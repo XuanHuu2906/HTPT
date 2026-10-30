@@ -41,3 +41,4 @@ Build base không chứng minh tính năng hoặc AC đã đạt. Chưa có lệ
 
 SPEC giữ nguyên kiến trúc Java/JavaFX Desktop, TCP Socket, PostgreSQL riêng từng Node và Raft 5 voter. Nội dung code/SQL minh họa trong tài liệu là đặc tả để tham khảo, không phải file implementation còn tồn tại. Các tài liệu bootstrap cũ được giữ và đánh dấu lịch sử; khi khác SPEC, dùng `docs/specs/` làm nguồn chuẩn.
 # HTPT
+# HTPT
