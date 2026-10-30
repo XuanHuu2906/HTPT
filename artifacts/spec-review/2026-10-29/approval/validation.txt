@@ -1,0 +1,10 @@
+Status-change validation: read current documents, SHA-256 comparison, local links, JSON parse
+Windows-11-10.0.26200-SP0 / Python 3.13.7
+PASS: 9 approved SPEC headers
+PASS: No draft status labels in current SPECs
+PASS: Files outside 9 SPECs and review unchanged
+PASS: Local document links resolve
+PASS: Fenced JSON examples parse
+PASS: Approval instruction recorded
+Runtime tests: NOT_RUN; documentation approval only.
+Exit: 0

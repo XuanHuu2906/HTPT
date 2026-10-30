@@ -1,0 +1,17 @@
+Task: BASE-CLEANUP-01
+Command: rtk proxy python -X utf8 -c (XML, file inventory, links and SHA-256 checks)
+Environment: Windows-11-10.0.26200-SP0 / Python 3.13.7
+PASS: No Java, compiled classes, SQL, UI, scripts or demo config files
+PASS: Root + five child POMs parse as XML
+PASS: Expected five Maven modules
+PASS: No POM references removed main classes
+PASS: Nine approved SPECs byte-for-byte unchanged
+PASS: Source placeholders retained
+PASS: No executable build output; copied placeholders allowed
+PASS: Current document links resolve
+PASS: Manifest matches current non-artifact files
+Maven validate: BLOCKED (mvn not found on PATH); see maven-validate.txt
+Runtime/unit/integration/E2E: NOT_RUN (no implementation/test sources)
+Static validation exit: 0
+Broken links: []
+Leftover code/config: []

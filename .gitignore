@@ -1,0 +1,16 @@
+# Build artifacts and IDE
+**/target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+*.log
+logs/
+*.pid
+.DS_Store
+# Local overrides and credentials
+configs/*-local.properties
+.env
+!/.env.example

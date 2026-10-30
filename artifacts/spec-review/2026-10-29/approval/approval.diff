@@ -1,0 +1,313 @@
+--- before/00-MASTER.md
++++ approved/00-MASTER.md
+@@ -1,7 +1,7 @@
+ # MASTER SPEC — Hệ thống bán vé tàu cao tốc phân tán
+ 
+-> **Mã:** SPEC-00 · **Phiên bản tài liệu:** Draft v1.0 · **Ngày:** 29/10/2026  
+-> **Phạm vi:** Nhóm 6, môn Hệ thống phân tán · **Tình trạng:** Đặc tả đề xuất để nhóm review, **không phải xác nhận đã code/test**.
++> **Mã:** SPEC-00 · **Phiên bản tài liệu:** APPROVED-v1 · **Ngày:** 29/10/2026  
++> **Phạm vi:** Nhóm 6, môn Hệ thống phân tán · **Tình trạng:** APPROVED-v1 theo chỉ thị người dùng ngày 29/10/2026, **không phải xác nhận đã code/test**.
+ 
+ ## 1. Mục đích và cách sử dụng
+ 
+@@ -32,13 +32,13 @@
+ - Ở nhà: 5 Backend + 5 PostgreSQL qua Docker Compose, JavaFX trực tiếp trên Windows. Demo: 5 laptop chứa Node/DB, laptop 6 giám sát; tất cả dùng LAN.
+ - Các yêu cầu `FR01`–`FR12`, tiêu chí `AC01`–`AC10` lấy từ tài liệu Quản lý phạm vi/WBS.
+ 
+-**[DESIGN-v1] — Chi tiết do bộ SPEC này bổ sung, cần nhóm chấp thuận trước khi khóa API:**
++**[APPROVED-v1] — Chi tiết thiết kế được phê duyệt theo chỉ thị người dùng:**
+ 
+ - Envelope TCP JSON `protocolVersion=1`, prefix độ dài 4 byte big-endian; tên trường `camelCase`, bộ mã lỗi, timeout mẫu.
+ - Phân loại trạng thái yêu cầu, cấu trúc bảng CSDL cụ thể, chiến lược read barrier, quy ước response và cấu hình mẫu.
+-- Những chi tiết đó là **thiết kế triển khai đề xuất** chứ không được trình bày như nội dung đã được duyệt từ tài liệu nguồn hoặc đã chạy thành công.
++- Những chi tiết đó là **thiết kế triển khai được phê duyệt trong bộ SPEC này**, không phải bằng chứng đã có trong tài liệu nguồn hoặc đã chạy thành công.
+ 
+-**Quản lý trạng thái sau rà soát:** [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md) ghi vấn đề, lựa chọn thiết kế, lệch code và reviewer. `Draft v1`, `DESIGN-v1 / CHƯA KHÓA` đều là chưa phê duyệt. Chỉ đổi thành **APPROVED-v1** cho revision được TV1–TV6 xác nhận; giữ nguyên lịch sử trạng thái trong hồ sơ. Approval thiết kế và mức triển khai/test là hai trạng thái độc lập; không dùng APPROVED-v1 để khẳng định đã PASS AC.
++**Quản lý trạng thái sau rà soát:** toàn bộ SPEC-00–08 chuyển thành **APPROVED-v1** ngày 29/10/2026 theo chỉ thị người dùng “không cần đụng tới code chuyển trạng thái cho tôi”. [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md) lưu căn cứ phê duyệt, revision và các việc triển khai còn lại. Không suy diễn xác nhận riêng của từng TV1–TV6. Approval thiết kế và mức triển khai/test là hai trạng thái độc lập; không dùng APPROVED-v1 để khẳng định đã PASS AC.
+ 
+ ## 3. Các bất biến không được vi phạm
+ 
+--- before/01-REQUIREMENTS.md
++++ approved/01-REQUIREMENTS.md
+@@ -1,6 +1,6 @@
+ # SPEC-01 — Yêu cầu và nghiệm thu
+ 
+-> **Trạng thái:** Draft v1 · **Nguồn:** Quản lý phạm vi/WBS Nhóm 6, ý tưởng dự án, yêu cầu giảng viên. Các mã FR/AC giữ nguyên tài liệu nhóm.
++> **Trạng thái:** APPROVED-v1 · **Nguồn:** Quản lý phạm vi/WBS Nhóm 6, ý tưởng dự án, yêu cầu giảng viên. Các mã FR/AC giữ nguyên tài liệu nhóm.
+ 
+ ## 1. Mục tiêu
+ 
+--- before/02-ARCHITECTURE.md
++++ approved/02-ARCHITECTURE.md
+@@ -1,6 +1,6 @@
+ # SPEC-02 — Kiến trúc tổng thể
+ 
+-> **Trạng thái:** Draft v1 · **Bộ nền:** Java / JavaFX / PostgreSQL / TCP Socket / Raft 5 Node, **không Web Service**.
++> **Trạng thái:** APPROVED-v1 · **Bộ nền:** Java / JavaFX / PostgreSQL / TCP Socket / Raft 5 Node, **không Web Service**.
+ 
+ ## 1. Sơ đồ logic
+ 
+@@ -69,7 +69,7 @@
+ ## 4. Luồng ghi chuẩn
+ 
+ 1. Client sinh `requestId` **một lần cho một ý định đặt/hủy**, tạo bản tin `BOOK_TICKET`/`CANCEL_TICKET`.
+-2. Node nhận yêu cầu; nếu Follower: trả `NOT_LEADER` + `leaderHint`, để Client tự kết nối lại. **[DESIGN-v1] Chọn redirect thay vì proxy** để tránh vòng chuyển tiếp và dễ test; tài liệu demo cho phép cả hai cách.
++2. Node nhận yêu cầu; nếu Follower: trả `NOT_LEADER` + `leaderHint`, để Client tự kết nối lại. **[APPROVED-v1] Chọn redirect thay vì proxy** để tránh vòng chuyển tiếp và dễ test; tài liệu demo cho phép cả hai cách.
+ 3. Leader kiểm tra định dạng/auth demo; ghi command theo thứ tự vào Raft log, lưu bền vững rồi replicate.
+ 4. Khi đủ điều kiện commit Raft, Leader tiến hành apply log đã commit lên PostgreSQL trong transaction cùng checkpoint apply; sau đó trả kết quả đã lưu.
+ 5. Client chỉ hiển thị vé `CONFIRMED` nếu nhận kết quả business có bằng chứng apply thành công, và refresh trạng thái ghế.
+@@ -99,11 +99,11 @@
+ 
+ Các sự kiện tối thiểu: `node.started`, `leader.elected`, `raft.append`, `raft.committed`, `booking.applied`, `booking.rejected`, `node.disconnected`, `node.recovered`, `client.request.uncertain`. Cấu trúc log nên có `nodeId`, `requestId` (nếu có), `term`, `logIndex`, `commitIndex`, `lastApplied`, `eventType`, `timestamp`. Không coi timestamp khác máy là thứ tự đồng thuận; **logIndex/term** quyết định thứ tự Raft.
+ 
+-## 9. Quyết định cần được khóa khi tích hợp
++## 9. Quyết định thiết kế đã phê duyệt
+ 
+-- `ADR-001` [DESIGN-v1]: TCP length-prefix JSON version 1.
+-- `ADR-002` [DESIGN-v1]: Follower redirect Client đến Leader.
+-- `ADR-003` [DESIGN-v1]: leader log barrier NO_OP cho mỗi `GET_SEATS`/`GET_REQUEST_RESULT`/`GET_TICKET_HISTORY`, theo SPEC-04 §7.
+-- `ADR-004` [DESIGN-v1]: lưu Raft metadata/log và booking state trong PostgreSQL **riêng của từng Node**, apply + `lastApplied` cùng transaction.
++- `ADR-001` [APPROVED-v1]: TCP length-prefix JSON version 1.
++- `ADR-002` [APPROVED-v1]: Follower redirect Client đến Leader.
++- `ADR-003` [APPROVED-v1]: leader log barrier NO_OP cho mỗi `GET_SEATS`/`GET_REQUEST_RESULT`/`GET_TICKET_HISTORY`, theo SPEC-04 §7.
++- `ADR-004` [APPROVED-v1]: lưu Raft metadata/log và booking state trong PostgreSQL **riêng của từng Node**, apply + `lastApplied` cùng transaction.
+ 
+-Khi nhóm thống nhất đúng revision, ghi người duyệt/ngày/bằng chứng tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md), đổi nhãn thiết kế thành `APPROVED-v1` theo SPEC-00. Nếu ADR dùng nhãn ACCEPTED trong issue thì phải liên kết cùng quyết định phê duyệt, không tạo một trạng thái khóa API khác. Migration code/fixtures/deployment là lượt triển khai riêng được review đồng bộ.
++Các ADR trên có trạng thái `APPROVED-v1` theo chỉ thị người dùng; căn cứ và revision tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md). Nếu ADR dùng nhãn ACCEPTED trong issue thì phải liên kết cùng quyết định phê duyệt. Migration code/fixtures/deployment là lượt triển khai riêng được review đồng bộ.
+--- before/03-CONTRACTS.md
++++ approved/03-CONTRACTS.md
+@@ -1,9 +1,9 @@
+ # SPEC-03 — TCP Protocol & Shared Contracts (Nguồn chuẩn DTO)
+ 
+-> **Trạng thái:** **DESIGN-v1 / CHƯA KHÓA**. Tài liệu đầu vào chỉ gợi ý nhóm bản tin; hình dạng JSON, field, error code và thời hạn dưới đây do bộ SPEC đề xuất để nhóm phê duyệt.  
++> **Trạng thái:** **APPROVED-v1**, theo chỉ thị người dùng ngày 29/10/2026. Hình dạng JSON, field, error code và quy tắc dưới đây là baseline thiết kế được phê duyệt; không xác nhận code hiện tại đã hỗ trợ.  
+ > **Owner:** TV3 · **Review bắt buộc:** TV1, TV2, TV4, TV5, TV6. **Không dùng HTTP/REST/SOAP/Web Service**.
+ 
+-> **Rà soát SPEC-REVIEW-01 (29/10/2026):** các bổ sung vẫn là đề xuất. Code bootstrap hiện dùng envelope/type/seed khác tài liệu này; xem [hồ sơ review và điều kiện phê duyệt](../reviews/SPEC-REVIEW-01.md). Không triển khai riêng một phía hoặc coi cùng số version là tương thích.
++> **Rà soát SPEC-REVIEW-01 (29/10/2026):** đã chuyển trạng thái theo chỉ thị người dùng. Code bootstrap hiện dùng envelope/type/seed khác tài liệu này; xem [hồ sơ review và phê duyệt](../reviews/SPEC-REVIEW-01.md). Không triển khai riêng một phía hoặc coi cùng số version là tương thích.
+ 
+ ## 1. Nguyên tắc
+ 
+@@ -21,7 +21,7 @@
+ N bytes UTF-8 encoded JSON envelope
+ ```
+ 
+-- `N` là độ dài **byte**, không phải số ký tự. **DESIGN-v1:** `1 <= N <= 1_048_576` (1 MiB).
++- `N` là độ dài **byte**, không phải số ký tự. **APPROVED-v1:** `1 <= N <= 1_048_576` (1 MiB).
+ - `readFully(4)`, kiểm tra `N`, rồi `readFully(N)`; EOF giữa khung = mất kết nối/khung lỗi, không parse phần còn thiếu.
+ - Mỗi socket có một writer được tuần tự hóa; nhiều request trên cùng kết nối phải phân biệt bằng `messageId`.
+ - Socket connect/read timeout và reconnect cấu hình, không khóa JavaFX Application Thread.
+@@ -50,7 +50,7 @@
+ 
+ `sentAt` chỉ phục vụ log và hiển thị; deadline/timeout đo bằng đồng hồ monotonic cục bộ, không lấy chênh lệch `sentAt` giữa máy. `correlationId=null` cho request; response có `messageId` mới và `correlationId` bằng ID request. `senderId` phải được kiểm tra theo kênh/peer cấu hình, **không** đủ để xác thực hay cấp quyền quản trị; mô hình trust demo cần nhóm chốt tại hồ sơ review.
+ 
+-### 3.0. Kiểu dữ liệu và nullability chung (DESIGN-v1)
++### 3.0. Kiểu dữ liệu và nullability chung (APPROVED-v1)
+ 
+ - Mọi field được liệt kê đều bắt buộc xuất hiện; chỉ các field ghi rõ nullable mới được `null`. `payload` luôn là object, không phải chuỗi JSON. Từ chối key trùng, field không biết, enum lạ, sai kiểu hoặc tràn số bằng `INVALID_REQUEST`; không ép chuỗi/số/boolean lẫn nhau.
+ - `protocolVersion`: integer đúng `1`; `messageId` và business `requestId`: UUID dạng `8-4-4-4-12` hex chữ thường. `correlationId`: UUID hoặc null như trên. `senderId`, `type`: string theo §1/§3.1.
+@@ -182,7 +182,7 @@
+ 
+ Request: `{ "tripId":"SE-001", "limit":50, "cursor":null }`; `limit` integer 1–100. Response object có đúng các field `tripId`, `tickets`, `nextCursor`, `readIndex`, `leaderId`. `tickets` là mảng (có thể rỗng) các object `{ticketId, seatId, passengerName, status, issuedAt, cancelledAt}`; status ACTIVE/CANCELLED, `cancelledAt=null` chỉ khi ACTIVE. Các field khác non-null, trừ `nextCursor` khi hết trang.
+ 
+-DESIGN-v1: sắp vé theo index BOOK thành công tăng dần, lấy từ kết quả BOOK đã lưu; không sắp theo đồng hồ máy. `cursor` là null hoặc chuỗi thập phân chuẩn của index BOOK cuối trang trước (không dấu/zero đầu, số >= 1 trong miền long). Trang sau lấy index lớn hơn cursor; cursor sai dạng trả INVALID_REQUEST. `nextCursor` là index vé cuối trang nếu còn vé, nếu hết là null. Mỗi trang qua read barrier và một DB snapshot; các trang không phải snapshot toàn bộ lịch sử cố định, trạng thái hủy có thể thay đổi giữa hai lần đọc. UI refresh từ cursor null để cập nhật vé cũ. Response phải nằm trong giới hạn frame; không cắt JSON giữa chừng.
++APPROVED-v1: sắp vé theo index BOOK thành công tăng dần, lấy từ kết quả BOOK đã lưu; không sắp theo đồng hồ máy. `cursor` là null hoặc chuỗi thập phân chuẩn của index BOOK cuối trang trước (không dấu/zero đầu, số >= 1 trong miền long). Trang sau lấy index lớn hơn cursor; cursor sai dạng trả INVALID_REQUEST. `nextCursor` là index vé cuối trang nếu còn vé, nếu hết là null. Mỗi trang qua read barrier và một DB snapshot; các trang không phải snapshot toàn bộ lịch sử cố định, trạng thái hủy có thể thay đổi giữa hai lần đọc. UI refresh từ cursor null để cập nhật vé cũ. Response phải nằm trong giới hạn frame; không cắt JSON giữa chừng.
+ 
+ Endpoint này trả lịch sử **vé**, không phải API stream sự kiện hay danh sách mọi request bị từ chối. Nhật ký giao dịch/sự kiện FR11 được lưu trong `request_results`/`business_events` và log vận hành; giao diện tra toàn bộ sự kiện cần contract riêng được review, không suy diễn từ endpoint này. Demo chỉ dùng tên hành khách giả, chưa có phân quyền theo vai trò người dùng.
+ 
+@@ -260,7 +260,7 @@
+ - Payload `command` được persist nguyên vẹn, không tái tạo `ticketId`, timestamp hoặc random khi apply ở từng Node.
+ - Tương thích phiên bản phải được test hai chiều; thay field wire là **breaking change** cần owner review.
+ 
+-### 6.1. Log command và kiểm tra RPC (DESIGN-v1)
++### 6.1. Log command và kiểm tra RPC (APPROVED-v1)
+ 
+ | `commandType` trong entry | Các field bắt buộc của `command` |
+ |---|---|
+@@ -298,5 +298,5 @@
+ - Input: `tripId` đúng `SE-001`, `seatId` thuộc `G01`–`G10`, `requestId` UUID, `passengerName` không rỗng và bị giới hạn độ dài trong [05-BOOKING-DATABASE.md](05-BOOKING-DATABASE.md).
+ - Mọi DTO có serialization/deserialization round-trip test, nullability test và golden JSON fixtures; test framing với Unicode tiếng Việt, 2 khung nối tiếp, khung phân mảnh, kết nối đóng giữa khung.
+ - `shared` module do TV3 sở hữu. TV1/2/4/5/6 không tự định nghĩa DTO đối thủ; thay đổi phải qua PR và cập nhật test.
+-- **Điểm cần chốt nhóm trước code song song:** chọn field name/enums, quy ước `NOT_LEADER`, có `ticketId` trong log, read barrier, các giá trị error. Khi approved, tạo tag contract v1 và giữ backward-compat hoặc nâng `protocolVersion` khi breaking change.
+-- Quyết định phê duyệt, migration từ bootstrap và người review được ghi tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md); chỉ đổi nhãn thành APPROVED-v1 khi có xác nhận cho đúng revision. Approval thiết kế không đồng nghĩa code đã hỗ trợ hoặc AC đã PASS.
++- **Baseline đã phê duyệt:** field name/enums, quy ước `NOT_LEADER`, `ticketId` trong log, read barrier và các giá trị error theo tài liệu này. Khi triển khai, tạo tag contract v1 nếu có Git và giữ backward-compat hoặc thống nhất migration/version khi breaking change.
++- Quyết định chuyển trạng thái và revision được ghi tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md). Migration từ bootstrap còn là công việc triển khai riêng. Approval thiết kế không đồng nghĩa code đã hỗ trợ hoặc AC đã PASS.
+--- before/04-RAFT.md
++++ approved/04-RAFT.md
+@@ -1,6 +1,6 @@
+ # SPEC-04 — Raft: Election, Replication, Commit & Recovery
+ 
+-> **Trạng thái:** Draft v1, phác thảo cài đặt Raft chuẩn cho **5 voter cố định**. **Owner:** TV4 (log/replication/commit) + TV5 (election/failure/recovery); cùng sở hữu `raft/core` và review chéo.
++> **Trạng thái:** APPROVED-v1, phác thảo cài đặt Raft chuẩn cho **5 voter cố định**. **Owner:** TV4 (log/replication/commit) + TV5 (election/failure/recovery); cùng sở hữu `raft/core` và review chéo.
+ 
+ ## 1. Mục tiêu và giới hạn
+ 
+@@ -33,7 +33,7 @@
+ 5. Nhận request **hoặc response** hợp lệ từ peer với term lớn hơn thì persist term mới, reset votedFor, từ bỏ role cũ, trở thành Follower trước khi xử lý tiếp. Candidate nhận AppendEntries term bằng term hiện tại cũng trở thành Follower. Response term cũ không được cập nhật tiến độ election/replication.
+ 6. Leader không hợp lệ/term cũ không thể tiếp tục ghi; Node không bỏ phiếu vì tên laptop cố định.
+ 
+-**DESIGN-v1 timers dùng cho cấu hình demo, không phải hằng số thuật toán:** heartbeat khoảng 100–200 ms, election timeout ngẫu nhiên 500–1000 ms ở LAN ổn định; hiệu chỉnh sau test để giảm split vote. Không dùng thời gian vật lý giữa máy làm thứ tự commit.
++**APPROVED-v1 timers dùng cho cấu hình demo, không phải hằng số thuật toán:** heartbeat khoảng 100–200 ms, election timeout ngẫu nhiên 500–1000 ms ở LAN ổn định; hiệu chỉnh sau test để giảm split vote. Không dùng thời gian vật lý giữa máy làm thứ tự commit.
+ 
+ ## 4. AppendEntries và log matching
+ 
+@@ -65,7 +65,7 @@
+ 
+ ## 7. Read safety (`GET_SEATS`, tra cứu requestId, lịch sử vé)
+ 
+-**DESIGN-v1 — baseline đề xuất để nhóm chốt:** mỗi request đọc authoritative (GET_SEATS, GET_REQUEST_RESULT, GET_TICKET_HISTORY) được Leader append một entry `NO_OP` của currentTerm **sau khi nhận request**, persist/replicate/commit đúng majority, lấy index entry đó làm `readIndex`, chờ `lastApplied >= readIndex`, rồi query trong một DB snapshot. NO_OP có DTO tại SPEC-03 §6.1. Cách này dùng log barrier đã được đề cập trong draft, không cần thêm RPC ReadIndex; chi phí là tăng log mỗi lần đọc. Không tái dùng một NO_OP cũ cho mọi lần đọc sau đó.
++**APPROVED-v1 — baseline đã phê duyệt:** mỗi request đọc authoritative (GET_SEATS, GET_REQUEST_RESULT, GET_TICKET_HISTORY) được Leader append một entry `NO_OP` của currentTerm **sau khi nhận request**, persist/replicate/commit đúng majority, lấy index entry đó làm `readIndex`, chờ `lastApplied >= readIndex`, rồi query trong một DB snapshot. NO_OP có DTO tại SPEC-03 §6.1. Cách này dùng log barrier đã được đề cập trong draft, không cần thêm RPC ReadIndex; chi phí là tăng log mỗi lần đọc. Không tái dùng một NO_OP cũ cho mọi lần đọc sau đó.
+ 
+ Nếu đổi term/role trong lúc chờ thì hủy phục vụ đọc và trả NOT_LEADER; nếu không commit/apply kịp deadline thì READ_UNAVAILABLE. UNKNOWN trong lookup chỉ là không tìm thấy kết quả sau barrier thành công. Tối ưu ReadIndex/quorum heartbeat theo từng request cần review thiết kế riêng, không tự thay bằng một heartbeat cũ hoặc lease dựa trên đồng hồ.
+ 
+@@ -118,4 +118,4 @@
+ 
+ Kiểm thử restart term/vote/log, split vote, up-to-date election, append conflict, commit current-term rule, atomic apply, failover 3/5, partition 3–2, retry mất phản hồi, catch-up từ Node lỗi. Mỗi test có lệnh chạy, môi trường, assertion, log minh chứng. Snapshot chưa triển khai ghi **NOT_IMPLEMENTED (mở rộng ngoài baseline v1)**.
+ 
+-Đối chiếu thuật toán: [Ongaro & Ousterhout, Raft extended paper](https://raft.github.io/raft.pdf), Figure 2 (AppendEntries, election, commit) và §8 (client retry/read safety). Các lựa chọn DTO, PostgreSQL và log barrier cụ thể vẫn là DESIGN-v1 của nhóm.
++Đối chiếu thuật toán: [Ongaro & Ousterhout, Raft extended paper](https://raft.github.io/raft.pdf), Figure 2 (AppendEntries, election, commit) và §8 (client retry/read safety). Các lựa chọn DTO, PostgreSQL và log barrier cụ thể vẫn là APPROVED-v1 của nhóm.
+--- before/05-BOOKING-DATABASE.md
++++ approved/05-BOOKING-DATABASE.md
+@@ -1,6 +1,6 @@
+ # SPEC-05 — Nghiệp vụ đặt/hủy vé & PostgreSQL
+ 
+-> **Trạng thái:** Draft v1. Yêu cầu nghiệp vụ lấy từ hồ sơ nhóm; **DDL và một số quy tắc dữ liệu chi tiết là DESIGN-v1**, cần TV2 và TV4/5 review.  
++> **Trạng thái:** APPROVED-v1 theo chỉ thị người dùng. Yêu cầu nghiệp vụ lấy từ hồ sơ nhóm; **DDL và quy tắc dữ liệu trong tài liệu đã được phê duyệt ở mức thiết kế**. Lượt triển khai cần TV2 và TV4/5 review.  
+ > **Owner:** TV2; phối hợp TV4/5 về commit/apply và TV3 về command DTO.
+ 
+ ## 1. Domain và bất biến
+@@ -19,7 +19,7 @@
+ 
+ **CANCEL (P1):** `requestId`, `ticketId`; Leader bổ sung `cancelledAt` vào log. Hủy hợp lệ nếu vé tồn tại, thuộc trạng thái `ACTIVE`; hủy xong trả ghế về `AVAILABLE` và giữ lịch sử.
+ 
+-**Validation DESIGN-v1:** `requestId` là UUID theo SPEC-03; `passengerName` sau Java `String.strip()` phải có 1–120 Unicode code point (không đếm UTF-16 code unit), không chứa U+0000; `tripId=SE-001`, ghế trong tập G01–G10. Không tự đổi hoa/thường hay Unicode normalization của tên; lưu tên đã strip vào command. Tên người thật không cần thiết — dùng dữ liệu demo. Schema/type lỗi được từ chối trước append; không append command thiếu field do Leader cấp.
++**Validation APPROVED-v1:** `requestId` là UUID theo SPEC-03; `passengerName` sau Java `String.strip()` phải có 1–120 Unicode code point (không đếm UTF-16 code unit), không chứa U+0000; `tripId=SE-001`, ghế trong tập G01–G10. Không tự đổi hoa/thường hay Unicode normalization của tên; lưu tên đã strip vào command. Tên người thật không cần thiết — dùng dữ liệu demo. Schema/type lỗi được từ chối trước append; không append command thiếu field do Leader cấp.
+ 
+ ## 3. Logic quyết định trạng thái (deterministic state machine)
+ 
+@@ -68,7 +68,7 @@
+ 
+ `ticketId` **bị loại khỏi fingerprint BOOK** vì Leader sinh, nhưng **bắt buộc nằm trong fingerprint CANCEL** vì là input Client. Cùng ID nhưng đổi loại BOOK↔CANCEL cũng là conflict. Không ném lỗi khiến apply bị kẹt mãi khi conflict đã nằm trong committed log: entry conflict không thay business state/kết quả gốc, nhưng checkpoint vẫn tiến trong transaction; trả ERROR_RESPONSE(REQUEST_ID_CONFLICT) cho lần gửi xung đột. Lookup ID vẫn trả kết quả gốc. Không thêm hàng request_results thứ hai để lưu conflict vì khóa chính là requestId.
+ 
+-### 3.1. Fingerprint, replay và dữ liệu tất định (DESIGN-v1)
++### 3.1. Fingerprint, replay và dữ liệu tất định (APPROVED-v1)
+ 
+ - Chuẩn hóa input trước append và trước so sánh retry; UUID theo dạng chuẩn SPEC-03, tên theo §2. Tuple BOOK: `(BOOK_TICKET, tripId, seatId, passengerName)`; tuple CANCEL: `(CANCEL_TICKET, ticketId)`.
+ - Encode từng field tuple thành `uint32 big-endian byteLength || UTF-8 bytes`, nối theo đúng thứ tự trên, SHA-256 rồi lưu hex chữ thường 64 ký tự vào intent_fingerprint. Không hash toàn bộ JSON, thứ tự key, envelope, requestId, hoặc field Leader sinh. Không có field null trong tuple hợp lệ. Golden fixtures phải chứng minh thứ tự key JSON không đổi fingerprint, nhưng đổi vé đích CANCEL thì có.
+@@ -155,7 +155,7 @@
+ );
+ ```
+ 
+-Mối liên hệ `seats.current_ticket_id` ↔ `tickets.ticket_id` được bảo đảm bởi **transaction và kiểm thử đối chiếu**. Nếu muốn thêm FK trong migration, cần thiết kế thứ tự insert/deferrable constraint để không chặn luồng apply. DESIGN-v1: đúng một business_events row khi tạo kết quả APPLIED mới, event_type=`BOOK_CONFIRMED|BOOK_REJECTED|CANCEL_CONFIRMED|CANCEL_REJECTED`; event_json là kết quả đã lưu. Duplicate/conflict/NO_OP không tạo event nghiệp vụ mới. Dùng log_index làm khóa tất định; không dùng BIGSERIAL vì sequence có thể nhảy khác nhau sau rollback tại các Node. Log chẩn đoán conflict vẫn ghi được ngoài business_events, không tham gia đối chiếu state machine.
++Mối liên hệ `seats.current_ticket_id` ↔ `tickets.ticket_id` được bảo đảm bởi **transaction và kiểm thử đối chiếu**. Nếu muốn thêm FK trong migration, cần thiết kế thứ tự insert/deferrable constraint để không chặn luồng apply. APPROVED-v1: đúng một business_events row khi tạo kết quả APPLIED mới, event_type=`BOOK_CONFIRMED|BOOK_REJECTED|CANCEL_CONFIRMED|CANCEL_REJECTED`; event_json là kết quả đã lưu. Duplicate/conflict/NO_OP không tạo event nghiệp vụ mới. Dùng log_index làm khóa tất định; không dùng BIGSERIAL vì sequence có thể nhảy khác nhau sau rollback tại các Node. Log chẩn đoán conflict vẫn ghi được ngoài business_events, không tham gia đối chiếu state machine.
+ 
+ `result_json` lưu đúng **payload** BOOK_TICKET_RESPONSE/CANCEL_TICKET_RESPONSE cuối cùng theo SPEC-03, không lưu envelope/messageId/senderId/sentAt của một lần trả lời. Lookup ánh xạ outcome CONFIRMED→APPLIED_SUCCESS, REJECTED→APPLIED_REJECTED từ kết quả này và các cột; duplicate chỉ tạo envelope mới, không sửa payload đã lưu. Đối chiếu JSONB theo nội dung field, không theo thứ tự key hay cách escape chuỗi.
+ 
+--- before/06-DESKTOP-UI.md
++++ approved/06-DESKTOP-UI.md
+@@ -1,6 +1,6 @@
+ # SPEC-06 — JavaFX Desktop Client và Cluster Monitor
+ 
+-> **Trạng thái:** Draft v1 · **Owner:** TV1 (Client), TV6 (Monitor). Không có trang web, WebView làm frontend hay HTTP API.
++> **Trạng thái:** APPROVED-v1 · **Owner:** TV1 (Client), TV6 (Monitor). Không có trang web, WebView làm frontend hay HTTP API.
+ 
+ ## 1. Hai ứng dụng Desktop
+ 
+--- before/07-TESTING.md
++++ approved/07-TESTING.md
+@@ -1,6 +1,6 @@
+ # SPEC-07 — Chiến lược kiểm thử, AC01–AC10 và bằng chứng
+ 
+-> **Trạng thái:** Draft v1 · **Owner điều phối:** TV6 · **Thực thi:** Cả sáu thành viên.  
++> **Trạng thái:** APPROVED-v1 · **Owner điều phối:** TV6 · **Thực thi:** Cả sáu thành viên.  
+ > Đây là **kịch bản và tiêu chí kỳ vọng**, không phải kết quả đã test. Trạng thái ban đầu của mọi testcase: **NOT_RUN**.
+ 
+ ## 1. Nguyên tắc kiểm thử
+--- before/08-DEPLOYMENT.md
++++ approved/08-DEPLOYMENT.md
+@@ -1,6 +1,6 @@
+ # SPEC-08 — Deployment & vận hành: Docker 2 chế độ / 6 Laptop LAN
+ 
+-> **Trạng thái:** Draft v1 dựa trên phương án Docker Nhóm 6. **Owner:** TV6; review TV2 (DB), TV3 (TCP/ports), TV4–TV5 (Raft). Docker hỗ trợ **Backend và PostgreSQL**; **JavaFX Desktop chạy trực tiếp Windows**.
++> **Trạng thái:** APPROVED-v1 dựa trên phương án Docker Nhóm 6. **Owner:** TV6; review TV2 (DB), TV3 (TCP/ports), TV4–TV5 (Raft). Docker hỗ trợ **Backend và PostgreSQL**; **JavaFX Desktop chạy trực tiếp Windows**.
+ 
+ ## 1. Một codebase, hai môi trường
+ 
+@@ -29,7 +29,7 @@
+ 
+ Không giả định Laptop 1 luôn là Leader; bầu cử động theo Raft. Nếu Laptop 6 tắt, cụm 5 Node không đổi số phiếu.
+ 
+-## 3. Cổng mạng và biến môi trường (DESIGN-v1)
++## 3. Cổng mạng và biến môi trường (APPROVED-v1)
+ 
+ **Quy ước mẫu cần khóa để tránh lỗi LAN:**
+ 
+@@ -58,7 +58,7 @@
+ 
+ Các IP ví dụ `192.168.10.11–15` từ kịch bản minh họa, **không** được giả định đúng trong lớp. Gán IP thật/địa chỉ tĩnh theo LAN hiện tại. Khi chạy dev, peer advertise/peers dùng hostname service nội bộ Docker; Client advertise phải là địa chỉ truy cập được từ Desktop Windows (`127.0.0.1:9101..9105` khi cùng máy), không dùng hostname Docker cho Host Client.
+ 
+-### 3.1. Discovery, ranh giới kênh và cấu hình thiếu (DESIGN-v1)
++### 3.1. Discovery, ranh giới kênh và cấu hình thiếu (APPROVED-v1)
+ 
+ - Client/Monitor cần map đủ `node-1`..`node-5` → **client endpoint**: dev `127.0.0.1:9101..9105`; LAN `IP_LAPTOP_1..5:9100`. `leaderHint` chỉ là node ID, không mang host/port; map này là nguồn resolve. Hint null/stale thì thử các endpoint với backoff/deadline, không hardcode Leader.
+ - Backend peer map phải có đủ 5 ID duy nhất, chứa chính Node; quorum luôn 3 dù peer nào offline. Tách handler/cổng Client và peer: không nhận REQUEST_VOTE/APPEND_ENTRIES trên client port. Firewall giới hạn peer port cho 5 host cấu hình; kiểm tra senderId với cấu hình không được quảng cáo là xác thực mật mã. Cơ chế nhận diện peer cụ thể còn cần TV3/TV6 chốt trong hồ sơ review.
+--- before/SPEC-REVIEW-01.md
++++ approved/SPEC-REVIEW-01.md
+@@ -1,8 +1,8 @@
+ # SPEC-REVIEW-01 — Rà soát contract và toàn bộ 9 SPEC
+ 
+-Ngày: 29/10/2026. Phạm vi: SPEC-00 đến SPEC-08, trọng tâm SPEC-03. Trạng thái: **DESIGN-v1 / CHƯA KHÓA — CHỜ NHÓM REVIEW**.
++Ngày: 29/10/2026. Phạm vi: SPEC-00 đến SPEC-08, trọng tâm SPEC-03. Trạng thái hiện hành: **APPROVED-v1**.
+ 
+-Đây là hồ sơ sửa tài liệu và đề xuất quyết định. Không xác nhận code đã tương thích hoặc test runtime đã PASS. Không có bằng chứng nhóm TV1–TV6 đã duyệt revision này tại thời điểm rà soát.
++Đây là hồ sơ rà soát và phê duyệt thiết kế. Căn cứ chuyển trạng thái: chỉ thị trực tiếp của người dùng ngày 29/10/2026, “không cần đụng tới code chuyển trạng thái cho tôi”. Chỉ chuyển trạng thái tài liệu; không xác nhận code đã tương thích hoặc test runtime đã PASS, không suy diễn từng TV1–TV6 đã review riêng.
+ 
+ ## 1. Phát hiện và xử lý trong tài liệu
+ 
+@@ -41,20 +41,22 @@
+ 
+ Lựa chọn để nhóm quyết định: **A**, giữ code bootstrap như hiện tại đến một lượt migration phối hợp sang SPEC đã duyệt (bản review này đi theo hướng A); **B**, điều chỉnh SPEC về code bootstrap, cần đánh giá lại invariants và không được giữ local read/no-Raft như nghiệm thu cuối. Trong hướng A, TV3 phải chốt tăng version hay chuyển toàn bộ cluster/client cùng lúc trong môi trường demo; không triển khai trộn hai envelope cùng version và không tự reset dữ liệu.
+ 
+-## 3. Các quyết định cần thống nhất trước APPROVED-v1
++## 3. Baseline phê duyệt và việc triển khai còn lại
+ 
+ | Quyết định | Đề xuất/câu hỏi còn mở | Chủ trì / review | Trạng thái |
+ |---|---|---|---|
+-| D01 — Wire baseline & migration | Schema SPEC-03; chọn version migration hoặc chuyển đồng bộ, lập danh sách module/fixtures/DB bị ảnh hưởng | TV3 / tất cả | CHỜ NHÓM |
+-| D02 — Read barrier | Log NO_OP mới cho từng query; chấp nhận log tăng trong demo, chưa tối ưu ReadIndex/snapshot | TV4/5 / TV2/3/6 | CHỜ NHÓM |
+-| D03 — Deterministic apply | Fingerprint tuple, timestamp từ command, conflict checkpoint, audit log_index, retention request_results | TV2 / TV3/4/5 | CHỜ NHÓM |
+-| D04 — Client recovery & history | Pending journal, nullability/result mapping, cursor theo index và refresh giữa trang | TV1 / TV2/3 | CHỜ NHÓM |
+-| D05 — Deployment trust & timers | Map peer/client, firewall; cần chọn cách ràng buộc peer identity trong demo và giá trị timeout. senderId/CLUSTER_ID tự khai không phải authentication | TV3/6 / TV4/5 | CHỜ NHÓM |
+-| D06 — Phạm vi lịch sử/monitor | Ticket history và log vận hành có đáp ứng FR11–12 không; nếu cần stream/query events trên UI phải bổ sung contract trước khi duyệt phần đó | TV1/6 / TV2/3 | CHỜ NHÓM |
++| D01 — Wire baseline & migration | Schema SPEC-03 được duyệt; phương án version migration/chuyển đồng bộ còn phải chọn trong lượt triển khai | TV3 / tất cả | APPROVED-v1; migration chưa triển khai |
++| D02 — Read barrier | Log NO_OP mới cho từng query; chấp nhận log tăng trong demo, chưa tối ưu ReadIndex/snapshot | TV4/5 / TV2/3/6 | APPROVED-v1 |
++| D03 — Deterministic apply | Fingerprint tuple, timestamp từ command, conflict checkpoint, audit log_index, retention request_results | TV2 / TV3/4/5 | APPROVED-v1 |
++| D04 — Client recovery & history | Pending journal, nullability/result mapping, cursor theo index và refresh giữa trang | TV1 / TV2/3 | APPROVED-v1 |
++| D05 — Deployment trust & timers | Baseline map peer/client và firewall được duyệt; cơ chế identity cụ thể/giá trị timeout còn là việc triển khai. senderId/CLUSTER_ID tự khai không phải authentication | TV3/6 / TV4/5 | APPROVED-v1; chi tiết vận hành còn mở |
++| D06 — Phạm vi lịch sử/monitor | Baseline ticket history và log vận hành được duyệt; stream/query events trên UI cần contract bổ sung nếu triển khai | TV1/6 / TV2/3 | APPROVED-v1; mở rộng cần review riêng |
+ 
+-Không dựng thêm giao thức auth, admin hoặc event stream trong lần sửa này chỉ để lấp chỗ chưa được nhóm quyết định. Những phần phụ thuộc D05/D06 chưa được coi đã khóa. Ngưỡng timeout cụ thể là cấu hình cần test, không phải cam kết SLA mới.
++Chỉ thị chuyển trạng thái phê duyệt baseline tài liệu hiện có; không bổ sung giao thức auth, admin hoặc event stream và không tự chọn các chi tiết triển khai còn mở. Ngưỡng timeout cụ thể là cấu hình cần test, không phải cam kết SLA mới.
+ 
+ ## 4. Sổ xác nhận và thao tác khóa
++
++**Phê duyệt hiện hành:** người dùng yêu cầu chuyển bộ SPEC sang APPROVED-v1 ngày 29/10/2026. Bảng dưới lưu tình trạng xác nhận cá nhân tại lần rà soát ban đầu, không phải điều kiện trì hoãn chỉ thị chuyển trạng thái này.
+ 
+ | Thành viên | Phần review | Quyết định / ngày / bằng chứng |
+ |---|---|---|
+@@ -65,11 +67,11 @@
+ | TV5 | Election, term/vote, restart/recovery | CHƯA CÓ XÁC NHẬN |
+ | TV6 | Monitor, deployment, evidence/test plan | CHƯA CÓ XÁC NHẬN |
+ 
+-Khi nhóm thống nhất:
++Lịch sử trạng thái:
+ 
+-1. Chốt D01–D06, cập nhật phần phụ thuộc trong 9 SPEC; ghi tên reviewer, ngày, link PR/issue/biên bản hoặc xác nhận được người dùng cung cấp. Approval phải gắn với revision cụ thể (Git SHA nếu có, hoặc manifest SHA-256 của các file SPEC).
+-2. Chỉ lúc đó đổi trạng thái hiện hành `Draft v1` / `DESIGN-v1 / CHƯA KHÓA` của các phần được duyệt thành `APPROVED-v1`; đồng bộ SPEC-00/02/03 và ghi lịch sử phê duyệt tại đây. Không thay hàng loạt nhãn trong các bản lưu lịch sử/evidence.
+-3. Tạo tag contract khi có Git repository; lập lượt triển khai đồng bộ DTO/codec/handler/Client/Monitor/SQL/fixtures. Approval tài liệu không xóa các gap code ở §2 hoặc đổi NOT_RUN thành PASS.
++1. Sau rà soát: `Draft v1` / `DESIGN-v1 / CHƯA KHÓA`; chưa ghi nhận phê duyệt.
++2. Theo chỉ thị tiếp theo của người dùng: chuyển cả 9 SPEC và các ADR/nhãn thiết kế hiện hành thành `APPROVED-v1`. Giữ nguyên bản lưu lịch sử và evidence lần rà soát trước.
++3. Revision phê duyệt: [manifest SHA-256](../../artifacts/spec-review/2026-10-29/approval/approved-spec-sha256.json); [kiểm tra chuyển trạng thái](../../artifacts/spec-review/2026-10-29/approval/validation.txt). Không tạo tag khi chưa có Git repository. Approval tài liệu không xóa gap code ở §2 hoặc đổi NOT_RUN thành PASS.
+ 
+ ## 5. Kiểm tra và bằng chứng
+ 

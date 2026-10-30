@@ -1,0 +1,11 @@
+{
+  "docs/specs/00-MASTER.md": "ffe669bbda9f85f17bcab173fa1acc02e6261b58e4385e6583fff3624569f0ea",
+  "docs/specs/01-REQUIREMENTS.md": "f57e980a370732175779d36231a5c4d70beb54df2feff229847fd3fcb5c7bc59",
+  "docs/specs/02-ARCHITECTURE.md": "ddad02590df44b173b949033dab3c118459909ce58006453ab4850d241fd3c4a",
+  "docs/specs/03-CONTRACTS.md": "f05a0b050065ee21fd5bb15adc291eafb1b6b2a00b533dd77dc5aa3832ec579b",
+  "docs/specs/04-RAFT.md": "de20ad2d1638a4859778752f4ad18c928cb6e6d3a8ab00081732028b159f764c",
+  "docs/specs/05-BOOKING-DATABASE.md": "581ab6fe2bbe8b97ce7fc9a6717f7e6312279902fd99da3ca3c314efde167903",
+  "docs/specs/06-DESKTOP-UI.md": "575ca9b3cf823a5f4029b11381e227dbe32b8fe1b61736eb2139a1643339662a",
+  "docs/specs/07-TESTING.md": "97b49b866e09c36b1549b812c6411c03e7bdf688006a398fba6b0be1c0a26b48",
+  "docs/specs/08-DEPLOYMENT.md": "a69a061d165bd36dd4ad5d5c63a1287b9cc7fc95c8d18a07d4449c59e9c210a7"
+}

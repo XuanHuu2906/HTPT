@@ -1,0 +1,27 @@
+Command: rtk proxy python -X utf8 artifacts/spec-review/2026-10-29/validate_specs.py
+Environment: Windows-11-10.0.26200-SP0, Python 3.13.7
+Workspace: D:\HTPT\railway-distributed-system
+Scope: documentation consistency only; runtime unit/integration/E2E NOT_RUN.
+Git status exit: 128
+fatal: not a git repository (or any of the parent directories): .git
+PASS: Exactly nine numbered SPEC documents
+PASS: All pre-existing files outside nine SPECs unchanged
+PASS: No unexpected new files outside review/evidence scope
+PASS: All relative Markdown links resolve
+PASS: No Unicode replacement characters
+PASS: Balanced fenced code blocks
+PASS: All eight fenced JSON examples parse
+PASS: Contract remains DESIGN-v1 / CHƯA KHÓA
+PASS: No approval falsely recorded for any reviewer
+PASS: GET_SEATS sample contains G01 through G10 once in order
+PASS: GET_SEATS sample status/ticket nullability
+PASS: BOOK log sample includes all replicated fields
+PASS: Envelope sample separates messageId and business requestId
+PASS: Status sample lists four peers excluding self
+PASS: Unsafe Follower commit formula removed
+PASS: Online count no longer defines quorum
+PASS: NO_OP defined in wire entry, Raft apply and SQL draft
+PASS: Draft audit DDL uses log index, not local sequence
+PASS: Fifteen added edge cases explicitly NOT_RUN
+Validation exit: 0
+Java/PostgreSQL/Raft/JavaFX behavior: NOT_RUN (documentation-only task).

@@ -1,0 +1,4 @@
+Command: rtk proxy mvn -B -ntp validate
+Exit: 1
+rtk: Failed to resolve 'mvn' via PATH, falling back to direct exec: Binary 'mvn' not found on PATH
+rtk: Failed to execute command: mvn: program not found

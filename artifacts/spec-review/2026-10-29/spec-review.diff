@@ -1,0 +1,569 @@
+--- before/00-MASTER.md
++++ after/00-MASTER.md
+@@ -38,6 +38,8 @@
+ - Phân loại trạng thái yêu cầu, cấu trúc bảng CSDL cụ thể, chiến lược read barrier, quy ước response và cấu hình mẫu.
+ - Những chi tiết đó là **thiết kế triển khai đề xuất** chứ không được trình bày như nội dung đã được duyệt từ tài liệu nguồn hoặc đã chạy thành công.
+ 
++**Quản lý trạng thái sau rà soát:** [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md) ghi vấn đề, lựa chọn thiết kế, lệch code và reviewer. `Draft v1`, `DESIGN-v1 / CHƯA KHÓA` đều là chưa phê duyệt. Chỉ đổi thành **APPROVED-v1** cho revision được TV1–TV6 xác nhận; giữ nguyên lịch sử trạng thái trong hồ sơ. Approval thiết kế và mức triển khai/test là hai trạng thái độc lập; không dùng APPROVED-v1 để khẳng định đã PASS AC.
++
+ ## 3. Các bất biến không được vi phạm
+ 
+ 1. `SE-001` có đúng 10 ghế: `G01`–`G10`.
+@@ -56,7 +58,7 @@
+ 
+ **Cốt lõi/P0:** 10 ghế, hiển thị, đặt vé, nhiều Client, chống bán trùng, 5 Node, Raft election/log/commit, phục hồi, mất quorum an toàn, retry an toàn.  
+ **Mở rộng có trong đề xuất/P1:** hủy vé, lịch sử giao dịch, Cluster Monitor, mô phỏng lỗi, kịch bản demo.  
+-**Ngoài phạm vi:** website, Web Service, REST/HTTP API, thanh toán thật, chuyến tàu thực tế, nhiều tuyến, nhiều ngày, phân hạng ghế, giữ chỗ có thời hạn, thống kê doanh thu nâng cao, Kubernetes, hệ thống Internet công khai.
++**Ngoài phạm vi:** website, Web Service, REST/HTTP API, thanh toán thật, chuyến tàu thực tế, nhiều tuyến, nhiều ngày, phân hạng ghế, giữ chỗ có thời hạn, thống kê doanh thu nâng cao, Kubernetes, hệ thống Internet công khai. Snapshot/log compaction là mở rộng chưa thuộc baseline v1; chỉ bổ sung sau khi có thay đổi SPEC/contract được review.
+ 
+ ## 5. Thuật ngữ chuẩn
+ 
+--- before/01-REQUIREMENTS.md
++++ after/01-REQUIREMENTS.md
+@@ -65,6 +65,8 @@
+ 
+ Không đưa ra SLA độ trễ/throughput hoặc mức khả dụng phần trăm vì tài liệu nguồn không chốt số liệu; khi có benchmark, nhóm phải định nghĩa môi trường và ngưỡng riêng.
+ 
++`SUCCESS` trong ngôn ngữ UI/AC là kết quả nghiệp vụ thành công (`outcome=CONFIRMED` hoặc lookup `state=APPLIED_SUCCESS` theo SPEC-03), không phải wire enum mới. UNKNOWN/PENDING không phải thất bại đã xác nhận. Quorum luôn 3 trong tập 5 voter cấu hình, không tính lại theo số Node online.
++
+ ## 5. Acceptance criteria (giữ mã AC01–AC10)
+ 
+ | Mã | Bối cảnh | Điều kiện PASS |
+@@ -81,6 +83,8 @@
+ | AC10 | Client mất phản hồi | Có thể truy vấn và retry cùng requestId, không cấp vé trùng |
+ 
+ Ngoài AC gốc: `TC-CANCEL-*`, `TC-HISTORY-*`, `TC-UI-*` được định nghĩa ở [07-TESTING.md](07-TESTING.md), không đánh tráo chúng thành AC11 từ tài liệu nhóm.
++
++AC03/AC04 có assertion safety “tối đa một/không vé thứ 11”; khi test trong cụm khỏe và ghế trống phải kiểm tra thêm có một booking thành công, tránh hệ thống từ chối mọi request vẫn được coi đạt chức năng. AC06/AC09 cấm **commit mới** khi chỉ còn 2/5; response trễ hoặc lookup lại một lệnh đã commit trước lúc mất quorum không phải bằng chứng commit mới. Phải đối chiếu term/index và thời điểm inject lỗi theo SPEC-07.
+ 
+ ## 6. Luật quyết định nghiệp vụ
+ 
+--- before/02-ARCHITECTURE.md
++++ after/02-ARCHITECTURE.md
+@@ -64,7 +64,7 @@
+ | Raft | Election, replicate, commit, thứ tự state-machine apply | Quyết định rằng ghế còn trống bằng UI cache |
+ | Booking state machine | Xét trạng thái ghế, apply booking/cancel tuần tự, idempotency | Thực hiện side effect trước commit Raft |
+ | PostgreSQL tại Node | Durable term/vote/log, apply state & vé nội bộ | Tự nhân bản chéo với các PostgreSQL khác |
+-| Monitor | Quan sát, gửi lệnh quản trị được giới hạn trong môi trường demo | Raft vote, đổi Leader bằng thay UI, sửa DB tùy ý |
++| Monitor | Quan sát qua TCP; gọi script/process controller demo theo SPEC-06/08 khi đã triển khai | Raft vote, đổi Leader bằng thay UI, sửa DB tùy ý; tự thêm TCP admin message chưa có contract |
+ 
+ ## 4. Luồng ghi chuẩn
+ 
+@@ -80,7 +80,7 @@
+ ## 5. Luồng đọc
+ 
+ - Dữ liệu ghế/vé hiển thị chính thức đọc từ Leader qua read barrier bảo đảm không phải Leader cũ hoặc state chưa apply; xem [04-RAFT.md](04-RAFT.md).
+-- Khi đọc chưa thể xác nhận tính mới, trả lỗi `READ_UNAVAILABLE`/`UNKNOWN`, không tự biến bản sao Follower thành trạng thái ghế authoritative.
++- Khi đọc chưa thể xác nhận tính mới, trả lỗi `READ_UNAVAILABLE`; UI tra cứu hiển thị UNKNOWN. UNKNOWN là state, không phải errorCode. Không tự biến bản sao Follower thành trạng thái ghế authoritative.
+ - Đối với Monitor, `NODE_STATUS` là chẩn đoán cục bộ (có thể trễ), không phải căn cứ xác nhận vé.
+ 
+ ## 6. Quan hệ module và hợp đồng
+@@ -92,7 +92,7 @@
+ - Các kết nối socket và handler có thể chạy song song qua `ExecutorService`, nhưng mọi thay đổi Raft state phải tuần tự hóa theo cơ chế đồng bộ được quyết định trong implementation.
+ - **Một Node lỗi ≠ một giao dịch chắc chắn thất bại.** Ghi có thể đã commit trước khi phản hồi mất. Client phải tra `requestId`.
+ - **Phân vùng 3–2:** một phía có thể duy trì tiến trình đồng thuận nếu điều kiện Raft thỏa; phía 2 Node không có quyền xác nhận lệnh mới.
+-- **Mất Laptop 6:** mất giám sát, quorum vẫn là 5 Node (hoặc số Node dữ liệu còn online) không bị ảnh hưởng.
++- **Mất Laptop 6:** mất giám sát; membership vẫn là 5 voter, quorum cố định **3/5**, không tính lại theo số Node online.
+ - **Một laptop mô phỏng 10 container:** kiểm chứng lỗi container/process, **không** chứng minh chịu lỗi mất máy vật lý.
+ 
+ ## 8. Nhật ký và khả năng quan sát
+@@ -103,7 +103,7 @@
+ 
+ - `ADR-001` [DESIGN-v1]: TCP length-prefix JSON version 1.
+ - `ADR-002` [DESIGN-v1]: Follower redirect Client đến Leader.
+-- `ADR-003` [DESIGN-v1]: leader read barrier cho `GET_SEATS`/`GET_REQUEST_RESULT`.
++- `ADR-003` [DESIGN-v1]: leader log barrier NO_OP cho mỗi `GET_SEATS`/`GET_REQUEST_RESULT`/`GET_TICKET_HISTORY`, theo SPEC-04 §7.
+ - `ADR-004` [DESIGN-v1]: lưu Raft metadata/log và booking state trong PostgreSQL **riêng của từng Node**, apply + `lastApplied` cùng transaction.
+ 
+-Khi nhóm thống nhất, đổi trạng thái quyết định từ `DRAFT` thành `ACCEPTED` trong lịch sử PR/issue; cập nhật hợp đồng, test và AGENTS cùng lúc.
++Khi nhóm thống nhất đúng revision, ghi người duyệt/ngày/bằng chứng tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md), đổi nhãn thiết kế thành `APPROVED-v1` theo SPEC-00. Nếu ADR dùng nhãn ACCEPTED trong issue thì phải liên kết cùng quyết định phê duyệt, không tạo một trạng thái khóa API khác. Migration code/fixtures/deployment là lượt triển khai riêng được review đồng bộ.
+--- before/03-CONTRACTS.md
++++ after/03-CONTRACTS.md
+@@ -2,6 +2,8 @@
+ 
+ > **Trạng thái:** **DESIGN-v1 / CHƯA KHÓA**. Tài liệu đầu vào chỉ gợi ý nhóm bản tin; hình dạng JSON, field, error code và thời hạn dưới đây do bộ SPEC đề xuất để nhóm phê duyệt.  
+ > **Owner:** TV3 · **Review bắt buộc:** TV1, TV2, TV4, TV5, TV6. **Không dùng HTTP/REST/SOAP/Web Service**.
++
++> **Rà soát SPEC-REVIEW-01 (29/10/2026):** các bổ sung vẫn là đề xuất. Code bootstrap hiện dùng envelope/type/seed khác tài liệu này; xem [hồ sơ review và điều kiện phê duyệt](../reviews/SPEC-REVIEW-01.md). Không triển khai riêng một phía hoặc coi cùng số version là tương thích.
+ 
+ ## 1. Nguyên tắc
+ 
+@@ -24,6 +26,8 @@
+ - Mỗi socket có một writer được tuần tự hóa; nhiều request trên cùng kết nối phải phân biệt bằng `messageId`.
+ - Socket connect/read timeout và reconnect cấu hình, không khóa JavaFX Application Thread.
+ - Bản tin sai version, sai type hoặc quá giới hạn phải bị từ chối có kiểm soát; không ghi vào log Raft.
++- Length ngoài giới hạn, UTF-8/JSON lỗi hoặc EOF giữa khung: đóng kết nối, không cố đọc tiếp để tìm khung mới. Chỉ gửi `ERROR_RESPONSE` khi đã parse được envelope và `messageId` hợp lệ để correlation; không trả lỗi cho một response lỗi (tránh vòng lặp).
++- Response có thể về khác thứ tự gửi; chỉ ghép với request đang chờ đúng `correlationId`, type và peer. Response đến muộn không được hoàn tất một thao tác mới.
+ 
+ ## 3. Envelope (mọi message)
+ 
+@@ -44,7 +48,16 @@
+ }
+ ```
+ 
+-`sentAt` chỉ phục vụ log, timeout và hiển thị; **không** dùng timestamp xuyên Node để quyết định thứ tự giao dịch. `correlationId=null` cho bản tin chủ động; phản hồi ghi lại ID bản tin yêu cầu. `senderId` lấy từ kênh/định danh được xác thực trong môi trường demo, **không** tin mù quáng vào field JSON để cấp quyền quản trị.
++`sentAt` chỉ phục vụ log và hiển thị; deadline/timeout đo bằng đồng hồ monotonic cục bộ, không lấy chênh lệch `sentAt` giữa máy. `correlationId=null` cho request; response có `messageId` mới và `correlationId` bằng ID request. `senderId` phải được kiểm tra theo kênh/peer cấu hình, **không** đủ để xác thực hay cấp quyền quản trị; mô hình trust demo cần nhóm chốt tại hồ sơ review.
++
++### 3.0. Kiểu dữ liệu và nullability chung (DESIGN-v1)
++
++- Mọi field được liệt kê đều bắt buộc xuất hiện; chỉ các field ghi rõ nullable mới được `null`. `payload` luôn là object, không phải chuỗi JSON. Từ chối key trùng, field không biết, enum lạ, sai kiểu hoặc tràn số bằng `INVALID_REQUEST`; không ép chuỗi/số/boolean lẫn nhau.
++- `protocolVersion`: integer đúng `1`; `messageId` và business `requestId`: UUID dạng `8-4-4-4-12` hex chữ thường. `correlationId`: UUID hoặc null như trên. `senderId`, `type`: string theo §1/§3.1.
++- Term/index: JSON integer trong `[0, 9223372036854775807]`, ánh xạ Java `long`; index entry và `appliedLogIndex` đã apply phải >= 1. Log rỗng dùng `(index=0, term=0)`, không lưu entry index 0; entry thực có term >= 1. Không wrap khi tràn.
++- Timestamp: string UTC ISO-8601 dạng `YYYY-MM-DDTHH:mm:ss.SSSZ`, chính xác millisecond, dùng chung trong command/DB/response. Ví dụ rút gọn `...:00Z` dưới đây cũng hợp lệ (millisecond bằng 0). Không dùng timestamp làm thứ tự nghiệp vụ.
++- `ticketId`: định danh opaque 1–64 ký tự ASCII `[A-Za-z0-9-]`; ví dụ `ticket-uuid` là giá trị minh họa. Client không tự sinh ticketId cho BOOK.
++- `leaderId`/`leaderHint`: `node-1`..`node-5` hoặc null nếu chưa biết; hint không chứng minh thẩm quyền. Client ánh xạ node ID qua danh sách endpoint cấu hình trong SPEC-08, không dùng cổng peer cho business request.
+ 
+ ### 3.1. Bảng kiểu thông điệp
+ 
+@@ -54,7 +67,7 @@
+ | `BOOK_TICKET` | `BOOK_TICKET_RESPONSE` | Client | Lệnh ghi có `requestId` |
+ | `CANCEL_TICKET` | `CANCEL_TICKET_RESPONSE` | Client | P1, lệnh ghi có `requestId` |
+ | `GET_REQUEST_RESULT` | `GET_REQUEST_RESULT_RESPONSE` | Client | Tra cứu retry/timeout |
+-| `GET_TICKET_HISTORY` | `GET_TICKET_HISTORY_RESPONSE` | Client | P1, query có giới hạn |
++| `GET_TICKET_HISTORY` | `GET_TICKET_HISTORY_RESPONSE` | Client | P1, query có giới hạn và read barrier |
+ | `NODE_STATUS` | `NODE_STATUS_RESPONSE` | Monitor | Đọc trạng thái cục bộ, có thể stale |
+ | `REQUEST_VOTE` | `REQUEST_VOTE_RESPONSE` | Node | Raft RPC |
+ | `APPEND_ENTRIES` | `APPEND_ENTRIES_RESPONSE` | Node | Raft RPC, heartbeat cũng dùng type này |
+@@ -75,7 +88,15 @@
+   "tripId": "SE-001",
+   "seats": [
+     { "seatId": "G01", "status": "AVAILABLE", "ticketId": null },
+-    { "seatId": "G02", "status": "BOOKED", "ticketId": "ticket-uuid" }
++    { "seatId": "G02", "status": "BOOKED", "ticketId": "ticket-uuid" },
++    { "seatId": "G03", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G04", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G05", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G06", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G07", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G08", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G09", "status": "AVAILABLE", "ticketId": null },
++    { "seatId": "G10", "status": "AVAILABLE", "ticketId": null }
+   ],
+   "readIndex": 42,
+   "leaderId": "node-3"
+@@ -83,6 +104,8 @@
+ ```
+ 
+ `seats` phải đủ đúng 10 ghế khi trả kết quả đầy đủ; `readIndex` là chỉ số commit/applied tối thiểu đã dùng để đọc, **không** phải phiên bản riêng từng ghế. Trạng thái chỉ `AVAILABLE`/`BOOKED`, **không có `SELECTED` từ server**.
++
++Thứ tự mảng là G01→G10, không trùng; `ticketId=null` khi AVAILABLE và non-null khi BOOKED. Response thành công có `leaderId` non-null. Query chạy trong một DB snapshot nhất quán sau read barrier, không trộn ghế đọc trước/sau các transaction apply khác nhau.
+ 
+ ### 4.2. `BOOK_TICKET`
+ 
+@@ -111,11 +134,21 @@
+ }
+ ```
+ 
+-`outcome`: `CONFIRMED` (đã commit+apply), `REJECTED` (quy tắc nghiệp vụ hoặc validation từ chối), `UNKNOWN` (không xác định khi lỗi/timeout). **Không** đặt `CONFIRMED` khi mới append hoặc khi mới replicate trên 1–2 Node.
++`outcome`: `CONFIRMED` (đã commit+apply), `REJECTED` (đã commit+apply quyết định từ chối nghiệp vụ), `UNKNOWN` (server hết thời hạn chờ kết quả apply). Validation trước append dùng `ERROR_RESPONSE(INVALID_REQUEST)`, không tạo kết quả APPLIED. **Không** đặt `CONFIRMED` khi mới append hoặc khi mới replicate trên 1–2 Node.
++
++| Outcome | `ticketId` BOOK | `reasonCode` | `appliedLogIndex` |
++|---|---|---|---|
++| `CONFIRMED` | Vé được cấp | null | Index của kết quả đầu tiên đã lưu |
++| `REJECTED` | null | `SEAT_ALREADY_BOOKED` hoặc `INVALID_REQUEST` (validation tất định khi apply) | Index của kết quả đã lưu |
++| `UNKNOWN` | null | `TIMEOUT_UNKNOWN` | null |
++
++`requestId`, `tripId`, `seatId` luôn giữ input hợp lệ đã nhận. UNKNOWN không được lưu vào `request_results`. Lỗi routing/storage/quorum dùng `ERROR_RESPONSE` theo §7, không biến thành một kết quả từ chối nghiệp vụ bền vững.
+ 
+ ### 4.3. `CANCEL_TICKET` (P1)
+ 
+ Request payload: `{"requestId":"<uuid>","ticketId":"ticket-uuid"}`. Response: `requestId`, `outcome` (`CONFIRMED|REJECTED|UNKNOWN`), `ticketId`, `reasonCode`, `appliedLogIndex`. Hủy thành công làm vé thành `CANCELLED` và ghế `AVAILABLE` sau commit+apply.
++
++`ticketId` luôn là vé đích trong request. CONFIRMED có reason null/index >= 1; REJECTED có `TICKET_NOT_ACTIVE` (vé không tồn tại hoặc đã hủy)/index >= 1; UNKNOWN có `TIMEOUT_UNKNOWN`/index null. Retry cùng ID trả kết quả hủy ban đầu; hủy lần nữa bằng ID mới bị từ chối, không giải phóng ghế đang thuộc vé mới.
+ 
+ ### 4.4. `GET_REQUEST_RESULT` (P0)
+ 
+@@ -139,15 +172,23 @@
+ - `APPLIED_SUCCESS`: lệnh được commit+apply và thành công nghiệp vụ.
+ - `APPLIED_REJECTED`: đã có kết quả từ chối nghiệp vụ được ghi bền vững.
+ - `PENDING`: Leader có thông tin yêu cầu đang xử lý, nhưng chưa có kết quả apply.
+-- `UNKNOWN`: chưa thể chứng minh kết quả do mất Leader/quorum, read barrier lỗi hoặc chưa có bản ghi kết quả; **không đồng nghĩa chưa từng commit**.
++- `UNKNOWN`: sau read barrier chưa có kết quả hoặc thông tin pending tại Leader; **không đồng nghĩa chưa từng commit**. Nếu read barrier thất bại thì trả `ERROR_RESPONSE(READ_UNAVAILABLE)`, Client cũng hiển thị UNKNOWN.
++
++APPLIED_SUCCESS/APPLIED_REJECTED chỉ lấy từ `request_results` sau read barrier; `commandType` non-null và `appliedLogIndex >= 1`, reason/ticket theo kết quả BOOK/CANCEL ở trên. PENDING có `commandType` của ý định đang xử lý, các field `ticketId`, `reasonCode`, `appliedLogIndex` null. UNKNOWN có cả bốn field đó null. Follower luôn trả NOT_LEADER. Lookup theo ID trả kết quả **ý định đầu tiên** đã apply, không phải payload xung đột gửi lại sau đó; Client gặp REQUEST_ID_CONFLICT không được gán kết quả lookup cho payload đã sửa.
+ 
+ **Quy tắc quan trọng:** khi Client nhận `UNKNOWN`, chỉ được retry **nguyên `requestId` và payload** hoặc tra cứu lại. Việc tra cứu `UNKNOWN` **không** cho phép khởi tạo requestId mới cho cùng ý định.
+ 
+ ### 4.5. `GET_TICKET_HISTORY` (P1)
+ 
+-Request: `{ "tripId":"SE-001", "limit":50, "cursor":null }`. Response: danh sách `{ticketId, seatId, passengerName, status, issuedAt, cancelledAt}` và `nextCursor`. Chỉ cho đọc trạng thái đã xác nhận; giới hạn/ẩn dữ liệu hành khách demo tùy vai trò.
++Request: `{ "tripId":"SE-001", "limit":50, "cursor":null }`; `limit` integer 1–100. Response object có đúng các field `tripId`, `tickets`, `nextCursor`, `readIndex`, `leaderId`. `tickets` là mảng (có thể rỗng) các object `{ticketId, seatId, passengerName, status, issuedAt, cancelledAt}`; status ACTIVE/CANCELLED, `cancelledAt=null` chỉ khi ACTIVE. Các field khác non-null, trừ `nextCursor` khi hết trang.
++
++DESIGN-v1: sắp vé theo index BOOK thành công tăng dần, lấy từ kết quả BOOK đã lưu; không sắp theo đồng hồ máy. `cursor` là null hoặc chuỗi thập phân chuẩn của index BOOK cuối trang trước (không dấu/zero đầu, số >= 1 trong miền long). Trang sau lấy index lớn hơn cursor; cursor sai dạng trả INVALID_REQUEST. `nextCursor` là index vé cuối trang nếu còn vé, nếu hết là null. Mỗi trang qua read barrier và một DB snapshot; các trang không phải snapshot toàn bộ lịch sử cố định, trạng thái hủy có thể thay đổi giữa hai lần đọc. UI refresh từ cursor null để cập nhật vé cũ. Response phải nằm trong giới hạn frame; không cắt JSON giữa chừng.
++
++Endpoint này trả lịch sử **vé**, không phải API stream sự kiện hay danh sách mọi request bị từ chối. Nhật ký giao dịch/sự kiện FR11 được lưu trong `request_results`/`business_events` và log vận hành; giao diện tra toàn bộ sự kiện cần contract riêng được review, không suy diễn từ endpoint này. Demo chỉ dùng tên hành khách giả, chưa có phân quyền theo vai trò người dùng.
+ 
+ ## 5. Diagnostic `NODE_STATUS` (Monitor)
++
++Request payload: `{}`; được gọi tại mọi Node, không yêu cầu Leader/read barrier.
+ 
+ Response payload:
+ 
+@@ -161,12 +202,14 @@
+   "commitIndex": 43,
+   "lastApplied": 43,
+   "storageHealthy": true,
+-  "peerConnectivity": {"node-1": true, "node-2": false},
++  "peerConnectivity": {"node-1": true, "node-2": false, "node-4": null, "node-5": true},
+   "observedAt": "2026-10-29T10:00:00Z"
+ }
+ ```
+ 
+ Dữ liệu status chỉ phản ánh **quan sát tại Node trả lời**, không phải một snapshot nhất quán toàn cụm. Monitor không được suy ra đã commit chỉ vì thấy `lastLogIndex` tăng.
++
++`role` là FOLLOWER/CANDIDATE/LEADER, hoặc null nếu chưa khởi tạo được Raft; không bịa FOLLOWER/term 0 để che lỗi storage. `storageHealthy` boolean theo lần kiểm tra cục bộ; term/index có thể null khi không đọc được giá trị đáng tin. `peerConnectivity` có đủ 4 peer (không gồm self), true = lần RPC gần nhất thành công, false = thất bại/timeout, null = chưa quan sát; các giá trị không phải chứng nhận quorum. `observedAt` là thời điểm tạo status; Monitor tự đo độ cũ từ lúc nhận bằng đồng hồ cục bộ. Node không phản hồi thì Monitor tự hiển thị OFFLINE/UNKNOWN, không tạo NODE_STATUS giả.
+ 
+ ## 6. Raft RPC (chỉ Node↔Node)
+ 
+@@ -201,7 +244,8 @@
+         "tripId": "SE-001",
+         "seatId": "G05",
+         "passengerName": "Khach demo",
+-        "ticketId": "ticket-uuid"
++        "ticketId": "ticket-uuid",
++        "issuedAt": "2026-10-29T10:00:00.000Z"
+       }
+     }
+   ],
+@@ -212,9 +256,21 @@
+ **`APPEND_ENTRIES_RESPONSE.payload`:** `{ "term":8, "success":true, "matchIndex":43 }`.
+ 
+ - Empty `entries=[]` là heartbeat/commit-index update.
+-- Nếu bị từ chối do `prevLogIndex/prevLogTerm` không khớp, `success=false`, `matchIndex` chỉ mang giá trị hữu ích nếu đã xác minh; xử lý lùi `nextIndex` là trách nhiệm Raft.
++- Khi success=true, `matchIndex = prevLogIndex + entries.size()` của chính RPC đã xử lý (heartbeat dùng prevLogIndex), không phải toàn bộ đuôi log Follower. Khi success=false, `matchIndex=0` và Leader bỏ qua field này; thuật toán lùi nextIndex theo SPEC-04. Response term luôn là currentTerm của bên nhận sau xử lý.
+ - Payload `command` được persist nguyên vẹn, không tái tạo `ticketId`, timestamp hoặc random khi apply ở từng Node.
+ - Tương thích phiên bản phải được test hai chiều; thay field wire là **breaking change** cần owner review.
++
++### 6.1. Log command và kiểm tra RPC (DESIGN-v1)
++
++| `commandType` trong entry | Các field bắt buộc của `command` |
++|---|---|
++| `BOOK_TICKET` | `requestId`, `tripId`, `seatId`, `passengerName`, `ticketId`, `issuedAt` |
++| `CANCEL_TICKET` | `requestId`, `ticketId`, `cancelledAt` |
++| `NO_OP` | Object rỗng `{}` |
++
++NO_OP là entry nội bộ phục vụ read barrier trong SPEC-04, **không** là message Client mới và không có requestId/ticket/audit nghiệp vụ. Leader cấp ticketId và timestamp trước append; không sửa command đã persist. Quy tắc intent/normalization nằm tại SPEC-05 §3.1.
++
++Chỉ nhận Raft RPC trên kênh peer; candidateId/leaderId phải trùng senderId và thuộc tập 5 voter cấu hình. Entry bắt đầu `prevLogIndex+1`, liên tiếp, term không giảm trong chuỗi log và không vượt term RPC; `(prevLogIndex=0)` yêu cầu prevLogTerm=0. Leader chia batch để cả envelope <= 1 MiB. Type/schema lỗi dùng INVALID_REQUEST; term cũ/log mismatch dùng Raft response false. Chỉ response được correlation với RPC hiện tại từ peer hợp lệ mới được tính vote/ACK; chi tiết term và phản hồi trễ ở SPEC-04.
+ 
+ ## 7. Mã lỗi chuẩn
+ 
+@@ -233,9 +289,14 @@
+ 
+ `ERROR_RESPONSE` dùng payload `{"errorCode":"NOT_LEADER","message":"...","leaderHint":"node-3","term":8,"requestId":"<uuid-or-null>"}`. `message` chỉ diễn giải cho người dùng, **logic phải dựa `errorCode`**.
+ 
++Tất cả 5 field trên đều xuất hiện: errorCode/message non-null, leaderHint nullable, term nullable nếu chưa có Raft state đáng tin, requestId nullable nếu request không có business ID hợp lệ. `SEAT_ALREADY_BOOKED`/`TICKET_NOT_ACTIVE` là reasonCode của response nghiệp vụ đã apply, không trả như lỗi pre-check ghế. REQUEST_ID_CONFLICT dùng ERROR_RESPONSE và không ghi đè kết quả gốc; cách apply conflict xem SPEC-05. Không có error code `UNKNOWN`: đó là outcome/state/UI state.
++
++NO_QUORUM, NOT_LEADER sau đổi vai trò, INTERNAL_ERROR hoặc TIMEOUT_UNKNOWN không chứng minh lệnh trước đó chưa commit. Client giữ nguyên ý định khi retry. INVALID_REQUEST chỉ cho biết lần gửi này không được append; không phủ định một lần gửi trước đã mất phản hồi. Request sai type/schema/field bị từ chối trước append, kể cả Client cố gửi field do Leader cấp.
++
+ ## 8. Validation, tương thích và cách khóa contract
+ 
+-- Input: `tripId` đúng mẫu, `seatId` thuộc `G01`–`G10`, `requestId` UUID, `passengerName` không rỗng và bị giới hạn độ dài trong [05-BOOKING-DATABASE.md](05-BOOKING-DATABASE.md).
++- Input: `tripId` đúng `SE-001`, `seatId` thuộc `G01`–`G10`, `requestId` UUID, `passengerName` không rỗng và bị giới hạn độ dài trong [05-BOOKING-DATABASE.md](05-BOOKING-DATABASE.md).
+ - Mọi DTO có serialization/deserialization round-trip test, nullability test và golden JSON fixtures; test framing với Unicode tiếng Việt, 2 khung nối tiếp, khung phân mảnh, kết nối đóng giữa khung.
+ - `shared` module do TV3 sở hữu. TV1/2/4/5/6 không tự định nghĩa DTO đối thủ; thay đổi phải qua PR và cập nhật test.
+ - **Điểm cần chốt nhóm trước code song song:** chọn field name/enums, quy ước `NOT_LEADER`, có `ticketId` trong log, read barrier, các giá trị error. Khi approved, tạo tag contract v1 và giữ backward-compat hoặc nâng `protocolVersion` khi breaking change.
++- Quyết định phê duyệt, migration từ bootstrap và người review được ghi tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md); chỉ đổi nhãn thành APPROVED-v1 khi có xác nhận cho đúng revision. Approval thiết kế không đồng nghĩa code đã hỗ trợ hoặc AC đã PASS.
+--- before/04-RAFT.md
++++ after/04-RAFT.md
+@@ -6,7 +6,7 @@
+ 
+ Raft thống nhất **thứ tự lệnh đặt/hủy vé** giữa 5 Node Java với 5 PostgreSQL riêng. Cụm có **majority = 3/5**; một hoặc hai Node lỗi vẫn **có thể** phục vụ khi những Node còn lại bầu/duy trì Leader có log hợp lệ. Không hứa tiếp tục trong mọi partition, delay hoặc khi storage lỗi.
+ 
+-**P0 bắt buộc:** bầu chọn, persistent term/vote/log, AppendEntries, log matching, majority commit đúng Raft, apply theo thứ tự, bắt kịp khi Node quay lại, bảo toàn an toàn khi split 3–2. **P1:** snapshot/log compaction; không dùng snapshot để thay thế P0 chưa đúng.
++**P0 bắt buộc:** bầu chọn, persistent term/vote/log, AppendEntries, log matching, majority commit đúng Raft, apply theo thứ tự, bắt kịp khi Node quay lại, bảo toàn an toàn khi split 3–2. Snapshot/log compaction là **mở rộng chưa thuộc baseline v1**, không phải điều kiện hoàn thành FR10–FR12/P1; không xóa log khi chưa có contract snapshot được duyệt.
+ 
+ ## 2. Trạng thái mỗi Node
+ 
+@@ -26,11 +26,11 @@
+ 
+ ## 3. Election / RequestVote
+ 
+-1. Follower nhận heartbeat hợp lệ từ Leader có term không cũ thì reset election timer.
++1. Nhận AppendEntries đúng schema từ peer Leader có term không cũ thì reset election timer (kể cả khi cần sửa log mismatch); vote được grant cũng reset timer. RPC term cũ hoặc vote bị từ chối không reset timer.
+ 2. Election timeout **ngẫu nhiên, khác biệt giữa Node**; ứng viên tăng term và **persist `currentTerm/votedFor=self`** trước khi phát `REQUEST_VOTE`.
+ 3. `REQUEST_VOTE(term,candidateId,lastLogIndex,lastLogTerm)`; Node chỉ cấp vote nếu term không cũ, chưa vote cho ai khác trong term (hoặc cùng candidate), **và** nhật ký candidate ít nhất mới bằng nhật ký của Node (so sánh `lastLogTerm`, rồi `lastLogIndex`). Persist vote trước khi trả đồng ý.
+-4. Khi candidate nhận **ít nhất 3 phiếu** trong term hiện tại, chuyển Leader; khởi tạo `nextIndex/matchIndex`, gửi AppendEntries heartbeat.
+-5. Nhận RPC với term lớn hơn thì cập nhật term bền vững, từ bỏ role cũ, trở thành Follower.
++4. Khi candidate nhận **ít nhất 3 phiếu từ 3 voter khác nhau**, gồm self, trong term hiện tại, chuyển Leader; khởi tạo `nextIndex=lastLogIndex+1`, `matchIndex=0` cho từng peer, gửi AppendEntries heartbeat. Không đếm response trùng thành nhiều phiếu.
++5. Nhận request **hoặc response** hợp lệ từ peer với term lớn hơn thì persist term mới, reset votedFor, từ bỏ role cũ, trở thành Follower trước khi xử lý tiếp. Candidate nhận AppendEntries term bằng term hiện tại cũng trở thành Follower. Response term cũ không được cập nhật tiến độ election/replication.
+ 6. Leader không hợp lệ/term cũ không thể tiếp tục ghi; Node không bỏ phiếu vì tên laptop cố định.
+ 
+ **DESIGN-v1 timers dùng cho cấu hình demo, không phải hằng số thuật toán:** heartbeat khoảng 100–200 ms, election timeout ngẫu nhiên 500–1000 ms ở LAN ổn định; hiệu chỉnh sau test để giảm split vote. Không dùng thời gian vật lý giữa máy làm thứ tự commit.
+@@ -41,8 +41,10 @@
+ - Follower từ chối term cũ hoặc không khớp entry tại `(prevLogIndex,prevLogTerm)`.
+ - Nếu khớp: xử lý xung đột tại **các entry chưa commit** theo quy tắc Raft, xóa suffix xung đột, append entry mới, lưu bền trước khi xác nhận thành công.
+ - **Không bao giờ truncate/ghi đè entry đã commit**. Bất kỳ tình huống đòi hỏi làm vậy là lỗi nghiêm trọng, phải dừng thao tác nguy hiểm, log và test chẩn đoán.
+-- Follower cập nhật `commitIndex = min(leaderCommit,lastLogIndex)` rồi apply theo thứ tự.
++- Sau AppendEntries thành công, đặt `lastMatchedIndex = prevLogIndex + entries.size()`; `commitIndex = max(commitIndex, min(leaderCommit, lastMatchedIndex))` rồi apply theo thứ tự. Heartbeat dùng lastMatchedIndex=prevLogIndex. Không dùng lastLogIndex cục bộ vì Follower có thể còn suffix chưa khớp Leader; không giảm commitIndex khi RPC cũ đến muộn.
+ - Leader khi bị từ chối giảm `nextIndex[peer]`/dùng conflict hint được chứng minh, retry đến khi log follower khớp; tránh busy loop.
++- Heartbeat vẫn phải kiểm tra prevLogIndex/prevLogTerm; chỉ truncate khi thấy entry cùng index **khác term**, không xóa suffix chỉ vì batch ngắn hoặc rỗng. Cùng index/term mà payload khác là vi phạm invariant: fail closed, không âm thầm ghi đè.
++- Baseline dùng tối đa một AppendEntries đang chờ trên mỗi peer; sau timeout bỏ qua response muộn cho RPC đã hết hiệu lực (vẫn xử lý term lớn hơn). Response success chỉ nâng matchIndex đến index xác minh trong RPC, không giảm matchIndex; nextIndex không dưới matchIndex+1 hay dưới 1. Peer/storage thất bại không được tính ACK.
+ 
+ ## 5. Quy tắc commit — điểm dễ bị code sai
+ 
+@@ -58,15 +60,18 @@
+ - Lệnh có cùng dữ liệu phải tạo **cùng kết quả** trên các Node. Không phát sinh `UUID`, giờ hiện tại, random hoặc đọc thông tin ngoại sinh bên trong `apply`.
+ - Các trường không quyết định bởi Raft như `ticketId`, `issuedAt`, `cancelledAt` nếu cần phải được cấp trong **command** hoặc dẫn xuất tất định từ command/index.
+ - Một transaction DB apply cần cập nhật **business tables + request_results + lastApplied** nguyên tử; rollback toàn bộ khi lỗi.
+-- Khi restart: đọc `term/votedFor/log/lastApplied`, phục hồi commit knowledge từ Leader hợp lệ, tiếp tục apply các entry đã commit còn thiếu. Không được áp dụng entry chỉ vì tồn tại trong log nhưng chưa biết commit.
++- Khi restart: đọc nhất quán `term/votedFor/log/lastApplied`, kiểm tra log đủ đến checkpoint. Khởi tạo `commitIndex=lastApplied` vì checkpoint bền vững chứng minh prefix đó đã commit; phần sau chỉ phục hồi commit knowledge theo Raft. Nếu checkpoint vượt log hoặc log có lỗ thì fail closed. Không suy ra commitIndex=lastLogIndex và không replay lại prefix đã apply.
++- NO_OP cũng đi qua transaction tăng lastApplied, nhưng không thêm request_results/vé/sự kiện nghiệp vụ; không để checkpoint dừng trước NO_OP.
+ 
+-## 7. Read safety (`GET_SEATS`, tra cứu requestId)
++## 7. Read safety (`GET_SEATS`, tra cứu requestId, lịch sử vé)
+ 
+-**DESIGN-v1:** Client chỉ nhận dữ liệu “mới nhất/an toàn” qua Leader đã kiểm tra thẩm quyền ở term hiện tại. Sử dụng **read barrier** (ví dụ: commit entry no-op trong term hiện tại khi lên Leader rồi kiểm tra quorum hiện hành theo ReadIndex, hoặc cơ chế log barrier có đủ majority). Sau đó đợi `lastApplied >= readIndex` mới đọc bảng nghiệp vụ.
++**DESIGN-v1 — baseline đề xuất để nhóm chốt:** mỗi request đọc authoritative (GET_SEATS, GET_REQUEST_RESULT, GET_TICKET_HISTORY) được Leader append một entry `NO_OP` của currentTerm **sau khi nhận request**, persist/replicate/commit đúng majority, lấy index entry đó làm `readIndex`, chờ `lastApplied >= readIndex`, rồi query trong một DB snapshot. NO_OP có DTO tại SPEC-03 §6.1. Cách này dùng log barrier đã được đề cập trong draft, không cần thêm RPC ReadIndex; chi phí là tăng log mỗi lần đọc. Không tái dùng một NO_OP cũ cho mọi lần đọc sau đó.
++
++Nếu đổi term/role trong lúc chờ thì hủy phục vụ đọc và trả NOT_LEADER; nếu không commit/apply kịp deadline thì READ_UNAVAILABLE. UNKNOWN trong lookup chỉ là không tìm thấy kết quả sau barrier thành công. Tối ưu ReadIndex/quorum heartbeat theo từng request cần review thiết kế riêng, không tự thay bằng một heartbeat cũ hoặc lease dựa trên đồng hồ.
+ 
+ - Không đọc từ Follower và công bố dữ liệu như đã nhất quán mạnh nếu chưa có giao thức đọc bảo đảm tương ứng.
+ - Không coi `leaderId` có trong RAM là bằng chứng vẫn có quorum.
+-- Nếu không đủ điều kiện đọc: trả `READ_UNAVAILABLE` hoặc trạng thái yêu cầu `UNKNOWN`; không dùng cache ghế để xác nhận có thể bán.
++- Nếu không đủ điều kiện đọc: trả `READ_UNAVAILABLE` (UI lookup hiển thị UNKNOWN); không dùng cache ghế để xác nhận có thể bán.
+ - Implementer phải viết test chứng minh Leader bị partition không tiếp tục cung cấp **đọc authoritative** từ state cũ.
+ 
+ ## 8. Lỗi và phục hồi
+@@ -111,4 +116,6 @@
+ 
+ ## 12. Điều kiện DONE Raft
+ 
+-Kiểm thử restart term/vote/log, split vote, up-to-date election, append conflict, commit current-term rule, atomic apply, failover 3/5, partition 3–2, retry mất phản hồi, catch-up từ Node lỗi. Mỗi test có lệnh chạy, môi trường, assertion, log minh chứng. Snapshot chưa triển khai phải ghi **NOT_IMPLEMENTED (P1)** chứ không báo Raft thất bại hoặc PASS giả.
++Kiểm thử restart term/vote/log, split vote, up-to-date election, append conflict, commit current-term rule, atomic apply, failover 3/5, partition 3–2, retry mất phản hồi, catch-up từ Node lỗi. Mỗi test có lệnh chạy, môi trường, assertion, log minh chứng. Snapshot chưa triển khai ghi **NOT_IMPLEMENTED (mở rộng ngoài baseline v1)**.
++
++Đối chiếu thuật toán: [Ongaro & Ousterhout, Raft extended paper](https://raft.github.io/raft.pdf), Figure 2 (AppendEntries, election, commit) và §8 (client retry/read safety). Các lựa chọn DTO, PostgreSQL và log barrier cụ thể vẫn là DESIGN-v1 của nhóm.
+--- before/05-BOOKING-DATABASE.md
++++ after/05-BOOKING-DATABASE.md
+@@ -19,7 +19,7 @@
+ 
+ **CANCEL (P1):** `requestId`, `ticketId`; Leader bổ sung `cancelledAt` vào log. Hủy hợp lệ nếu vé tồn tại, thuộc trạng thái `ACTIVE`; hủy xong trả ghế về `AVAILABLE` và giữ lịch sử.
+ 
+-**Validation DESIGN-v1:** `requestId` là UUID; `passengerName` trim không rỗng, từ 1–120 ký tự; `tripId=SE-001`, ghế trong tập G01–G10. Tên người thật không cần thiết — dùng dữ liệu demo.
++**Validation DESIGN-v1:** `requestId` là UUID theo SPEC-03; `passengerName` sau Java `String.strip()` phải có 1–120 Unicode code point (không đếm UTF-16 code unit), không chứa U+0000; `tripId=SE-001`, ghế trong tập G01–G10. Không tự đổi hoa/thường hay Unicode normalization của tên; lưu tên đã strip vào command. Tên người thật không cần thiết — dùng dữ liệu demo. Schema/type lỗi được từ chối trước append; không append command thiếu field do Leader cấp.
+ 
+ ## 3. Logic quyết định trạng thái (deterministic state machine)
+ 
+@@ -30,8 +30,9 @@
+   begin transaction
+   verify i == lastApplied + 1
+   if requestId already processed:
+-      verify same business intent fingerprint
+-      reuse persisted result; do not change seat/ticket
++      if same business intent fingerprint: reuse persisted result
++      else: return REQUEST_ID_CONFLICT for this entry without overwriting original result
++      do not change seat/ticket; still advance lastApplied=i atomically
+   else if trip/seat invalid:
+       persist APPLIED_REJECTED(INVALID_REQUEST)
+   else if seat.status != AVAILABLE:
+@@ -50,7 +51,10 @@
+ ```text
+ on apply(COMMITTED_CANCEL_ENTRY at index i):
+   begin transaction; verify next index
+-  if same requestId was already processed: reuse prior result
++  if requestId already processed:
++      compare command type + normalized intent as for BOOK
++      reuse original result only if intent matches; otherwise REQUEST_ID_CONFLICT
++      do not change seat/ticket or overwrite original result
+   else if ticket does not exist or is not ACTIVE:
+       persist APPLIED_REJECTED(TICKET_NOT_ACTIVE)
+   else:
+@@ -62,6 +66,18 @@
+ 
+ `REQUEST_ID_CONFLICT`: phải so sánh **business intent fingerprint**, gồm loại lệnh và input do Client cung cấp, **không** gồm các field do Leader sinh (như `issuedAt`/`ticketId`) để retry qua Leader mới có thể được nhận diện đúng. Nếu kết quả đã bền vững với ID đó, mọi replay cùng ý định phải trả cùng kết quả.
+ 
++`ticketId` **bị loại khỏi fingerprint BOOK** vì Leader sinh, nhưng **bắt buộc nằm trong fingerprint CANCEL** vì là input Client. Cùng ID nhưng đổi loại BOOK↔CANCEL cũng là conflict. Không ném lỗi khiến apply bị kẹt mãi khi conflict đã nằm trong committed log: entry conflict không thay business state/kết quả gốc, nhưng checkpoint vẫn tiến trong transaction; trả ERROR_RESPONSE(REQUEST_ID_CONFLICT) cho lần gửi xung đột. Lookup ID vẫn trả kết quả gốc. Không thêm hàng request_results thứ hai để lưu conflict vì khóa chính là requestId.
++
++### 3.1. Fingerprint, replay và dữ liệu tất định (DESIGN-v1)
++
++- Chuẩn hóa input trước append và trước so sánh retry; UUID theo dạng chuẩn SPEC-03, tên theo §2. Tuple BOOK: `(BOOK_TICKET, tripId, seatId, passengerName)`; tuple CANCEL: `(CANCEL_TICKET, ticketId)`.
++- Encode từng field tuple thành `uint32 big-endian byteLength || UTF-8 bytes`, nối theo đúng thứ tự trên, SHA-256 rồi lưu hex chữ thường 64 ký tự vào intent_fingerprint. Không hash toàn bộ JSON, thứ tự key, envelope, requestId, hoặc field Leader sinh. Không có field null trong tuple hợp lệ. Golden fixtures phải chứng minh thứ tự key JSON không đổi fingerprint, nhưng đổi vé đích CANCEL thì có.
++- Có thể gộp retry đang pending cùng ID/intent để giảm log; đó không thay thế dedup khi apply. Nếu nhiều entry cùng ID do đổi Leader, kết quả của lần apply đầu quyết định; duplicate cùng intent dùng lại **appliedLogIndex ban đầu**, dù checkpoint tiếp tục tăng theo entry duplicate.
++- Retry BOOK đã xác nhận sau khi vé bị hủy vẫn trả kết quả BOOK gốc; đó là xác nhận thao tác lịch sử, không chứng minh vé hiện còn ACTIVE. UI refresh ghế/lịch sử để biết trạng thái hiện tại.
++- Hủy vé chỉ được giải phóng ghế nếu currentTicketId đúng vé đích. Nếu ticket ACTIVE mà seat liên kết không khớp, đây là lỗi toàn vẹn dữ liệu: rollback/fail closed, không trả CONFIRMED hoặc giải phóng ghế của vé khác.
++- Timestamp command chỉ phục vụ hiển thị; cancelledAt có thể nhỏ hơn issuedAt do lệch đồng hồ Leader. Thứ tự dùng log index, không thêm constraint thời gian làm hỏng replay.
++- Không xóa request_results hoặc tái sử dụng requestId trong vòng đời cluster v1; chưa có contract hết hạn dedup. NO_OP chỉ tăng checkpoint theo SPEC-04, không cần fingerprint hoặc kết quả nghiệp vụ.
++
+ **Lưu ý:** state machine **được quyền từ chối nghiệp vụ một cách tất định** trên một command đã commit (ví dụ ghế đã bán); đó không phải lỗi Raft. Để tất cả Node có cùng kết quả và lịch sử, ghi cả `APPLIED_REJECTED` vào `request_results`.
+ 
+ ## 4. Lược đồ PostgreSQL v1 đề xuất
+@@ -78,8 +94,9 @@
+ 
+ CREATE TABLE raft_log (
+   log_index BIGINT PRIMARY KEY CHECK (log_index >= 1),
+-  term BIGINT NOT NULL CHECK (term >= 0),
+-  command_type VARCHAR(32) NOT NULL,
++  term BIGINT NOT NULL CHECK (term >= 1),
++  command_type VARCHAR(32) NOT NULL
++    CHECK (command_type IN ('BOOK_TICKET', 'CANCEL_TICKET', 'NO_OP')),
+   command_json JSONB NOT NULL
+ );
+ 
+@@ -119,26 +136,28 @@
+ 
+ CREATE TABLE request_results (
+   request_id UUID PRIMARY KEY,
+-  command_type VARCHAR(32) NOT NULL,
++  command_type VARCHAR(32) NOT NULL
++    CHECK (command_type IN ('BOOK_TICKET', 'CANCEL_TICKET')),
+   intent_fingerprint CHAR(64) NOT NULL,
+   state VARCHAR(20) NOT NULL
+      CHECK (state IN ('APPLIED_SUCCESS', 'APPLIED_REJECTED')),
+   reason_code VARCHAR(40),
+   ticket_id VARCHAR(64),
+-  applied_log_index BIGINT NOT NULL,
++  applied_log_index BIGINT NOT NULL CHECK (applied_log_index >= 1),
+   result_json JSONB NOT NULL
+ );
+ 
+ CREATE TABLE business_events (
+-  event_id BIGSERIAL PRIMARY KEY,
+-  log_index BIGINT NOT NULL,
+-  request_id UUID,
++  log_index BIGINT PRIMARY KEY CHECK (log_index >= 1),
++  request_id UUID NOT NULL,
+   event_type VARCHAR(40) NOT NULL,
+   event_json JSONB NOT NULL
+ );
+ ```
+ 
+-Mối liên hệ `seats.current_ticket_id` ↔ `tickets.ticket_id` được bảo đảm bởi **transaction và kiểm thử đối chiếu**. Nếu muốn thêm FK trong migration, cần thiết kế thứ tự insert/deferrable constraint để không chặn luồng apply. `business_events` có thể lưu một event hoặc nhiều event cho cùng log index theo quy ước thống nhất.
++Mối liên hệ `seats.current_ticket_id` ↔ `tickets.ticket_id` được bảo đảm bởi **transaction và kiểm thử đối chiếu**. Nếu muốn thêm FK trong migration, cần thiết kế thứ tự insert/deferrable constraint để không chặn luồng apply. DESIGN-v1: đúng một business_events row khi tạo kết quả APPLIED mới, event_type=`BOOK_CONFIRMED|BOOK_REJECTED|CANCEL_CONFIRMED|CANCEL_REJECTED`; event_json là kết quả đã lưu. Duplicate/conflict/NO_OP không tạo event nghiệp vụ mới. Dùng log_index làm khóa tất định; không dùng BIGSERIAL vì sequence có thể nhảy khác nhau sau rollback tại các Node. Log chẩn đoán conflict vẫn ghi được ngoài business_events, không tham gia đối chiếu state machine.
++
++`result_json` lưu đúng **payload** BOOK_TICKET_RESPONSE/CANCEL_TICKET_RESPONSE cuối cùng theo SPEC-03, không lưu envelope/messageId/senderId/sentAt của một lần trả lời. Lookup ánh xạ outcome CONFIRMED→APPLIED_SUCCESS, REJECTED→APPLIED_REJECTED từ kết quả này và các cột; duplicate chỉ tạo envelope mới, không sửa payload đã lưu. Đối chiếu JSONB theo nội dung field, không theo thứ tự key hay cách escape chuỗi.
+ 
+ ### 4.1. Seed dữ liệu
+ 
+--- before/06-DESKTOP-UI.md
++++ after/06-DESKTOP-UI.md
+@@ -45,17 +45,22 @@
+ 
+ 1. Mở Client, tải ghế bằng `GET_SEATS` (khi chưa đọc được dữ liệu đáng tin cậy, hiển thị placeholder/status warning).
+ 2. Nhân viên chọn ghế và nhập `passengerName` dùng cho demo.
+-3. Khi nhấn **Đặt vé**, sinh một `requestId` duy nhất, lưu vào trạng thái thao tác cho đến khi xác định kết quả; gửi `BOOK_TICKET`.
++3. Khi nhấn **Đặt vé**, sinh một `requestId` duy nhất, lưu ID + loại lệnh + payload chuẩn hóa vào pending journal cục bộ bền vững **trước lần gửi đầu**, giữ cho đến khi xác định kết quả. Journal chỉ phục vụ retry, không phải authoritative booking DB. Nếu không lưu được thì chưa gửi. Khởi động lại Client phải khôi phục và tra cứu pending thay vì tự tạo ý định mới.
+ 4. Nếu Node trả `NOT_LEADER`, kết nối `leaderHint` nếu có, retry **cùng requestId và payload**.
+ 5. Nếu `CONFIRMED`, hiển thị `ticketId`, chuyển ghế sang `BOOKED` sau refresh; nếu `REJECTED`, hiển thị lỗi nghiệp vụ.
+ 6. Nếu `TIMEOUT_UNKNOWN`/disconnect, hiển thị `UNKNOWN`, cho `GET_REQUEST_RESULT` hoặc retry cùng ID. **Không** tự sinh requestId mới bằng nút "Thử lại".
+ 7. `Làm mới` dùng `GET_SEATS` và không được thay đổi kết quả của yêu cầu đang pending.
++
++Không sửa payload của ý định đang UNKNOWN/PENDING; mỗi lần retry giữ payload/requestId, chỉ messageId mới. Khi REQUEST_ID_CONFLICT, dừng retry tự động và báo lỗi ID; lookup trả ý định gốc, không được gán cho form đã sửa. Retry BOOK cũ trả CONFIRMED sau khi vé đã hủy không có nghĩa vé hiện ACTIVE: refresh trạng thái hiện tại.
++
++Khi hint null/cũ/không kết nối được, thử danh sách endpoint Client đã cấu hình với backoff và deadline hữu hạn; không lặp redirect vô hạn, không tự suy ra Leader từ term. I/O timeout của một lần gửi không xóa pending journal. UI chỉ hoàn tất pending từ response hợp lệ hoặc lookup APPLIED tương ứng, không từ một GET_SEATS có ghế trống/đã bán.
+ 
+ ## 5. Hủy vé & lịch sử (P1)
+ 
+ - Tra cứu vé và trạng thái từ Leader; yêu cầu `CANCEL_TICKET` với `requestId` mới cho **ý định hủy**.
+ - Trước khi hủy hiển thị ticket id và xác nhận của người dùng; sau khi thành công, ghế thành `AVAILABLE`.
+ - Vé đã hủy vẫn xuất hiện lịch sử với trạng thái `CANCELLED`; không tự xóa khỏi Client chỉ vì ghế trống.
++- Phân trang theo cursor SPEC-03, không sắp thứ tự giao dịch bằng timestamp; refresh từ trang đầu để cập nhật vé đã hủy ở trang cũ. GET_TICKET_HISTORY chỉ trả vé, không có endpoint stream event trong v1.
+ - Khi Client không chắc hủy thành công, tra cứu cùng requestId như luồng đặt.
+ 
+ ## 6. Kiến trúc JavaFX
+@@ -102,3 +107,4 @@
+ - `UI-05`: Monitor thể hiện Leader/term thật; dừng Node thật thì trạng thái thay đổi từ dữ liệu mạng, không chỉ đổi màu thủ công.
+ - `UI-06`: tắt Monitor không ảnh hưởng quorum.
+ - `UI-07`: giao diện không đơ khi Node timeout/offline.
++- `UI-08`: đóng/mở Client sau khi gửi nhưng chưa nhận kết quả; pending journal giữ đúng requestId/payload, tra cứu hoặc retry không sinh ý định mới.
+--- before/07-TESTING.md
++++ after/07-TESTING.md
+@@ -18,17 +18,19 @@
+ |---|---|---|---|
+ | `TC-AC01` | AC01 | Reset cụm mới, query `GET_SEATS` | Đúng `SE-001`, G01–G10, không trùng ghế |
+ | `TC-AC02` | AC02 | Đặt G02 với requestId mới | Trả `CONFIRMED` sau commit+apply, đúng 1 ACTIVE G02 |
+-| `TC-AC03` | AC03 | 6 Client hoặc harness đồng thời BOOK G05 bằng 6 requestId khác nhau | Tối đa 1 CONFIRMED, tối đa 1 ACTIVE G05 |
++| `TC-AC03` | AC03 | Cụm khỏe, G05 trống; 6 Client hoặc harness đồng thời BOOK G05 bằng 6 requestId khác nhau | Đúng 1 CONFIRMED và 1 ACTIVE G05; 5 ý định còn lại APPLIED_REJECTED sau khi tra cứu mọi timeout |
+ | `TC-AC04` | AC04 | Bán đủ 10 ghế rồi yêu cầu BOOK lại ghế đã bán | Không phát hành vé ACTIVE thứ 11 |
+ | `TC-AC05A` | AC05 | Dừng 1 Follower thật, BOOK ghế khác | Commit hợp lệ khi còn 4/5 và Leader đủ điều kiện |
+ | `TC-AC05B` | AC05 | Dừng 2 Node, BOOK ghế mới khi còn 3/5 | Có thể commit khi 3 Node còn lại thành majority hợp lệ |
+-| `TC-AC06` | AC06 | Dừng thêm Node để chỉ còn 2/5 | **Không có CONFIRMED mới** |
++| `TC-AC06` | AC06 | Dừng thêm Node để chỉ còn 2/5; gửi requestId mới sau khi cắt quorum | **Không commit/xác nhận các lệnh mới này**; phân biệt response trễ của lệnh đã commit trước fault |
+ | `TC-AC07` | AC07 | Xác định Leader động, dừng Leader thật | Leader mới hợp lệ được bầu khi còn quorum, các lệnh tiếp tục an toàn |
+ | `TC-AC08` | AC08 | Node offline qua vài lệnh, bật lại | Catch-up, `lastApplied` tiến đến committed state, dữ liệu khớp |
+-| `TC-AC09` | AC09 | Chia mạng 3–2 bằng fault injector thật | Phía 2/5 không commit; không split-brain dẫn đến 2 vé ACTIVE |
++| `TC-AC09` | AC09 | Chia mạng 3–2 bằng fault injector thật; gửi ý định mới tới cả hai phía | Phía 2/5 không commit; phía 3/5 có thể tiếp tục sau election ổn định; không split-brain dẫn đến 2 vé ACTIVE |
+ | `TC-AC10` | AC10 | Gửi BOOK, cắt phản hồi hoặc kết nối trước khi Client nhận | Client giữ requestId, tra cứu/retry cùng payload, không sinh vé trùng |
+ 
+ `TC-AC07` phải xét trường hợp Leader lỗi **trong khi** có request chưa phản hồi; status cần được truy hồi, không đơn giản giả định failed. `TC-AC09` cần kiểm tra cả phía đa số và thiểu số. `TC-AC10` nên inject lỗi tại nhiều điểm: trước Leader nhận, sau append, sau majority commit, sau apply/trước response.
++
++Test liveness phải ghi deadline đã cấu hình và kết quả thực tế, không gán PASS chỉ vì chưa thấy bán trùng. TC-AC04 cần chứng minh 10 booking đầu thành công; TC-AC05A/B và phía majority TC-AC09 cần ít nhất một request mới commit+apply trong môi trường đã ổn định.
+ 
+ ## 3. Bổ sung P1 và test kỹ thuật
+ 
+@@ -52,6 +54,30 @@
+ | `TC-DEPLOY-01` | Mở nhiều Client trên LAN | Cùng một trip và cùng trạng thái commit |
+ | `TC-DEPLOY-02` | Dừng Laptop 6 | Cụm 5 Node không mất quorum vì Monitor không có vote |
+ 
++### 3.1. Ca biên bổ sung từ SPEC-REVIEW-01 — tất cả NOT_RUN
++
++Đây là yêu cầu test cho lượt triển khai sau, không phải test đã chạy trong đợt sửa tài liệu.
++
++| Test ID | Setup/hành động | Assertion bắt buộc | Owner |
++|---|---|---|---|
++| `TC-RAFT-07` | Follower có suffix khác Leader; heartbeat/batch ngắn chỉ khớp đến k, leaderCommit > k | Không advance commit vượt k; không apply suffix chưa khớp; heartbeat không truncate suffix nếu chưa có entry xung đột | TV4/5 |
++| `TC-RAFT-08` | Response vote/append trùng, đảo thứ tự, hết timeout; response có term cao hơn | Mỗi voter một phiếu; không giảm matchIndex; không tính ACK cũ; step down/persist khi thấy term cao | TV4/5 |
++| `TC-RAFT-09` | Restart sau durable apply; tiếp theo log chứa entry chưa commit | commitIndex bắt đầu ở lastApplied, không apply suffix chỉ vì tồn tại; checkpoint vượt log thì fail closed | TV2/4/5 |
++| `TC-READ-01` | Gửi cả 3 query authoritative tới Leader cũ sau partition | Không trả dữ liệu authoritative thiếu barrier; mỗi query hợp lệ có NO_OP mới sau request, commit+apply trước đọc | TV3/4/5 |
++| `TC-READ-02` | Cụm mới chỉ có ghế seed, chưa có BOOK; query đầu tiên | NO_OP current term commit, checkpoint tiến; đúng 10 ghế, không thêm ticket/request_results/business_event | TV2/4 |
++| `TC-IDEMP-03` | Cùng requestId khác ý định xuất hiện ở hai committed entries; cả BOOK/CANCEL và đổi loại lệnh | Kết quả gốc không bị ghi đè, conflict không đổi ghế; checkpoint qua entry conflict và xử lý được entry tiếp | TV2/4 |
++| `TC-IDEMP-04` | Retry qua Leader mới có ticketId/timestamp sinh khác; JSON đổi thứ tự key; tên Unicode | Cùng tuple intent có fingerprint giống nhau; CANCEL đổi ticketId có fingerprint khác; index kết quả gốc giữ nguyên | TV2/3 |
++| `TC-IDEMP-05` | BOOK, CANCEL thành công, retry BOOK cũ | Trả kết quả BOOK gốc nhưng không tái cấp vé; UI refresh thấy trạng thái hiện tại | TV1/2 |
++| `TC-CANCEL-04` | Hủy vé cũ bằng ID mới sau khi ghế đã được bán lại; hủy vé không tồn tại | TICKET_NOT_ACTIVE; không giải phóng vé mới; mọi Node hội tụ | TV2 |
++| `TC-HISTORY-02` | Nhiều trang, timestamps lệch thứ tự; hủy/BOOK giữa hai lần đọc | Cursor theo index BOOK; không trùng vé giữa trang; mỗi trang có barrier; refresh cập nhật vé cũ; cursor/limit lỗi bị từ chối | TV1/2/3 |
++| `TC-TCP-03` | Golden JSON cho mọi request/response, thiếu/null/sai type/field lạ/key trùng, số tràn | Tuân thủ SPEC-03, error correlation đúng, schema lỗi không append; frame không parse được thì đóng kết nối | TV3 |
++| `TC-TCP-04` | Response trễ/khác correlation; gửi Raft RPC qua client port | Không hoàn tất nhầm thao tác, không tính vote/ACK hoặc mutate Raft qua sai kênh | TV3/4/5 |
++| `TC-DB-01` | Rollback apply rồi replay khác số lần trên các Node | Vé, request_results, business_events có nội dung/khóa giống nhau ở cùng applied index; không lệch sequence audit | TV2 |
++| `TC-UI-02` | Crash/reopen Client sau gửi trước response; journal không ghi được | Khôi phục cùng requestId/payload; không tạo ý định mới; không gửi khi journal chưa bền | TV1 |
++| `TC-DEPLOY-03` | Dev host Client nhận hint Docker/LAN map, hint null/cũ; Node DB lỗi lúc startup | Resolve node ID qua client endpoints, retry hữu hạn; status không bịa role/index và không đếm health là quorum | TV3/6 |
++
++Ma trận này bổ sung ca kỹ thuật cho AC01–AC10/FR10–FR12, không tạo mã AC mới. Test 5 Node vẫn bắt buộc cho các assertion đồng thuận/hội tụ; fixture đơn lẻ chỉ chứng minh nhánh logic.
++
+ ## 4. Unit / integration / system
+ 
+ ### Unit
+@@ -64,7 +90,7 @@
+ ### Integration 1 Node
+ 
+ - JavaFX → TCP → Java Node → PostgreSQL với một đường đặt vé.
+-- **Không được coi PASS “Raft cụm 5 Node” khi mới chỉ chạy một Node.**
++- **Không được coi PASS “Raft cụm 5 Node” khi mới chỉ chạy một Node.** Với membership production cố định 5 voter, một Node đơn độc không thể trả CONFIRMED mới hoặc đọc authoritative cần quorum. Đường BOOK thành công trong integration 1 Node chỉ được dùng adapter/fixture commit ghi rõ test-only, không bật trong runtime hoặc tính là AC02 phân tán.
+ 
+ ### Integration 5 Node (Docker tại nhà)
+ 
+@@ -127,7 +153,7 @@
+ - Date/environment/commit: TBD
+ - Preconditions: 5 Node khỏe; seed sạch; Leader hợp lệ
+ - Steps: khởi chạy 6 Client đồng thời đặt G05, mỗi Client một requestId
+-- Expected: <= 1 CONFIRMED; <= 1 ACTIVE(G05)
++- Expected: đúng 1 CONFIRMED và 1 ACTIVE(G05) trong cụm khỏe; tra cứu mọi timeout, còn lại APPLIED_REJECTED
+ - Actual: NOT_RUN
+ - Status: NOT_RUN
+ - Command/log/screenshot/SQL evidence: chưa có
+--- before/08-DEPLOYMENT.md
++++ after/08-DEPLOYMENT.md
+@@ -56,7 +56,15 @@
+ DB_PASSWORD=CHANGE_ME_LOCAL_ONLY
+ ```
+ 
+-Các IP ví dụ `192.168.10.11–15` từ kịch bản minh họa, **không** được giả định đúng trong lớp. Gán IP thật/địa chỉ tĩnh theo LAN hiện tại. Khi chạy dev, thay advertise/peers bằng hostname service nội bộ Docker; Host Client dùng các port đã publish `9101..9105`.
++Các IP ví dụ `192.168.10.11–15` từ kịch bản minh họa, **không** được giả định đúng trong lớp. Gán IP thật/địa chỉ tĩnh theo LAN hiện tại. Khi chạy dev, peer advertise/peers dùng hostname service nội bộ Docker; Client advertise phải là địa chỉ truy cập được từ Desktop Windows (`127.0.0.1:9101..9105` khi cùng máy), không dùng hostname Docker cho Host Client.
++
++### 3.1. Discovery, ranh giới kênh và cấu hình thiếu (DESIGN-v1)
++
++- Client/Monitor cần map đủ `node-1`..`node-5` → **client endpoint**: dev `127.0.0.1:9101..9105`; LAN `IP_LAPTOP_1..5:9100`. `leaderHint` chỉ là node ID, không mang host/port; map này là nguồn resolve. Hint null/stale thì thử các endpoint với backoff/deadline, không hardcode Leader.
++- Backend peer map phải có đủ 5 ID duy nhất, chứa chính Node; quorum luôn 3 dù peer nào offline. Tách handler/cổng Client và peer: không nhận REQUEST_VOTE/APPEND_ENTRIES trên client port. Firewall giới hạn peer port cho 5 host cấu hình; kiểm tra senderId với cấu hình không được quảng cáo là xác thực mật mã. Cơ chế nhận diện peer cụ thể còn cần TV3/TV6 chốt trong hồ sơ review.
++- `CLUSTER_ID` hiện chỉ là cấu hình vận hành, **chưa có field/handshake trên wire** để chặn RPC khác cluster. Không dựa vào biến này để tuyên bố cô lập giao thức. Baseline demo phải cô lập mạng/peer list giữa các cụm và reset đồng bộ; muốn kiểm tra cluster trên wire phải bổ sung contract được review.
++- Cần cấu hình connect timeout, response deadline, retry backoff, heartbeat/election timeout; TV3/TV4/TV5/TV6 chốt giá trị từ test LAN. Deadline dùng đồng hồ monotonic cục bộ, không so với sentAt phía khác; hết hạn ghi chuyển UNKNOWN và giữ requestId.
++- Cùng protocolVersion=1 không có nghĩa code bootstrap tương thích SPEC-03. Trước đổi DTO phải chốt migration/reset coordinated hoặc version mới tại [SPEC-REVIEW-01](../reviews/SPEC-REVIEW-01.md); không rolling deploy hai hình dạng envelope khác nhau dưới cùng version.
+ 
+ ## 4. Cấu trúc file mục tiêu
+ 
+@@ -106,7 +114,7 @@
+ 4. Laptop 6 chạy JavaFX Client/Monitor, kết nối tới danh sách IP của Node (không vào DB trực tiếp).
+ 5. Kiểm tra `NODE_STATUS` thực tế cho từng Node, đúng một Leader sau ổn định, cùng 10 ghế seed.
+ 6. Demo tranh G05 từ nhiều Client; kiểm tra log commit và bảng ghế/vé tại các Node đang cập nhật.
+-7. Dừng Leader thực, chờ bầu mới; kiểm tra tiếp tục ghi với 4/5 hoặc 3/5; dừng thêm Node để còn 2/5 và xác nhận **không có SUCCESS mới**.
++7. Dừng Leader thực, chờ bầu mới; kiểm tra tiếp tục ghi với 4/5 hoặc 3/5; dừng thêm Node để còn 2/5, gửi requestId mới và xác nhận **không commit/xác nhận lệnh mới sau mất quorum**. Phân biệt response trễ của lệnh đã commit trước fault theo SPEC-07.
+ 8. Khởi động các Node đã dừng; đối chiếu `lastApplied`, tickets, seats sau catch-up; cuối cùng khôi phục 5/5.
+ 
+ **Không** demo bằng cách chỉ bấm chuyển màu Node thành OFFLINE trên Monitor; phải dừng tiến trình/container hoặc chặn kết nối mạng thực theo kịch bản.
