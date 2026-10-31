@@ -25,12 +25,14 @@
 5. `.gitkeep` là file giữ chỗ để Git theo dõi thư mục, **không phải mã nguồn đã hoàn thành**.
 6. Đường dẫn trong bảng là **đích dự kiến**, không phải file đang tồn tại. Được tạo theo task khi triển khai, không viết Java stub giả để lấp chỗ trống.
 
-## D01 — tài liệu thực sự cần nộp
-- `TV1-D01`: `docs/implementation/ui-flow.md`
+## D01 — đầu ra cần nộp theo loại công việc
+- `TV1-D01` **(Frontend bắt đầu code ngay)**: `desktop-client/src/main/java/vn/nhom6/railway/client/App.java`, `desktop-client/src/main/java/vn/nhom6/railway/client/controller/MainController.java`, `desktop-client/src/main/resources/fxml/main.fxml`, minh chứng `artifacts/evidence/D01/TV1-D01-javafx-running.png`. Không bắt buộc làm `ui-flow.md`.
 - `TV2-D01`: `docs/implementation/booking-implementation-checklist.md`
 - `TV3-D01`: `docs/implementation/contract-implementation-map.md`
 - `TV4-D01`: `docs/implementation/raft-replication-implementation-map.md`
 - `TV5-D01`: `docs/implementation/raft-election-test-matrix.md`
 - `TV6-D01`: `docs/implementation/environment-checklist.md` + `artifacts/evidence/D01/TV6-D01-maven-validate.log`
+
+Frontend TV1: D01 khởi chạy JavaFX 10 ghế; D02 làm sơ đồ ghế tương tác; D03–D07 hoàn thiện form, CSS, binding, tra cứu/hủy và MockBookingClient; D08 nghiệm thu toàn bộ giao diện MOCK. D09 trở đi mới tích hợp TCP/Backend thật.
 
 Các ngày tiếp theo: đầu ra chính ở đúng module, tài liệu/biên bản ở `docs/implementation/` khi cần, log chứng cứ ở `artifacts/evidence/DXX/`.
