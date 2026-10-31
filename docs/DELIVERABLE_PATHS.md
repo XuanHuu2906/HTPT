@@ -17,6 +17,14 @@
 | Chứng cứ kiểm thử | `artifacts/evidence/DXX/` (small text logs/reports) | Người thực hiện |
 | Tài liệu lập trình không trùng SPEC | `docs/implementation/` | Theo task |
 
+## Quy tắc phân công song song và nghiệm thu theo mốc (bản rà soát)
+
+1. **Đầu vào có sẵn trước ngày:** task `TVx-Dyy` chỉ được coi là phụ thuộc bắt buộc vào bản SPEC/code/config/PR đã bàn giao trước **đầu Dyy**. PR viết trong cùng ngày được xem là bàn giao cuối ngày, không chặn task cá nhân.
+2. **Mock/Fake có phạm vi giới hạn:** dùng `FakeRaftStorage`, `FakeRaftRpcClient`, `FakeCommitSource`, fixture JSON, `FakeTcpBookingServer` để phát triển độc lập. PASS unit/contract test không bằng PASS Raft qua 5 Node hoặc PostgreSQL durability thật.
+3. **Gate riêng G1–G8:** mỗi task cá nhân nộp code/test và minh chứng riêng. Mốc chung chỉ xét sau bàn giao cuối ngày; thiếu artifact thì `BLOCKED_GATE`, không tự coi task cá nhân chưa hoàn thành. G3 = một Node thật; G4/G5 = 5 Node thật; G6 = LAN 5 backend laptop + 1 client/monitor; G7/G8 = release/demo thực.
+4. **Đã dời phần tích hợp phụ thuộc:** D06–D08 RaftStorage/Election dùng Fake; D12 nhận JdbcRaftStorage và D13 kiểm lại adapter thật; D15 UI read với FakeReadAdapter, D19 RaftReadBarrier thật, G5 nghiệm thu read; D23 CANCEL UI kiểm fake, D24 Backend CANCEL, D25+ mới thử thật; D24 LAN preflight, D25 deploy từng laptop, G6 D26 kiểm vật lý.
+5. **Mỗi task PASS phải có minh chứng thật:** commit/PR, lệnh/test log + exit code, phân biệt rõ `MOCK`, `FAKE`, `LOCAL`, `LIVE_5_NODE`, `LAN_5_LAPTOP`. Ghi `BLOCKED_INTEGRATION` cho phần phụ thuộc chưa sẵn, không báo PASS chức năng chưa chạy.
+
 ## Quy tắc quan trọng
 1. **Giữ nguyên** mã `TV1-D01`…`TV6-D30` trong Google Sheets vì Apps Script dùng mã này để tìm và đồng bộ task.
 2. Tên người hiển thị đã đổi sang tên thành viên. Không thay mã nội bộ thành tên.
