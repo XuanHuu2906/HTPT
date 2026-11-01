@@ -1,16 +1,60 @@
-# Build artifacts and IDE
+
+
+# 1) Maven / Java generated outputs
 **/target/
+**/out/
+*.class
+
+# 2) IDE and editor metadata
 .idea/
 *.iml
 .classpath
 .project
 .settings/
 .vscode/
+
+# 3) Runtime logs, process state and crash dumps
 *.log
-logs/
+**/logs/
 *.pid
-.DS_Store
-# Local overrides and credentials
-configs/*-local.properties
+*.pid.lock
+hs_err_pid*
+replay_pid*
+
+# 4) Machine-specific configuration and secrets
 .env
-!/.env.example
+.env.*
+!**/.env.example
+**/*-local.properties
+**/secrets.properties
+**/secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# 5) Local PostgreSQL storage and database backups
+**/pgdata/
+**/postgres-data/
+docker/volumes/
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+
+# 6) Operating-system and editor temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+
+# 7) Formal acceptance evidence - 30-day plan (D01-D30)
+# The MASTER sheet explicitly requires artifacts/evidence/Dxx/*.
+# Keep runtime logs ignored elsewhere, but allow reviewed test logs here.
+!artifacts/evidence/
+!artifacts/evidence/**/
+!artifacts/evidence/**/*.log
