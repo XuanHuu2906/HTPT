@@ -231,7 +231,7 @@ public final class RaftState {
      * keeps the current role, so a candidate that already voted for itself simply refuses. This
      * method only mutates the model; it does not send a response and does not persist the vote.
      *
-     * @param candidateTerm        term carried by the vote request, {@code >= 0}
+     * @param candidateTerm        term carried by the vote request, {@code >= 1}
      * @param candidateId          voter-visible id of the candidate
      * @param candidateLastLogIndex last log index advertised by the candidate, {@code >= 0}
      * @param candidateLastLogTerm  last log term advertised by the candidate, {@code >= 0}
@@ -578,8 +578,12 @@ public final class RaftState {
     }
 
     private static void validateCandidateLog(long candidateTerm, long candidateLastLogIndex, long candidateLastLogTerm) {
-        if (candidateTerm < EMPTY_LOG_INDEX) {
-            throw new IllegalArgumentException("candidateTerm must be >= 0 but was " + candidateTerm);
+        if (candidateTerm < RaftLogEntry.FIRST_TERM) {
+            // A candidate increments its term before sending REQUEST_VOTE (SPEC-04 section 3.2),
+            // so a conformant peer never sends term 0. Term 0 only describes a fresh Node that
+            // has not taken part in any election yet and must never be granted a vote.
+            throw new IllegalArgumentException(
+                    "candidateTerm must be >= " + RaftLogEntry.FIRST_TERM + " but was " + candidateTerm);
         }
         if (candidateLastLogTerm < EMPTY_LOG_TERM) {
             throw new IllegalArgumentException(

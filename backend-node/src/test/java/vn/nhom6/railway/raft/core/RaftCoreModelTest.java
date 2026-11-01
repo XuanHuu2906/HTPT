@@ -324,6 +324,39 @@ class RaftCoreModelTest {
         assertThrows(NullPointerException.class, () -> state.grantVote(1L, null, 0L, 0L));
     }
 
+    @Test
+    void rejectsVoteRequestWithTermZeroOnAFreshNode() {
+        RaftState fresh = new RaftState();
+
+        assertThrows(IllegalArgumentException.class, () -> fresh.grantVote(0L, "node-2", 0L, 0L),
+                "a candidate always increments its term first, so term 0 is never a valid vote request");
+
+        assertNull(fresh.votedFor(), "a rejected request must not record a vote");
+        assertEquals(0L, fresh.currentTerm());
+        assertEquals(Role.FOLLOWER, fresh.role());
+    }
+
+    @Test
+    void rejectsVoteRequestWithTermZeroWithoutChangingAnExistingVote() {
+        RaftState state = RaftState.restore(3L, "node-4", List.of(), 0L);
+
+        assertThrows(IllegalArgumentException.class, () -> state.grantVote(0L, "node-2", 0L, 0L));
+
+        assertEquals("node-4", state.votedFor());
+        assertEquals(3L, state.currentTerm());
+    }
+
+    @Test
+    void aFreshNodeStillGrantsTheFirstValidVoteInTermOne() {
+        RaftState fresh = new RaftState();
+
+        assertThrows(IllegalArgumentException.class, () -> fresh.grantVote(0L, "node-2", 0L, 0L));
+        assertTrue(fresh.grantVote(1L, "node-3", 0L, 0L), "term 1 is the first valid election term");
+
+        assertEquals(1L, fresh.currentTerm());
+        assertEquals("node-3", fresh.votedFor());
+    }
+
     // -------------------------------------------------------------------------------------------
     // Append
     // -------------------------------------------------------------------------------------------
