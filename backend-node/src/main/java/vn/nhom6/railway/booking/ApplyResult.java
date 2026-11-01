@@ -72,6 +72,12 @@ public record ApplyResult(
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
+    /**
+     * Pattern ticketId: {@code [A-Za-z0-9-]{1,64}} theo SPEC-03 §3.0.
+     * Dùng để validate ticketId của CANCEL UNKNOWN trong constructor.
+     */
+    private static final Pattern TICKET_ID_PATTERN = Pattern.compile("^[A-Za-z0-9-]{1,64}$");
+
     // -----------------------------------------------------------------------
     // Compact constructor — validate tổ hợp field theo bảng SPEC
     // -----------------------------------------------------------------------
@@ -84,15 +90,15 @@ public record ApplyResult(
      *   <li>requestId hợp lệ
      *   <li>outcome không null
      *   <li>CONFIRMED: ticketId != null, reasonCode == null, appliedLogIndex >= 1
-     *   <li>REJECTED: appliedLogIndex >= 1; reasonCode phải là một trong các giá trị hợp lệ;
-     *       xem lưu ý về ticketId bên dưới
-     *   <li>UNKNOWN: reasonCode == TIMEOUT_UNKNOWN, appliedLogIndex == null
+     *   <li>REJECTED: appliedLogIndex >= 1; reasonCode ∈ tập hợp lệ
+     *   <li>UNKNOWN: reasonCode == TIMEOUT_UNKNOWN, appliedLogIndex == null;
+     *       ticketId có thể null (BOOK UNKNOWN) hoặc non-null hợp lệ (CANCEL UNKNOWN —
+     *       SPEC-03 §4.3: "ticketId luôn là vé đích trong request")
      * </ul>
      *
-     * <p>Lưu ý về REJECTED ticketId: theo SPEC-03 §4.2 BOOK REJECTED ticketId == null; theo
-     * §4.3 CANCEL REJECTED ticketId là vé đích (non-null). Thay vì bắt constructor biết loại
-     * lệnh, các factory method {@link #bookRejected} và {@link #cancelRejected} kiểm tra
-     * thêm điều kiện đó. Constructor chung chỉ enforce: reasonCode thuộc tập cho phép.
+     * <p>Lưu ý REJECTED ticketId: BOOK REJECTED → null; CANCEL REJECTED → vé đích (non-null).
+     * Factory method {@link #bookRejected} và {@link #cancelRejected} enforce thêm điều kiện
+     * đó. Constructor chung chỉ enforce reasonCode thuộc tập cho phép và appliedLogIndex.
      */
     public ApplyResult {
         Objects.requireNonNull(outcome, "outcome không được null");
@@ -139,11 +145,14 @@ public record ApplyResult(
                     throw new IllegalArgumentException(
                             "UNKNOWN yêu cầu appliedLogIndex == null; nhận: " + appliedLogIndex);
                 }
-                // ticketId nên null cho UNKNOWN nhưng SPEC không cấm tường minh trong constructor
-                // chung; để an toàn ta enforce null
-                if (ticketId != null) {
+                // BOOK UNKNOWN: ticketId == null
+                // CANCEL UNKNOWN: ticketId là vé đích (non-null) — SPEC-03 §4.3
+                // Constructor cho phép cả hai; factory method cancelUnknown() enforce non-null.
+                // Nếu non-null thì phải đúng format để tránh garbage vào response.
+                if (ticketId != null && !TICKET_ID_PATTERN.matcher(ticketId).matches()) {
                     throw new IllegalArgumentException(
-                            "UNKNOWN yêu cầu ticketId == null; nhận: " + ticketId);
+                            "UNKNOWN ticketId (nếu có) phải khớp [A-Za-z0-9-]{1,64}; nhận: "
+                            + ticketId);
                 }
             }
         }
@@ -246,9 +255,17 @@ public record ApplyResult(
     /**
      * CANCEL UNKNOWN — server timeout, Client chưa biết kết quả hủy.
      *
+     * <p>Theo SPEC-03 §4.3: "ticketId luôn là vé đích trong request" — áp dụng cho mọi
+     * outcome của CANCEL, kể cả UNKNOWN. ticketId không được null.
+     *
      * @param requestId UUID chữ thường 8-4-4-4-12
+     * @param ticketId  vé đích của yêu cầu hủy (non-null, {@code [A-Za-z0-9-]{1,64}})
      */
-    public static ApplyResult cancelUnknown(String requestId) {
-        return new ApplyResult(requestId, Outcome.UNKNOWN, null, TIMEOUT_UNKNOWN, null);
+    public static ApplyResult cancelUnknown(String requestId, String ticketId) {
+        if (ticketId == null) {
+            throw new IllegalArgumentException(
+                    "cancelUnknown yêu cầu ticketId != null (SPEC-03 §4.3: vé đích)");
+        }
+        return new ApplyResult(requestId, Outcome.UNKNOWN, ticketId, TIMEOUT_UNKNOWN, null);
     }
 }

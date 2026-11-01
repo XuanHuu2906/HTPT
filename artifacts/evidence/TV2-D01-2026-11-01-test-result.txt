@@ -1,38 +1,39 @@
 Command:     D:\ok\apache-maven-3.10.0-bin\apache-maven-3.10.0\bin\mvn.cmd -B -ntp -pl backend-node -am test
 Environment: Windows 11, JDK 25.0.3 (D:\java\jdk-25), Maven 3.10.0 (D:\ok\apache-maven-3.10.0-bin)
 Branch:      tv2/TV2-D01-booking-command
-Commit:      7b78ce3
-Finished at: 2026-11-01T13:00:25+07:00
+Task:        TV2-D01 fix cancelUnknown + tighten ApplyResult constructor
+Finished at: 2026-11-01T16:32:19+07:00
+
+--- CHANGES ---
+- ApplyResult.cancelUnknown(): now requires ticketId (SPEC-03 §4.3)
+- ApplyResult constructor UNKNOWN: removed wrong ticketId==null constraint;
+  allows null (BOOK UNKNOWN) or valid-format non-null (CANCEL UNKNOWN);
+  rejects invalid format ticketId via TICKET_ID_PATTERN
+- Added TICKET_ID_PATTERN constant to ApplyResult
 
 --- RESULTS ---
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
-[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
-[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
-[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
-[INFO] Tests run: 4,  Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
 [INFO] Tests run: 5,  Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
-[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
-[INFO] Tests run: 4,  Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5,  Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
 [INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
 [INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4,  Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0
 
-[INFO] Tests run: 60, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 62, Failures: 0, Errors: 0, Skipped: 0
 
-[INFO] ------------------------------------------------------------------------
-[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
-[INFO] railway-distributed-system ......................... SUCCESS [  0.004 s]
-[INFO] shared ............................................. SUCCESS [  7.530 s]
-[INFO] backend-node ....................................... SUCCESS [  3.831 s]
 [INFO] BUILD SUCCESS
-[INFO] Total time:  11.547 s
-[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.241 s
 
 Result: PASS

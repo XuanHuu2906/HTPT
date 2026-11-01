@@ -436,11 +436,23 @@ class BookingCommandTest {
         }
 
         @Test
-        @DisplayName("cancelUnknown — UNKNOWN, isPersistable() = false")
+        @DisplayName("cancelUnknown — UNKNOWN giữ ticketId vé đích (SPEC-03 §4.3), isPersistable()=false")
         void cancelUnknown() {
-            var r = ApplyResult.cancelUnknown(VALID_REQUEST_ID);
+            // SPEC-03 §4.3: "ticketId luôn là vé đích trong request"
+            var r = ApplyResult.cancelUnknown(VALID_REQUEST_ID, VALID_TICKET_ID);
             assertEquals(ApplyResult.Outcome.UNKNOWN, r.outcome());
-            assertFalse(r.isPersistable());
+            assertEquals(VALID_TICKET_ID, r.ticketId(),
+                    "CANCEL UNKNOWN phải giữ ticketId là vé đích");
+            assertEquals(ApplyResult.TIMEOUT_UNKNOWN, r.reasonCode());
+            assertNull(r.appliedLogIndex());
+            assertFalse(r.isPersistable(), "UNKNOWN không được lưu vào request_results");
+        }
+
+        @Test
+        @DisplayName("cancelUnknown null ticketId bị từ chối — SPEC-03 §4.3")
+        void cancelUnknownNullTicketId() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    ApplyResult.cancelUnknown(VALID_REQUEST_ID, null));
         }
     }
 
@@ -466,7 +478,7 @@ class BookingCommandTest {
         @DisplayName("REJECTED isPersistable=true; UNKNOWN isPersistable=false")
         void persistability() {
             var rejected = ApplyResult.bookRejected(VALID_REQUEST_ID, ApplyResult.INVALID_REQUEST, 3L);
-            var unknown  = ApplyResult.cancelUnknown(VALID_REQUEST_ID);
+            var unknown  = ApplyResult.cancelUnknown(VALID_REQUEST_ID, VALID_TICKET_ID);
 
             assertTrue(rejected.isPersistable());
             assertFalse(unknown.isPersistable());
@@ -548,11 +560,21 @@ class BookingCommandTest {
         }
 
         @Test
-        @DisplayName("UNKNOWN với ticketId != null bị từ chối")
-        void unknownWithTicketId() {
-            assertThrows(IllegalArgumentException.class, () ->
+        @DisplayName("UNKNOWN + ticketId hợp lệ — OK cho CANCEL UNKNOWN (SPEC-03 §4.3)")
+        void unknownWithValidTicketId() {
+            // Sau khi sửa: CANCEL UNKNOWN được phép có ticketId
+            assertDoesNotThrow(() ->
                     new ApplyResult(VALID_REQUEST_ID, ApplyResult.Outcome.UNKNOWN,
                             VALID_TICKET_ID, ApplyResult.TIMEOUT_UNKNOWN, null));
+        }
+
+        @Test
+        @DisplayName("UNKNOWN ticketId sai format bị từ chối")
+        void unknownInvalidTicketIdFormat() {
+            // ticketId có ký tự @ không hợp lệ theo [A-Za-z0-9-]{1,64}
+            assertThrows(IllegalArgumentException.class, () ->
+                    new ApplyResult(VALID_REQUEST_ID, ApplyResult.Outcome.UNKNOWN,
+                            "bad@ticket!", ApplyResult.TIMEOUT_UNKNOWN, null));
         }
 
         @Test
