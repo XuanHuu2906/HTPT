@@ -15,7 +15,8 @@
 
 # 3) Runtime logs, process state and crash dumps
 *.log
-**/logs/
+!artifacts/**/*.log
+logs/
 *.pid
 *.pid.lock
 hs_err_pid*
