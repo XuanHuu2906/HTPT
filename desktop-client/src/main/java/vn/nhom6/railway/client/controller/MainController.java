@@ -1,26 +1,42 @@
 package vn.nhom6.railway.client.controller;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Controller điều khiển giao diện chính của ứng dụng bán vé Desktop (JavaFX).
  * <p>
- * Phạm vi D01:
- * - Hiển thị nhãn MOCK nổi bật.
- * - Dựng sẵn vùng điều hướng bên trái (placeholder).
- * - Sinh lưới 10 ghế (G01 - G10) từ dữ liệu mock cứng trong code.
- * - Cho phép chọn ghế cục bộ (SELECTED_LOCAL) mà không kết nối Backend hay gọi API.
+ * Phạm vi TASK D02:
+ * - Hiển thị màn hình chính (Tổng quan chuyến tàu SE-001, thông tin hành trình).
+ * - Điều hướng linh hoạt sang sơ đồ chọn ghế tương tác (seat-grid.fxml) bằng cơ chế đổi vùng center.
+ * - Có đường quay lại màn hình chính ("Quay lại màn hình chính" / "Chọn chuyến").
+ * - Chuyển tiếp sang khu vực đặt vé placeholder (chuẩn bị dữ liệu ghế đã chọn cho TASK D03).
  */
 public class MainController {
+
+    // === Container gốc BorderPane để hoán đổi nội dung vùng center ===
+    @FXML
+    private BorderPane rootBorderPane;
+
+    @FXML
+    private VBox mainCenterContainer;
+
+    @FXML
+    private Button openSeatGridBtn;
 
     // === Tiêu đề & Nhãn MOCK ===
     @FXML
@@ -29,7 +45,7 @@ public class MainController {
     @FXML
     private Label mockBadgeLabel;
 
-    // === Vùng điều hướng (Navigation Region) ===
+    // === Vùng điều hướng bên trái (Navigation Region) ===
     @FXML
     private VBox navRegion;
 
@@ -45,257 +61,190 @@ public class MainController {
     @FXML
     private Button navMyTicketsBtn;
 
-    // === Container sơ đồ ghế & Form ===
-    @FXML
-    private GridPane seatGridContainer;
-
-    @FXML
-    private Label selectedSeatLabel;
-
-    @FXML
-    private TextField passengerNameField;
-
-    @FXML
-    private Button bookSeatBtn;
-
-    @FXML
-    private Button refreshBtn;
-
-    @FXML
-    private Button lookupBtn;
-
     // === Thanh trạng thái bên dưới ===
     @FXML
     private Label statusMessageLabel;
 
-    /**
-     * Định nghĩa các trạng thái ghế phục vụ chế độ MOCK (theo SPEC-06).
-     */
-    public enum SeatMockState {
-        AVAILABLE("Trống", "-fx-background-color: #ecfdf5; -fx-text-fill: #065f46; -fx-border-color: #10b981; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;"),
-        BOOKED("Đã đặt", "-fx-background-color: #fef2f2; -fx-text-fill: #991b1b; -fx-border-color: #ef4444; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: default;"),
-        SELECTED_LOCAL("Đang chọn", "-fx-background-color: #fffbeb; -fx-text-fill: #92400e; -fx-border-color: #f59e0b; -fx-border-width: 2.5; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;");
-
-        private final String displayText;
-        private final String cssStyle;
-
-        SeatMockState(String displayText, String cssStyle) {
-            this.displayText = displayText;
-            this.cssStyle = cssStyle;
-        }
-
-        public String getDisplayText() {
-            return displayText;
-        }
-
-        public String getCssStyle() {
-            return cssStyle;
-        }
-    }
-
-    // Bộ nhớ trạng thái 10 ghế (MOCK cứng)
-    private final Map<String, SeatMockState> seatStateMap = new HashMap<>();
-    private final Map<String, Button> seatButtonMap = new HashMap<>();
-
-    // Ghế đang chọn cục bộ trên Client
-    private String selectedSeatId = null;
+    // Cache giao diện sơ đồ chọn ghế (D02) để bảo lưu trạng thái ghế đang chọn khi quay lại
+    private Parent cachedSeatGridView;
+    private SeatGridController cachedSeatGridController;
 
     @FXML
     public void initialize() {
-        // 1. Đảm bảo nhãn MOCK nổi bật
         if (mockBadgeLabel != null) {
             mockBadgeLabel.setText("MOCK DATA");
         }
 
-        // 2. Khởi tạo dữ liệu mock cứng cho 10 ghế G01 – G10
-        initMockData();
-
-        // 3. Dựng lưới 10 ghế (GridPane 2 hàng x 5 cột)
-        buildSeatGrid();
-
-        // 4. Gắn sự kiện cho các nút điều hướng và form thao tác (placeholder)
-        bindEventHandlers();
+        bindNavigationHandlers();
     }
 
-    /**
-     * Sinh dữ liệu trạng thái ban đầu cho 10 ghế (G01 đến G10).
-     * Một số ghế là BOOKED để minh họa, còn lại là AVAILABLE.
-     */
-    private void initMockData() {
-        seatStateMap.clear();
-        for (int i = 1; i <= 10; i++) {
-            String seatId = String.format("G%02d", i);
-            // Ghế G02, G04, G08 giả lập là đã được đặt trước đó
-            if (i == 2 || i == 4 || i == 8) {
-                seatStateMap.put(seatId, SeatMockState.BOOKED);
-            } else {
-                seatStateMap.put(seatId, SeatMockState.AVAILABLE);
-            }
-        }
-        selectedSeatId = null;
-    }
+    // =========================================================================
+    // ĐIỀU HƯỚNG MÀN HÌNH (NAVIGATION - TASK D02)
+    // =========================================================================
 
     /**
-     * Dựng 10 nút bấm đại diện cho 10 ghế và đặt vào GridPane (2 hàng x 5 cột).
-     * Hàng 0: G01 - G05
-     * Hàng 1: G06 - G10
+     * Chuyển vùng center của BorderPane sang Sơ đồ chọn ghế tương tác (seat-grid.fxml).
      */
-    private void buildSeatGrid() {
-        if (seatGridContainer == null) {
-            return;
-        }
+    public void showSeatGridView() {
+        try {
+            if (cachedSeatGridView == null) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/seat-grid.fxml"));
+                cachedSeatGridView = loader.load();
+                cachedSeatGridController = loader.getController();
 
-        seatGridContainer.getChildren().clear();
-        seatButtonMap.clear();
+                // Gắn callback quay lại màn hình chính
+                cachedSeatGridController.setOnBackAction(this::showMainView);
 
-        for (int i = 1; i <= 10; i++) {
-            String seatId = String.format("G%02d", i);
-            SeatMockState state = seatStateMap.get(seatId);
-
-            Button seatButton = new Button();
-            seatButton.setPrefWidth(120.0);
-            seatButton.setPrefHeight(75.0);
-            seatButton.setAlignment(Pos.CENTER);
-
-            // Cập nhật nhãn và style theo trạng thái
-            updateSeatButtonStyle(seatButton, seatId, state);
-
-            // Gắn sự kiện click ghế
-            seatButton.setOnAction(e -> handleSeatClick(seatId));
-
-            // Lưu tham chiếu
-            seatButtonMap.put(seatId, seatButton);
-
-            // Tọa độ lưới: 5 cột / hàng
-            int col = (i - 1) % 5;
-            int row = (i - 1) / 5;
-            seatGridContainer.add(seatButton, col, row);
-        }
-
-        updateSelectionDisplay();
-    }
-
-    /**
-     * Cập nhật văn bản hiển thị và định dạng CSS cho nút ghế.
-     */
-    private void updateSeatButtonStyle(Button button, String seatId, SeatMockState state) {
-        // Hiển thị cả mã ghế và nhãn trạng thái (hỗ trợ accessibility)
-        button.setText(seatId + "\n[" + state.getDisplayText() + "]");
-        button.setStyle(state.getCssStyle() + " -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-alignment: center;");
-    }
-
-    /**
-     * Xử lý khi người dùng click vào một ghế.
-     */
-    private void handleSeatClick(String seatId) {
-        SeatMockState currentState = seatStateMap.get(seatId);
-
-        if (currentState == SeatMockState.BOOKED) {
-            updateStatusMessage("Ghế " + seatId + " đã được đặt trước (BOOKED). Vui lòng chọn ghế trống khác!");
-            return;
-        }
-
-        // Nếu click lại chính ghế đang chọn -> hủy chọn
-        if (seatId.equals(selectedSeatId)) {
-            seatStateMap.put(seatId, SeatMockState.AVAILABLE);
-            updateSeatButtonStyle(seatButtonMap.get(seatId), seatId, SeatMockState.AVAILABLE);
-            selectedSeatId = null;
-            updateStatusMessage("Đã bỏ chọn ghế " + seatId + ".");
-        } else {
-            // Hủy chọn ghế cũ (nếu có)
-            if (selectedSeatId != null) {
-                seatStateMap.put(selectedSeatId, SeatMockState.AVAILABLE);
-                updateSeatButtonStyle(seatButtonMap.get(selectedSeatId), selectedSeatId, SeatMockState.AVAILABLE);
+                // Gắn callback tiếp tục sang vùng đặt vé (Placeholder D03)
+                cachedSeatGridController.setOnContinueAction(this::showBookingPlaceholder);
             }
 
-            // Chọn ghế mới
-            selectedSeatId = seatId;
-            seatStateMap.put(seatId, SeatMockState.SELECTED_LOCAL);
-            updateSeatButtonStyle(seatButtonMap.get(seatId), seatId, SeatMockState.SELECTED_LOCAL);
-            updateStatusMessage("Đã chọn ghế " + seatId + " (MOCK). Nhập tên khách để đặt vé.");
-        }
-
-        updateSelectionDisplay();
-    }
-
-    /**
-     * Cập nhật nhãn hiển thị ghế đang chọn.
-     */
-    private void updateSelectionDisplay() {
-        if (selectedSeatLabel != null) {
-            if (selectedSeatId != null) {
-                selectedSeatLabel.setText("Ghế đang chọn: " + selectedSeatId);
-            } else {
-                selectedSeatLabel.setText("Ghế đang chọn: (Chưa chọn)");
+            if (rootBorderPane != null) {
+                rootBorderPane.setCenter(cachedSeatGridView);
+                highlightNavButton(navSeatBtn);
+                updateStatusMessage("Đang ở Sơ đồ chọn ghế tương tác (TASK D02). Click chọn các ghế mong muốn.");
             }
+        } catch (IOException e) {
+            updateStatusMessage("Lỗi khi nạp giao diện seat-grid.fxml: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
-     * Gắn xử lý cho các nút hành động (Mock placeholders).
+     * Quay lại màn hình chính ban đầu (mainCenterContainer).
      */
-    private void bindEventHandlers() {
-        // Nút Đặt vé (MOCK)
-        if (bookSeatBtn != null) {
-            bookSeatBtn.setOnAction(e -> {
-                if (selectedSeatId == null) {
-                    updateStatusMessage("Vui lòng click chọn một ghế trống trước khi nhấn Đặt vé!");
-                    return;
-                }
+    public void showMainView() {
+        if (rootBorderPane != null && mainCenterContainer != null) {
+            rootBorderPane.setCenter(mainCenterContainer);
+            highlightNavButton(navTripBtn);
+            updateStatusMessage("Đã quay về màn hình chính (Chuyến tàu SE-001).");
+        }
+    }
 
-                String passenger = (passengerNameField != null) ? passengerNameField.getText().trim() : "";
-                if (passenger.isEmpty()) {
-                    updateStatusMessage("Vui lòng nhập họ tên hành khách để tiếp tục!");
-                    return;
-                }
+    /**
+     * Hiển thị khu vực đặt vé placeholder (Giai đoạn D03).
+     *
+     * @param selectedSeats danh sách ghế đã chọn từ SeatGridController
+     */
+    public void showBookingPlaceholder(List<String> selectedSeats) {
+        if (rootBorderPane == null) return;
 
-                // Giả lập đặt vé thành công ở tầng giao diện MOCK
-                String bookedSeat = selectedSeatId;
-                seatStateMap.put(bookedSeat, SeatMockState.BOOKED);
-                updateSeatButtonStyle(seatButtonMap.get(bookedSeat), bookedSeat, SeatMockState.BOOKED);
-                selectedSeatId = null;
-                updateSelectionDisplay();
+        VBox placeholderBox = new VBox(16.0);
+        placeholderBox.setPadding(new Insets(20));
+        placeholderBox.setStyle("-fx-background-color: #f8fafc;");
 
-                updateStatusMessage("MOCK SUCCESS: Đã đặt ghế " + bookedSeat + " cho khách [" + passenger + "] (Mock D01, chưa gọi Backend).");
-            });
+        // 1. Card tiêu đề & điều hướng quay lại
+        HBox topCard = new HBox(15.0);
+        topCard.setAlignment(Pos.CENTER_LEFT);
+        topCard.setStyle("-fx-background-color: #ffffff; -fx-padding: 14 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;");
+
+        Button backToSeatBtn = new Button("⬅ Quay lại chọn ghế");
+        backToSeatBtn.setStyle("-fx-background-color: #1e293b; -fx-text-fill: #ffffff; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 14; -fx-background-radius: 6; -fx-cursor: hand;");
+        backToSeatBtn.setOnAction(e -> showSeatGridView());
+
+        Button backToHomeBtn = new Button("🏠 Màn hình chính");
+        backToHomeBtn.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;");
+        backToHomeBtn.setOnAction(e -> showMainView());
+
+        VBox titleBox = new VBox(2.0);
+        Label mainTitle = new Label("KHU VỰC ĐẶT VÉ CHI TIẾT");
+        mainTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
+        Label subTitle = new Label("Chuyến tàu SE-001 | Toa 01 - Khoang 10 ghế VIP");
+        subTitle.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+        titleBox.getChildren().addAll(mainTitle, subTitle);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label d03Badge = new Label("PLACEHOLDER — TASK D03");
+        d03Badge.setStyle("-fx-background-color: #e0e7ff; -fx-text-fill: #3730a3; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 5 12; -fx-background-radius: 6; -fx-border-color: #c7d2fe; -fx-border-radius: 6;");
+
+        topCard.getChildren().addAll(backToSeatBtn, backToHomeBtn, new Separator(), titleBox, spacer, d03Badge);
+
+        // 2. Card thông tin ghế đã chọn
+        VBox contentCard = new VBox(16.0);
+        contentCard.setPadding(new Insets(20));
+        contentCard.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;");
+        VBox.setVgrow(contentCard, Priority.ALWAYS);
+
+        Label infoHeader = new Label("DANH SÁCH GHẾ ĐÃ CHỌN TỪ SƠ ĐỒ:");
+        infoHeader.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" );
+
+        HBox seatsDisplayBox = new HBox(10.0);
+        seatsDisplayBox.setAlignment(Pos.CENTER_LEFT);
+        for (String seatId : selectedSeats) {
+            Label seatPill = new Label(seatId);
+            seatPill.setStyle("-fx-background-color: #ecfdf5; -fx-text-fill: #065f46; -fx-border-color: #10b981; -fx-border-width: 1.5; -fx-border-radius: 6; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 6 16;");
+            seatsDisplayBox.getChildren().add(seatPill);
         }
 
-        // Nút Làm mới
-        if (refreshBtn != null) {
-            refreshBtn.setOnAction(e -> {
-                initMockData();
-                buildSeatGrid();
-                if (passengerNameField != null) {
-                    passengerNameField.clear();
-                }
-                updateStatusMessage("Đã làm mới dữ liệu sơ đồ ghế (Reset về trạng thái MOCK ban đầu).");
-            });
+        Label totalLabel = new Label("Tổng số ghế: " + selectedSeats.size() + " ghế");
+        totalLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #334155; -fx-font-weight: bold;");
+
+        // Hộp thông báo placeholder D03
+        VBox noteBox = new VBox(6.0);
+        noteBox.setPadding(new Insets(14));
+        noteBox.setStyle("-fx-background-color: #eff6ff; -fx-background-radius: 8; -fx-border-color: #bfdbfe; -fx-border-radius: 8;");
+        Label noteTitle = new Label("ℹ Ghi chú triển khai (TASK D03 Placeholder):");
+        noteTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e40af; -fx-font-size: 13px;");
+        Label noteContent = new Label("Form chi tiết thông tin hành khách (Họ tên, CCCD, Đối tượng ưu tiên), tổng tiền vé và gửi lệnh đặt vé xác thực sẽ được hoàn thiện trong TASK D03 theo đặc tả SPEC-06.");
+        noteContent.setStyle("-fx-text-fill: #1e3a8a; -fx-font-size: 12px;");
+        noteBox.getChildren().addAll(noteTitle, noteContent);
+
+        contentCard.getChildren().addAll(infoHeader, seatsDisplayBox, totalLabel, new Separator(), noteBox);
+
+        placeholderBox.getChildren().addAll(topCard, contentCard);
+
+        rootBorderPane.setCenter(placeholderBox);
+        updateStatusMessage("Đã chuyển sang khu vực đặt vé (Placeholder D03). Ghế: " + String.join(", ", selectedSeats));
+    }
+
+    public SeatGridController getCachedSeatGridController() {
+        return cachedSeatGridController;
+    }
+
+    // =========================================================================
+    // EVENT HANDLERS
+    // =========================================================================
+
+    private void bindNavigationHandlers() {
+        // Nút điều hướng chính trên màn hình chính
+        if (openSeatGridBtn != null) {
+            openSeatGridBtn.setOnAction(e -> showSeatGridView());
         }
 
-        // Nút Tra cứu
-        if (lookupBtn != null) {
-            lookupBtn.setOnAction(e -> {
-                updateStatusMessage("MOCK INFO: Tính năng tra cứu requestId sẽ khả dụng khi kết nối Backend ở các sprint tiếp theo.");
-            });
+        // Nút trên menu bên trái
+        if (navSeatBtn != null) {
+            navSeatBtn.setOnAction(e -> showSeatGridView());
         }
 
-        // Các nút điều hướng (Placeholder)
-        setupNavButton(navTripBtn, "Chọn chuyến");
-        setupNavButton(navSeatBtn, "Chọn ghế (10 ghế)");
+        if (navTripBtn != null) {
+            navTripBtn.setOnAction(e -> showMainView());
+        }
+
         setupNavButton(navPaymentBtn, "Thanh toán");
         setupNavButton(navMyTicketsBtn, "Vé của tôi");
     }
 
+    private void highlightNavButton(Button activeBtn) {
+        String defaultStyle = "-fx-background-color: #1e293b; -fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;";
+        String activeStyle = "-fx-background-color: #3b82f6; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;";
+
+        if (navTripBtn != null) navTripBtn.setStyle(navTripBtn == activeBtn ? activeStyle : defaultStyle);
+        if (navSeatBtn != null) navSeatBtn.setStyle(navSeatBtn == activeBtn ? activeStyle : defaultStyle);
+        if (navPaymentBtn != null) navPaymentBtn.setStyle(navPaymentBtn == activeBtn ? activeStyle : defaultStyle);
+        if (navMyTicketsBtn != null) navMyTicketsBtn.setStyle(navMyTicketsBtn == activeBtn ? activeStyle : defaultStyle);
+    }
+
     private void setupNavButton(Button btn, String navName) {
         if (btn != null) {
-            btn.setOnAction(e -> updateStatusMessage("Điều hướng: " + navName + " (Placeholder D01)"));
+            btn.setOnAction(e -> updateStatusMessage("Điều hướng: " + navName + " (Placeholder)"));
         }
     }
 
-    private void updateStatusMessage(String message) {
+    public void updateStatusMessage(String message) {
         if (statusMessageLabel != null) {
             statusMessageLabel.setText(message);
         }
     }
 }
-
