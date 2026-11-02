@@ -1,8 +1,8 @@
-# TV4-D02 - Maven test evidence (Docker)
-# Image: maven:3.9-eclipse-temurin-25
-# Command: docker run ... mvn -B -ntp -pl backend-node -am clean test
-# Git HEAD: <SHA ở bước 1>
-# Base: main c79ac34 (code D02 chạy trên cây làm việc, commit sau khi test)
+# TV4-D02 - Maven test evidence (Docker, run on clean tree)
+# Image: maven:3.9-eclipse-temurin-25 (Docker Desktop, Windows host)
+# Command: docker run --rm -v D:\HOCTAP\HTPT:/workspace -w /workspace -v htpt-m2:/root/.m2 maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am clean test
+# Git HEAD (code commit): f343b376f9f560e02f3973fc8ff2f429c4b4e102
+# Base: main c79ac34; this log is committed after the code commit
 [INFO] Scanning for projects...
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Build Order:
@@ -47,7 +47,7 @@
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running vn.nhom6.railway.protocol.MessageEnvelopeTest
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.826 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.916 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -84,28 +84,28 @@
 [INFO] -------------------------------------------------------
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.140 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.145 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
-[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.072 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
-[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.167 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.181 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
-[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
-[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.528 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.588 s -- in vn.nhom6.railway.booking.BookingCommandTest
 [INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTest
-[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.135 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.163 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
 [INFO] Running vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
-[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.216 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -114,12 +114,12 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
 [INFO] 
-[INFO] railway-distributed-system ......................... SUCCESS [  0.160 s]
-[INFO] shared ............................................. SUCCESS [  5.506 s]
-[INFO] backend-node ....................................... SUCCESS [  6.285 s]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.149 s]
+[INFO] shared ............................................. SUCCESS [  5.059 s]
+[INFO] backend-node ....................................... SUCCESS [  6.959 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  12.110 s
-[INFO] Finished at: 2026-11-02T11:21:00Z
+[INFO] Total time:  12.315 s
+[INFO] Finished at: 2026-11-02T11:29:41Z
 [INFO] ------------------------------------------------------------------------
