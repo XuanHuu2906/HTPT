@@ -14,8 +14,9 @@ import vn.nhom6.railway.raft.core.RaftStorage.RaftStorageException;
  * {@link RaftState}, and starts as {@link Role#FOLLOWER} with {@code commitIndex} equal to
  * {@code lastApplied}. Every call into this interface is serialized on one Raft event loop.
  * Only the RaftNode implementation may mutate RaftState; election, replication, and recovery
- * collaborate through this boundary. Networking, booking, and monitor modules may use only
- * its read-only queries.
+ * collaborate through this boundary. The StateMachine reports apply progress through
+ * {@link #onApplied(long)}. Networking, booking, and monitor modules may use only its read-only
+ * queries.
  *
  * <p>A {@link RaftStorageException} requires the Node to fail closed and stop confirming
  * writes. Durable persistence, Raft commitment, and state-machine application are distinct
@@ -38,6 +39,29 @@ public interface RaftNode {
 
     /** Returns the highest index durably applied by the state machine. */
     long lastApplied();
+
+    /**
+     * Reports that the StateMachine (TV2) has durably applied an entry.
+     *
+     * <p>Call only after the StateMachine transaction that atomically updates the business
+     * tables, {@code request_results}, and {@code lastApplied} has committed durably; do not
+     * call before apply completes (SPEC-04 sections 5 and 6). The index must equal
+     * {@code lastApplied() + 1} and must be at or below {@code commitIndex()}. An index that
+     * skips an entry or is not committed must throw {@link IllegalArgumentException}; it
+     * must not be silently ignored or applied out of order. Report {@code NO_OP} entries as
+     * applied too, so the checkpoint does not stop before a {@code NO_OP} (SPEC-04 section 6).
+     *
+     * <p>This method must not write to {@link RaftStorage}: TV2 persists {@code lastApplied}
+     * in the apply transaction, and RaftNode only updates {@link RaftState} in memory. Call
+     * it sequentially on the Raft event loop, like every other RaftNode method. Applied is
+     * distinct from committed and from {@code CONFIRMED}; a Leader may report
+     * {@code CONFIRMED} to a Client only after apply succeeds.
+     *
+     * @param index index of the durably applied committed entry
+     * @throws IllegalArgumentException if {@code index != lastApplied() + 1} or
+     *                                  {@code index > commitIndex()}
+     */
+    void onApplied(long index);
 
     /** Returns the last log index, or 0 for an empty log. */
     long lastLogIndex();
