@@ -1,0 +1,51 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | CONFIG VALIDATION (TV6-D02)
+================================================================================
+
+[1. THONG TIN KIEM TRA]
+  Thoi diem (Local) : 2026-11-02 11:46:34 +07:00
+  Thoi diem (UTC)   : 2026-11-02T04:46:34.833Z
+  Ten may (Host)    : HOANGDAT
+  Thu muc du an     : D:\HTPT
+
+[2. KIEM TRA TEP MAU: docker/.env.example]
+  [OK] Tep ton tai: D:\HTPT\docker\.env.example
+    [KEY FOUND] NODE_ID = node-1
+    [KEY FOUND] CLUSTER_ID = railway-demo-5
+    [KEY FOUND] NODE_CLIENT_BIND = 0.0.0.0:9100
+    [KEY FOUND] NODE_PEER_BIND = 0.0.0.0:9200
+    [KEY FOUND] NODE_ADVERTISE_CLIENT = 127.0.0.1:9101
+    [KEY FOUND] NODE_ADVERTISE_PEER = node-1:9200
+    [KEY FOUND] NODE_PEERS = node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+    [KEY FOUND] DB_HOST = postgres-1
+    [KEY FOUND] DB_PORT = 5432
+    [KEY FOUND] DB_NAME = railway_node1
+    [KEY FOUND] DB_USER = railway
+    [KEY FOUND] RAFT_ELECTION_TIMEOUT_MIN_MS = 150
+    [KEY FOUND] RAFT_ELECTION_TIMEOUT_MAX_MS = 300
+    [KEY FOUND] RAFT_HEARTBEAT_INTERVAL_MS = 50
+  [RULE CHECK] Raft Timers logic hop le: Heartbeat (50 ms) < ElectionMin (150 ms) < ElectionMax (300 ms)
+  [RULE CHECK] NODE_PEERS chua dung 5 node thanh vien.
+
+[3. KIEM TRA TEP DANH BA: configs/dev/cluster.properties]
+  [OK] Tep ton tai: D:\HTPT\configs\dev\cluster.properties
+  [RULE CHECK] Quorum dat chuan Raft 5 node: Quorum = 3 / 5 (Majority).
+    Client Endpoint: node-1 -> 127.0.0.1:9101
+    Client Endpoint: node-2 -> 127.0.0.1:9102
+    Client Endpoint: node-3 -> 127.0.0.1:9103
+    Client Endpoint: node-4 -> 127.0.0.1:9104
+    Client Endpoint: node-5 -> 127.0.0.1:9105
+  [RULE CHECK] Da xac thuc 5 Client Ports rieng biet: 9101, 9102, 9103, 9104, 9105
+  [RULE CHECK] Da xac thuc 5 Peer Ports rieng biet: 9201, 9202, 9203, 9204, 9205
+
+--------------------------------------------------------------------------------
+ TONG KET DANH GIA CAU HINH TV6-D02
+--------------------------------------------------------------------------------
+
+>>> KET QUA: [PASS] <<<
+Toan bo cac file cau hinh (docker/.env.example, configs/dev/cluster.properties)
+deu hop le ve cu phap, du 5 Node, khong xung dot port va dung chuan Quorum 3/5!
+
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D02\TV6-D02-config-check.log
+================================================================================
