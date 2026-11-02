@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="vn.nhom6.railway.client.controller.SeatGridController"
+      spacing="16.0" style="-fx-padding: 20; -fx-background-color: #f8fafc;"
+      VBox.vgrow="ALWAYS">
+
+    <!-- Card tiêu đề & điều hướng quay lại -->
+    <HBox alignment="CENTER_LEFT" spacing="15.0"
+          style="-fx-background-color: #ffffff; -fx-padding: 14 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <children>
+            <Button fx:id="backBtn" onAction="#onBackClicked" text="⬅ Quay lại màn hình chính"
+                    style="-fx-background-color: #1e293b; -fx-text-fill: #ffffff; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 14; -fx-background-radius: 6; -fx-cursor: hand;" />
+
+            <Separator orientation="VERTICAL" style="-fx-padding: 0 4;" />
+
+            <VBox spacing="2.0">
+                <children>
+                    <Label text="SƠ ĐỒ CHỌN GHẾ TÀU CAO TỐC SE-001"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                    <Label text="Hà Nội ➔ TP. Hồ Chí Minh | Toa 01 - Khoang 10 ghế VIP (G01–G10)"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                </children>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <!-- Nhãn MOCK DATA hiển thị rõ ràng -->
+            <Label fx:id="mockBadgeLabel" text="MOCK DATA — D02"
+                   style="-fx-background-color: #f59e0b; -fx-text-fill: #78350f; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 5 12; -fx-background-radius: 6; -fx-border-color: #d97706; -fx-border-radius: 6;" />
+        </children>
+    </HBox>
+
+    <!-- Card Sơ đồ 10 ghế + Chú giải màu -->
+    <VBox spacing="14.0" VBox.vgrow="ALWAYS"
+          style="-fx-background-color: #ffffff; -fx-padding: 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <children>
+            <HBox alignment="CENTER_LEFT">
+                <children>
+                    <Label text="CHỌN GHẾ NGỒI (Click ghế để chọn / bỏ chọn)"
+                           style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                    <Region HBox.hgrow="ALWAYS" />
+
+                    <!-- Chú giải màu (Legend) -->
+                    <HBox spacing="16.0" alignment="CENTER_RIGHT">
+                        <children>
+                            <HBox spacing="6.0" alignment="CENTER">
+                                <children>
+                                    <Region prefWidth="14.0" prefHeight="14.0"
+                                            style="-fx-background-color: #ecfdf5; -fx-border-color: #10b981; -fx-border-radius: 3; -fx-background-radius: 3;" />
+                                    <Label text="Trống (AVAILABLE)" style="-fx-font-size: 11px; -fx-text-fill: #065f46; -fx-font-weight: bold;" />
+                                </children>
+                            </HBox>
+                            <HBox spacing="6.0" alignment="CENTER">
+                                <children>
+                                    <Region prefWidth="14.0" prefHeight="14.0"
+                                            style="-fx-background-color: #fffbeb; -fx-border-color: #f59e0b; -fx-border-radius: 3; -fx-background-radius: 3;" />
+                                    <Label text="Đang chọn (SELECTED)" style="-fx-font-size: 11px; -fx-text-fill: #92400e; -fx-font-weight: bold;" />
+                                </children>
+                            </HBox>
+                            <HBox spacing="6.0" alignment="CENTER">
+                                <children>
+                                    <Region prefWidth="14.0" prefHeight="14.0"
+                                            style="-fx-background-color: #fef2f2; -fx-border-color: #ef4444; -fx-border-radius: 3; -fx-background-radius: 3;" />
+                                    <Label text="Đã đặt (BOOKED)" style="-fx-font-size: 11px; -fx-text-fill: #991b1b; -fx-font-weight: bold;" />
+                                </children>
+                            </HBox>
+                        </children>
+                    </HBox>
+                </children>
+            </HBox>
+
+            <Separator style="-fx-opacity: 0.5;" />
+
+            <!-- Lưới 10 ghế (GridPane 2 hàng x 5 cột) -->
+            <GridPane fx:id="seatGridPane" alignment="CENTER" hgap="16.0" vgap="16.0"
+                      VBox.vgrow="ALWAYS" style="-fx-padding: 16 10;">
+                <!-- 10 ghế G01 đến G10 được khởi tạo và quản lý bởi SeatGridController -->
+            </GridPane>
+        </children>
+    </VBox>
+
+    <!-- Khu vực hiển thị danh sách ghế đang chọn & Nút Tiếp tục -->
+    <HBox alignment="CENTER_LEFT" spacing="12.0"
+          style="-fx-background-color: #ffffff; -fx-padding: 14 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <children>
+            <VBox spacing="3.0">
+                <children>
+                    <Label fx:id="selectedSeatsLabel" text="Ghế đang chọn: (Chưa chọn ghế nào)"
+                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                    <Label fx:id="seatStatusLabel" text="Gợi ý: Click ghế trống để chọn. Ghế màu đỏ đã được đặt trước không thể chọn."
+                           style="-fx-font-size: 11px; -fx-text-fill: #64748b;" />
+                </children>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="resetSelectionBtn" onAction="#onResetSelectionClicked" text="Bỏ chọn tất cả"
+                    style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;" />
+
+            <Button fx:id="continueBtn" onAction="#onContinueClicked" disable="true" text="Tiếp tục đặt vé ➔"
+                    style="-fx-background-color: #10b981; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 8 18; -fx-background-radius: 6; -fx-cursor: hand;" />
+        </children>
+    </HBox>
+
+</VBox>
+
