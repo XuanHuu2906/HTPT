@@ -1,29 +1,39 @@
 package vn.nhom6.railway.client.controller;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+import vn.nhom6.railway.client.BookingOutcome;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
 /**
- * Controller quản lý sơ đồ chọn ghế tương tác (TASK D02).
+ * Controller quản lý sơ đồ chọn ghế tương tác (TASK D02 & D03).
  * <p>
  * Tính năng:
  * - Dữ liệu MOCK 10 ghế (G01–G10), một vài ghế ở trạng thái BOOKED.
  * - Cho phép chọn và bỏ chọn từng ghế trống (SELECTED_LOCAL).
- * - Cập nhật nhãn ghế đang chọn và tự động bật/tắt nút "Tiếp tục".
- * - Cung cấp {@link #getSelectedSeats()} cho module D03 lấy dữ liệu ghế đã chọn.
- * - Hỗ trợ callback điều hướng quay lại màn hình chính hoặc tiếp tục sang form đặt vé.
+ * - Cập nhật nhãn ghế đang chọn và tự động bật/tắt nút "Đặt vé".
+ * - Khi nhấn "Đặt vé", mở hộp thoại modal BookingDialog (TASK D03).
+ * - Xử lý tác động kết quả đặt vé (CONFIRMED, REJECTED, UNKNOWN) lên trạng thái ghế.
  */
 public class SeatGridController {
 
@@ -73,7 +83,7 @@ public class SeatGridController {
         }
     }
 
-    // Dữ liệu trạng thái ban đầu của 10 ghế (MOCK cứng)
+    // Dữ liệu trạng thái của 10 ghế (MOCK)
     private final Map<String, SeatMockState> initialSeatStateMap = new HashMap<>();
 
     // Bản đồ lưu các nút ghế trên giao diện
@@ -82,14 +92,14 @@ public class SeatGridController {
     // Danh sách các ghế người dùng đang chọn cục bộ (dùng TreeSet để tự sắp xếp theo mã ghế)
     private final Set<String> selectedSeats = new TreeSet<>();
 
-    // Callback điều hướng
+    // Callback điều hướng quay lại
     private Runnable onBackAction;
     private Consumer<List<String>> onContinueAction;
 
     @FXML
     public void initialize() {
         if (mockBadgeLabel != null) {
-            mockBadgeLabel.setText("MOCK DATA — D02");
+            mockBadgeLabel.setText("MOCK DATA — D02/D03");
         }
 
         // 1. Khởi tạo dữ liệu mock cứng
@@ -98,7 +108,7 @@ public class SeatGridController {
         // 2. Dựng lưới 10 ghế (GridPane 2 hàng x 5 cột)
         buildSeatGrid();
 
-        // 3. Khởi tạo trạng thái danh sách chọn và nút Tiếp tục
+        // 3. Khởi tạo trạng thái danh sách chọn và nút Đặt vé
         updateSelectionUI();
     }
 
@@ -194,7 +204,7 @@ public class SeatGridController {
     }
 
     /**
-     * Cập nhật nhãn hiển thị danh sách ghế đang chọn và bật/tắt nút "Tiếp tục".
+     * Cập nhật nhãn hiển thị danh sách ghế đang chọn và bật/tắt nút "Đặt vé".
      */
     private void updateSelectionUI() {
         if (selectedSeats.isEmpty()) {
@@ -216,7 +226,7 @@ public class SeatGridController {
     }
 
     /**
-     * Cung cấp getter để module D03 lấy được danh sách ghế đã chọn.
+     * Cung cấp getter để lấy được danh sách ghế đã chọn.
      *
      * @return danh sách các mã ghế đã chọn (ví dụ: ["G01", "G03"])
      */
@@ -225,7 +235,7 @@ public class SeatGridController {
     }
 
     /**
-     * Cho phép nạp danh sách ghế đã chọn từ bên ngoài (phục vụ điều hướng khứ hồi).
+     * Cho phép nạp danh sách ghế đã chọn từ bên ngoài.
      */
     public void setSelectedSeats(Collection<String> seats) {
         clearSelection();
@@ -255,7 +265,7 @@ public class SeatGridController {
     }
 
     /**
-     * Lấy tham chiếu nút ghế (phục vụ kiểm thử / automation).
+     * Lấy tham chiếu nút ghế.
      */
     public Button getSeatButton(String seatId) {
         return seatButtons.get(seatId);
@@ -280,8 +290,112 @@ public class SeatGridController {
 
     @FXML
     private void onContinueClicked() {
-        if (!selectedSeats.isEmpty() && onContinueAction != null) {
+        if (selectedSeats.isEmpty()) {
+            return;
+        }
+
+        // Mở hộp thoại đặt vé (TASK D03)
+        openBookingDialog();
+
+        // Đồng thời thông báo callback nếu có
+        if (onContinueAction != null) {
             onContinueAction.accept(getSelectedSeats());
+        }
+    }
+
+    /**
+     * Mở hộp thoại modal Đặt vé (TASK D03).
+     */
+    public void openBookingDialog() {
+        URL fxmlLocation = getClass().getResource("/fxml/booking-dialog.fxml");
+        if (fxmlLocation == null) {
+            String errorMsg = "LỖI: Không tìm thấy tệp giao diện /fxml/booking-dialog.fxml!";
+            updateStatus(errorMsg);
+            System.err.println(errorMsg);
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(fxmlLocation);
+            Parent dialogRoot = loader.load();
+            BookingDialogController dialogController = loader.getController();
+
+            // Đổ danh sách ghế vào vùng tóm tắt
+            dialogController.setSelectedSeats(getSelectedSeats());
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Xác nhận đặt vé");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+
+            Window owner = null;
+            if (seatGridPane != null && seatGridPane.getScene() != null) {
+                owner = seatGridPane.getScene().getWindow();
+            }
+            if (owner != null) {
+                dialogStage.initOwner(owner);
+            }
+
+            dialogController.setDialogStage(dialogStage);
+            dialogStage.setScene(new Scene(dialogRoot));
+            dialogStage.setResizable(false);
+            dialogStage.showAndWait();
+
+            // Nhận kết quả sau khi đóng hộp thoại
+            Optional<BookingOutcome> outcomeOpt = dialogController.getOutcome();
+            if (outcomeOpt.isPresent()) {
+                handleBookingOutcome(outcomeOpt.get());
+            } else {
+                updateStatus("Đã hủy thao tác đặt vé. Trạng thái ghế giữ nguyên.");
+            }
+        } catch (IOException e) {
+            String errorMsg = "Lỗi khi mở form đặt vé: " + e.getMessage();
+            updateStatus(errorMsg);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý tác động kết quả đặt vé lên trạng thái ghế D02.
+     *
+     * @param outcome kết quả đặt vé từ BookingDialogController
+     */
+    public void handleBookingOutcome(BookingOutcome outcome) {
+        if (outcome == null) return;
+
+        switch (outcome.getStatus()) {
+            case CONFIRMED -> {
+                // CONFIRMED: "Đặt vé thành công" kèm mã tham chiếu; D02 đổi ghế sang trạng thái đã đặt
+                String refCode = outcome.getReferenceCode();
+                List<String> bookedSeats = new ArrayList<>(selectedSeats);
+                for (String seatId : bookedSeats) {
+                    initialSeatStateMap.put(seatId, SeatMockState.BOOKED);
+                    Button btn = seatButtons.get(seatId);
+                    if (btn != null) {
+                        updateSeatButtonStyle(btn, seatId, SeatMockState.BOOKED);
+                    }
+                }
+                selectedSeats.clear();
+                updateSelectionUI();
+                updateStatus("Đặt vé thành công. Mã tham chiếu: " + refCode + " (Ghế: " + String.join(", ", bookedSeats) + ")");
+            }
+            case REJECTED -> {
+                // REJECTED + SEAT_ALREADY_BOOKED: "Ghế đã có người đặt, vui lòng chọn ghế khác"; D02 đánh dấu ghế không khả dụng và để người dùng chọn lại
+                List<String> rejectedSeats = new ArrayList<>(selectedSeats);
+                for (String seatId : rejectedSeats) {
+                    initialSeatStateMap.put(seatId, SeatMockState.BOOKED);
+                    Button btn = seatButtons.get(seatId);
+                    if (btn != null) {
+                        updateSeatButtonStyle(btn, seatId, SeatMockState.BOOKED);
+                    }
+                }
+                selectedSeats.clear();
+                updateSelectionUI();
+                updateStatus("Ghế đã có người đặt, vui lòng chọn ghế khác");
+            }
+            case UNKNOWN -> {
+                // UNKNOWN: "Chưa xác định được kết quả, vui lòng kiểm tra lại trước khi đặt lại"; GIỮ NGUYÊN trạng thái ghế
+                updateStatus("Chưa xác định được kết quả, vui lòng kiểm tra lại trước khi đặt lại");
+            }
         }
     }
 
@@ -297,4 +411,3 @@ public class SeatGridController {
         }
     }
 }
-

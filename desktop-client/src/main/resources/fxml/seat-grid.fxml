@@ -35,7 +35,7 @@
             <Region HBox.hgrow="ALWAYS" />
 
             <!-- Nhãn MOCK DATA hiển thị rõ ràng -->
-            <Label fx:id="mockBadgeLabel" text="MOCK DATA — D02"
+            <Label fx:id="mockBadgeLabel" text="MOCK DATA — D02/D03"
                    style="-fx-background-color: #f59e0b; -fx-text-fill: #78350f; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 5 12; -fx-background-radius: 6; -fx-border-color: #d97706; -fx-border-radius: 6;" />
         </children>
     </HBox>
@@ -89,7 +89,7 @@
         </children>
     </VBox>
 
-    <!-- Khu vực hiển thị danh sách ghế đang chọn & Nút Tiếp tục -->
+    <!-- Khu vực hiển thị danh sách ghế đang chọn & Nút Đặt vé -->
     <HBox alignment="CENTER_LEFT" spacing="12.0"
           style="-fx-background-color: #ffffff; -fx-padding: 14 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
         <children>
@@ -97,7 +97,7 @@
                 <children>
                     <Label fx:id="selectedSeatsLabel" text="Ghế đang chọn: (Chưa chọn ghế nào)"
                            style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
-                    <Label fx:id="seatStatusLabel" text="Gợi ý: Click ghế trống để chọn. Ghế màu đỏ đã được đặt trước không thể chọn."
+                    <Label fx:id="seatStatusLabel" text="Gợi ý: Click ghế trống để chọn. Nhấn 'Đặt vé' để mở hộp thoại xác nhận."
                            style="-fx-font-size: 11px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
@@ -107,10 +107,9 @@
             <Button fx:id="resetSelectionBtn" onAction="#onResetSelectionClicked" text="Bỏ chọn tất cả"
                     style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;" />
 
-            <Button fx:id="continueBtn" onAction="#onContinueClicked" disable="true" text="Tiếp tục đặt vé ➔"
-                    style="-fx-background-color: #10b981; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 8 18; -fx-background-radius: 6; -fx-cursor: hand;" />
+            <Button fx:id="continueBtn" onAction="#onContinueClicked" disable="true" text="Đặt vé ➔"
+                    style="-fx-background-color: #10b981; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;" />
         </children>
     </HBox>
 
 </VBox>
-
