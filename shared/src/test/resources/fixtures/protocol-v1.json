@@ -1,0 +1,104 @@
+{
+  "bookTicketRequest": {
+    "protocolVersion": 1,
+    "messageId": "b4c410df-2b27-45dd-81ac-b7f9c0ec21e4",
+    "correlationId": null,
+    "type": "BOOK_TICKET",
+    "senderId": "client-7",
+    "sentAt": "2026-10-29T10:00:00Z",
+    "payload": {
+      "requestId": "542e32fb-b657-4478-9cea-52286822d1d2",
+      "tripId": "SE-001",
+      "seatId": "G05",
+      "passengerName": "Khach demo"
+    }
+  },
+  "getSeatsRequest": {
+    "protocolVersion": 1,
+    "messageId": "a1111111-2222-3333-4444-555555555555",
+    "correlationId": null,
+    "type": "GET_SEATS",
+    "senderId": "client-1",
+    "sentAt": "2026-10-29T10:00:00Z",
+    "payload": {
+      "tripId": "SE-001"
+    }
+  },
+  "requestVoteRequest": {
+    "protocolVersion": 1,
+    "messageId": "c1111111-2222-3333-4444-555555555555",
+    "correlationId": null,
+    "type": "REQUEST_VOTE",
+    "senderId": "node-3",
+    "sentAt": "2026-10-29T10:00:00Z",
+    "payload": {
+      "term": 8,
+      "candidateId": "node-3",
+      "lastLogIndex": 42,
+      "lastLogTerm": 7
+    }
+  },
+  "appendEntriesReplicationRequest": {
+    "protocolVersion": 1,
+    "messageId": "d1111111-2222-3333-4444-555555555555",
+    "correlationId": null,
+    "type": "APPEND_ENTRIES",
+    "senderId": "node-3",
+    "sentAt": "2026-10-29T10:00:00Z",
+    "payload": {
+      "term": 8,
+      "leaderId": "node-3",
+      "prevLogIndex": 42,
+      "prevLogTerm": 7,
+      "entries": [
+        {
+          "index": 43,
+          "term": 8,
+          "commandType": "BOOK_TICKET",
+          "command": {
+            "requestId": "542e32fb-b657-4478-9cea-52286822d1d2",
+            "tripId": "SE-001",
+            "seatId": "G05",
+            "passengerName": "Khach demo",
+            "ticketId": "ticket-uuid",
+            "issuedAt": "2026-10-29T10:00:00.000Z"
+          }
+        }
+      ],
+      "leaderCommit": 43
+    }
+  },
+  "appendEntriesHeartbeatRequest": {
+    "protocolVersion": 1,
+    "messageId": "e1111111-2222-3333-4444-555555555555",
+    "correlationId": null,
+    "type": "APPEND_ENTRIES",
+    "senderId": "node-3",
+    "sentAt": "2026-10-29T10:00:00Z",
+    "payload": {
+      "term": 8,
+      "leaderId": "node-3",
+      "prevLogIndex": 42,
+      "prevLogTerm": 7,
+      "entries": [],
+      "leaderCommit": 43
+    }
+  },
+  "bookTicketResponse": {
+    "protocolVersion": 1,
+    "messageId": "f1111111-2222-3333-4444-555555555555",
+    "correlationId": "b4c410df-2b27-45dd-81ac-b7f9c0ec21e4",
+    "type": "BOOK_TICKET_RESPONSE",
+    "senderId": "node-3",
+    "sentAt": "2026-10-29T10:00:01Z",
+    "payload": {
+      "requestId": "542e32fb-b657-4478-9cea-52286822d1d2",
+      "outcome": "CONFIRMED",
+      "ticketId": "ticket-uuid",
+      "tripId": "SE-001",
+      "seatId": "G05",
+      "reasonCode": null,
+      "appliedLogIndex": 43
+    }
+  }
+}
