@@ -11,8 +11,9 @@
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.client.controller.BookingDialogController"
+      stylesheets="@../css/railway.css"
       spacing="16.0" prefWidth="480.0"
-      style="-fx-background-color: #f8fafc; -fx-padding: 24; -fx-font-family: 'Segoe UI', Tahoma, sans-serif;">
+      style="-fx-background-color: #f8fafc; -fx-padding: 24;">
 
     <!-- TIÊU ĐỀ HỘP THOẠI -->
     <HBox alignment="CENTER_LEFT" spacing="10.0">
@@ -26,8 +27,7 @@
                 </children>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Label text="MOCK D03"
-                   style="-fx-background-color: #fef3c7; -fx-text-fill: #92400e; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 4 10; -fx-background-radius: 4; -fx-border-color: #fcd34d; -fx-border-radius: 4;" />
+            <Label text="MOCK D04" styleClass="badge-mock" />
         </children>
     </HBox>
 
@@ -40,7 +40,7 @@
             <Label text="Danh sách ghế đã chọn:"
                    style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;" />
             <Label fx:id="selectedSeatsSummaryLabel" text="(Chưa có ghế nào)"
-                   style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #065f46; -fx-background-color: #ecfdf5; -fx-padding: 6 12; -fx-background-radius: 6; -fx-border-color: #a7f3d0; -fx-border-radius: 6;" />
+                   styleClass="summary-seats-empty" />
         </children>
     </VBox>
 
@@ -54,8 +54,7 @@
                     <Label text=" *" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #ef4444;" />
                     <Region HBox.hgrow="ALWAYS" />
                     <!-- Nhãn đếm ký tự x/50 -->
-                    <Label fx:id="charCountLabel" text="0/50"
-                           style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;" />
+                    <Label fx:id="charCountLabel" text="0/50" styleClass="char-count-normal" />
                 </children>
             </HBox>
 
@@ -73,11 +72,10 @@
     <!-- HÀNG NÚT XÁC NHẬN VÀ HỦY -->
     <HBox alignment="CENTER_RIGHT" spacing="12.0">
         <children>
-            <Button fx:id="cancelBtn" onAction="#onCancel" text="Hủy"
-                    style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 8 18; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;" />
+            <Button fx:id="cancelBtn" onAction="#onCancel" text="Hủy" styleClass="btn-reset" />
 
             <Button fx:id="confirmBtn" onAction="#onConfirm" text="Xác nhận đặt vé" disable="true"
-                    style="-fx-background-color: #2563eb; -fx-text-fill: #ffffff; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;" />
+                    styleClass="btn-primary" />
         </children>
     </HBox>
 
@@ -85,9 +83,8 @@
     <HBox alignment="CENTER" style="-fx-min-height: 20px;">
         <children>
             <Label fx:id="statusLabel" text="" wrapText="true"
-                   style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-text-alignment: center;" />
+                   style="-fx-font-size: 12px; -fx-text-alignment: center;" />
         </children>
     </HBox>
 
 </VBox>
-

@@ -1,0 +1,432 @@
+/* =============================================================================
+   HỆ THỐNG BÁN VÉ TÀU CAO TỐC SE-001 (NHÓM 6)
+   railway.css — Stylesheet dùng chung cho JavaFX Desktop Client (TASK D04)
+   Tuân thủ SPEC-06: Phân biệt trực quan 4 trạng thái ghế, màn hình và MOCK controls.
+   ============================================================================= */
+
+.root {
+    -fx-font-family: 'Segoe UI', Tahoma, Helvetica, Arial, sans-serif;
+    -fx-base: #f8fafc;
+    -fx-background: #f8fafc;
+}
+
+/* =============================================================================
+   1. ĐỊNH DẠNG CƠ BẢN VÀ 4 TRẠNG THÁI GHẾ (SEAT BUTTONS)
+   AVAILABLE  : Nền xanh nhạt, viền xanh liền 1.5px, chữ xanh đậm, trỏ chuột hình bàn tay
+   BOOKED     : Nền đỏ nhạt, viền đỏ liền 1.5px, chữ đỏ đậm, trỏ chuột cấm (not-allowed)
+   SELECTED   : Nền vàng hổ phách, viền cam hổ phách đậm 2.5px, chữ nâu cam, trỏ chuột bàn tay
+   UNKNOWN    : Nền cam nhạt, VIỀN CAM NÉT ĐỨT (dashed) 2px, chữ cam đậm, trỏ chuột bàn tay
+   ============================================================================= */
+
+.seat-button {
+    -fx-pref-width: 120px;
+    -fx-pref-height: 75px;
+    -fx-alignment: center;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-alignment: center;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 6px;
+}
+
+/* Trạng thái 1: AVAILABLE (Ghế trống, sẵn sàng chọn) */
+.seat-available {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #065f46;
+    -fx-border-color: #10b981;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5px;
+    -fx-cursor: hand;
+}
+
+.seat-available:hover {
+    -fx-background-color: #d1fae5;
+    -fx-border-color: #059669;
+}
+
+.seat-available:focused {
+    -fx-border-color: #047857;
+    -fx-border-width: 2.5px;
+}
+
+/* Trạng thái 2: BOOKED (Ghế đã đặt trước, không thể chọn) */
+.seat-booked {
+    -fx-background-color: #fef2f2;
+    -fx-text-fill: #991b1b;
+    -fx-border-color: #ef4444;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5px;
+    -fx-cursor: not-allowed;
+}
+
+.seat-booked:hover {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: #dc2626;
+}
+
+.seat-booked:focused {
+    -fx-border-color: #b91c1c;
+    -fx-border-width: 2px;
+}
+
+/* Trạng thái 3: SELECTED (Ghế người dùng đang chọn cục bộ) */
+.seat-selected {
+    -fx-background-color: #fffbeb;
+    -fx-text-fill: #92400e;
+    -fx-border-color: #f59e0b;
+    -fx-border-style: solid;
+    -fx-border-width: 2.5px;
+    -fx-cursor: hand;
+}
+
+.seat-selected:hover {
+    -fx-background-color: #fef3c7;
+    -fx-border-color: #d97706;
+}
+
+.seat-selected:focused {
+    -fx-border-color: #b45309;
+    -fx-border-width: 3px;
+}
+
+/* Trạng thái 4: UNKNOWN (Chưa rõ kết quả sau timeout/mất kết nối - viền nét đứt) */
+.seat-unknown {
+    -fx-background-color: #fff7ed;
+    -fx-text-fill: #c2410c;
+    -fx-border-color: #ea580c;
+    -fx-border-style: dashed;
+    -fx-border-width: 2px;
+    -fx-cursor: hand;
+}
+
+.seat-unknown:hover {
+    -fx-background-color: #ffedd5;
+    -fx-border-color: #c2410c;
+}
+
+.seat-unknown:focused {
+    -fx-border-color: #9a3412;
+    -fx-border-width: 2.5px;
+}
+
+/* Trạng thái disabled chung */
+.seat-button:disabled {
+    -fx-opacity: 0.65;
+    -fx-cursor: not-allowed;
+}
+
+/* =============================================================================
+   2. CHÚ GIẢI TRẠNG THÁI (LEGEND) KHỚP HOÀN TOÀN VỚI GHẾ
+   ============================================================================= */
+
+.legend-box {
+    -fx-pref-width: 15px;
+    -fx-pref-height: 15px;
+    -fx-min-width: 15px;
+    -fx-min-height: 15px;
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+}
+
+.legend-available {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #10b981;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5px;
+}
+
+.legend-selected {
+    -fx-background-color: #fffbeb;
+    -fx-border-color: #f59e0b;
+    -fx-border-style: solid;
+    -fx-border-width: 2px;
+}
+
+.legend-booked {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #ef4444;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5px;
+}
+
+.legend-unknown {
+    -fx-background-color: #fff7ed;
+    -fx-border-color: #ea580c;
+    -fx-border-style: dashed;
+    -fx-border-width: 1.5px;
+}
+
+.legend-label-available {
+    -fx-font-size: 11px;
+    -fx-text-fill: #065f46;
+    -fx-font-weight: bold;
+}
+
+.legend-label-selected {
+    -fx-font-size: 11px;
+    -fx-text-fill: #92400e;
+    -fx-font-weight: bold;
+}
+
+.legend-label-booked {
+    -fx-font-size: 11px;
+    -fx-text-fill: #991b1b;
+    -fx-font-weight: bold;
+}
+
+.legend-label-unknown {
+    -fx-font-size: 11px;
+    -fx-text-fill: #c2410c;
+    -fx-font-weight: bold;
+}
+
+/* =============================================================================
+   3. TRẠNG THÁI MÀN HÌNH (SCREEN STATE BANNERS: IDLE, LOADING, ERROR, DISCONNECTED)
+   ============================================================================= */
+
+.status-banner {
+    -fx-padding: 8px 14px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-alignment: center-left;
+}
+
+/* Trạng thái IDLE: Sẵn sàng */
+.status-idle {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 1px;
+}
+
+.status-idle .status-label {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+}
+
+/* Trạng thái LOADING: Đang nạp dữ liệu (Kèm ProgressIndicator) */
+.status-loading {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #3b82f6;
+    -fx-border-width: 1.5px;
+}
+
+.status-loading .status-label {
+    -fx-text-fill: #1d4ed8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Trạng thái ERROR: Lỗi xử lý dữ liệu */
+.status-error {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #ef4444;
+    -fx-border-width: 1.5px;
+}
+
+.status-error .status-label {
+    -fx-text-fill: #b91c1c;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Trạng thái DISCONNECTED: Mất kết nối mạng/cụm máy chủ */
+.status-disconnected {
+    -fx-background-color: #fff7ed;
+    -fx-border-color: #ea580c;
+    -fx-border-width: 1.5px;
+}
+
+.status-disconnected .status-label {
+    -fx-text-fill: #c2410c;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.status-progress-indicator {
+    -fx-pref-width: 18px;
+    -fx-pref-height: 18px;
+}
+
+/* =============================================================================
+   4. NHÃN MOCK & BẢNG ĐIỀU KHIỂN KIỂM THỬ NHANH (MOCK CONTROL PANEL)
+   ============================================================================= */
+
+.badge-mock {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 10px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #f59e0b;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+}
+
+.mock-panel {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 12px;
+}
+
+.mock-panel-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64748b;
+}
+
+.mock-btn {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #334155;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 9px;
+    -fx-background-radius: 4px;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.mock-btn:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #94a3b8;
+}
+
+.mock-btn:pressed {
+    -fx-background-color: #e2e8f0;
+}
+
+/* =============================================================================
+   5. NÚT ĐIỀU HƯỚNG & HÀNH ĐỘNG CHUNG
+   ============================================================================= */
+
+.btn-back {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 14px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-back:hover {
+    -fx-background-color: #334155;
+}
+
+.btn-reset {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+    -fx-padding: 8px 14px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-reset:hover {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #1e293b;
+}
+
+.btn-continue {
+    -fx-background-color: #10b981;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 8px 20px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-continue:hover {
+    -fx-background-color: #059669;
+}
+
+.btn-continue:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+.btn-primary {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 20px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+.btn-primary:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+/* =============================================================================
+   6. HỘP THOẠI ĐẶT VÉ (BOOKING DIALOG)
+   ============================================================================= */
+
+.summary-seats-empty {
+    -fx-font-size: 13px;
+    -fx-text-fill: #991b1b;
+    -fx-background-color: #fef2f2;
+    -fx-padding: 6px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #fecaca;
+    -fx-border-radius: 6px;
+}
+
+.summary-seats-selected {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #065f46;
+    -fx-background-color: #ecfdf5;
+    -fx-padding: 6px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #a7f3d0;
+    -fx-border-radius: 6px;
+}
+
+.char-count-normal {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94a3b8;
+}
+
+.char-count-error {
+    -fx-font-size: 11px;
+    -fx-text-fill: #ef4444;
+    -fx-font-weight: bold;
+}
+
+.booking-status-submitting {
+    -fx-text-fill: #2563eb;
+    -fx-font-size: 12px;
+}
+
+.booking-status-confirmed {
+    -fx-text-fill: #059669;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.booking-status-rejected {
+    -fx-text-fill: #dc2626;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.booking-status-unknown {
+    -fx-text-fill: #ea580c;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+

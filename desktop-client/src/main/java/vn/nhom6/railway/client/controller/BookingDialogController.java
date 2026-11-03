@@ -18,16 +18,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Controller điều khiển hộp thoại Xác nhận đặt vé (TASK D03).
+ * Controller điều khiển hộp thoại Xác nhận đặt vé (TASK D03/D04).
  * <p>
  * Tính năng:
- * - Tiếp nhận danh sách ghế đã chọn từ sơ đồ ghế D02.
- * - Lắng nghe thay đổi trên ô nhập họ tên, kiểm tra tính hợp lệ và cập nhật bộ
- * đếm ký tự.
- * - Gọi {@link MockBookingService} chạy ngầm qua {@link Task} để không khóa UI
- * thread.
+ * - Tiếp nhận danh sách ghế đã chọn từ sơ đồ ghế D02/D04.
+ * - Lắng nghe thay đổi trên ô nhập họ tên, kiểm tra tính hợp lệ và cập nhật bộ đếm ký tự.
+ * - Gọi {@link MockBookingService} chạy ngầm qua {@link Task} để không khóa UI thread.
  * - Chặn bấm xác nhận nhiều lần khi đang xử lý.
- * - Cung cấp {@link #getOutcome()} để D02 lấy kết quả sau khi đóng hộp thoại.
+ * - Cung cấp {@link #getOutcome()} để D02/D04 lấy kết quả sau khi đóng hộp thoại.
+ * - Định dạng giao diện hoàn toàn qua CSS classes (railway.css), không hardcode màu trong Java.
  */
 public class BookingDialogController {
 
@@ -68,6 +67,7 @@ public class BookingDialogController {
 
         if (charCountLabel != null) {
             charCountLabel.setText("0/" + BookingFormValidator.NAME_MAX_LENGTH);
+            setCharCountStyleClass("char-count-normal");
         }
 
         if (confirmBtn != null) {
@@ -85,8 +85,7 @@ public class BookingDialogController {
     }
 
     /**
-     * Cung cấp MockBookingService tùy biến (phục vụ unit test / mock dependency
-     * injection).
+     * Cung cấp MockBookingService tùy biến (phục vụ unit test / mock dependency injection).
      */
     public void setBookingService(MockBookingService bookingService) {
         if (bookingService != null) {
@@ -106,22 +105,21 @@ public class BookingDialogController {
     }
 
     /**
-     * Thiết lập danh sách ghế đã chọn từ D02.
+     * Thiết lập danh sách ghế đã chọn từ D02/D04.
      *
      * @param seats danh sách mã ghế
      */
     public void setSelectedSeats(List<String> seats) {
         this.selectedSeats = (seats != null) ? new ArrayList<>(seats) : new ArrayList<>();
         if (selectedSeatsSummaryLabel != null) {
+            selectedSeatsSummaryLabel.getStyleClass().removeAll("summary-seats-empty", "summary-seats-selected");
             if (this.selectedSeats.isEmpty()) {
                 selectedSeatsSummaryLabel.setText("(Chưa có ghế nào)");
-                selectedSeatsSummaryLabel.setStyle(
-                        "-fx-font-size: 13px; -fx-text-fill: #991b1b; -fx-background-color: #fef2f2; -fx-padding: 6 12; -fx-background-radius: 6; -fx-border-color: #fecaca; -fx-border-radius: 6;");
+                selectedSeatsSummaryLabel.getStyleClass().add("summary-seats-empty");
             } else {
                 selectedSeatsSummaryLabel.setText(
                         String.join(", ", this.selectedSeats) + " (Tổng: " + this.selectedSeats.size() + " ghế)");
-                selectedSeatsSummaryLabel.setStyle(
-                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #065f46; -fx-background-color: #ecfdf5; -fx-padding: 6 12; -fx-background-radius: 6; -fx-border-color: #a7f3d0; -fx-border-radius: 6;");
+                selectedSeatsSummaryLabel.getStyleClass().add("summary-seats-selected");
             }
         }
         // Tái đánh giá tính hợp lệ của form
@@ -141,9 +139,9 @@ public class BookingDialogController {
         if (charCountLabel != null) {
             charCountLabel.setText(len + "/" + BookingFormValidator.NAME_MAX_LENGTH);
             if (len > BookingFormValidator.NAME_MAX_LENGTH) {
-                charCountLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #ef4444; -fx-font-weight: bold;");
+                setCharCountStyleClass("char-count-error");
             } else {
-                charCountLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");
+                setCharCountStyleClass("char-count-normal");
             }
         }
 
@@ -167,6 +165,13 @@ public class BookingDialogController {
             if (confirmBtn != null) {
                 confirmBtn.setDisable(false);
             }
+        }
+    }
+
+    private void setCharCountStyleClass(String styleClass) {
+        if (charCountLabel != null) {
+            charCountLabel.getStyleClass().removeAll("char-count-normal", "char-count-error");
+            charCountLabel.getStyleClass().add(styleClass);
         }
     }
 
@@ -218,8 +223,11 @@ public class BookingDialogController {
             passengerNameField.setDisable(true);
 
         if (statusLabel != null) {
+            statusLabel.getStyleClass().removeAll(
+                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected", "booking-status-unknown"
+            );
+            statusLabel.getStyleClass().add("booking-status-submitting");
             statusLabel.setText("Đang gửi yêu cầu đặt vé...");
-            statusLabel.setStyle("-fx-text-fill: #2563eb; -fx-font-size: 12px;");
         }
 
         String normalizedName = BookingFormValidator.normalizeName(rawName);
@@ -251,22 +259,26 @@ public class BookingDialogController {
 
     /**
      * Hiển thị trạng thái kết quả trong dialog và tự động đóng sau một khoảng ngắn
-     * để D02 nhận kết quả.
+     * để D02/D04 nhận kết quả.
      */
     private void showOutcomeAndAutoClose(BookingOutcome result) {
         if (statusLabel != null) {
+            statusLabel.getStyleClass().removeAll(
+                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected", "booking-status-unknown"
+            );
+
             switch (result.getStatus()) {
                 case CONFIRMED -> {
+                    statusLabel.getStyleClass().add("booking-status-confirmed");
                     statusLabel.setText("✓ Đặt vé thành công! Mã: " + result.getReferenceCode());
-                    statusLabel.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold; -fx-font-size: 12px;");
                 }
                 case REJECTED -> {
+                    statusLabel.getStyleClass().add("booking-status-rejected");
                     statusLabel.setText("✗ Ghế đã có người đặt, vui lòng chọn ghế khác");
-                    statusLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-weight: bold; -fx-font-size: 12px;");
                 }
                 case UNKNOWN -> {
+                    statusLabel.getStyleClass().add("booking-status-unknown");
                     statusLabel.setText("⚠ Chưa xác định được kết quả, vui lòng kiểm tra lại");
-                    statusLabel.setStyle("-fx-text-fill: #d97706; -fx-font-weight: bold; -fx-font-size: 12px;");
                 }
             }
         }
@@ -294,10 +306,9 @@ public class BookingDialogController {
     }
 
     /**
-     * Cung cấp kết quả đặt vé cho D02 sau khi hộp thoại đóng (sau showAndWait).
+     * Cung cấp kết quả đặt vé cho D02/D04 sau khi hộp thoại đóng.
      *
-     * @return {@link Optional} chứa {@link BookingOutcome} nếu đã xác nhận, hoặc
-     *         rỗng nếu người dùng hủy/đóng hộp thoại
+     * @return {@link Optional} chứa {@link BookingOutcome} nếu đã xác nhận, hoặc rỗng nếu người dùng hủy
      */
     public Optional<BookingOutcome> getOutcome() {
         return Optional.ofNullable(outcome);
