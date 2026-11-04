@@ -1,0 +1,109 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | GATE G1 BUILD VERIFICATION (TV6)
+================================================================================
+
+[1. THONG TIN HE THONG VA MOI TRUONG THUC THI]
+  Thoi diem (Local)          : 2026-11-04 18:37:52 +07:00
+  Thoi diem (UTC)            : 2026-11-04T11:37:52.216Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Phien ban PowerShell       : 5.1.26100.9711
+  Thu muc du an (Repo Root)  : D:\HTPT
+  Git Branch hien tai        : dat
+  Git Commit SHA hien tai    : 24bf9e5fff9e8ba388c9ae851f73f6bcaef4bfb3
+  Target Ref / Snapshot G1   : 4d98446dff91414472dfd009ad786c4a5906e929
+
+[2. KIEM TRA TOOLCHAIN: JAVA / JDK]
+  [OK] Java executable       : C:\Program Files (x86)\Common Files\Oracle\Java\java8path\java.exe
+  Chi tiet phien ban:
+    java version "1.8.0_491"
+    Java(TM) SE Runtime Environment (build 1.8.0_491-b10)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.491-b10, mixed mode)
+  [CANH BAO BLOCKED] Phien ban Java qua cu (< 17). Du an yeu cau release 25 / JDK 21+.
+
+[3. KIEM TRA TOOLCHAIN: APACHE MAVEN]
+  [FAIL] Khong tim thay lenh 'mvn' trong PATH he thong.
+
+[4. KIEM TRA CAU TRUC MAVEN REACTOR 5 MODULES (GATE G1)]
+  [FOUND] Root Reactor -> pom.xml
+  [FOUND] Shared Module (TV3) -> shared/pom.xml
+  [FOUND] Backend Node Module (TV2/4/5) -> backend-node/pom.xml
+  [FOUND] Desktop Client Module (TV1) -> desktop-client/pom.xml
+  [FOUND] Desktop Monitor Module (TV6) -> desktop-monitor/pom.xml
+  [FOUND] Integration Tests Module (TV6) -> integration-tests/pom.xml
+
+[5. KIEM TRA CAC THANH PHAN DA MERGE TRONG SNAPSHOT CUOI D02 (REF: 4d98446dff91414472dfd009ad786c4a5906e929)]
+  [FOUND - D01] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/MessageEnvelope.java (ref_hash: 57c00fc9683a)
+  [FOUND - D01] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/MessageType.java (ref_hash: 443330cd256c)
+  [FOUND - D02] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/BookTicketRequestDto.java (ref_hash: 6db5118d80fb)
+  [FOUND - D02] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/GetSeatsRequestDto.java (ref_hash: 5503b986dbe1)
+  [FOUND - D02] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/RequestVoteRequestDto.java (ref_hash: 0d1c167767ad)
+  [FOUND - D02] [Shared DTO] shared/src/main/java/vn/nhom6/railway/protocol/dto/AppendEntriesRequestDto.java (ref_hash: 432dab11bdd6)
+  [FOUND - D01] [Backend Booking] backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java (ref_hash: b873933de14a)
+  [FOUND - D02] [Backend Booking] backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java (ref_hash: 2c8ad1f1bdd2)
+  [FOUND - D01] [Raft Core] backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftState.java (ref_hash: 19d97b8a80c6)
+  [FOUND - D01] [Raft Core] backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java (ref_hash: ed616e6ff89d)
+  [FOUND - D02] [Raft Core] backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftNode.java (ref_hash: 0e68defde2f7)
+  [FOUND - D02] [Raft Core] backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStorage.java (ref_hash: 4b450c857fce)
+  [FOUND - D01] [Raft Election] backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionConfig.java (ref_hash: d8c330977146)
+  [FOUND - D01] [Raft Election] backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionTimeoutPolicy.java (ref_hash: 64a3da797219)
+  [FOUND - D02] [Raft Election] backend-node/src/main/java/vn/nhom6/railway/raft/election/VoteRules.java (ref_hash: 831a6cbb2740)
+  [FOUND - D01] [Desktop Client] desktop-client/src/main/java/vn/nhom6/railway/client/App.java (ref_hash: 8b5c39dd79b1)
+  [FOUND - D01] [Desktop Client] desktop-client/src/main/java/vn/nhom6/railway/client/controller/MainController.java (ref_hash: c7bb9410bb3e)
+  [FOUND - D01] [Desktop Client] desktop-client/src/main/resources/fxml/main.fxml (ref_hash: 0f5c0586623c)
+  [FOUND - D02] [Cluster Config] configs/dev/cluster.properties (ref_hash: 475b401fc7d8)
+  [FOUND - D02] [Cluster Config] docker/.env.example (ref_hash: d2478a7e24e1)
+  Tong so artifact D01/D02 da hop nhat trong snapshot: 20 / 20
+
+[6. DANH GIA CAC BLOCKER CON THIEU CHO G1 FULL VERIFY (HOP DONG D03)]
+  Kiem tra su hien dien cua cac hop dong D03 trong snapshot cuoi D02 (4d98446dff91414472dfd009ad786c4a5906e929):
+  [BLOCKER D02 SNAPSHOT] [TV3 - TV3-D03] shared/src/main/java/vn/nhom6/railway/protocol/codec/MessageCodec.java
+    -> Y nghia: JSON Codec tuan tu hoa MessageEnvelope dung SPEC-03
+    -> Trang thai: Chua merge tai moc cuoi D02 (Da co tren local working tree/branch)
+  [BLOCKER D02 SNAPSHOT] [TV3 - TV3-D03] shared/src/test/resources/fixtures/protocol-v1.json
+    -> Y nghia: Golden JSON fixture hop dong giao thuc v1
+    -> Trang thai: Chua merge tai moc cuoi D02 (Da co tren local working tree/branch)
+  [BLOCKER D02 SNAPSHOT] [TV2 - TV2-D03] backend-node/src/test/java/vn/nhom6/railway/booking/BookingRaftContractTest.java
+    -> Y nghia: Hop dong persistence va apply giua Booking va Raft (SPEC-05)
+    -> Trang thai: Chua merge tai moc cuoi D02 (Da co tren local working tree/branch)
+  [BLOCKER D02 SNAPSHOT] [TV4 - TV4-D03] backend-node/src/test/java/vn/nhom6/railway/raft/core/RaftCoreContractTest.java
+    -> Y nghia: Hop dong kiem thu RaftCore voi fake booking/election (SPEC-04)
+    -> Trang thai: Chua merge tai moc cuoi D02 (Da co tren local working tree/branch)
+  [BLOCKER D02 SNAPSHOT] [TV1 - TV1-D03] desktop-client/src/test/java/vn/nhom6/railway/client/BookingFormValidatorTest.java
+    -> Y nghia: Kiem thu validate form dat ve client (SPEC-06)
+    -> Trang thai: Chua merge tai moc cuoi D02 (Da co tren local working tree/branch)
+
+[7. THUC THI MAVEN BUILD & TEST (GATE G1 VERIFICATION)]
+  [SKIPPED] Khong the thuc thi Maven build do moi truong toolchain bi chan (BLOCKED).
+  Ly do chan toolchain:
+    - Java runtime trong PATH la Java cu (< 17, phat hien Java 8). Can JDK 21 hoac 25.
+    - Thieu Apache Maven (lenh 'mvn' khong ton tai trong PATH)
+
+--------------------------------------------------------------------------------
+ TONG KET DANH GIA GATE G1 VA SNAPSHOT CUOI D02
+--------------------------------------------------------------------------------
+
+>>> TRANG THAI G1 TREN MOI TRUONG MAY HIEN TAI: [BLOCKED] <<<
+Nguyen nhan can tro:
+  1. Java runtime trong PATH la Java cu (< 17, phat hien Java 8). Can JDK 21 hoac 25.
+  2. Thieu Apache Maven (lenh 'mvn' khong ton tai trong PATH)
+
+[KET LUAN VE SNAPSHOT CUOI D02 (REF: 4d98446dff91414472dfd009ad786c4a5906e929)]:
+  1. Snapshot cuoi D02 da co day du 20/20 artifact nen tang cua D01 va D02 (DTO, State Machine, Raft interfaces, UI stub, cluster config).
+  2. Cac blocker ve ma nguon con thieu cho G1 Full Verify:
+     * Blocker G1 tren snapshot D02: shared/src/main/java/vn/nhom6/railway/protocol/codec/MessageCodec.java (TV3-D03 - JSON Codec tuan tu hoa MessageEnvelope dung SPEC-03)
+     * Blocker G1 tren snapshot D02: shared/src/test/resources/fixtures/protocol-v1.json (TV3-D03 - Golden JSON fixture hop dong giao thuc v1)
+     * Blocker G1 tren snapshot D02: backend-node/src/test/java/vn/nhom6/railway/booking/BookingRaftContractTest.java (TV2-D03 - Hop dong persistence va apply giua Booking va Raft (SPEC-05))
+     * Blocker G1 tren snapshot D02: backend-node/src/test/java/vn/nhom6/railway/raft/core/RaftCoreContractTest.java (TV4-D03 - Hop dong kiem thu RaftCore voi fake booking/election (SPEC-04))
+     * Blocker G1 tren snapshot D02: desktop-client/src/test/java/vn/nhom6/railway/client/BookingFormValidatorTest.java (TV1-D03 - Kiem thu validate form dat ve client (SPEC-06))
+  3. Quy trinh chuan: TV6 khong cho TV1-TV5 hoan thanh D03 de viet script; script nay duoc tao san sang tu D02 va se duoc chay de Gate G1 Full Verify sau khi code D03 duoc merge hoan chinh.
+
+[HUONG DAN MO CHAN TOOLCHAIN / MOI TRUONG (UNBLOCK)]:
+  1. Cai dat JDK 21 hoac JDK 25 va thiet lap bien moi truong JAVA_HOME.
+  2. Cai dat Apache Maven (3.9+) va them duong dan bin vao PATH.
+  3. Hoac chay script voi tham so tuy chon neu may co JDK/Maven o vi tri rieng:
+     .\scripts\verify-g1-build.ps1 -MavenPath '<duong_dan_mvn.cmd>' -JavaHome '<duong_dan_jdk>'
+
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D02\TV6-D02-verify-g1-build.log
+================================================================================
