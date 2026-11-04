@@ -1,0 +1,130 @@
+Task: TV2-D02 — schema migration test evidence
+Run started: 2026-11-04T13:34:21+07:00
+Environment: Windows 11; JDK 25; Maven 3.10.0
+PostgreSQL: postgres (PostgreSQL) 15.17 (temporary isolated UTF-8 cluster, loopback only)
+RAILWAY_TEST_JDBC_URL / DB_USER / DB_PASSWORD: configured for this run; temporary credentials only
+Group B: RUN against real PostgreSQL; isolated schema created by SchemaMigrationTest and dropped in finally
+Command: mvn -B -ntp -pl backend-node -am test
+--- Maven output ---
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24360 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\ok\HTPT\HTPT\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\ok\HTPT\HTPT\backend-node\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\ok\HTPT\HTPT\backend-node\src\test\resources
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.144 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.414 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.132 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.persistence.SchemaMigrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.435 s -- in vn.nhom6.railway.persistence.SchemaMigrationTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 98, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.004 s]
+[INFO] shared ............................................. SUCCESS [  2.604 s]
+[INFO] backend-node ....................................... SUCCESS [  2.686 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.462 s
+[INFO] Finished at: 2026-11-04T13:34:33+07:00
+[INFO] ------------------------------------------------------------------------
+--- Run result ---
+Maven exit code: 0
+Group B executed: YES; PostgreSQL 15 real server, temporary isolated cluster
+Run finished: 2026-11-04T13:34:34+07:00
