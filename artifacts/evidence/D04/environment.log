@@ -1,0 +1,17 @@
+openjdk 25.0.5 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-25.0.5+8 (build 25.0.5+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.5+8 (build 25.0.5+8-LTS, mixed mode, sharing)
+Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)
+Maven home: D:\SpringBoot\apache-maven-3.10.0
+Java version: 25.0.5, vendor: Eclipse Adoptium, runtime: C:\Program Files\Eclipse Adoptium\jdk-25.0.5.8-hotspot
+Default locale: en_US, platform encoding: UTF-8, time zone: Asia/Saigon
+OS name: "windows 11", version: "10.0", arch: "amd64", family: "windows"
+d2922f7cc454c114a46edab127486a8f7cc89966
+ D shared/src/main/java/vn/nhom6/railway/protocol/dto/.gitkeep
+ D shared/src/test/java/vn/nhom6/railway/protocol/.gitkeep
+?? artifacts/evidence/D02/TV5-D02-election-core-contract-test.log
+?? artifacts/evidence/D04/
+?? backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionService.java
+?? backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionTimer.java
+?? backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionCoreContractTest.java
+?? backend-node/src/test/java/vn/nhom6/railway/raft/election/TimerTest.java
