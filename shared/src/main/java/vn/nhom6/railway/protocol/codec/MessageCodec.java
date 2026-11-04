@@ -1,23 +1,33 @@
 package vn.nhom6.railway.protocol.codec;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.cfg.CoercionAction;
+import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
+import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
+import vn.nhom6.railway.protocol.dto.MessageType;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
- * Central JSON MessageCodec according to SPEC-03 Section 1 and Section 3.
+ * Central JSON MessageCodec according to SPEC-03 Section 1, Section 3, Section 3.0, and Section 7.
  *
  * <p>Encodes and decodes {@link MessageEnvelope} and payload DTOs to/from UTF-8 JSON.
- * Configured with strict validation rules (e.g. {@code FAIL_ON_UNKNOWN_PROPERTIES})
- * and ensures {@code correlationId: null} is serialized explicitly.</p>
+ * Configured with strict defense rules:
+ * <ul>
+ *   <li>Strict duplicate key detection (rejects duplicate JSON keys)</li>
+ *   <li>Fail on unknown properties (rejects unexpected fields)</li>
+ *   <li>Disabled scalar coercion (prevents string-to-number / number-to-string coercion)</li>
+ *   <li>Explicit null serialization for correlationId in requests</li>
+ * </ul>
  */
 public final class MessageCodec {
 
@@ -28,11 +38,25 @@ public final class MessageCodec {
     }
 
     private static ObjectMapper createConfiguredMapper() {
-        ObjectMapper mapper = new ObjectMapper();
+        // Enforce strict duplicate key detection (SPEC-03 Section 3.0)
+        JsonFactory jsonFactory = JsonFactory.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+
+        ObjectMapper mapper = new ObjectMapper(jsonFactory);
+
         // Ensure null fields (like correlationId: null) are always present in JSON (SPEC-03 Section 3)
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+
         // Strict mode: Reject unknown properties with error (SPEC-03 Section 3.0)
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        // Strict coercion: Reject string-to-number, number-to-string, and boolean coercion (SPEC-03 Section 3.0)
+        mapper.coercionConfigDefaults()
+                .setCoercion(CoercionInputShape.String, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail);
+
         return mapper;
     }
 
@@ -157,5 +181,41 @@ public final class MessageCodec {
             throw new IllegalArgumentException("payloadClass must not be null");
         }
         return MAPPER.treeToValue(rawEnvelope.getPayload(), payloadClass);
+    }
+
+    /**
+     * Classifies a parsing or validation exception into standard SPEC-03 Section 7 error codes.
+     *
+     * @param ex The exception thrown during decode or validation
+     * @return "UNSUPPORTED_VERSION", "INVALID_REQUEST", or "INTERNAL_ERROR"
+     */
+    public static String classifyErrorCode(Throwable ex) {
+        if (ex == null) {
+            return "INTERNAL_ERROR";
+        }
+        String msg = ex.getMessage();
+        if (msg != null && (msg.contains("Unsupported protocolVersion") || msg.contains("UNSUPPORTED_VERSION"))) {
+            return "UNSUPPORTED_VERSION";
+        }
+        if (ex instanceof JsonProcessingException || ex instanceof IllegalArgumentException) {
+            return "INVALID_REQUEST";
+        }
+        return "INTERNAL_ERROR";
+    }
+
+    /**
+     * Helper factory to build a standard ERROR_RESPONSE envelope according to SPEC-03 Section 7.
+     */
+    public static MessageEnvelope<ErrorResponseDto> createErrorResponse(
+            String requestMessageId,
+            String errorCode,
+            String message,
+            String leaderHint,
+            Long term,
+            String requestId,
+            String senderId) {
+        ErrorResponseDto payload = new ErrorResponseDto(errorCode, message, leaderHint, term, requestId);
+        payload.validate();
+        return MessageEnvelope.createResponse(requestMessageId, MessageType.ERROR_RESPONSE, senderId, payload);
     }
 }
