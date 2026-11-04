@@ -13,10 +13,12 @@ import vn.nhom6.railway.raft.core.RaftState;
  * {@link RaftLogEntry} values (SPEC-04 sections 2, 4 and 6).
  *
  * <p>This type models only the append/query surface needed by replication:
- * {@link #append(RaftLogEntry)}, {@link #get(long)}, {@link #lastIndex()} and {@link #lastTerm()}.
- * It performs no I/O, no persistence, no truncation, no commit/majority computation, no timers
- * and no threads. Persisting an entry before acknowledging an {@code APPEND_ENTRIES} success is
- * the responsibility of the durable log layer (SPEC-04 section 9).
+ * {@link #append(RaftLogEntry)}, {@link #get(long)}, {@link #lastIndex()} and {@link #lastTerm()},
+ * plus the package-private {@link #truncateSuffixFrom(long)} used by
+ * {@link LogConsistencyChecker}. It performs no I/O, no persistence, no commit/majority
+ * computation, no timers and no threads. Persisting an entry before acknowledging an
+ * {@code APPEND_ENTRIES} success is the responsibility of the durable log layer
+ * (SPEC-04 section 9).
  *
  * <p>An empty log is {@code (lastIndex = 0, lastTerm = 0)}; entry index 0 is never stored and the
  * first real entry has index 1 (SPEC-03 section 3.0). Every appended entry must extend the log by
@@ -26,10 +28,12 @@ import vn.nhom6.railway.raft.core.RaftState;
  * Raft event loop of the Node, the same convention as {@link RaftState}. This class deliberately
  * uses no locks.
  *
- * <p><strong>D04 scope.</strong> This log is a standalone structure. It is not wired into
+ * <p><strong>D04/D05 scope.</strong> This log is a standalone structure. It is not wired into
  * {@link RaftState}/{@code RaftStorage} yet, so no second competing log mechanism runs inside the
- * Raft model until TV5 reviews the integration. There is intentionally no
- * {@code truncate}/{@code removeFrom}/{@code clear} and no mutation of an appended entry.
+ * Raft model until TV5 reviews the integration. The only removal operation is the package-private
+ * {@link #truncateSuffixFrom(long)}, which exists for {@link LogConsistencyChecker} and must never
+ * be used to touch a committed entry; there is no public {@code truncate}/{@code removeFrom}/
+ * {@code clear} and no mutation of an appended entry.
  */
 public final class InMemoryRaftLog {
 
@@ -65,6 +69,35 @@ public final class InMemoryRaftLog {
                     "entry term " + entry.term() + " must not be lower than previous lastTerm " + lastTerm());
         }
         entries.add(entry);
+    }
+
+    /**
+     * Removes every entry from {@code index} to the end of the log, keeping the prefix
+     * {@code [1, index - 1]} (SPEC-04 section 4).
+     *
+     * <p>This is the single removal primitive used to resolve a Raft log conflict. The package-private
+     * visibility is deliberate: only {@link LogConsistencyChecker} may call it, because that class
+     * owns the {@code commitIndex} guard. The caller must therefore guarantee
+     * {@code index > commitIndex}: committed entries are never truncated (SPEC-04 section 4, 10).
+     * This method cannot check that invariant itself because {@link InMemoryRaftLog} holds no
+     * commit state.
+     *
+     * <p>No I/O and no persistence happen here; the durable log must persist the truncation before
+     * a success response is sent (SPEC-04 section 9).
+     *
+     * @param index first entry to remove, a currently existing log position
+     * @throws IllegalArgumentException when {@code index} is outside {@code [1, lastIndex()]}
+     */
+    void truncateSuffixFrom(long index) {
+        if (index < RaftLogEntry.FIRST_INDEX) {
+            throw new IllegalArgumentException(
+                    "index must be >= " + RaftLogEntry.FIRST_INDEX + " but was " + index);
+        }
+        if (index > lastIndex()) {
+            throw new IllegalArgumentException(
+                    "cannot truncate from index " + index + " beyond lastIndex " + lastIndex());
+        }
+        entries.subList((int) Math.toIntExact(index - 1L), entries.size()).clear();
     }
 
     /**
