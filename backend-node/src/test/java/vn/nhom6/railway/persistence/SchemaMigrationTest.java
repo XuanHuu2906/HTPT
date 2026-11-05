@@ -25,12 +25,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemaMigrationTest {
-    private static final String MIGRATION_PATH = "database/migration/V1__schema.sql";
+    private static final String V1_MIGRATION = "V1__schema.sql";
+    private static final String V2_MIGRATION = "V2__seed.sql";
 
     @Test
-    void migrationContainsRequiredSchemaAndSeed() throws IOException {
-        String sql = Files.readString(findMigration(), StandardCharsets.UTF_8);
-        String normalized = normalizeSql(sql);
+    void migrationsContainRequiredSchemaAndSeed() throws IOException {
+        String v1Sql = Files.readString(findMigration(V1_MIGRATION), StandardCharsets.UTF_8);
+        String v2Sql = Files.readString(findMigration(V2_MIGRATION), StandardCharsets.UTF_8);
+        String normalized = normalizeSql(v1Sql);
+        String normalizedV2 = normalizeSql(v2Sql);
 
         Matcher tableMatcher = Pattern.compile("\\bCREATE\\s+TABLE\\s+([A-Z_]+)\\s*\\(")
                 .matcher(normalized);
@@ -69,26 +72,26 @@ class SchemaMigrationTest {
                         "CHECK\\s*\\(\\s*STATE\\s+IN\\s*\\(\\s*" +
                         "'APPLIED_SUCCESS'\\s*,\\s*'APPLIED_REJECTED'\\s*\\)\\s*\\)")
                 .matcher(normalized).find());
-
+        assertTrue(Pattern.compile(
+                "\\bREQUEST_ID\\s+UUID\\s+PRIMARY\\s+KEY")
+                .matcher(normalized).find());
+        assertFalse(Pattern.compile("\\bINSERT\\s+INTO\\s+(?:TRIPS|SEATS)\\b")
+                .matcher(normalized).find(), "V1 must not seed trips or seats");
         assertTrue(Pattern.compile(
                 "\\bINSERT\\s+INTO\\s+TRIPS\\s*\\(\\s*TRIP_ID\\s*\\)\\s*" +
                         "VALUES\\s*\\(\\s*'SE-001'\\s*\\)")
-                .matcher(normalized).find());
-        Matcher seatMatcher = Pattern.compile(
-                "\\(\\s*'SE-001'\\s*,\\s*'(G\\d{2})'\\s*,\\s*'AVAILABLE'\\s*,\\s*NULL\\s*\\)")
-                .matcher(normalized);
-        Set<String> seededSeats = new HashSet<>();
-        while (seatMatcher.find()) {
-            seededSeats.add(seatMatcher.group(1));
-        }
-        Set<String> expectedSeats = new HashSet<>();
-        for (int seatNumber = 1; seatNumber <= 10; seatNumber++) {
-            expectedSeats.add(String.format(Locale.ROOT, "G%02d", seatNumber));
-        }
-        assertEquals(expectedSeats, seededSeats);
+                .matcher(normalizedV2).find());
         assertTrue(Pattern.compile(
-                "(?im)^\\s*--[^\\r\\n]*không chạy lại/không reset riêng một Node")
-                .matcher(sql).find());
+                "\\bINSERT\\s+INTO\\s+SEATS\\s*\\(\\s*TRIP_ID\\s*,\\s*SEAT_ID\\s*,\\s*" +
+                        "STATUS\\s*,\\s*CURRENT_TICKET_ID\\s*\\)\\s*" +
+                        "SELECT\\s+'SE-001'\\s*,\\s*'G'\\s*\\|\\|\\s*LPAD\\(N::TEXT\\s*,\\s*2\\s*,\\s*'0'\\)\\s*,\\s*" +
+                        "'AVAILABLE'\\s*,\\s*NULL\\s+FROM\\s+GENERATE_SERIES\\(1\\s*,\\s*10\\)\\s+AS\\s+N")
+                .matcher(normalizedV2).find());
+        assertTrue(Pattern.compile(
+                "(?im)^\\s*--[^\\r\\n]*không chạy/reset riêng một Node đang tham gia consensus")
+                .matcher(v2Sql).find());
+        assertFalse(Pattern.compile("\\b(?:BIGSERIAL|SERIAL)\\b")
+                .matcher(normalizedV2).find());
         assertFalse(Pattern.compile("\\b(?:BIGSERIAL|SERIAL)\\b")
                 .matcher(normalized).find());
     }
@@ -102,7 +105,8 @@ class SchemaMigrationTest {
                 hasText(jdbcUrl) && hasText(username) && hasText(password),
                 "RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER, and RAILWAY_TEST_DB_PASSWORD are required");
 
-        String migration = Files.readString(findMigration(), StandardCharsets.UTF_8);
+        String v1Migration = Files.readString(findMigration(V1_MIGRATION), StandardCharsets.UTF_8);
+        String v2Migration = Files.readString(findMigration(V2_MIGRATION), StandardCharsets.UTF_8);
         String schema = "railway_test_" + UUID.randomUUID().toString().replace("-", "");
         try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
             boolean schemaCreated = false;
@@ -110,20 +114,41 @@ class SchemaMigrationTest {
                 execute(connection, "CREATE SCHEMA \"" + schema + "\"");
                 schemaCreated = true;
                 execute(connection, "SET search_path TO \"" + schema + "\"");
-                for (String command : migration.split(";")) {
-                    if (!command.isBlank()) {
-                        execute(connection, command);
-                    }
-                }
-
-                assertEquals(10, queryInt(connection,
-                        "SELECT COUNT(*) FROM seats WHERE trip_id = 'SE-001'"));
+                executeMigration(connection, v1Migration);
+                assertEquals(8, queryInt(connection,
+                        "SELECT COUNT(*) FROM information_schema.tables " +
+                                "WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'"));
+                assertEquals(0, queryInt(connection, "SELECT COUNT(*) FROM trips"));
+                assertEquals(0, queryInt(connection, "SELECT COUNT(*) FROM seats"));
+                assertEquals(1, queryInt(connection,
+                        "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = current_schema() " +
+                                "AND tablename = 'tickets' AND indexname = 'ux_one_active_ticket_per_seat'"));
+                assertEquals(1, queryInt(connection,
+                        "SELECT COUNT(*) FROM pg_constraint WHERE conrelid = 'request_results'::regclass " +
+                                "AND contype = 'p'"));
                 assertEquals(0, queryLong(connection,
                         "SELECT last_applied FROM raft_apply_progress WHERE singleton = 1"));
                 assertEquals(0, queryLong(connection,
                         "SELECT current_term FROM raft_meta WHERE singleton = 1"));
                 assertEquals(1, queryInt(connection,
                         "SELECT COUNT(*) FROM raft_meta WHERE singleton = 1 AND voted_for IS NULL"));
+                assertEquals(1, queryInt(connection,
+                        "SELECT COUNT(*) FROM raft_apply_progress WHERE singleton = 1"));
+
+                executeMigration(connection, v2Migration);
+                assertEquals(1, queryInt(connection,
+                        "SELECT COUNT(*) FROM trips WHERE trip_id = 'SE-001'"));
+                assertEquals(10, queryInt(connection,
+                        "SELECT COUNT(*) FROM seats WHERE trip_id = 'SE-001'"));
+                assertEquals(10, queryInt(connection,
+                        "SELECT COUNT(DISTINCT seat_id) FROM seats WHERE trip_id = 'SE-001'"));
+                assertEquals(10, queryInt(connection,
+                        "SELECT COUNT(*) FROM seats WHERE trip_id = 'SE-001' " +
+                                "AND status = 'AVAILABLE' AND current_ticket_id IS NULL"));
+                assertEquals(expectedSeatIds(), queryStringSet(connection,
+                        "SELECT seat_id FROM seats WHERE trip_id = 'SE-001'"));
+                assertThrows(SQLException.class, () -> executeMigration(connection, v2Migration),
+                        "Running V2 a second time must fail rather than mask duplicate seed data");
 
                 execute(connection, """
                         INSERT INTO tickets(ticket_id, trip_id, seat_id, passenger_name, status, issued_at)
@@ -198,9 +223,9 @@ class SchemaMigrationTest {
         }
     }
 
-    private static Path findMigration() throws IOException {
-        Path localPath = Path.of("database", "migration", "V1__schema.sql");
-        Path parentPath = Path.of("..", "database", "migration", "V1__schema.sql");
+    private static Path findMigration(String migrationName) throws IOException {
+        Path localPath = Path.of("database", "migration", migrationName);
+        Path parentPath = Path.of("..", "database", "migration", migrationName);
         if (Files.isRegularFile(localPath)) {
             return localPath;
         }
@@ -211,11 +236,27 @@ class SchemaMigrationTest {
                 + " or " + parentPath.toAbsolutePath());
     }
 
+    private static void executeMigration(Connection connection, String migration) throws SQLException {
+        for (String command : migration.split(";")) {
+            if (!command.isBlank()) {
+                execute(connection, command);
+            }
+        }
+    }
+
     private static String normalizeSql(String sql) {
         return sql.replaceAll("--[^\\r\\n]*", " ")
                 .replaceAll("\\s+", " ")
                 .trim()
                 .toUpperCase(Locale.ROOT);
+    }
+
+    private static Set<String> expectedSeatIds() {
+        Set<String> expectedSeats = new HashSet<>();
+        for (int seatNumber = 1; seatNumber <= 10; seatNumber++) {
+            expectedSeats.add(String.format(Locale.ROOT, "G%02d", seatNumber));
+        }
+        return expectedSeats;
     }
 
     private static boolean hasText(String value) {
@@ -246,6 +287,17 @@ class SchemaMigrationTest {
             assertTrue(resultSet.next(), "Query returned no rows: " + sql);
             return resultSet.getLong(1);
         }
+    }
+
+    private static Set<String> queryStringSet(Connection connection, String sql) throws SQLException {
+        Set<String> values = new HashSet<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            while (resultSet.next()) {
+                values.add(resultSet.getString(1));
+            }
+        }
+        return values;
     }
 
     private static String requestResultInsert(String requestId, String state, long appliedLogIndex) {
