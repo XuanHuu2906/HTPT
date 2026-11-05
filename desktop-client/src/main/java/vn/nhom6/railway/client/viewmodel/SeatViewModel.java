@@ -276,7 +276,7 @@ public class SeatViewModel {
     }
 
     public boolean isBooked() {
-        return booked.get();
+        return getStatus() == SeatStatus.BOOKED;
     }
 
     public ReadOnlyBooleanProperty bookedProperty() {
@@ -284,7 +284,7 @@ public class SeatViewModel {
     }
 
     public boolean isSelected() {
-        return selected.get();
+        return getStatus() == SeatStatus.SELECTED;
     }
 
     public ReadOnlyBooleanProperty selectedProperty() {
@@ -292,7 +292,7 @@ public class SeatViewModel {
     }
 
     public boolean isAvailable() {
-        return available.get();
+        return getStatus() == SeatStatus.AVAILABLE;
     }
 
     public ReadOnlyBooleanProperty availableProperty() {
@@ -300,7 +300,7 @@ public class SeatViewModel {
     }
 
     public boolean isUnknown() {
-        return unknown.get();
+        return getStatus() == SeatStatus.UNKNOWN;
     }
 
     public ReadOnlyBooleanProperty unknownProperty() {

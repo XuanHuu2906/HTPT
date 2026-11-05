@@ -244,4 +244,53 @@ class SeatViewModelTest {
         assertEquals(ScreenState.DISCONNECTED, model.getState());
         assertEquals("status-disconnected", model.getStyleClass());
     }
+
+    @Test
+    @DisplayName("Kiểm tra kịch bản Reset gốc: chọn G06, G07 rồi bấm Reset gốc")
+    void testResetDefaultScenario() {
+        ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+        javafx.collections.transformation.FilteredList<SeatViewModel> selectedSeatsList =
+                new javafx.collections.transformation.FilteredList<>(seats, SeatViewModel::isSelected);
+
+        javafx.beans.binding.StringBinding binding = javafx.beans.binding.Bindings.createStringBinding(() -> {
+            if (selectedSeatsList.isEmpty()) {
+                return "Ghế đang chọn: (Chưa chọn ghế nào)";
+            }
+            java.util.List<String> sortedIds = selectedSeatsList.stream()
+                    .map(SeatViewModel::getSeatId)
+                    .sorted()
+                    .toList();
+            return "Ghế đang chọn: " + String.join(", ", sortedIds) + " (" + sortedIds.size() + " ghế)";
+        }, selectedSeatsList);
+
+        javafx.beans.binding.BooleanBinding disableBinding = javafx.beans.binding.Bindings.isEmpty(selectedSeatsList);
+
+        // Ban đầu
+        assertEquals("Ghế đang chọn: (Chưa chọn ghế nào)", binding.get());
+        assertTrue(disableBinding.get());
+
+        // 1. Người dùng click G06, G07
+        SeatViewModel g06 = seats.get(5);
+        SeatViewModel g07 = seats.get(6);
+        g06.setStatus(SeatStatus.SELECTED);
+        g07.setStatus(SeatStatus.SELECTED);
+
+        assertEquals(2, selectedSeatsList.size());
+        assertEquals("Ghế đang chọn: G06, G07 (2 ghế)", binding.get());
+        assertFalse(disableBinding.get());
+
+        // 2. Người dùng nhấn nút "Reset gốc" (chạy onMockResetDefault)
+        // clearSelection():
+        for (SeatViewModel vm : seats) {
+            if (vm.isSelected()) {
+                vm.setStatus(SeatStatus.AVAILABLE);
+            }
+        }
+        // applySnapshot:
+        SeatViewModel.applySnapshot(seats, MockSeatSource.createInitialSnapshot());
+
+        assertEquals(0, selectedSeatsList.size());
+        assertEquals("Ghế đang chọn: (Chưa chọn ghế nào)", binding.get());
+        assertTrue(disableBinding.get());
+    }
 }

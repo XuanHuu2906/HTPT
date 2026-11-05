@@ -3,8 +3,12 @@ package vn.nhom6.railway.client.controller;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -153,9 +157,9 @@ public class SeatGridController {
     private final IntegerProperty bookedCountProperty = new SimpleIntegerProperty(0);
     private final IntegerProperty unknownCountProperty = new SimpleIntegerProperty(0);
 
-    // Lưu trữ tham chiếu Binding để tránh bị garbage collection
-    private StringBinding selectedSeatsSummaryBinding;
-    private BooleanBinding continueBtnDisableBinding;
+    // Reactive Properties cho danh sách ghế đang chọn & trạng thái nút Đặt vé
+    private final StringProperty selectedSeatsSummaryProperty = new SimpleStringProperty("Ghế đang chọn: (Chưa chọn ghế nào)");
+    private final BooleanProperty hasSelectedSeatsProperty = new SimpleBooleanProperty(false);
 
     // Callback điều hướng
     private Runnable onBackAction;
@@ -204,26 +208,14 @@ public class SeatGridController {
      * Thiết lập các reactive data bindings cho Legend, Nhãn tóm tắt và Nút Đặt vé.
      */
     private void setupReactiveBindings() {
-        // 1. Bind nhãn danh sách ghế đang chọn
-        selectedSeatsSummaryBinding = Bindings.createStringBinding(() -> {
-            if (selectedSeatsList.isEmpty()) {
-                return "Ghế đang chọn: (Chưa chọn ghế nào)";
-            }
-            List<String> sortedIds = selectedSeatsList.stream()
-                    .map(SeatViewModel::getSeatId)
-                    .sorted()
-                    .toList();
-            return "Ghế đang chọn: " + String.join(", ", sortedIds) + " (" + sortedIds.size() + " ghế)";
-        }, selectedSeatsList);
-
+        // 1. Bind nhãn danh sách ghế đang chọn trực tiếp qua StringProperty phản ứng
         if (selectedSeatsLabel != null) {
-            selectedSeatsLabel.textProperty().bind(selectedSeatsSummaryBinding);
+            selectedSeatsLabel.textProperty().bind(selectedSeatsSummaryProperty);
         }
 
-        // 2. Bind disableProperty của nút Tiếp tục (Đặt vé)
-        continueBtnDisableBinding = Bindings.isEmpty(selectedSeatsList);
+        // 2. Bind disableProperty của nút Tiếp tục (Đặt vé) qua BooleanProperty
         if (continueBtn != null) {
-            continueBtn.disableProperty().bind(continueBtnDisableBinding);
+            continueBtn.disableProperty().bind(hasSelectedSeatsProperty.not());
         }
 
         // 3. Bind 4 nhãn Legend trực tiếp vào các reactive IntegerProperties
@@ -241,6 +233,7 @@ public class SeatGridController {
         }
 
         updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     /**
@@ -258,6 +251,7 @@ public class SeatGridController {
                 buildSeatGrid();
             }
             updateLegendCounts();
+            updateSelectedSeatsUI();
         });
     }
 
@@ -291,6 +285,7 @@ public class SeatGridController {
             vm.statusProperty().addListener((obs, oldStatus, newStatus) -> {
                 updateSeatButtonStyleClass(button, newStatus);
                 updateLegendCounts();
+                updateSelectedSeatsUI();
             });
 
             // 4. Click ghế: Controller chỉ gọi ViewModel để đổi status (AVAILABLE ⇄ SELECTED)
@@ -303,6 +298,7 @@ public class SeatGridController {
             seatGridPane.add(button, col, row);
         }
         updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     /**
@@ -339,6 +335,25 @@ public class SeatGridController {
         selectedCountProperty.set(sel);
         bookedCountProperty.set(book);
         unknownCountProperty.set(unk);
+    }
+
+    /**
+     * Cập nhật danh sách ghế đang chọn và trạng thái disable của nút Đặt vé theo dữ liệu reactive (TASK D05).
+     */
+    public void updateSelectedSeatsUI() {
+        List<String> sortedIds = seats.stream()
+                .filter(SeatViewModel::isSelected)
+                .map(SeatViewModel::getSeatId)
+                .sorted()
+                .toList();
+
+        if (sortedIds.isEmpty()) {
+            selectedSeatsSummaryProperty.set("Ghế đang chọn: (Chưa chọn ghế nào)");
+            hasSelectedSeatsProperty.set(false);
+        } else {
+            selectedSeatsSummaryProperty.set("Ghế đang chọn: " + String.join(", ", sortedIds) + " (" + sortedIds.size() + " ghế)");
+            hasSelectedSeatsProperty.set(true);
+        }
     }
 
     /**
@@ -415,10 +430,11 @@ public class SeatGridController {
     }
 
     /**
-     * Lấy danh sách các mã ghế người dùng đang chọn suy ra từ FilteredList.
+     * Lấy danh sách các mã ghế người dùng đang chọn suy ra trực tiếp từ ViewModel.
      */
     public List<String> getSelectedSeats() {
-        return selectedSeatsList.stream()
+        return seats.stream()
+                .filter(SeatViewModel::isSelected)
                 .map(SeatViewModel::getSeatId)
                 .sorted()
                 .toList();
@@ -437,15 +453,21 @@ public class SeatGridController {
                 }
             }
         }
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     /**
      * Bỏ chọn toàn bộ ghế đang chọn bằng cách chuyển status về AVAILABLE trong model.
      */
     public void clearSelection() {
-        for (SeatViewModel vm : new ArrayList<>(selectedSeatsList)) {
-            vm.setStatus(SeatStatus.AVAILABLE);
+        for (SeatViewModel vm : seats) {
+            if (vm.isSelected()) {
+                vm.setStatus(SeatStatus.AVAILABLE);
+            }
         }
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     public Button getSeatButton(String seatId) {
@@ -599,6 +621,8 @@ public class SeatGridController {
                 screenStateModel.setState(ScreenState.DISCONNECTED, msg);
             }
         }
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     @FXML
@@ -672,6 +696,8 @@ public class SeatGridController {
         clearSelection();
         SeatViewModel.applySnapshot(seats, MockSeatSource.createRefreshedMockSnapshot());
         screenStateModel.setState(ScreenState.IDLE, "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
+        updateLegendCounts();
+        updateSelectedSeatsUI();
         updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK thành công.");
     }
 
@@ -710,6 +736,9 @@ public class SeatGridController {
         setSeatStatusHelper("G09", SeatStatus.AVAILABLE);
         setSeatStatusHelper("G10", SeatStatus.AVAILABLE);
 
+        updateLegendCounts();
+        updateSelectedSeatsUI();
+
         screenStateModel.setState(ScreenState.IDLE, "Đang hiển thị đủ 4 trạng thái ghế: AVAILABLE, BOOKED, SELECTED, UNKNOWN.");
         updateStatus("MOCK: Đã thiết lập đủ 4 trạng thái ghế (G01 AVAILABLE, G02/G08 BOOKED, G05 SELECTED, G04 UNKNOWN).");
     }
@@ -719,6 +748,8 @@ public class SeatGridController {
         clearSelection();
         SeatViewModel.applySnapshot(seats, MockSeatSource.createInitialSnapshot());
         screenStateModel.setState(ScreenState.IDLE);
+        updateLegendCounts();
+        updateSelectedSeatsUI();
         updateStatus("MOCK: Đã khôi phục dữ liệu ghế MOCK ban đầu.");
     }
 
