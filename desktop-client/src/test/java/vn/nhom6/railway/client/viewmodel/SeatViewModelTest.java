@@ -1,17 +1,20 @@
 package vn.nhom6.railway.client.viewmodel;
 
+import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import vn.nhom6.railway.client.viewmodel.SeatViewModel.MockSeatSource;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenState;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenStateModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.SeatStatus;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("SeatViewModel & ScreenStateModel Tests (D04)")
+@DisplayName("SeatViewModel & ScreenStateModel Tests (D04/D05)")
 class SeatViewModelTest {
 
     @Test
@@ -55,38 +58,94 @@ class SeatViewModelTest {
         assertEquals("G01", vmDefault.getSeatId());
         assertEquals(SeatStatus.AVAILABLE, vmDefault.getStatus());
         assertEquals("seat-available", vmDefault.getStyleClass());
+        assertTrue(vmDefault.isAvailable());
+        assertFalse(vmDefault.isBooked());
+        assertFalse(vmDefault.isSelected());
+        assertFalse(vmDefault.isUnknown());
 
         SeatViewModel vmBooked = new SeatViewModel("G02", SeatStatus.BOOKED);
         assertEquals("G02", vmBooked.getSeatId());
         assertEquals(SeatStatus.BOOKED, vmBooked.getStatus());
         assertEquals("seat-booked", vmBooked.getStyleClass());
+        assertTrue(vmBooked.isBooked());
+        assertFalse(vmBooked.isAvailable());
     }
 
     @Test
-    @DisplayName("SeatViewModel - Cập nhật trạng thái kích hoạt property listener phản ứng tức thì")
-    void testSeatViewModelPropertyListener() {
+    @DisplayName("SeatViewModel - Cập nhật trạng thái tự động đồng bộ displayText, booked, selected và styleClass properties")
+    void testSeatViewModelPropertySynchronization() {
         SeatViewModel vm = new SeatViewModel("G03", SeatStatus.AVAILABLE);
+        assertTrue(vm.isAvailable());
+        assertFalse(vm.isBooked());
+        assertFalse(vm.isSelected());
+        assertTrue(vm.displayTextProperty().get().contains("Trống"));
+        assertEquals("seat-available", vm.styleClassProperty().get());
 
-        AtomicReference<SeatStatus> observedNewStatus = new AtomicReference<>();
-        AtomicBoolean listenerFired = new AtomicBoolean(false);
+        // Đổi sang SELECTED
+        vm.setStatus(SeatStatus.SELECTED);
+        assertTrue(vm.isSelected());
+        assertFalse(vm.isAvailable());
+        assertFalse(vm.isBooked());
+        assertTrue(vm.displayTextProperty().get().contains("Đang chọn"));
+        assertEquals("seat-selected", vm.styleClassProperty().get());
 
-        vm.statusProperty().addListener((obs, oldVal, newVal) -> {
-            listenerFired.set(true);
-            observedNewStatus.set(newVal);
+        // Đổi sang BOOKED
+        vm.setStatus(SeatStatus.BOOKED);
+        assertTrue(vm.isBooked());
+        assertFalse(vm.isSelected());
+        assertTrue(vm.displayTextProperty().get().contains("Đã đặt"));
+        assertEquals("seat-booked", vm.styleClassProperty().get());
+
+        // Đổi sang UNKNOWN
+        vm.setStatus(SeatStatus.UNKNOWN);
+        assertTrue(vm.isUnknown());
+        assertFalse(vm.isBooked());
+        assertTrue(vm.displayTextProperty().get().contains("Chưa rõ"));
+        assertEquals("seat-unknown", vm.styleClassProperty().get());
+    }
+
+    @Test
+    @DisplayName("MockSeatSource - Sinh 10 ghế MOCK chuẩn, G02/G04/G08 BOOKED, các ghế khác AVAILABLE")
+    void testMockSeatSourceCreation() {
+        ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+        assertNotNull(seats);
+        assertEquals(10, seats.size());
+
+        for (int i = 1; i <= 10; i++) {
+            SeatViewModel seat = seats.get(i - 1);
+            String expectedId = String.format("G%02d", i);
+            assertEquals(expectedId, seat.getSeatId());
+            if (i == 2 || i == 4 || i == 8) {
+                assertEquals(SeatStatus.BOOKED, seat.getStatus());
+                assertTrue(seat.isBooked());
+            } else {
+                assertEquals(SeatStatus.AVAILABLE, seat.getStatus());
+                assertTrue(seat.isAvailable());
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("MockSeatSource - ObservableList có extractor kích hoạt sự kiện update khi status ghế thay đổi")
+    void testObservableListExtractorUpdates() {
+        ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+        AtomicInteger updateEventsCount = new AtomicInteger(0);
+
+        seats.addListener((javafx.collections.ListChangeListener<SeatViewModel>) change -> {
+            while (change.next()) {
+                if (change.wasUpdated()) {
+                    updateEventsCount.incrementAndGet();
+                }
+            }
         });
 
-        vm.setStatus(SeatStatus.SELECTED);
-        assertTrue(listenerFired.get());
-        assertEquals(SeatStatus.SELECTED, observedNewStatus.get());
-        assertEquals(SeatStatus.SELECTED, vm.getStatus());
-        assertEquals("seat-selected", vm.getStyleClass());
+        // Đổi trạng thái G01 từ AVAILABLE sang SELECTED
+        seats.get(0).setStatus(SeatStatus.SELECTED);
+        assertEquals(1, updateEventsCount.get());
 
-        // Chuyển sang UNKNOWN
-        listenerFired.set(false);
-        vm.setStatus(SeatStatus.UNKNOWN);
-        assertTrue(listenerFired.get());
-        assertEquals(SeatStatus.UNKNOWN, observedNewStatus.get());
-        assertEquals("seat-unknown", vm.getStyleClass());
+        // Đổi trạng thái G03 từ AVAILABLE sang BOOKED
+        seats.get(2).setStatus(SeatStatus.BOOKED);
+        assertEquals(2, updateEventsCount.get());
     }
 
     @Test
@@ -132,4 +191,3 @@ class SeatViewModelTest {
         assertEquals("status-disconnected", model.getStyleClass());
     }
 }
-

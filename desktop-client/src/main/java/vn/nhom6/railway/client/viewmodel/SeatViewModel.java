@@ -1,23 +1,39 @@
 package vn.nhom6.railway.client.viewmodel;
 
+import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import java.util.Set;
 
 /**
- * ViewModel đại diện cho trạng thái của một ghế ngồi và trạng thái màn hình (TASK D04).
+ * ViewModel đại diện cho trạng thái của một ghế ngồi và trạng thái màn hình (TASK D04 & D05).
  * <p>
- * Tính năng:
+ * Tính năng nâng cấp D05:
  * - Enum {@link SeatStatus} gồm 4 trạng thái: AVAILABLE, BOOKED, SELECTED, UNKNOWN.
- * - Mỗi ghế có `seatId` (G01–G10) và `ObjectProperty<SeatStatus>` để UI bind, đổi trạng thái là UI tự cập nhật.
- * - Hàm ánh xạ trạng thái sang style class: seat-available, seat-booked, seat-selected, seat-unknown.
- * - Enum {@link ScreenState} gồm 4 trạng thái màn hình: IDLE, LOADING, ERROR, DISCONNECTED kèm message để bind.
+ * - Mỗi ghế có `seatId` (read-only), `ObjectProperty<SeatStatus> status` đúng chuẩn JavaFX bean.
+ * - Bổ sung các JavaFX Properties phục vụ UI data binding:
+ *   + `displayTextProperty`: Nhãn hiển thị kèm ký hiệu accessibility tự động đồng bộ theo status.
+ *   + `bookedProperty`: BooleanProperty đại diện trạng thái đã đặt (dùng bind disable button).
+ *   + `selectedProperty`: BooleanProperty đại diện trạng thái đang chọn.
+ *   + `availableProperty`, `unknownProperty`: BooleanProperty hỗ trợ logic kiểm tra.
+ *   + `styleClassProperty`: Tên lớp CSS tương ứng để bind style class.
+ * - Nguồn dữ liệu MOCK duy nhất thông qua {@link MockSeatSource} sinh danh sách
+ *   `ObservableList<SeatViewModel>` có extractor theo dõi `statusProperty`.
+ * - Enum {@link ScreenState} và {@link ScreenStateModel} quản lý trạng thái màn hình.
  */
 public class SeatViewModel {
 
     /**
-     * 4 trạng thái ghế theo đặc tả SPEC-06 và nhiệm vụ D04.
+     * 4 trạng thái ghế theo đặc tả SPEC-06 và nhiệm vụ D04/D05.
      */
     public enum SeatStatus {
         AVAILABLE("Trống", "seat-available"),
@@ -66,7 +82,7 @@ public class SeatViewModel {
      * 4 trạng thái màn hình theo yêu cầu D04.
      */
     public enum ScreenState {
-        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D04).", "status-idle"),
+        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D05).", "status-idle"),
         LOADING("Đang tải dữ liệu từ hệ thống...", "status-loading"),
         ERROR("Đã xảy ra lỗi khi xử lý dữ liệu ghế.", "status-error"),
         DISCONNECTED("Mất kết nối với mạng / cụm máy chủ.", "status-disconnected");
@@ -85,6 +101,33 @@ public class SeatViewModel {
 
         public String getStyleClass() {
             return styleClass;
+        }
+    }
+
+    /**
+     * Nguồn dữ liệu ghế MOCK duy nhất (TASK D05).
+     * Dữ liệu ban đầu có nhãn MOCK, không rải số liệu giả ở nhiều nơi.
+     */
+    public static class MockSeatSource {
+        public static final String MOCK_LABEL = "MOCK DATA — D05";
+        public static final int TOTAL_SEATS = 10;
+        public static final Set<String> INITIAL_BOOKED_SEATS = Set.of("G02", "G04", "G08");
+
+        /**
+         * Sinh danh sách ObservableList gồm 10 ghế (G01–G10) có extractor theo dõi statusProperty.
+         */
+        public static ObservableList<SeatViewModel> createMockSeats() {
+            ObservableList<SeatViewModel> list = FXCollections.observableArrayList(
+                    seat -> new Observable[]{seat.statusProperty()}
+            );
+            for (int i = 1; i <= TOTAL_SEATS; i++) {
+                String seatId = String.format("G%02d", i);
+                SeatStatus initialStatus = INITIAL_BOOKED_SEATS.contains(seatId)
+                        ? SeatStatus.BOOKED
+                        : SeatStatus.AVAILABLE;
+                list.add(new SeatViewModel(seatId, initialStatus));
+            }
+            return list;
         }
     }
 
@@ -131,7 +174,13 @@ public class SeatViewModel {
     }
 
     private final String seatId;
-    private final ObjectProperty<SeatStatus> status = new SimpleObjectProperty<>(SeatStatus.AVAILABLE);
+    private final ObjectProperty<SeatStatus> status = new SimpleObjectProperty<>();
+    private final ReadOnlyStringWrapper displayText = new ReadOnlyStringWrapper();
+    private final ReadOnlyBooleanWrapper booked = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyBooleanWrapper selected = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyBooleanWrapper available = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyBooleanWrapper unknown = new ReadOnlyBooleanWrapper();
+    private final ReadOnlyStringWrapper styleClass = new ReadOnlyStringWrapper();
 
     public SeatViewModel(String seatId) {
         this(seatId, SeatStatus.AVAILABLE);
@@ -139,7 +188,21 @@ public class SeatViewModel {
 
     public SeatViewModel(String seatId, SeatStatus initialStatus) {
         this.seatId = seatId;
-        this.status.set(initialStatus);
+        this.status.addListener((obs, oldVal, newVal) -> syncProperties(newVal));
+        this.status.set(initialStatus != null ? initialStatus : SeatStatus.AVAILABLE);
+        syncProperties(this.status.get());
+    }
+
+    private void syncProperties(SeatStatus s) {
+        if (s == null) {
+            s = SeatStatus.AVAILABLE;
+        }
+        displayText.set(s.formatButtonText(seatId));
+        booked.set(s == SeatStatus.BOOKED);
+        selected.set(s == SeatStatus.SELECTED);
+        available.set(s == SeatStatus.AVAILABLE);
+        unknown.set(s == SeatStatus.UNKNOWN);
+        styleClass.set(s.getStyleClass());
     }
 
     public String getSeatId() {
@@ -151,28 +214,76 @@ public class SeatViewModel {
     }
 
     public void setStatus(SeatStatus newStatus) {
-        this.status.set(newStatus);
+        this.status.set(newStatus != null ? newStatus : SeatStatus.AVAILABLE);
     }
 
     public ObjectProperty<SeatStatus> statusProperty() {
         return status;
     }
 
+    public String getDisplayText() {
+        return displayText.get();
+    }
+
+    public ReadOnlyStringProperty displayTextProperty() {
+        return displayText.getReadOnlyProperty();
+    }
+
+    public boolean isBooked() {
+        return booked.get();
+    }
+
+    public ReadOnlyBooleanProperty bookedProperty() {
+        return booked.getReadOnlyProperty();
+    }
+
+    public boolean isSelected() {
+        return selected.get();
+    }
+
+    public ReadOnlyBooleanProperty selectedProperty() {
+        return selected.getReadOnlyProperty();
+    }
+
+    public boolean isAvailable() {
+        return available.get();
+    }
+
+    public ReadOnlyBooleanProperty availableProperty() {
+        return available.getReadOnlyProperty();
+    }
+
+    public boolean isUnknown() {
+        return unknown.get();
+    }
+
+    public ReadOnlyBooleanProperty unknownProperty() {
+        return unknown.getReadOnlyProperty();
+    }
+
+    public String getStyleClass() {
+        return styleClass.get();
+    }
+
+    public ReadOnlyStringProperty styleClassProperty() {
+        return styleClass.getReadOnlyProperty();
+    }
+
+    /**
+     * Tạo danh sách ghế MOCK từ nguồn MOCK duy nhất.
+     */
+    public static ObservableList<SeatViewModel> createMockSeats() {
+        return MockSeatSource.createMockSeats();
+    }
+
     /**
      * Ánh xạ trạng thái ghế sang tên lớp CSS (style class).
-     *
-     * @param status trạng thái ghế
-     * @return tên style class CSS tương ứng
      */
     public static String mapStatusToStyleClass(SeatStatus status) {
         if (status == null) {
             return SeatStatus.AVAILABLE.getStyleClass();
         }
         return status.getStyleClass();
-    }
-
-    public String getStyleClass() {
-        return mapStatusToStyleClass(getStatus());
     }
 
     public String getFormattedText() {
