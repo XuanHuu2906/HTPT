@@ -1,0 +1,150 @@
+Task: TV5-D02 (ElectionService interface + ElectionCoreContractTest); owner TV5; core reviewer TV4 (review not claimed).
+Date: 2026-11-03T21:57:25+07:00
+Base commit (working tree includes task changes): 4d98446dff91414472dfd009ad786c4a5906e929
+Scope: SPEC-04 section 3; interface glue over TV4 RaftState/RaftNode, TV5-D02 VoteRules, TV3-D02 RequestVoteRequestDto.
+NOT_RUN: durable vote/restart, RPC/TCP, live split vote, five-node AC07, G1 cross-module integration.
+Command: mvn -B -ntp -pl backend-node -am test
+Source SHA256:
+11435c0347bbfdb852290464996173474f17545ea49035065c1df0754a4452cf *backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionService.java
+32cfad488ee598558c1b5e646faa5d2d32fcc3267dfb00ed019f8c75fe45bde8 *backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionCoreContractTest.java
+f845550723894fc93c1af475d3bf5389e3be0767982e47e97e779e310d4105e1 *backend-node/src/main/java/vn/nhom6/railway/raft/election/VoteRules.java
+36c1b3180520811871ddae23aecf352b48aa0acb221c716fb9dc72b516fcfaf3 *backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftState.java
+d9d5f78c17d39578a614dbafd7fb3053d918218062fbdeca0fc14db6fcc51abf *backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftNode.java
+1373501f16684619000bf374792c8b1f78871f5a2aaffef0a9229eed10aa7214 *shared/src/main/java/vn/nhom6/railway/protocol/dto/RequestVoteRequestDto.java
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24352 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\railway-distributed-system\shared\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.093 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Running vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.174 s -- in vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\railway-distributed-system\backend-node\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\railway-distributed-system\backend-node\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.113 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.257 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.694 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.125 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.307 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.330 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.201 s -- in vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.232 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.225 s -- in vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 227, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.005 s]
+[INFO] shared ............................................. SUCCESS [  7.011 s]
+[INFO] backend-node ....................................... SUCCESS [  4.157 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.466 s
+[INFO] Finished at: 2026-11-03T21:57:42+07:00
+[INFO] ------------------------------------------------------------------------
+Exit code: 0
