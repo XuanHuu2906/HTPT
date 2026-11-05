@@ -149,6 +149,60 @@ class SeatViewModelTest {
     }
 
     @Test
+    @DisplayName("MockSeatSource.applySnapshot - Cập nhật trạng thái ghế mà không tạo lại đối tượng")
+    void testApplySnapshotPreservesInstancesAndUpdatesState() {
+        ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+        SeatViewModel seatG01 = seats.get(0);
+        SeatViewModel seatG03 = seats.get(2);
+        SeatViewModel seatG04 = seats.get(3);
+
+        assertEquals("G01", seatG01.getSeatId());
+        assertEquals(SeatStatus.AVAILABLE, seatG01.getStatus());
+        assertEquals("G03", seatG03.getSeatId());
+        assertEquals(SeatStatus.AVAILABLE, seatG03.getStatus());
+        assertEquals("G04", seatG04.getSeatId());
+        assertEquals(SeatStatus.BOOKED, seatG04.getStatus());
+
+        // Snapshot thay đổi: G03 AVAILABLE -> BOOKED, G04 BOOKED -> AVAILABLE
+        java.util.Map<String, SeatStatus> snapshot = new java.util.HashMap<>();
+        snapshot.put("G03", SeatStatus.BOOKED);
+        snapshot.put("G04", SeatStatus.AVAILABLE);
+
+        SeatViewModel.applySnapshot(seats, snapshot);
+
+        // Đảm bảo đối tượng trong list giữ nguyên tham chiếu (không tạo mới đối tượng)
+        assertSame(seatG01, seats.get(0));
+        assertSame(seatG03, seats.get(2));
+        assertSame(seatG04, seats.get(3));
+
+        // Trạng thái ghế được cập nhật chính xác
+        assertEquals(SeatStatus.AVAILABLE, seatG01.getStatus());
+        assertEquals(SeatStatus.BOOKED, seatG03.getStatus());
+        assertTrue(seatG03.isBooked());
+        assertEquals(SeatStatus.AVAILABLE, seatG04.getStatus());
+        assertTrue(seatG04.isAvailable());
+    }
+
+    @Test
+    @DisplayName("MockSeatSource - createRefreshedMockSnapshot sinh snapshot hợp lệ và cập nhật được qua applySnapshot")
+    void testRefreshedMockSnapshot() {
+        ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+        java.util.Map<String, SeatStatus> refreshedSnapshot = MockSeatSource.createRefreshedMockSnapshot();
+
+        assertNotNull(refreshedSnapshot);
+        assertEquals(10, refreshedSnapshot.size());
+        assertEquals(SeatStatus.BOOKED, refreshedSnapshot.get("G01"));
+        assertEquals(SeatStatus.AVAILABLE, refreshedSnapshot.get("G04"));
+        assertEquals(SeatStatus.UNKNOWN, refreshedSnapshot.get("G09"));
+
+        SeatViewModel.applySnapshot(seats, refreshedSnapshot);
+
+        assertEquals(SeatStatus.BOOKED, seats.get(0).getStatus()); // G01
+        assertEquals(SeatStatus.AVAILABLE, seats.get(3).getStatus()); // G04
+        assertEquals(SeatStatus.UNKNOWN, seats.get(8).getStatus()); // G09
+    }
+
+    @Test
     @DisplayName("ScreenState - 4 trạng thái màn hình có style class CSS và thông điệp chuẩn")
     void testScreenStateEnums() {
         assertEquals("status-idle", ScreenState.IDLE.getStyleClass());

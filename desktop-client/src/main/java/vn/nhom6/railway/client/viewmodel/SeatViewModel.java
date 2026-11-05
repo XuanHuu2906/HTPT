@@ -129,6 +129,52 @@ public class SeatViewModel {
             }
             return list;
         }
+
+        /**
+         * Sinh snapshot trạng thái ghế mặc định ban đầu: G02, G04, G08 là BOOKED, còn lại AVAILABLE.
+         */
+        public static java.util.Map<String, SeatStatus> createInitialSnapshot() {
+            java.util.Map<String, SeatStatus> map = new java.util.LinkedHashMap<>();
+            for (int i = 1; i <= TOTAL_SEATS; i++) {
+                String seatId = String.format("G%02d", i);
+                map.put(seatId, INITIAL_BOOKED_SEATS.contains(seatId) ? SeatStatus.BOOKED : SeatStatus.AVAILABLE);
+            }
+            return map;
+        }
+
+        /**
+         * Sinh snapshot mô phỏng dữ liệu cập nhật mới (refresh):
+         * Ví dụ: G01, G05 được đặt (BOOKED), G04 được mở lại (AVAILABLE), G09 CHƯA RÕ (UNKNOWN).
+         */
+        public static java.util.Map<String, SeatStatus> createRefreshedMockSnapshot() {
+            java.util.Map<String, SeatStatus> map = new java.util.LinkedHashMap<>(createInitialSnapshot());
+            map.put("G01", SeatStatus.BOOKED);
+            map.put("G04", SeatStatus.AVAILABLE);
+            map.put("G05", SeatStatus.BOOKED);
+            map.put("G09", SeatStatus.UNKNOWN);
+            return map;
+        }
+
+        /**
+         * Áp dụng snapshot trạng thái ghế mới vào danh sách ghế hiện có mà KHÔNG tạo lại đối tượng SeatViewModel.
+         *
+         * @param seats danh sách ghế hiện tại
+         * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
+         */
+        public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
+            if (seats == null || snapshot == null) {
+                return;
+            }
+            for (SeatViewModel seat : seats) {
+                String id = seat.getSeatId();
+                if (snapshot.containsKey(id)) {
+                    SeatStatus newStatus = snapshot.get(id);
+                    if (newStatus != null && seat.getStatus() != newStatus) {
+                        seat.setStatus(newStatus);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -274,6 +320,16 @@ public class SeatViewModel {
      */
     public static ObservableList<SeatViewModel> createMockSeats() {
         return MockSeatSource.createMockSeats();
+    }
+
+    /**
+     * Áp dụng snapshot trạng thái ghế mới vào danh sách ghế hiện có mà KHÔNG tạo lại đối tượng (TASK D05).
+     *
+     * @param seats danh sách ghế cần cập nhật
+     * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
+     */
+    public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
+        MockSeatSource.applySnapshot(seats, snapshot);
     }
 
     /**
