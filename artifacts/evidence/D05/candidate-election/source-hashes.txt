@@ -1,0 +1,27 @@
+﻿
+
+Algorithm : SHA256
+Hash      : 10ABEB1005FEAFFA09A0548567802640AF6C2FA89D960ADF9537BD1896DCB549
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\CandidateElect
+            ion.java
+
+Algorithm : SHA256
+Hash      : 1D5517EB653D2B626CA75B9DFCA2B4BE3C6D8A65DBC623F670E1C7F40F2327D2
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\test\java\vn\nhom6\railway\raft\election\ElectionTest.j
+            ava
+
+Algorithm : SHA256
+Hash      : 11435C0347BBFDB852290464996173474F17545EA49035065C1DF0754A4452CF
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\ElectionServic
+            e.java
+
+Algorithm : SHA256
+Hash      : D9D5F78C17D39578A614DBAFD7FB3053D918218062FBDECA0FC14DB6FCC51ABF
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\core\RaftNode.java
+
+Algorithm : SHA256
+Hash      : 36C1B3180520811871DDAE23AECF352B48AA0ACB221C716FB9DC72B516FCFAF3
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\core\RaftState.java
+
+
+
