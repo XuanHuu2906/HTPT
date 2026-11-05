@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import vn.nhom6.railway.protocol.dto.RequestVoteRequestDto;
 import vn.nhom6.railway.raft.core.RaftNode;
 import vn.nhom6.railway.raft.core.RaftState;
 import vn.nhom6.railway.raft.core.RaftStorage.RaftStorageException;
@@ -25,16 +26,28 @@ import vn.nhom6.railway.raft.core.Role;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Virtual local time and fake core/storage only; not a distributed election test. */
+/** Real timer/candidate with virtual time and fake core/storage/transport; no cluster runtime. */
 class TimerTest {
     private final FakeScheduler clock = new FakeScheduler();
     private final FakeNode node = new FakeNode();
     private final List<Exception> failures = new ArrayList<>();
+    private final List<Sent> sent = new ArrayList<>();
+    private Runnable onLeader = () -> { };
+    private final CandidateElection election = new CandidateElection("node-1", node, node.state,
+            (peer, request, reply) -> {
+                assertEquals(node.savedTerm, request.getTerm(), "persist before sending votes");
+                assertEquals("node-1", node.savedVote);
+                sent.add(new Sent(peer, request, reply));
+            }, term -> node.state.becomeFollower(term), () -> onLeader.run());
+
+    private record Sent(String peer, RequestVoteRequestDto request, CandidateElection.VoteReply reply) { }
 
     private ElectionTimer timer(long... intervals) {
         int[] draw = {0};
-        return new ElectionTimer(node, clock,
+        ElectionTimer timer = new ElectionTimer(election, clock,
                 () -> intervals[Math.min(draw[0]++, intervals.length - 1)], failures::add);
+        onLeader = timer::stop;
+        return timer;
     }
 
     @Test
@@ -47,11 +60,40 @@ class TimerTest {
         assertEquals(Role.CANDIDATE, node.role());
         assertEquals(1, node.currentTerm());
         assertEquals("node-1", node.state.votedFor());
+        assertEquals(4, sent.size());
+        assertTrue(sent.stream().allMatch(s -> s.request().getTerm() == 1));
         clock.advance(999);
         assertEquals(1, node.timeouts);
         clock.advance(1);
         assertEquals(2, node.timeouts);
         assertEquals(2, node.currentTerm());
+        assertEquals(8, sent.size());
+        assertTrue(sent.subList(4, 8).stream().allMatch(s -> s.request().getTerm() == 2));
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test
+    void oneDeadlineStartsOneCampaignAndPromotionCancelsFurtherTimeouts() throws Exception {
+        ElectionTimer timer = timer(500);
+        timer.start();
+        FakeTask expired = clock.tasks.peek();
+        clock.advance(500);
+        expired.command.run(); // An already delivered deadline must not run another campaign.
+
+        assertEquals(1, node.timeouts);
+        assertEquals(1, node.currentTerm());
+        assertEquals(4, sent.size());
+        assertEquals(Set.of("node-2", "node-3", "node-4", "node-5"),
+                Set.copyOf(sent.stream().map(Sent::peer).toList()));
+        assertTrue(sent.stream().allMatch(s -> s.request().getTerm() == 1));
+
+        sent.get(0).reply().receive(new RaftNode.RequestVoteResponse(1, true));
+        assertEquals(Role.CANDIDATE, node.role());
+        sent.get(1).reply().receive(new RaftNode.RequestVoteResponse(1, true));
+        assertEquals(Role.LEADER, node.role());
+        clock.advance(2_000);
+        assertEquals(1, node.timeouts);
+        assertEquals(4, sent.size());
         assertTrue(failures.isEmpty());
     }
 
@@ -223,6 +265,7 @@ class TimerTest {
         assertEquals(1, node.timeouts);
         assertEquals(List.of(node.failure), failures);
         assertEquals(Role.FOLLOWER, node.role());
+        assertTrue(sent.isEmpty(), "failed durable transition cannot send RequestVote");
         assertThrows(IllegalStateException.class, timer::start);
     }
 
@@ -265,7 +308,7 @@ class TimerTest {
 
     @Test
     void productionConstructorUsesConfiguredRandomizedInterval() {
-        ElectionTimer timer = new ElectionTimer(node, clock, ElectionConfig.defaults(), failures::add);
+        ElectionTimer timer = new ElectionTimer(election, clock, ElectionConfig.defaults(), failures::add);
         timer.start();
         long deadline = clock.tasks.peek().deadline;
         assertTrue(deadline >= 500 && deadline <= 1_000);
@@ -343,6 +386,8 @@ class TimerTest {
     private static final class FakeNode implements RaftNode {
         private final RaftState state = new RaftState();
         private int timeouts;
+        private long savedTerm;
+        private String savedVote;
         private RaftStorageException failure;
         private Runnable afterTimeout = () -> { };
 
@@ -350,6 +395,9 @@ class TimerTest {
             timeouts++;
             if (failure != null) throw failure;
             state.startElection("node-1");
+            // Test-only durable-write marker; there is no PostgreSQL in this fixture.
+            savedTerm = state.currentTerm();
+            savedVote = state.votedFor();
             afterTimeout.run();
         }
         @Override public AppendEntriesResponse handleAppendEntries(AppendEntriesRequest request) {

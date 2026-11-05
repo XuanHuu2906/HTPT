@@ -25,6 +25,7 @@ import vn.nhom6.railway.raft.core.Role;
  * not postpone an election. Call stop on promotion to Leader and start after stepping down.
  */
 public final class ElectionTimer implements AutoCloseable {
+    private final ElectionService election;
     private final RaftNode node;
     private final ScheduledExecutorService eventLoop;
     private final ElectionTimeoutPolicy timeouts;
@@ -35,15 +36,16 @@ public final class ElectionTimer implements AutoCloseable {
     private boolean closed;
 
     /** Creates a timer with independently randomized intervals from the existing policy. */
-    public ElectionTimer(RaftNode node, ScheduledExecutorService eventLoop,
+    public ElectionTimer(ElectionService election, ScheduledExecutorService eventLoop,
             ElectionConfig config, Consumer<Exception> onFailure) {
-        this(node, eventLoop, ElectionTimeoutPolicy.randomized(config), onFailure);
+        this(election, eventLoop, ElectionTimeoutPolicy.randomized(config), onFailure);
     }
 
     /** Injects deterministic intervals and a virtual-time scheduler for unit tests. */
-    public ElectionTimer(RaftNode node, ScheduledExecutorService eventLoop,
+    public ElectionTimer(ElectionService election, ScheduledExecutorService eventLoop,
             ElectionTimeoutPolicy timeouts, Consumer<Exception> onFailure) {
-        this.node = Objects.requireNonNull(node, "node");
+        this.election = Objects.requireNonNull(election, "election");
+        this.node = Objects.requireNonNull(election.node(), "election.node");
         this.eventLoop = Objects.requireNonNull(eventLoop, "eventLoop");
         this.timeouts = Objects.requireNonNull(timeouts, "timeouts");
         this.onFailure = Objects.requireNonNull(onFailure, "onFailure");
@@ -131,8 +133,8 @@ public final class ElectionTimer implements AutoCloseable {
                 stop();
                 return;
             }
-            // Core owns Candidate transition and persist-before-REQUEST_VOTE ordering.
-            node.onElectionTimeout();
+            // One entry point owns the campaign; it invokes the durable core exactly once.
+            election.startElection();
             if (running && !closed) {
                 if (node.role() == Role.LEADER) {
                     stop();

@@ -111,9 +111,11 @@ public interface RaftNode {
     AppendEntriesResponse handleAppendEntries(AppendEntriesRequest request) throws RaftStorageException;
 
     /**
-     * Handles an election timeout. The RaftNode implementation starts an election through
-     * RaftState, durably stores the new term and self-vote, and only then emits
-     * {@code REQUEST_VOTE}. TV5 must not mutate RaftState directly.
+     * Performs the durable core transition for one election timeout: increment the term,
+     * record the self-vote and persist both before returning. ElectionService is the sole
+     * caller for timer-driven campaigns and sends REQUEST_VOTE after this returns.
+     * This method must not send RPCs or call back into ElectionService. ElectionTimer
+     * invokes ElectionService.startElection, not this method separately.
      *
      * @throws RaftStorageException if the new term and vote cannot be durably stored
      */

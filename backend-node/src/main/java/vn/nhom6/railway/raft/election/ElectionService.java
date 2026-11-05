@@ -62,6 +62,7 @@ public interface ElectionService {
 
     /**
      * Starts a local election after the election timer expires.
+     * This is ElectionTimer's only timeout entry point; the timer must not also call core.
      *
      * <p>Delegates to {@link RaftNode#onElectionTimeout()}, which increments the term,
      * records the self-vote and durably stores both before this method returns
