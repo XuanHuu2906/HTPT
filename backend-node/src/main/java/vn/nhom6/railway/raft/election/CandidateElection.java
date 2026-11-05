@@ -21,10 +21,9 @@ import vn.nhom6.railway.raft.core.Role;
  * state must be the very instance owned by node. Only campaign bookkeeping is local here;
  * durable transitions remain in the core. This class does not provide TCP or PostgreSQL.
  *
- * <p>D4's timer calls RaftNode.onElectionTimeout. Runtime wiring must arrange for that
- * event to invoke this coordinator once, whose node delegate performs the durable core
- * transition only; it must not call back into this coordinator recursively or send a
- * second set of vote requests. Runtime wiring is not provided by this D5 component.
+ * <p>ElectionTimer invokes startElection once per deadline. This coordinator alone calls
+ * RaftNode.onElectionTimeout for the durable transition, then sends vote requests.
+ * The core must neither call back into election nor send a second set of vote requests.
  */
 public final class CandidateElection implements ElectionService {
     private static final List<String> VOTERS =

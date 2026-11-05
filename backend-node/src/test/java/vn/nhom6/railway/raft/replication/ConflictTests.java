@@ -381,6 +381,37 @@ class ConflictTests {
     }
 
     @Test
+    void laterSameTermPayloadConflictAfterDivergenceLeavesEntireLogUntouched() {
+        InMemoryRaftLog log = logOf(payloadEntry(1L, 1L, PAYLOAD_A),
+                payloadEntry(2L, 2L, PAYLOAD_A), payloadEntry(3L, 3L, PAYLOAD_A));
+        List<RaftLogEntry> before = log.entries();
+        List<RaftLogEntry> batch = List.of(payloadEntry(2L, 3L, PAYLOAD_B),
+                payloadEntry(3L, 3L, PAYLOAD_B));
+
+        assertThrows(IllegalStateException.class,
+                () -> checkerOf(log).reconcile(1L, 1L, batch, 1L));
+
+        assertLogUnchanged(log, before);
+    }
+
+    @Test
+    void divergenceIsRetainedWhenLaterEntriesMatchAndBatchExtendsPastLocalTail() {
+        RaftLogEntry first = payloadEntry(1L, 1L, PAYLOAD_A);
+        RaftLogEntry third = payloadEntry(3L, 3L, PAYLOAD_A);
+        InMemoryRaftLog log = logOf(first, payloadEntry(2L, 2L, PAYLOAD_A), third);
+        List<RaftLogEntry> batch = List.of(payloadEntry(2L, 3L, PAYLOAD_B),
+                third, payloadEntry(4L, 3L, PAYLOAD_B));
+
+        var result = checkerOf(log).reconcile(1L, 1L, batch, 1L);
+
+        assertTrue(result.accepted());
+        assertEquals(2L, result.truncatedFromIndex());
+        assertEquals(4L, result.matchIndex());
+        assertEquals(batch, result.appended());
+        assertEquals(List.of(first, batch.get(0), third, batch.get(2)), log.entries());
+    }
+
+    @Test
     void sameIndexAndTermWithDifferentCommandAtACommittedIndexIsFatal() {
         InMemoryRaftLog log = logOf(payloadEntry(1L, 1L, PAYLOAD_A), payloadEntry(2L, 1L, PAYLOAD_A));
         LogConsistencyChecker checker = checkerOf(log);

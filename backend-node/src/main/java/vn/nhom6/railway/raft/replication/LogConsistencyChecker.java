@@ -200,10 +200,11 @@ public final class LogConsistencyChecker {
      * same {@code (index, term)}, fail closed (SPEC-04 section 4).
      */
     private long findDivergence(List<RaftLogEntry> entries, long lastIndex, long commitIndex) {
+        long firstDivergence = RaftState.EMPTY_LOG_INDEX;
         for (RaftLogEntry incoming : entries) {
             if (incoming.index() > lastIndex) {
                 // Everything from here on is new; no local suffix of those indices exists.
-                return RaftState.EMPTY_LOG_INDEX;
+                break;
             }
             RaftLogEntry local = log.get(incoming.index()).orElseThrow(() -> new IllegalStateException(
                     "log lost entry " + incoming.index() + " while it was within lastIndex " + lastIndex));
@@ -218,9 +219,13 @@ public final class LogConsistencyChecker {
                 throw new IllegalStateException("incoming term " + incoming.term() + " at committed index "
                         + incoming.index() + " would overwrite committed term " + local.term());
             }
-            return incoming.index();
+            if (firstDivergence == RaftState.EMPTY_LOG_INDEX) {
+                firstDivergence = incoming.index();
+            }
+            // Keep validating against the original log, including the suffix to be removed.
+            // A later same-(index, term) payload violation must abort before any mutation.
         }
-        return RaftState.EMPTY_LOG_INDEX;
+        return firstDivergence;
     }
 
     /**
