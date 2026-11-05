@@ -1,10 +1,23 @@
 package vn.nhom6.railway.client.controller;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.StringBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.GridPane;
@@ -14,6 +27,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import vn.nhom6.railway.client.BookingOutcome;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
+import vn.nhom6.railway.client.viewmodel.SeatViewModel.MockSeatSource;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenState;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenStateModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.SeatStatus;
@@ -23,24 +37,27 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 
 /**
- * Controller quản lý sơ đồ chọn ghế tương tác (TASK D02, D03 & D04).
+ * Controller quản lý sơ đồ chọn ghế tương tác (TASK D02, D03, D04 & D05).
  * <p>
- * Tính năng nâng cấp D04:
- * - Sử dụng {@link SeatViewModel} và {@link ScreenStateModel} thay vì hardcode màu trong Java.
- * - Phân biệt trực quan 4 trạng thái ghế: AVAILABLE, BOOKED, SELECTED, UNKNOWN (viền nét đứt).
- * - Legend cập nhật số lượng và trạng thái trực tiếp theo dữ liệu mock.
- * - Quản lý trạng thái màn hình: IDLE, LOADING (kèm ProgressIndicator), ERROR, DISCONNECTED.
- * - Xử lý đầy đủ kết quả đặt vé: CONFIRMED (đổi BOOKED), REJECTED (đổi BOOKED), UNKNOWN (đổi UNKNOWN).
- * - Bảng điều khiển MOCK kiểm thử nhanh để xác minh màu và legend tự động cập nhật.
+ * Tính năng nâng cấp D05:
+ * - Sinh các ô ghế tự động bằng vòng lặp từ {@link ObservableList} của {@link SeatViewModel},
+ *   không khai báo hoặc hardcode từng button G01..G10.
+ * - Danh sách ghế đang chọn được suy ra tự động bằng {@link FilteredList} từ ViewModel,
+ *   không duy trì bản sao thủ công dễ lệch dữ liệu.
+ * - Nút "Tiếp tục" (Đặt vé) tự động bind disableProperty theo `Bindings.isEmpty(selectedSeatsList)`.
+ * - Nhãn danh sách ghế chọn và 4 nhãn Legend (AVAILABLE, BOOKED, SELECTED, UNKNOWN)
+ *   tự động bind vào ViewModel và tự re-evaluate khi dữ liệu thay đổi.
+ * - Mỗi nút ghế bind trực tiếp vào ViewModel:
+ *   + textProperty bind vào displayTextProperty.
+ *   + disableProperty bind vào bookedProperty (disabled khi BOOKED).
+ *   + Style class CSS cập nhật qua listener trên statusProperty.
+ * - Click ghế chỉ gọi vào ViewModel (setStatus), UI tự động cập nhật nhờ binding.
  */
 public class SeatGridController {
 
@@ -88,7 +105,7 @@ public class SeatGridController {
     @FXML
     private Label legendUnknownLabel;
 
-    // === Nút Điều Khiển MOCK (Fast Mock Controls) ===
+    // === Nút & ComboBox Điều Khiển MOCK (Fast Mock Controls — TASK D05) ===
     @FXML
     private Button mockLoadingBtn;
 
@@ -102,10 +119,19 @@ public class SeatGridController {
     private Button mockIdleBtn;
 
     @FXML
-    private Button mockToggleG04UnknownBtn;
+    private ComboBox<String> mockSeatComboBox;
 
     @FXML
-    private Button mockToggleG05BookedBtn;
+    private ComboBox<SeatStatus> mockStatusComboBox;
+
+    @FXML
+    private Button mockApplySeatStatusBtn;
+
+    @FXML
+    private Button mockToggleG03BookedBtn;
+
+    @FXML
+    private Button mockRefreshSnapshotBtn;
 
     @FXML
     private Button mockAll4StatesBtn;
@@ -113,17 +139,27 @@ public class SeatGridController {
     @FXML
     private Button mockResetDefaultBtn;
 
-    // ViewModel lưu trữ dữ liệu 10 ghế (G01–G10)
-    private final Map<String, SeatViewModel> seatViewModels = new LinkedHashMap<>();
+    // Nguồn dữ liệu ObservableList 10 ghế (G01–G10) sinh từ MockSeatSource duy nhất
+    private final ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
 
-    // Bản đồ lưu các nút ghế trên giao diện
+    // Danh sách ghế đang chọn được suy ra trực tiếp từ seats qua FilteredList (không giữ bản sao thủ công)
+    private final FilteredList<SeatViewModel> selectedSeatsList = new FilteredList<>(seats, SeatViewModel::isSelected);
+
+    // Bản đồ lưu tham chiếu các nút ghế trên giao diện
     private final Map<String, Button> seatButtons = new HashMap<>();
-
-    // Danh sách các ghế người dùng đang chọn cục bộ (dùng TreeSet để sắp xếp mã ghế tăng dần)
-    private final Set<String> selectedSeats = new TreeSet<>();
 
     // Model quản lý trạng thái màn hình
     private final ScreenStateModel screenStateModel = new ScreenStateModel();
+
+    // Reactive Properties lưu trữ số lượng ghế cho Legend binding (TASK D05)
+    private final IntegerProperty availableCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty selectedCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty bookedCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty unknownCountProperty = new SimpleIntegerProperty(0);
+
+    // Reactive Properties cho danh sách ghế đang chọn & trạng thái nút Đặt vé
+    private final StringProperty selectedSeatsSummaryProperty = new SimpleStringProperty("Ghế đang chọn: (Chưa chọn ghế nào)");
+    private final BooleanProperty hasSelectedSeatsProperty = new SimpleBooleanProperty(false);
 
     // Callback điều hướng
     private Runnable onBackAction;
@@ -132,43 +168,96 @@ public class SeatGridController {
     @FXML
     public void initialize() {
         if (mockBadgeLabel != null) {
-            mockBadgeLabel.setText("MOCK DATA — D04");
+            mockBadgeLabel.setText(MockSeatSource.MOCK_LABEL);
         }
 
-        // 1. Khởi tạo dữ liệu ghế bằng SeatViewModel
-        initMockData();
+        // 1. Lắng nghe thay đổi danh sách ObservableList để refresh lưới nếu cấu trúc thay đổi
+        setupSeatsListListener();
 
-        // 2. Dựng lưới 10 ghế trong GridPane (2 hàng x 5 cột)
+        // 2. Dựng lưới ghế tự động bằng vòng lặp và thiết lập data binding
         buildSeatGrid();
 
         // 3. Khởi tạo liên kết trạng thái màn hình (ScreenStateModel)
         setupScreenStateBinding();
 
-        // 4. Cập nhật nhãn chọn và chú giải số lượng (Legend)
-        updateSelectionUI();
-        updateLegendCounts();
+        // 4. Thiết lập Data Binding cho Legend, Nút Đặt vé và Danh sách ghế chọn
+        setupReactiveBindings();
+
+        // 5. Khởi tạo danh sách lựa chọn cho vùng điều khiển MOCK
+        initMockControls();
     }
 
     /**
-     * Khởi tạo dữ liệu 10 ghế MOCK: G01 đến G10.
-     * Mặc định ban đầu: G02, G04, G08 ở trạng thái BOOKED, các ghế còn lại là AVAILABLE.
+     * Khởi tạo dữ liệu cho ComboBox điều khiển ghế MOCK.
      */
-    private void initMockData() {
-        seatViewModels.clear();
-        for (int i = 1; i <= 10; i++) {
-            String seatId = String.format("G%02d", i);
-            SeatStatus initialStatus;
-            if (i == 2 || i == 4 || i == 8) {
-                initialStatus = SeatStatus.BOOKED;
-            } else {
-                initialStatus = SeatStatus.AVAILABLE;
-            }
-            seatViewModels.put(seatId, new SeatViewModel(seatId, initialStatus));
+    private void initMockControls() {
+        if (mockSeatComboBox != null) {
+            mockSeatComboBox.getItems().setAll(
+                    seats.stream().map(SeatViewModel::getSeatId).toList()
+            );
+            mockSeatComboBox.setValue("G03");
+        }
+
+        if (mockStatusComboBox != null) {
+            mockStatusComboBox.getItems().setAll(SeatStatus.values());
+            mockStatusComboBox.setValue(SeatStatus.BOOKED);
         }
     }
 
     /**
-     * Dựng các nút bấm đại diện cho 10 ghế trong GridPane.
+     * Thiết lập các reactive data bindings cho Legend, Nhãn tóm tắt và Nút Đặt vé.
+     */
+    private void setupReactiveBindings() {
+        // 1. Bind nhãn danh sách ghế đang chọn trực tiếp qua StringProperty phản ứng
+        if (selectedSeatsLabel != null) {
+            selectedSeatsLabel.textProperty().bind(selectedSeatsSummaryProperty);
+        }
+
+        // 2. Bind disableProperty của nút Tiếp tục (Đặt vé) qua BooleanProperty
+        if (continueBtn != null) {
+            continueBtn.disableProperty().bind(hasSelectedSeatsProperty.not());
+        }
+
+        // 3. Bind 4 nhãn Legend trực tiếp vào các reactive IntegerProperties
+        if (legendAvailableLabel != null) {
+            legendAvailableLabel.textProperty().bind(Bindings.concat("Trống (", availableCountProperty.asString(), ")"));
+        }
+        if (legendSelectedLabel != null) {
+            legendSelectedLabel.textProperty().bind(Bindings.concat("Đang chọn (", selectedCountProperty.asString(), ")"));
+        }
+        if (legendBookedLabel != null) {
+            legendBookedLabel.textProperty().bind(Bindings.concat("Đã đặt (", bookedCountProperty.asString(), ")"));
+        }
+        if (legendUnknownLabel != null) {
+            legendUnknownLabel.textProperty().bind(Bindings.concat("Chưa rõ (", unknownCountProperty.asString(), ")"));
+        }
+
+        updateLegendCounts();
+        updateSelectedSeatsUI();
+    }
+
+    /**
+     * Lắng nghe thay đổi của ObservableList để refresh lưới ghế tự động khi danh sách thêm/bớt.
+     */
+    private void setupSeatsListListener() {
+        seats.addListener((ListChangeListener<SeatViewModel>) change -> {
+            boolean needsRebuild = false;
+            while (change.next()) {
+                if (change.wasAdded() || change.wasRemoved() || change.wasPermutated()) {
+                    needsRebuild = true;
+                }
+            }
+            if (needsRebuild) {
+                buildSeatGrid();
+            }
+            updateLegendCounts();
+            updateSelectedSeatsUI();
+        });
+    }
+
+    /**
+     * Dựng các ô ghế tự động bằng vòng lặp từ ObservableList<SeatViewModel>.
+     * KHÔNG khai báo hoặc hardcode từng button G01..G10.
      */
     private void buildSeatGrid() {
         if (seatGridPane == null) {
@@ -178,63 +267,107 @@ public class SeatGridController {
         seatGridPane.getChildren().clear();
         seatButtons.clear();
 
-        int index = 0;
-        for (Map.Entry<String, SeatViewModel> entry : seatViewModels.entrySet()) {
-            String seatId = entry.getKey();
-            SeatViewModel vm = entry.getValue();
+        for (int index = 0; index < seats.size(); index++) {
+            SeatViewModel vm = seats.get(index);
+            String seatId = vm.getSeatId();
 
             Button button = new Button();
             button.getStyleClass().add("seat-button");
 
-            // Cập nhật giao diện ban đầu
-            updateSeatButtonVisuals(button, seatId, vm.getStatus());
+            // 1. Bind văn bản hiển thị trên nút tự động theo displayTextProperty của ViewModel
+            button.textProperty().bind(vm.displayTextProperty());
 
-            // Lắng nghe thay đổi trạng thái từ ViewModel để UI tự động cập nhật
+            // 2. Bind disable trạng thái: disabled tự động khi ghế đã BOOKED
+            button.disableProperty().bind(vm.bookedProperty());
+
+            // 3. Khởi tạo và lắng nghe thay đổi style class CSS qua statusProperty
+            updateSeatButtonStyleClass(button, vm.getStatus());
             vm.statusProperty().addListener((obs, oldStatus, newStatus) -> {
-                updateSeatButtonVisuals(button, seatId, newStatus);
+                updateSeatButtonStyleClass(button, newStatus);
                 updateLegendCounts();
+                updateSelectedSeatsUI();
             });
 
-            // Gắn sự kiện click ghế
-            button.setOnAction(e -> handleSeatClick(seatId));
+            // 4. Click ghế: Controller chỉ gọi ViewModel để đổi status (AVAILABLE ⇄ SELECTED)
+            button.setOnAction(e -> handleSeatClick(vm));
 
             seatButtons.put(seatId, button);
 
             int col = index % 5;
             int row = index / 5;
             seatGridPane.add(button, col, row);
-            index++;
         }
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     /**
-     * Cập nhật style class CSS và nhãn hiển thị cho nút ghế mà KHÔNG hardcode màu trong Java code.
+     * Cập nhật style class CSS cho nút ghế từ CSS railway.css (không hardcode màu trong Java).
      */
-    private void updateSeatButtonVisuals(Button button, String seatId, SeatStatus status) {
+    private void updateSeatButtonStyleClass(Button button, SeatStatus status) {
         if (button == null || status == null) {
             return;
         }
 
         button.getStyleClass().removeAll("seat-available", "seat-booked", "seat-selected", "seat-unknown");
         button.getStyleClass().add(status.getStyleClass());
-        button.setText(status.formatButtonText(seatId));
+    }
+
+    /**
+     * Cập nhật các IntegerProperty đếm số lượng ghế theo 4 trạng thái để Legend tự động phản hồi (TASK D05).
+     */
+    public void updateLegendCounts() {
+        int avail = 0;
+        int sel = 0;
+        int book = 0;
+        int unk = 0;
+
+        for (SeatViewModel vm : seats) {
+            switch (vm.getStatus()) {
+                case AVAILABLE -> avail++;
+                case SELECTED -> sel++;
+                case BOOKED -> book++;
+                case UNKNOWN -> unk++;
+            }
+        }
+
+        availableCountProperty.set(avail);
+        selectedCountProperty.set(sel);
+        bookedCountProperty.set(book);
+        unknownCountProperty.set(unk);
+    }
+
+    /**
+     * Cập nhật danh sách ghế đang chọn và trạng thái disable của nút Đặt vé theo dữ liệu reactive (TASK D05).
+     */
+    public void updateSelectedSeatsUI() {
+        List<String> sortedIds = seats.stream()
+                .filter(SeatViewModel::isSelected)
+                .map(SeatViewModel::getSeatId)
+                .sorted()
+                .toList();
+
+        if (sortedIds.isEmpty()) {
+            selectedSeatsSummaryProperty.set("Ghế đang chọn: (Chưa chọn ghế nào)");
+            hasSelectedSeatsProperty.set(false);
+        } else {
+            selectedSeatsSummaryProperty.set("Ghế đang chọn: " + String.join(", ", sortedIds) + " (" + sortedIds.size() + " ghế)");
+            hasSelectedSeatsProperty.set(true);
+        }
     }
 
     /**
      * Thiết lập lắng nghe thay đổi của ScreenStateModel để cập nhật banner thông báo.
      */
     private void setupScreenStateBinding() {
-        // Lắng nghe thay đổi trạng thái
         screenStateModel.stateProperty().addListener((obs, oldState, newState) -> updateScreenStateUI(newState));
 
-        // Lắng nghe thay đổi thông điệp
         screenStateModel.messageProperty().addListener((obs, oldMsg, newMsg) -> {
             if (screenStatusLabel != null) {
                 screenStatusLabel.setText(newMsg);
             }
         });
 
-        // Khởi tạo trạng thái ban đầu
         updateScreenStateUI(screenStateModel.getState());
     }
 
@@ -261,43 +394,10 @@ public class SeatGridController {
     }
 
     /**
-     * Cập nhật số lượng đếm trên chú giải (Legend) dựa trên dữ liệu ghế thực tế.
-     * Minh chứng khi dữ liệu mock thay đổi thì legend tự động cập nhật đúng.
-     */
-    public void updateLegendCounts() {
-        int availableCount = 0;
-        int selectedCount = 0;
-        int bookedCount = 0;
-        int unknownCount = 0;
-
-        for (SeatViewModel vm : seatViewModels.values()) {
-            switch (vm.getStatus()) {
-                case AVAILABLE -> availableCount++;
-                case SELECTED -> selectedCount++;
-                case BOOKED -> bookedCount++;
-                case UNKNOWN -> unknownCount++;
-            }
-        }
-
-        if (legendAvailableLabel != null) {
-            legendAvailableLabel.setText("Trống (" + availableCount + ")");
-        }
-        if (legendSelectedLabel != null) {
-            legendSelectedLabel.setText("Đang chọn (" + selectedCount + ")");
-        }
-        if (legendBookedLabel != null) {
-            legendBookedLabel.setText("Đã đặt (" + bookedCount + ")");
-        }
-        if (legendUnknownLabel != null) {
-            legendUnknownLabel.setText("Chưa rõ (" + unknownCount + ")");
-        }
-    }
-
-    /**
      * Xử lý tương tác khi người dùng nhấp vào một ghế.
+     * Controller chỉ gọi vào ViewModel để đổi trạng thái, UI tự động cập nhật qua bindings.
      */
-    public void handleSeatClick(String seatId) {
-        SeatViewModel vm = seatViewModels.get(seatId);
+    public void handleSeatClick(SeatViewModel vm) {
         if (vm == null) {
             return;
         }
@@ -305,88 +405,69 @@ public class SeatGridController {
         SeatStatus currentStatus = vm.getStatus();
 
         if (currentStatus == SeatStatus.BOOKED) {
-            updateStatus("Ghế " + seatId + " đã được đặt trước (BOOKED). Không thể chọn ghế này!");
+            updateStatus("Ghế " + vm.getSeatId() + " đã được đặt trước (BOOKED). Không thể chọn ghế này!");
             return;
         }
 
         if (currentStatus == SeatStatus.UNKNOWN) {
-            updateStatus("Ghế " + seatId + " đang ở trạng thái CHƯA RÕ (UNKNOWN). Vui lòng đợi xác nhận trước khi thao tác!");
+            updateStatus("Ghế " + vm.getSeatId() + " đang ở trạng thái CHƯA RÕ (UNKNOWN). Vui lòng đợi xác nhận trước khi thao tác!");
             return;
         }
 
-        if (selectedSeats.contains(seatId)) {
-            // Hủy chọn
-            selectedSeats.remove(seatId);
+        if (currentStatus == SeatStatus.SELECTED) {
+            // Hủy chọn: chuyển về AVAILABLE trong model, UI và FilteredList tự cập nhật
             vm.setStatus(SeatStatus.AVAILABLE);
-            updateStatus("Đã bỏ chọn ghế " + seatId + ".");
-        } else {
-            // Chọn ghế
-            selectedSeats.add(seatId);
+            updateStatus("Đã bỏ chọn ghế " + vm.getSeatId() + ".");
+        } else if (currentStatus == SeatStatus.AVAILABLE) {
+            // Chọn ghế: chuyển sang SELECTED trong model, UI và FilteredList tự cập nhật
             vm.setStatus(SeatStatus.SELECTED);
-            updateStatus("Đã chọn ghế " + seatId + ".");
-        }
-
-        updateSelectionUI();
-    }
-
-    /**
-     * Cập nhật nhãn ghế đang chọn và bật/tắt nút "Đặt vé".
-     */
-    private void updateSelectionUI() {
-        if (selectedSeats.isEmpty()) {
-            if (selectedSeatsLabel != null) {
-                selectedSeatsLabel.setText("Ghế đang chọn: (Chưa chọn ghế nào)");
-            }
-            if (continueBtn != null) {
-                continueBtn.setDisable(true);
-            }
-        } else {
-            String seatListStr = String.join(", ", selectedSeats);
-            if (selectedSeatsLabel != null) {
-                selectedSeatsLabel.setText("Ghế đang chọn: " + seatListStr + " (" + selectedSeats.size() + " ghế)");
-            }
-            if (continueBtn != null) {
-                continueBtn.setDisable(false);
-            }
+            updateStatus("Đã chọn ghế " + vm.getSeatId() + ".");
         }
     }
 
+    public void handleSeatClick(String seatId) {
+        handleSeatClick(getSeatViewModel(seatId));
+    }
+
     /**
-     * Lấy danh sách các mã ghế người dùng đang chọn.
+     * Lấy danh sách các mã ghế người dùng đang chọn suy ra trực tiếp từ ViewModel.
      */
     public List<String> getSelectedSeats() {
-        return new ArrayList<>(selectedSeats);
+        return seats.stream()
+                .filter(SeatViewModel::isSelected)
+                .map(SeatViewModel::getSeatId)
+                .sorted()
+                .toList();
     }
 
     /**
-     * Thiết lập danh sách ghế đã chọn từ bên ngoài.
+     * Thiết lập danh sách ghế đã chọn từ bên ngoài bằng cách cập nhật model.
      */
-    public void setSelectedSeats(Collection<String> seats) {
+    public void setSelectedSeats(Collection<String> seatIds) {
         clearSelection();
-        if (seats != null) {
-            for (String seatId : seats) {
-                SeatViewModel vm = seatViewModels.get(seatId);
-                if (vm != null && vm.getStatus() == SeatStatus.AVAILABLE) {
-                    selectedSeats.add(seatId);
+        if (seatIds != null) {
+            for (String seatId : seatIds) {
+                SeatViewModel vm = getSeatViewModel(seatId);
+                if (vm != null && vm.isAvailable()) {
                     vm.setStatus(SeatStatus.SELECTED);
                 }
             }
         }
-        updateSelectionUI();
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     /**
-     * Bỏ chọn toàn bộ ghế đang chọn.
+     * Bỏ chọn toàn bộ ghế đang chọn bằng cách chuyển status về AVAILABLE trong model.
      */
     public void clearSelection() {
-        for (String seatId : new ArrayList<>(selectedSeats)) {
-            SeatViewModel vm = seatViewModels.get(seatId);
-            if (vm != null && vm.getStatus() == SeatStatus.SELECTED) {
+        for (SeatViewModel vm : seats) {
+            if (vm.isSelected()) {
                 vm.setStatus(SeatStatus.AVAILABLE);
             }
         }
-        selectedSeats.clear();
-        updateSelectionUI();
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     public Button getSeatButton(String seatId) {
@@ -394,7 +475,21 @@ public class SeatGridController {
     }
 
     public SeatViewModel getSeatViewModel(String seatId) {
-        return seatViewModels.get(seatId);
+        if (seatId == null) return null;
+        for (SeatViewModel vm : seats) {
+            if (seatId.equals(vm.getSeatId())) {
+                return vm;
+            }
+        }
+        return null;
+    }
+
+    public ObservableList<SeatViewModel> getSeats() {
+        return seats;
+    }
+
+    public FilteredList<SeatViewModel> getSelectedSeatsList() {
+        return selectedSeatsList;
     }
 
     public ScreenStateModel getScreenStateModel() {
@@ -420,7 +515,7 @@ public class SeatGridController {
 
     @FXML
     private void onContinueClicked() {
-        if (selectedSeats.isEmpty()) {
+        if (selectedSeatsList.isEmpty()) {
             return;
         }
 
@@ -432,7 +527,7 @@ public class SeatGridController {
     }
 
     /**
-     * Mở hộp thoại modal Đặt vé (TASK D03/D04).
+     * Mở hộp thoại modal Đặt vé (TASK D03/D04/D05).
      */
     public void openBookingDialog() {
         URL fxmlLocation = getClass().getResource("/fxml/booking-dialog.fxml");
@@ -482,62 +577,52 @@ public class SeatGridController {
     }
 
     /**
-     * Xử lý tác động kết quả đặt vé lên trạng thái ghế theo đặc tả SPEC-06 và D04.
-     * <p>
-     * Quy tắc nghiệm thu:
-     * - CONFIRMED: Ghế chuyển sang BOOKED.
-     * - REJECTED (SEAT_ALREADY_BOOKED): Ghế chuyển sang BOOKED, báo lỗi rõ lý do.
-     * - UNKNOWN / timeout: Ghế chuyển sang UNKNOWN (viền nét đứt), KHÔNG coi là REJECTED,
-     *   KHÔNG tự ý chuyển BOOKED hay AVAILABLE.
+     * Xử lý tác động kết quả đặt vé lên trạng thái ghế theo đặc tả SPEC-06 và D05.
+     * Cập nhật trạng thái trực tiếp qua ViewModel, UI và binding tự động đồng bộ.
      */
     public void handleBookingOutcome(BookingOutcome outcome) {
         if (outcome == null) return;
 
-        List<String> affectedSeats = new ArrayList<>(selectedSeats);
+        List<String> affectedSeats = getSelectedSeats();
 
         switch (outcome.getStatus()) {
             case CONFIRMED -> {
                 String refCode = outcome.getReferenceCode();
                 for (String seatId : affectedSeats) {
-                    SeatViewModel vm = seatViewModels.get(seatId);
+                    SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null) {
                         vm.setStatus(SeatStatus.BOOKED);
                     }
                 }
-                selectedSeats.clear();
-                updateSelectionUI();
                 String msg = "Đặt vé thành công! Mã tham chiếu: " + refCode + " (Ghế: " + String.join(", ", affectedSeats) + ")";
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.IDLE, msg);
             }
             case REJECTED -> {
                 for (String seatId : affectedSeats) {
-                    SeatViewModel vm = seatViewModels.get(seatId);
+                    SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null) {
                         vm.setStatus(SeatStatus.BOOKED);
                     }
                 }
-                selectedSeats.clear();
-                updateSelectionUI();
                 String msg = "Ghế đã có người đặt trước (REJECTED: " + outcome.getReasonCode() + "), vui lòng chọn ghế khác.";
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.ERROR, msg);
             }
             case UNKNOWN -> {
-                // UNKNOWN / timeout: Chuyển ghế sang UNKNOWN, phân biệt rõ với REJECTED
                 for (String seatId : affectedSeats) {
-                    SeatViewModel vm = seatViewModels.get(seatId);
+                    SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null) {
                         vm.setStatus(SeatStatus.UNKNOWN);
                     }
                 }
-                selectedSeats.clear();
-                updateSelectionUI();
                 String msg = "Chưa xác định kết quả (TIMEOUT/MẤT KẾT NỐI). Ghế đã chuyển sang trạng thái CHƯA RÕ (UNKNOWN)!";
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.DISCONNECTED, msg);
             }
         }
+        updateLegendCounts();
+        updateSelectedSeatsUI();
     }
 
     @FXML
@@ -553,7 +638,7 @@ public class SeatGridController {
     }
 
     // =========================================================================
-    // VÙNG ĐIỀU KHIỂN MOCK TEST (FAST MOCK CONTROLS — TASK D04)
+    // VÙNG ĐIỀU KHIỂN MOCK TEST (FAST MOCK CONTROLS — TASK D04/D05)
     // =========================================================================
 
     @FXML
@@ -576,37 +661,68 @@ public class SeatGridController {
 
     @FXML
     public void onMockIdleClicked() {
-        screenStateModel.setState(ScreenState.IDLE, "Hệ thống sẵn sàng ở chế độ MOCK (D04).");
+        screenStateModel.setState(ScreenState.IDLE, "Hệ thống sẵn sàng ở chế độ MOCK (D05).");
         updateStatus("MOCK: Đã chuyển màn hình về trạng thái IDLE (sẵn sàng).");
     }
 
     @FXML
+    public void onMockApplySeatStatus() {
+        if (mockSeatComboBox == null || mockStatusComboBox == null) {
+            return;
+        }
+        String seatId = mockSeatComboBox.getValue();
+        SeatStatus targetStatus = mockStatusComboBox.getValue();
+        if (seatId != null && targetStatus != null) {
+            SeatViewModel vm = getSeatViewModel(seatId);
+            if (vm != null) {
+                vm.setStatus(targetStatus);
+                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus + " trong model.");
+            }
+        }
+    }
+
+    @FXML
+    public void onMockToggleG03Booked() {
+        SeatViewModel vm = getSeatViewModel("G03");
+        if (vm != null) {
+            SeatStatus newStatus = (vm.getStatus() == SeatStatus.BOOKED) ? SeatStatus.AVAILABLE : SeatStatus.BOOKED;
+            vm.setStatus(newStatus);
+            updateStatus("MOCK: Đã đổi ghế G03 sang trạng thái " + newStatus.name() + " trong model.");
+        }
+    }
+
+    @FXML
+    public void onMockRefreshSnapshotClicked() {
+        clearSelection();
+        SeatViewModel.applySnapshot(seats, MockSeatSource.createRefreshedMockSnapshot());
+        screenStateModel.setState(ScreenState.IDLE, "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
+        updateLegendCounts();
+        updateSelectedSeatsUI();
+        updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK thành công.");
+    }
+
+    @FXML
     public void onMockToggleG04Unknown() {
-        SeatViewModel vm = seatViewModels.get("G04");
+        SeatViewModel vm = getSeatViewModel("G04");
         if (vm != null) {
             SeatStatus newStatus = (vm.getStatus() == SeatStatus.UNKNOWN) ? SeatStatus.AVAILABLE : SeatStatus.UNKNOWN;
             vm.setStatus(newStatus);
-            selectedSeats.remove("G04");
-            updateSelectionUI();
             updateStatus("MOCK: Đã đổi ghế G04 sang trạng thái " + newStatus.name() + ".");
         }
     }
 
     @FXML
     public void onMockToggleG05Booked() {
-        SeatViewModel vm = seatViewModels.get("G05");
+        SeatViewModel vm = getSeatViewModel("G05");
         if (vm != null) {
             SeatStatus newStatus = (vm.getStatus() == SeatStatus.BOOKED) ? SeatStatus.AVAILABLE : SeatStatus.BOOKED;
             vm.setStatus(newStatus);
-            selectedSeats.remove("G05");
-            updateSelectionUI();
             updateStatus("MOCK: Đã đổi ghế G05 sang trạng thái " + newStatus.name() + ".");
         }
     }
 
     @FXML
     public void onMockAll4States() {
-        // Thiết lập đồng thời cả 4 trạng thái để kiểm thử và chụp ảnh minh chứng
         clearSelection();
 
         setSeatStatusHelper("G01", SeatStatus.AVAILABLE);
@@ -620,8 +736,9 @@ public class SeatGridController {
         setSeatStatusHelper("G09", SeatStatus.AVAILABLE);
         setSeatStatusHelper("G10", SeatStatus.AVAILABLE);
 
-        selectedSeats.add("G05");
-        updateSelectionUI();
+        updateLegendCounts();
+        updateSelectedSeatsUI();
+
         screenStateModel.setState(ScreenState.IDLE, "Đang hiển thị đủ 4 trạng thái ghế: AVAILABLE, BOOKED, SELECTED, UNKNOWN.");
         updateStatus("MOCK: Đã thiết lập đủ 4 trạng thái ghế (G01 AVAILABLE, G02/G08 BOOKED, G05 SELECTED, G04 UNKNOWN).");
     }
@@ -629,24 +746,15 @@ public class SeatGridController {
     @FXML
     public void onMockResetDefault() {
         clearSelection();
-        for (int i = 1; i <= 10; i++) {
-            String seatId = String.format("G%02d", i);
-            SeatViewModel vm = seatViewModels.get(seatId);
-            if (vm != null) {
-                if (i == 2 || i == 4 || i == 8) {
-                    vm.setStatus(SeatStatus.BOOKED);
-                } else {
-                    vm.setStatus(SeatStatus.AVAILABLE);
-                }
-            }
-        }
-        updateSelectionUI();
+        SeatViewModel.applySnapshot(seats, MockSeatSource.createInitialSnapshot());
         screenStateModel.setState(ScreenState.IDLE);
+        updateLegendCounts();
+        updateSelectedSeatsUI();
         updateStatus("MOCK: Đã khôi phục dữ liệu ghế MOCK ban đầu.");
     }
 
     private void setSeatStatusHelper(String seatId, SeatStatus status) {
-        SeatViewModel vm = seatViewModels.get(seatId);
+        SeatViewModel vm = getSeatViewModel(seatId);
         if (vm != null) {
             vm.setStatus(status);
         }
