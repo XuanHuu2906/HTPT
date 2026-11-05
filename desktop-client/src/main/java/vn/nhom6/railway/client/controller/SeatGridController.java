@@ -3,6 +3,8 @@ package vn.nhom6.railway.client.controller;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -145,13 +147,15 @@ public class SeatGridController {
     // Model quản lý trạng thái màn hình
     private final ScreenStateModel screenStateModel = new ScreenStateModel();
 
+    // Reactive Properties lưu trữ số lượng ghế cho Legend binding (TASK D05)
+    private final IntegerProperty availableCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty selectedCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty bookedCountProperty = new SimpleIntegerProperty(0);
+    private final IntegerProperty unknownCountProperty = new SimpleIntegerProperty(0);
+
     // Lưu trữ tham chiếu Binding để tránh bị garbage collection
     private StringBinding selectedSeatsSummaryBinding;
     private BooleanBinding continueBtnDisableBinding;
-    private StringBinding legendAvailableBinding;
-    private StringBinding legendSelectedBinding;
-    private StringBinding legendBookedBinding;
-    private StringBinding legendUnknownBinding;
 
     // Callback điều hướng
     private Runnable onBackAction;
@@ -222,37 +226,21 @@ public class SeatGridController {
             continueBtn.disableProperty().bind(continueBtnDisableBinding);
         }
 
-        // 3. Bind 4 nhãn Legend số lượng trực tiếp vào ObservableList
-        legendAvailableBinding = Bindings.createStringBinding(() -> {
-            long count = seats.stream().filter(SeatViewModel::isAvailable).count();
-            return "Trống (" + count + ")";
-        }, seats);
+        // 3. Bind 4 nhãn Legend trực tiếp vào các reactive IntegerProperties
         if (legendAvailableLabel != null) {
-            legendAvailableLabel.textProperty().bind(legendAvailableBinding);
+            legendAvailableLabel.textProperty().bind(Bindings.concat("Trống (", availableCountProperty.asString(), ")"));
         }
-
-        legendSelectedBinding = Bindings.createStringBinding(() -> {
-            return "Đang chọn (" + selectedSeatsList.size() + ")";
-        }, selectedSeatsList);
         if (legendSelectedLabel != null) {
-            legendSelectedLabel.textProperty().bind(legendSelectedBinding);
+            legendSelectedLabel.textProperty().bind(Bindings.concat("Đang chọn (", selectedCountProperty.asString(), ")"));
         }
-
-        legendBookedBinding = Bindings.createStringBinding(() -> {
-            long count = seats.stream().filter(SeatViewModel::isBooked).count();
-            return "Đã đặt (" + count + ")";
-        }, seats);
         if (legendBookedLabel != null) {
-            legendBookedLabel.textProperty().bind(legendBookedBinding);
+            legendBookedLabel.textProperty().bind(Bindings.concat("Đã đặt (", bookedCountProperty.asString(), ")"));
+        }
+        if (legendUnknownLabel != null) {
+            legendUnknownLabel.textProperty().bind(Bindings.concat("Chưa rõ (", unknownCountProperty.asString(), ")"));
         }
 
-        legendUnknownBinding = Bindings.createStringBinding(() -> {
-            long count = seats.stream().filter(SeatViewModel::isUnknown).count();
-            return "Chưa rõ (" + count + ")";
-        }, seats);
-        if (legendUnknownLabel != null) {
-            legendUnknownLabel.textProperty().bind(legendUnknownBinding);
-        }
+        updateLegendCounts();
     }
 
     /**
@@ -269,6 +257,7 @@ public class SeatGridController {
             if (needsRebuild) {
                 buildSeatGrid();
             }
+            updateLegendCounts();
         });
     }
 
@@ -301,6 +290,7 @@ public class SeatGridController {
             updateSeatButtonStyleClass(button, vm.getStatus());
             vm.statusProperty().addListener((obs, oldStatus, newStatus) -> {
                 updateSeatButtonStyleClass(button, newStatus);
+                updateLegendCounts();
             });
 
             // 4. Click ghế: Controller chỉ gọi ViewModel để đổi status (AVAILABLE ⇄ SELECTED)
@@ -312,6 +302,7 @@ public class SeatGridController {
             int row = index / 5;
             seatGridPane.add(button, col, row);
         }
+        updateLegendCounts();
     }
 
     /**
@@ -324,6 +315,30 @@ public class SeatGridController {
 
         button.getStyleClass().removeAll("seat-available", "seat-booked", "seat-selected", "seat-unknown");
         button.getStyleClass().add(status.getStyleClass());
+    }
+
+    /**
+     * Cập nhật các IntegerProperty đếm số lượng ghế theo 4 trạng thái để Legend tự động phản hồi (TASK D05).
+     */
+    public void updateLegendCounts() {
+        int avail = 0;
+        int sel = 0;
+        int book = 0;
+        int unk = 0;
+
+        for (SeatViewModel vm : seats) {
+            switch (vm.getStatus()) {
+                case AVAILABLE -> avail++;
+                case SELECTED -> sel++;
+                case BOOKED -> book++;
+                case UNKNOWN -> unk++;
+            }
+        }
+
+        availableCountProperty.set(avail);
+        selectedCountProperty.set(sel);
+        bookedCountProperty.set(book);
+        unknownCountProperty.set(unk);
     }
 
     /**

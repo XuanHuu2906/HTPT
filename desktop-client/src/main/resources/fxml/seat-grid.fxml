@@ -142,20 +142,20 @@
             </HBox>
 
             <!-- Hàng 2: Đổi dữ liệu ghế mock (ComboBox & Nút Refresh Snapshot) -->
-            <HBox alignment="CENTER_LEFT" spacing="8.0">
+            <HBox alignment="CENTER_LEFT" spacing="6.0">
                 <children>
                     <Label text="Đổi ghế MOCK:" style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;" />
-                    <ComboBox fx:id="mockSeatComboBox" prefWidth="85.0" styleClass="mock-combobox" />
-                    <ComboBox fx:id="mockStatusComboBox" prefWidth="125.0" styleClass="mock-combobox" />
+                    <ComboBox fx:id="mockSeatComboBox" prefWidth="75.0" styleClass="mock-combobox" />
+                    <ComboBox fx:id="mockStatusComboBox" prefWidth="110.0" styleClass="mock-combobox" />
                     <Button fx:id="mockApplySeatStatusBtn" onAction="#onMockApplySeatStatus"
-                            text="Áp dụng đổi ghế" styleClass="mock-btn" />
+                            text="Áp dụng" styleClass="mock-btn" />
                     <Separator orientation="VERTICAL" style="-fx-padding: 0 2;" />
                     <Button fx:id="mockToggleG03BookedBtn" onAction="#onMockToggleG03Booked"
                             text="G03 ➔ BOOKED" styleClass="mock-btn" />
                     <Button fx:id="mockRefreshSnapshotBtn" onAction="#onMockRefreshSnapshotClicked"
-                            text="⟲ Refresh dữ liệu MOCK" styleClass="mock-btn" />
+                            text="⟲ Refresh MOCK" styleClass="mock-btn" />
                     <Button fx:id="mockAll4StatesBtn" onAction="#onMockAll4States"
-                            text="★ Đủ 4 trạng thái" styleClass="mock-btn" />
+                            text="★ 4 trạng thái" styleClass="mock-btn" />
                     <Button fx:id="mockResetDefaultBtn" onAction="#onMockResetDefault"
                             text="Reset gốc" styleClass="mock-btn" />
                 </children>
