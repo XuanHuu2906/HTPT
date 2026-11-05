@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.GridPane;
@@ -98,7 +99,7 @@ public class SeatGridController {
     @FXML
     private Label legendUnknownLabel;
 
-    // === Nút Điều Khiển MOCK (Fast Mock Controls) ===
+    // === Nút & ComboBox Điều Khiển MOCK (Fast Mock Controls — TASK D05) ===
     @FXML
     private Button mockLoadingBtn;
 
@@ -112,10 +113,19 @@ public class SeatGridController {
     private Button mockIdleBtn;
 
     @FXML
-    private Button mockToggleG04UnknownBtn;
+    private ComboBox<String> mockSeatComboBox;
 
     @FXML
-    private Button mockToggleG05BookedBtn;
+    private ComboBox<SeatStatus> mockStatusComboBox;
+
+    @FXML
+    private Button mockApplySeatStatusBtn;
+
+    @FXML
+    private Button mockToggleG03BookedBtn;
+
+    @FXML
+    private Button mockRefreshSnapshotBtn;
 
     @FXML
     private Button mockAll4StatesBtn;
@@ -164,6 +174,26 @@ public class SeatGridController {
 
         // 4. Thiết lập Data Binding cho Legend, Nút Đặt vé và Danh sách ghế chọn
         setupReactiveBindings();
+
+        // 5. Khởi tạo danh sách lựa chọn cho vùng điều khiển MOCK
+        initMockControls();
+    }
+
+    /**
+     * Khởi tạo dữ liệu cho ComboBox điều khiển ghế MOCK.
+     */
+    private void initMockControls() {
+        if (mockSeatComboBox != null) {
+            mockSeatComboBox.getItems().setAll(
+                    seats.stream().map(SeatViewModel::getSeatId).toList()
+            );
+            mockSeatComboBox.setValue("G03");
+        }
+
+        if (mockStatusComboBox != null) {
+            mockStatusComboBox.getItems().setAll(SeatStatus.values());
+            mockStatusComboBox.setValue(SeatStatus.BOOKED);
+        }
     }
 
     /**
@@ -594,6 +624,40 @@ public class SeatGridController {
     public void onMockIdleClicked() {
         screenStateModel.setState(ScreenState.IDLE, "Hệ thống sẵn sàng ở chế độ MOCK (D05).");
         updateStatus("MOCK: Đã chuyển màn hình về trạng thái IDLE (sẵn sàng).");
+    }
+
+    @FXML
+    public void onMockApplySeatStatus() {
+        if (mockSeatComboBox == null || mockStatusComboBox == null) {
+            return;
+        }
+        String seatId = mockSeatComboBox.getValue();
+        SeatStatus targetStatus = mockStatusComboBox.getValue();
+        if (seatId != null && targetStatus != null) {
+            SeatViewModel vm = getSeatViewModel(seatId);
+            if (vm != null) {
+                vm.setStatus(targetStatus);
+                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus + " trong model.");
+            }
+        }
+    }
+
+    @FXML
+    public void onMockToggleG03Booked() {
+        SeatViewModel vm = getSeatViewModel("G03");
+        if (vm != null) {
+            SeatStatus newStatus = (vm.getStatus() == SeatStatus.BOOKED) ? SeatStatus.AVAILABLE : SeatStatus.BOOKED;
+            vm.setStatus(newStatus);
+            updateStatus("MOCK: Đã đổi ghế G03 sang trạng thái " + newStatus.name() + " trong model.");
+        }
+    }
+
+    @FXML
+    public void onMockRefreshSnapshotClicked() {
+        clearSelection();
+        SeatViewModel.applySnapshot(seats, MockSeatSource.createRefreshedMockSnapshot());
+        screenStateModel.setState(ScreenState.IDLE, "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
+        updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK thành công.");
     }
 
     @FXML
