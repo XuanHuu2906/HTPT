@@ -69,18 +69,3 @@ CREATE TABLE business_events (
   event_type VARCHAR(40) NOT NULL,
   event_json JSONB NOT NULL
 );
-
--- Seed chỉ dành cho cụm mới đồng nhất, không chạy lại/không reset riêng một Node.
-INSERT INTO trips(trip_id) VALUES ('SE-001');
-
-INSERT INTO seats(trip_id, seat_id, status, current_ticket_id) VALUES
-  ('SE-001', 'G01', 'AVAILABLE', NULL),
-  ('SE-001', 'G02', 'AVAILABLE', NULL),
-  ('SE-001', 'G03', 'AVAILABLE', NULL),
-  ('SE-001', 'G04', 'AVAILABLE', NULL),
-  ('SE-001', 'G05', 'AVAILABLE', NULL),
-  ('SE-001', 'G06', 'AVAILABLE', NULL),
-  ('SE-001', 'G07', 'AVAILABLE', NULL),
-  ('SE-001', 'G08', 'AVAILABLE', NULL),
-  ('SE-001', 'G09', 'AVAILABLE', NULL),
-  ('SE-001', 'G10', 'AVAILABLE', NULL);
