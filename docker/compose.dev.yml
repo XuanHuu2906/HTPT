@@ -172,3 +172,235 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # ============================================================================
+  # 5 BACKEND NODE SERVICES (CUNG IMAGE, KHAC NODE_ID, PEERS, VA DATABASE)
+  # Profile: 'nodes' (hoac 'backend', 'all'). Chay 'docker compose up -d' chi khoi
+  # dong 5 DB; chay 'docker compose --profile nodes up -d' khoi dong ca 5 Nodes.
+  # ============================================================================
+
+  # ----------------------------------------------------------------------------
+  # BACKEND NODE 1
+  # ----------------------------------------------------------------------------
+  backend-node-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: railway-backend-node:dev
+    container_name: railway-backend-node-1
+    restart: unless-stopped
+    profiles:
+      - nodes
+      - backend
+      - all
+    environment:
+      NODE_ID: node-1
+      CLUSTER_ID: ${CLUSTER_ID:-railway-demo-5}
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_ADVERTISE_CLIENT: 127.0.0.1:9101
+      NODE_ADVERTISE_PEER: backend-node-1:9200
+      NODE_PEERS: node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+      DB_HOST: postgres-1
+      DB_PORT: 5432
+      DB_NAME: ${PG1_DB:-railway_node1}
+      DB_USER: ${PG1_USER:-railway}
+      DB_PASSWORD: ${PG1_PASSWORD:-railway_secret_local_only}
+      RAFT_ELECTION_TIMEOUT_MIN_MS: ${RAFT_ELECTION_TIMEOUT_MIN_MS:-150}
+      RAFT_ELECTION_TIMEOUT_MAX_MS: ${RAFT_ELECTION_TIMEOUT_MAX_MS:-300}
+      RAFT_HEARTBEAT_INTERVAL_MS: ${RAFT_HEARTBEAT_INTERVAL_MS:-50}
+      TCP_CONNECT_TIMEOUT_MS: ${TCP_CONNECT_TIMEOUT_MS:-1000}
+      TCP_RESPONSE_DEADLINE_MS: ${TCP_RESPONSE_DEADLINE_MS:-3000}
+    ports:
+      - "${NODE1_CLIENT_PORT:-9101}:9100"
+      - "${NODE1_PEER_PORT:-9201}:9200"
+    depends_on:
+      postgres-1:
+        condition: service_healthy
+    networks:
+      railway-net:
+        aliases:
+          - backend-node1
+          - node-1
+          - backend-node-1
+
+  # ----------------------------------------------------------------------------
+  # BACKEND NODE 2
+  # ----------------------------------------------------------------------------
+  backend-node-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: railway-backend-node:dev
+    container_name: railway-backend-node-2
+    restart: unless-stopped
+    profiles:
+      - nodes
+      - backend
+      - all
+    environment:
+      NODE_ID: node-2
+      CLUSTER_ID: ${CLUSTER_ID:-railway-demo-5}
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_ADVERTISE_CLIENT: 127.0.0.1:9102
+      NODE_ADVERTISE_PEER: backend-node-2:9200
+      NODE_PEERS: node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+      DB_HOST: postgres-2
+      DB_PORT: 5432
+      DB_NAME: ${PG2_DB:-railway_node2}
+      DB_USER: ${PG2_USER:-railway}
+      DB_PASSWORD: ${PG2_PASSWORD:-railway_secret_local_only}
+      RAFT_ELECTION_TIMEOUT_MIN_MS: ${RAFT_ELECTION_TIMEOUT_MIN_MS:-150}
+      RAFT_ELECTION_TIMEOUT_MAX_MS: ${RAFT_ELECTION_TIMEOUT_MAX_MS:-300}
+      RAFT_HEARTBEAT_INTERVAL_MS: ${RAFT_HEARTBEAT_INTERVAL_MS:-50}
+      TCP_CONNECT_TIMEOUT_MS: ${TCP_CONNECT_TIMEOUT_MS:-1000}
+      TCP_RESPONSE_DEADLINE_MS: ${TCP_RESPONSE_DEADLINE_MS:-3000}
+    ports:
+      - "${NODE2_CLIENT_PORT:-9102}:9100"
+      - "${NODE2_PEER_PORT:-9202}:9200"
+    depends_on:
+      postgres-2:
+        condition: service_healthy
+    networks:
+      railway-net:
+        aliases:
+          - backend-node2
+          - node-2
+          - backend-node-2
+
+  # ----------------------------------------------------------------------------
+  # BACKEND NODE 3
+  # ----------------------------------------------------------------------------
+  backend-node-3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: railway-backend-node:dev
+    container_name: railway-backend-node-3
+    restart: unless-stopped
+    profiles:
+      - nodes
+      - backend
+      - all
+    environment:
+      NODE_ID: node-3
+      CLUSTER_ID: ${CLUSTER_ID:-railway-demo-5}
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_ADVERTISE_CLIENT: 127.0.0.1:9103
+      NODE_ADVERTISE_PEER: backend-node-3:9200
+      NODE_PEERS: node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+      DB_HOST: postgres-3
+      DB_PORT: 5432
+      DB_NAME: ${PG3_DB:-railway_node3}
+      DB_USER: ${PG3_USER:-railway}
+      DB_PASSWORD: ${PG3_PASSWORD:-railway_secret_local_only}
+      RAFT_ELECTION_TIMEOUT_MIN_MS: ${RAFT_ELECTION_TIMEOUT_MIN_MS:-150}
+      RAFT_ELECTION_TIMEOUT_MAX_MS: ${RAFT_ELECTION_TIMEOUT_MAX_MS:-300}
+      RAFT_HEARTBEAT_INTERVAL_MS: ${RAFT_HEARTBEAT_INTERVAL_MS:-50}
+      TCP_CONNECT_TIMEOUT_MS: ${TCP_CONNECT_TIMEOUT_MS:-1000}
+      TCP_RESPONSE_DEADLINE_MS: ${TCP_RESPONSE_DEADLINE_MS:-3000}
+    ports:
+      - "${NODE3_CLIENT_PORT:-9103}:9100"
+      - "${NODE3_PEER_PORT:-9203}:9200"
+    depends_on:
+      postgres-3:
+        condition: service_healthy
+    networks:
+      railway-net:
+        aliases:
+          - backend-node3
+          - node-3
+          - backend-node-3
+
+  # ----------------------------------------------------------------------------
+  # BACKEND NODE 4
+  # ----------------------------------------------------------------------------
+  backend-node-4:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: railway-backend-node:dev
+    container_name: railway-backend-node-4
+    restart: unless-stopped
+    profiles:
+      - nodes
+      - backend
+      - all
+    environment:
+      NODE_ID: node-4
+      CLUSTER_ID: ${CLUSTER_ID:-railway-demo-5}
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_ADVERTISE_CLIENT: 127.0.0.1:9104
+      NODE_ADVERTISE_PEER: backend-node-4:9200
+      NODE_PEERS: node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+      DB_HOST: postgres-4
+      DB_PORT: 5432
+      DB_NAME: ${PG4_DB:-railway_node4}
+      DB_USER: ${PG4_USER:-railway}
+      DB_PASSWORD: ${PG4_PASSWORD:-railway_secret_local_only}
+      RAFT_ELECTION_TIMEOUT_MIN_MS: ${RAFT_ELECTION_TIMEOUT_MIN_MS:-150}
+      RAFT_ELECTION_TIMEOUT_MAX_MS: ${RAFT_ELECTION_TIMEOUT_MAX_MS:-300}
+      RAFT_HEARTBEAT_INTERVAL_MS: ${RAFT_HEARTBEAT_INTERVAL_MS:-50}
+      TCP_CONNECT_TIMEOUT_MS: ${TCP_CONNECT_TIMEOUT_MS:-1000}
+      TCP_RESPONSE_DEADLINE_MS: ${TCP_RESPONSE_DEADLINE_MS:-3000}
+    ports:
+      - "${NODE4_CLIENT_PORT:-9104}:9100"
+      - "${NODE4_PEER_PORT:-9204}:9200"
+    depends_on:
+      postgres-4:
+        condition: service_healthy
+    networks:
+      railway-net:
+        aliases:
+          - backend-node4
+          - node-4
+          - backend-node-4
+
+  # ----------------------------------------------------------------------------
+  # BACKEND NODE 5
+  # ----------------------------------------------------------------------------
+  backend-node-5:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: railway-backend-node:dev
+    container_name: railway-backend-node-5
+    restart: unless-stopped
+    profiles:
+      - nodes
+      - backend
+      - all
+    environment:
+      NODE_ID: node-5
+      CLUSTER_ID: ${CLUSTER_ID:-railway-demo-5}
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_ADVERTISE_CLIENT: 127.0.0.1:9105
+      NODE_ADVERTISE_PEER: backend-node-5:9200
+      NODE_PEERS: node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+      DB_HOST: postgres-5
+      DB_PORT: 5432
+      DB_NAME: ${PG5_DB:-railway_node5}
+      DB_USER: ${PG5_USER:-railway}
+      DB_PASSWORD: ${PG5_PASSWORD:-railway_secret_local_only}
+      RAFT_ELECTION_TIMEOUT_MIN_MS: ${RAFT_ELECTION_TIMEOUT_MIN_MS:-150}
+      RAFT_ELECTION_TIMEOUT_MAX_MS: ${RAFT_ELECTION_TIMEOUT_MAX_MS:-300}
+      RAFT_HEARTBEAT_INTERVAL_MS: ${RAFT_HEARTBEAT_INTERVAL_MS:-50}
+      TCP_CONNECT_TIMEOUT_MS: ${TCP_CONNECT_TIMEOUT_MS:-1000}
+      TCP_RESPONSE_DEADLINE_MS: ${TCP_RESPONSE_DEADLINE_MS:-3000}
+    ports:
+      - "${NODE5_CLIENT_PORT:-9105}:9100"
+      - "${NODE5_PEER_PORT:-9205}:9200"
+    depends_on:
+      postgres-5:
+        condition: service_healthy
+    networks:
+      railway-net:
+        aliases:
+          - backend-node5
+          - node-5
+          - backend-node-5
+

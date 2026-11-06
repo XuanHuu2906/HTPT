@@ -1,0 +1,14 @@
+.git
+.github
+.agents
+artifacts
+docs
+scripts
+target
+**/target
+.idea
+*.iml
+.vscode
+*.log
+docker/volumes
+

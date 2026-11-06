@@ -1,0 +1,71 @@
+# ==============================================================================
+# RAILWAY DISTRIBUTED SYSTEM - NHOM 6
+# DOCKERFILE CHO BACKEND NODE (JAVA RUNTIME - MULTI-STAGE BUILD)
+# Theo dac ta: docs/specs/08-DEPLOYMENT.md §1 & §4, docs/specs/02-ARCHITECTURE.md
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# STAGE 1: Build Java artifacts bang Apache Maven
+# ------------------------------------------------------------------------------
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+
+WORKDIR /build
+
+# Copy root POM va cac POM module de cache layer dependencies
+COPY pom.xml ./
+COPY shared/pom.xml shared/
+COPY backend-node/pom.xml backend-node/
+COPY desktop-client/pom.xml desktop-client/
+COPY desktop-monitor/pom.xml desktop-monitor/
+COPY integration-tests/pom.xml integration-tests/
+
+# Copy ma nguon cua cac module can thiet cho Backend (shared va backend-node)
+COPY shared/src shared/src
+COPY backend-node/src backend-node/src
+
+# Build backend-node va shared, sao chep dependencies vao target/lib
+RUN mvn -B -ntp clean package -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 && \
+    mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+
+# ------------------------------------------------------------------------------
+# STAGE 2: Lightweight Runtime Image cho Backend Node
+# ------------------------------------------------------------------------------
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Cai dat netcat va bash phuc vu kiem tra mang va healthcheck giua cac node
+RUN apk add --no-cache bash netcat-openbsd
+
+# Copy JAR da build va thu vien dependencies tu builder stage
+COPY --from=builder /build/backend-node/target/*.jar /app/backend-node.jar
+COPY --from=builder /build/backend-node/target/lib /app/lib
+
+# Copy entrypoint script
+COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
+RUN chmod +x /app/entrypoint-backend.sh
+
+# Cac bien moi truong mac dinh (se duoc inject ghi de tu compose.dev.yml)
+ENV NODE_ID=node-1 \
+    CLUSTER_ID=railway-demo-5 \
+    NODE_CLIENT_BIND=0.0.0.0:9100 \
+    NODE_PEER_BIND=0.0.0.0:9200 \
+    NODE_ADVERTISE_CLIENT=127.0.0.1:9101 \
+    NODE_ADVERTISE_PEER=backend-node-1:9200 \
+    NODE_PEERS=node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200 \
+    DB_HOST=postgres-1 \
+    DB_PORT=5432 \
+    DB_NAME=railway_node1 \
+    DB_USER=railway \
+    DB_PASSWORD=railway_secret_local_only \
+    RAFT_ELECTION_TIMEOUT_MIN_MS=150 \
+    RAFT_ELECTION_TIMEOUT_MAX_MS=300 \
+    RAFT_HEARTBEAT_INTERVAL_MS=50 \
+    TCP_CONNECT_TIMEOUT_MS=1000 \
+    TCP_RESPONSE_DEADLINE_MS=3000
+
+# Expose Client Socket Port (9100) va Raft Peer Port (9200)
+EXPOSE 9100 9200
+
+ENTRYPOINT ["/app/entrypoint-backend.sh"]
+
