@@ -191,17 +191,37 @@ public class TicketViewModel {
         }
 
         /**
-         * Thêm vé mới đặt thành công vào đầu danh sách để hiển thị ngay trong "Vé của tôi".
+         * Thêm hoặc cập nhật vé vào danh sách dùng chung.
+         * Đảm bảo mỗi ghế (seatId) chỉ có DUY NHẤT một bản ghi trạng thái trong danh sách.
          */
         public static void addTicket(TicketViewModel ticket) {
             if (ticket != null) {
+                String seatId = ticket.getSeatId();
+                if (seatId != null && !seatId.isBlank()) {
+                    // Loại bỏ bản ghi cũ của cùng ghế này nếu đã có để không bao giờ bị trùng lặp 2 trạng thái
+                    SHARED_TICKETS.removeIf(t -> seatId.equalsIgnoreCase(t.getSeatId()));
+                }
                 SHARED_TICKETS.add(0, ticket);
             }
         }
 
         /**
+         * Tìm vé hiện tại theo mã ghế.
+         */
+        public static TicketViewModel findTicketBySeatId(String seatId) {
+            if (seatId == null || seatId.isBlank()) {
+                return null;
+            }
+            return SHARED_TICKETS.stream()
+                    .filter(t -> seatId.equalsIgnoreCase(t.getSeatId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
          * Đồng bộ sự thay đổi trạng thái của một ghế sang danh sách "Vé của tôi".
-         * Tuân thủ yêu cầu: Nếu các trường dữ liệu thiếu (họ tên hành khách,...), để trống chuỗi rỗng "".
+         * Mỗi ghế chỉ có DUY NHẤT một trạng thái. Trường hợp ghế đó được thay đổi thì
+         * CẬP NHẬT LẠI bản ghi của ghế đó chứ không tạo thêm bản ghi trùng lặp.
          */
         public static void syncSeatStatusChange(String seatId, SeatViewModel.SeatStatus newStatus) {
             if (seatId == null || newStatus == null) {
@@ -211,53 +231,67 @@ public class TicketViewModel {
             String nowTime = java.time.LocalDateTime.now()
                     .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
+            TicketViewModel existing = findTicketBySeatId(seatId);
+
             switch (newStatus) {
                 case BOOKED -> {
-                    // Kiểm tra xem đã có vé CONFIRMED cho ghế này chưa
-                    boolean alreadyConfirmed = SHARED_TICKETS.stream()
-                            .anyMatch(t -> seatId.equalsIgnoreCase(t.getSeatId()) && t.getStatus() == TicketStatus.CONFIRMED);
-                    if (!alreadyConfirmed) {
-                        TicketViewModel newTicket = new TicketViewModel(
+                    String pName = (existing != null && existing.getPassengerName() != null && !existing.getPassengerName().isBlank())
+                            ? existing.getPassengerName()
+                            : "";
+                    String reqId = (existing != null && existing.getRequestId() != null && !existing.getRequestId().isBlank())
+                            ? existing.getRequestId()
+                            : "REQ-MOCK-" + seatId;
+                    TicketViewModel updated = new TicketViewModel(
+                            reqId,
+                            "TCK-SE001-" + seatId,
+                            seatId,
+                            "SE-001",
+                            pName,
+                            nowTime,
+                            "1.250.000 VNĐ",
+                            TicketStatus.CONFIRMED,
+                            null
+                    );
+                    addTicket(updated);
+                }
+                case AVAILABLE -> {
+                    if (existing != null) {
+                        existing.setStatus(TicketStatus.CANCELLED);
+                        existing.setReasonCode("HỦY QUA THAO TÁC MOCK");
+                    } else {
+                        TicketViewModel cancelled = new TicketViewModel(
                                 "REQ-MOCK-" + seatId,
                                 "TCK-SE001-" + seatId,
                                 seatId,
                                 "SE-001",
-                                "", // Họ tên để trống theo yêu cầu người dùng
+                                "",
                                 nowTime,
                                 "1.250.000 VNĐ",
-                                TicketStatus.CONFIRMED,
-                                null
+                                TicketStatus.CANCELLED,
+                                "HỦY QUA THAO TÁC MOCK"
                         );
-                        SHARED_TICKETS.add(0, newTicket);
-                    }
-                }
-                case AVAILABLE -> {
-                    // Khi ghế chuyển về AVAILABLE (hủy/giải phóng ghế), cập nhật tất cả vé CONFIRMED của ghế này thành CANCELLED
-                    for (TicketViewModel t : SHARED_TICKETS) {
-                        if (seatId.equalsIgnoreCase(t.getSeatId()) && t.getStatus() == TicketStatus.CONFIRMED) {
-                            t.setStatus(TicketStatus.CANCELLED);
-                            t.setReasonCode("HỦY QUA THAO TÁC MOCK");
-                        }
+                        addTicket(cancelled);
                     }
                 }
                 case UNKNOWN -> {
-                    // Kiểm tra xem đã có vé UNKNOWN cho ghế này chưa
-                    boolean alreadyUnknown = SHARED_TICKETS.stream()
-                            .anyMatch(t -> seatId.equalsIgnoreCase(t.getSeatId()) && t.getStatus() == TicketStatus.UNKNOWN);
-                    if (!alreadyUnknown) {
-                        TicketViewModel unknownTicket = new TicketViewModel(
-                                "REQ-MOCK-" + seatId,
-                                "", // Chưa cấp mã vé vì kết quả chưa rõ
-                                seatId,
-                                "SE-001",
-                                "", // Để trống
-                                nowTime,
-                                "1.250.000 VNĐ",
-                                TicketStatus.UNKNOWN,
-                                "TIMEOUT_MOCK_CONTROL"
-                        );
-                        SHARED_TICKETS.add(0, unknownTicket);
-                    }
+                    String pName = (existing != null && existing.getPassengerName() != null && !existing.getPassengerName().isBlank())
+                            ? existing.getPassengerName()
+                            : "";
+                    String reqId = (existing != null && existing.getRequestId() != null && !existing.getRequestId().isBlank())
+                            ? existing.getRequestId()
+                            : "REQ-MOCK-" + seatId;
+                    TicketViewModel updated = new TicketViewModel(
+                            reqId,
+                            "", // Chưa cấp mã vé vì kết quả chưa rõ
+                            seatId,
+                            "SE-001",
+                            pName,
+                            nowTime,
+                            "1.250.000 VNĐ",
+                            TicketStatus.UNKNOWN,
+                            "TIMEOUT_MOCK_CONTROL"
+                    );
+                    addTicket(updated);
                 }
                 default -> {
                     // SELECTED: chỉ là trạng thái chọn tạm trên UI, không sinh vé
@@ -295,7 +329,7 @@ public class TicketViewModel {
                             "Hoàng Đức Anh", "2026-11-05 09:45", "1.250.000 VNĐ",
                             TicketStatus.CANCELLED, "HỦY THEO YÊU CẦU KHÁCH HÀNG"),
                     new TicketViewModel(
-                            "REQ-20261105-005", "", "G02", "SE-001",
+                            "REQ-20261105-005", "", "G03", "SE-001",
                             "Vũ Hải Đăng", "2026-11-05 10:10", "1.250.000 VNĐ",
                             TicketStatus.REJECTED, "SEAT_ALREADY_BOOKED"),
                     new TicketViewModel(
