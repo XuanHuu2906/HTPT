@@ -438,3 +438,123 @@
     -fx-font-size: 12px;
 }
 
+/* =============================================================================
+   7. MÀN HÌNH TRA CỨU VÀ HỦY VÉ (TASK D06)
+   ============================================================================= */
+
+/* Badges trạng thái vé trong bảng và chi tiết */
+.badge-ticket {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3px 8px;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-alignment: center;
+}
+
+.badge-ticket-confirmed {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #065f46;
+    -fx-border-color: #10b981;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+}
+
+.badge-ticket-cancelled {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #64748b;
+    -fx-border-color: #cbd5e1;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+}
+
+.badge-ticket-rejected {
+    -fx-background-color: #fef2f2;
+    -fx-text-fill: #991b1b;
+    -fx-border-color: #ef4444;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+}
+
+.badge-ticket-unknown {
+    -fx-background-color: #fff7ed;
+    -fx-text-fill: #c2410c;
+    -fx-border-color: #ea580c;
+    -fx-border-style: dashed;
+    -fx-border-width: 1.5px;
+}
+
+/* Định dạng TableView danh sách vé */
+.ticket-table-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-font-size: 12px;
+}
+
+.ticket-table-view .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.ticket-table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 32px;
+}
+
+.ticket-table-view .column-header .label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+}
+
+.ticket-table-view .table-row-cell {
+    -fx-cell-size: 36px;
+    -fx-border-color: #f1f5f9;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.ticket-table-view .table-row-cell:odd {
+    -fx-background-color: #fafbfd;
+}
+
+.ticket-table-view .table-row-cell:even {
+    -fx-background-color: #ffffff;
+}
+
+.ticket-table-view .table-row-cell:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.ticket-table-view .table-row-cell:selected {
+    -fx-background-color: #e0f2fe;
+}
+
+.ticket-table-view .table-row-cell:selected .label {
+    -fx-text-fill: #0369a1;
+    -fx-font-weight: bold;
+}
+
+/* Nút hủy vé */
+.btn-cancel-ticket {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 8px 18px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-cancel-ticket:hover {
+    -fx-background-color: #dc2626;
+}
+
+.btn-cancel-ticket:disabled {
+    -fx-opacity: 0.45;
+    -fx-cursor: not-allowed;
+}
+
+
