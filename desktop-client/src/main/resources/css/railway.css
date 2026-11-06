@@ -491,6 +491,9 @@
     -fx-border-radius: 6px;
     -fx-background-radius: 6px;
     -fx-font-size: 12px;
+    -fx-selection-bar: #dbeafe;
+    -fx-selection-bar-non-focused: #f1f5f9;
+    -fx-selection-bar-text: #0f172a;
 }
 
 .ticket-table-view .column-header-background {
@@ -501,7 +504,7 @@
 
 .ticket-table-view .column-header {
     -fx-background-color: transparent;
-    -fx-size: 32px;
+    -fx-size: 34px;
 }
 
 .ticket-table-view .column-header .label {
@@ -511,9 +514,15 @@
 }
 
 .ticket-table-view .table-row-cell {
-    -fx-cell-size: 36px;
+    -fx-cell-size: 38px;
     -fx-border-color: #f1f5f9;
     -fx-border-width: 0 0 1px 0;
+}
+
+.ticket-table-view .table-cell {
+    -fx-text-fill: #1e293b;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 8px;
 }
 
 .ticket-table-view .table-row-cell:odd {
@@ -528,12 +537,23 @@
     -fx-background-color: #f1f5f9;
 }
 
-.ticket-table-view .table-row-cell:selected {
-    -fx-background-color: #e0f2fe;
+/* Khi một dòng được chọn (selected): Nền xanh dịu, CHỮ ĐẬM MÀU ĐEN XÁM ĐẬM RÕ NÉT */
+.ticket-table-view .table-row-cell:selected,
+.ticket-table-view .table-row-cell:filled:selected,
+.ticket-table-view .table-row-cell:selected:focused {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #93c5fd;
+    -fx-border-width: 1px 0 1px 0;
 }
 
-.ticket-table-view .table-row-cell:selected .label {
-    -fx-text-fill: #0369a1;
+.ticket-table-view .table-row-cell:selected:hover {
+    -fx-background-color: #bfdbfe;
+}
+
+.ticket-table-view .table-row-cell:selected .table-cell,
+.ticket-table-view .table-row-cell:filled:selected .table-cell,
+.ticket-table-view .table-row-cell:selected:focused .table-cell {
+    -fx-text-fill: #0f172a;
     -fx-font-weight: bold;
 }
 
