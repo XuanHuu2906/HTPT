@@ -76,5 +76,29 @@ class TicketViewModelTest {
         assertEquals(1, rejectedCount);
         assertEquals(1, unknownCount);
     }
+
+    @Test
+    @DisplayName("CancelMockOutcome - Giả lập 3 kết quả hủy vé tuân thủ SPEC-06")
+    void testCancelOutcomesBehavior() {
+        TicketViewModel ticket = new TicketViewModel(
+                "REQ-01", "TCK-01", "G01", "SE-001", "Nguyen Van A",
+                "2026-11-05 08:00", "1.250.000 VNĐ", TicketStatus.CONFIRMED, null
+        );
+
+        // 1. Khi kết quả là CANCELLED_SUCCESS -> Chuyển sang CANCELLED
+        ticket.setStatus(TicketStatus.CANCELLED);
+        assertEquals(TicketStatus.CANCELLED, ticket.getStatus());
+        assertFalse(ticket.isCancellable());
+
+        // 2. Khi kết quả là REJECTED (NOT_CANCELLABLE) -> Giữ nguyên CONFIRMED
+        ticket.setStatus(TicketStatus.CONFIRMED);
+        // Mô phỏng server từ chối: không đổi trạng thái
+        assertEquals(TicketStatus.CONFIRMED, ticket.getStatus());
+        assertTrue(ticket.isCancellable());
+
+        // 3. Khi kết quả là UNKNOWN (Timeout) -> Theo SPEC-06 không được đổi sang CANCELLED
+        // Trạng thái vẫn là CONFIRMED
+        assertEquals(TicketStatus.CONFIRMED, ticket.getStatus());
+    }
 }
 

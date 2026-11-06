@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="vn.nhom6.railway.client.controller.CancelTicketController"
+      spacing="16.0" prefWidth="540.0"
+      style="-fx-padding: 22 24; -fx-background-color: #f8fafc; -fx-font-family: 'Segoe UI', Tahoma, sans-serif;"
+      stylesheets="@../css/railway.css">
+
+    <!-- 1. TIÊU ĐỀ HỘP THOẠI & BADGE MOCK -->
+    <HBox alignment="CENTER_LEFT" spacing="10.0">
+        <children>
+            <VBox spacing="2.0">
+                <children>
+                    <Label text="XÁC NHẬN HỦY VÉ (TASK D06)"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                    <Label text="Thao tác hủy vé mô phỏng trên dữ liệu cục bộ (MOCK)"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                </children>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label text="DEMO / MOCK" styleClass="badge-mock" />
+        </children>
+    </HBox>
+
+    <!-- 2. CẢNH BÁO MOCK: Không ngụ ý ghi DB hay gửi server thật -->
+    <HBox alignment="CENTER_LEFT" spacing="8.0"
+          style="-fx-background-color: #fff7ed; -fx-padding: 8 12; -fx-background-radius: 6; -fx-border-color: #ffedd5; -fx-border-radius: 6;">
+        <children>
+            <Label text="⚠ LƯU Ý MÔ PHỎNG:"
+                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #c2410c;" />
+            <Label text="Dữ liệu mô phỏng, không ghi cơ sở dữ liệu và không gọi mạng backend thật."
+                   style="-fx-font-size: 11px; -fx-text-fill: #9a3412;" />
+        </children>
+    </HBox>
+
+    <!-- 3. BẢNG THÔNG TIN VÉ SẮP HỦY -->
+    <VBox spacing="10.0"
+          style="-fx-background-color: #ffffff; -fx-padding: 14 18; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <children>
+            <Label text="THÔNG TIN VÉ SẮP HỦY"
+                   style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+
+            <Separator style="-fx-opacity: 0.6;" />
+
+            <GridPane hgap="14.0" vgap="8.0">
+                <children>
+                    <Label text="Mã vé (Ticket ID):" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-font-weight: bold;" />
+                    <Label fx:id="ticketIdLabel" text="—" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                           style="-fx-font-size: 13px; -fx-text-fill: #0f172a; -fx-font-weight: bold;" />
+
+                    <Label text="Mã yêu cầu (Request ID):" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="requestIdLabel" text="—" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                           style="-fx-font-size: 12px; -fx-text-fill: #1e293b;" />
+
+                    <Label text="Chuyến tàu / Toa:" GridPane.columnIndex="0" GridPane.rowIndex="2"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="tripLabel" text="SE-001 · Toa 01 VIP" GridPane.columnIndex="1" GridPane.rowIndex="2"
+                           style="-fx-font-size: 12px; -fx-text-fill: #1e293b;" />
+
+                    <Label text="Ghế ngồi:" GridPane.columnIndex="0" GridPane.rowIndex="3"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="seatIdLabel" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3"
+                           style="-fx-font-size: 13px; -fx-text-fill: #b45309; -fx-font-weight: bold;" />
+
+                    <Label text="Hành khách:" GridPane.columnIndex="0" GridPane.rowIndex="4"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="passengerLabel" text="—" GridPane.columnIndex="1" GridPane.rowIndex="4"
+                           style="-fx-font-size: 12px; -fx-text-fill: #1e293b; -fx-font-weight: bold;" />
+
+                    <Label text="Số tiền hoàn lại (dự kiến):" GridPane.columnIndex="0" GridPane.rowIndex="5"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="refundPriceLabel" text="1.250.000 VNĐ (100%)" GridPane.columnIndex="1" GridPane.rowIndex="5"
+                           style="-fx-font-size: 13px; -fx-text-fill: #059669; -fx-font-weight: bold;" />
+                </children>
+            </GridPane>
+        </children>
+    </VBox>
+
+    <!-- 4. KHU VỰC ĐIỀU KHIỂN KẾT QUẢ MÔ PHỎNG (FAST MOCK OUTCOME) -->
+    <VBox spacing="8.0" styleClass="mock-panel">
+        <children>
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <children>
+                    <Label text="⚡ Giả lập phản hồi kết quả (MOCK DEMO):" styleClass="mock-panel-title" />
+                </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <children>
+                    <ComboBox fx:id="mockOutcomeCombo" prefWidth="480.0" styleClass="mock-combobox" />
+                </children>
+            </HBox>
+        </children>
+    </VBox>
+
+    <!-- 5. CHECKBOX XÁC NHẬN BẮT BUỘC -->
+    <VBox spacing="6.0">
+        <children>
+            <CheckBox fx:id="confirmCheckBox"
+                      text="Tôi xác nhận muốn hủy vé này và đồng ý với điều khoản hoàn vé."
+                      style="-fx-font-size: 12px; -fx-text-fill: #1e293b; -fx-font-weight: bold; -fx-cursor: hand;" />
+            <Label text="* Nút 'Xác nhận hủy vé' chỉ bật sau khi bạn tích chọn xác nhận bên trên."
+                   style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-style: italic;" />
+        </children>
+    </VBox>
+
+    <!-- 6. VÙNG THÔNG BÁO KẾT QUẢ SAU KHI THỰC HIỆN -->
+    <VBox fx:id="resultBox" spacing="4.0" visible="false" managed="false"
+          style="-fx-padding: 10 14; -fx-background-radius: 6; -fx-border-radius: 6;">
+        <children>
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <children>
+                    <ProgressIndicator fx:id="resultProgress" prefWidth="16.0" prefHeight="16.0"
+                                       visible="false" managed="false" />
+                    <Label fx:id="resultTitleLabel" text="—"
+                           style="-fx-font-size: 12px; -fx-font-weight: bold;" />
+                </children>
+            </HBox>
+            <Label fx:id="resultDetailLabel" text="—" wrapText="true"
+                   style="-fx-font-size: 11px;" />
+        </children>
+    </VBox>
+
+    <!-- 7. THANH NÚT HÀNH ĐỘNG -->
+    <HBox alignment="CENTER_RIGHT" spacing="12.0" style="-fx-padding: 8 0 0 0;">
+        <children>
+            <Button fx:id="closeBtn" onAction="#onCloseClicked" text="Quay lại"
+                    styleClass="btn-reset" />
+            <Button fx:id="confirmCancelBtn" onAction="#onConfirmCancelClicked" text="❌ Xác nhận hủy vé"
+                    styleClass="btn-cancel-ticket" disable="true" />
+        </children>
+    </HBox>
+
+</VBox>

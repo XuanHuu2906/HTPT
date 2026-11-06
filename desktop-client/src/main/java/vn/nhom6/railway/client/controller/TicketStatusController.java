@@ -341,7 +341,7 @@ public class TicketStatusController {
     }
 
     // =========================================================================
-    // HỘP THOẠI HỦY VÉ (CANCEL TICKET DIALOG — SẼ NỐI HOÀN CHỈNH Ở COMMIT 2)
+    // HỘP THOẠI HỦY VÉ (CANCEL TICKET DIALOG)
     // =========================================================================
 
     @FXML
@@ -355,8 +355,46 @@ public class TicketStatusController {
     }
 
     public void openCancelTicketDialog(TicketViewModel ticket) {
-        // Nối với CancelTicketController trong bước tiếp theo (TASK D06 Commit 2)
-        setSearchResultMessage("Đã chọn vé " + ticket.getTicketId() + " để hủy. Hộp thoại xác nhận sẽ mở trong Commit 2.", "#2563eb");
+        URL fxmlLocation = getClass().getResource("/fxml/cancel-ticket-dialog.fxml");
+        if (fxmlLocation == null) {
+            String errorMsg = "LỖI: Không tìm thấy tệp giao diện /fxml/cancel-ticket-dialog.fxml!";
+            setSearchResultMessage(errorMsg, "#dc2626");
+            System.err.println(errorMsg);
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(fxmlLocation);
+            Parent dialogRoot = loader.load();
+            CancelTicketController dialogController = loader.getController();
+
+            dialogController.setTicket(ticket);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Xác nhận hủy vé — MOCK D06");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+
+            Window owner = null;
+            if (ticketTableView != null && ticketTableView.getScene() != null) {
+                owner = ticketTableView.getScene().getWindow();
+            }
+            if (owner != null) {
+                dialogStage.initOwner(owner);
+            }
+
+            dialogController.setDialogStage(dialogStage);
+            dialogStage.setScene(new Scene(dialogRoot));
+            dialogStage.setResizable(false);
+            dialogStage.showAndWait();
+
+            // Refresh lại lựa chọn trên bảng sau khi đóng dialog
+            ticketTableView.refresh();
+            updateSelectedTicketUI(ticket);
+        } catch (IOException e) {
+            String errorMsg = "Lỗi khi mở form hủy vé: " + e.getMessage();
+            setSearchResultMessage(errorMsg, "#dc2626");
+            e.printStackTrace();
+        }
     }
 
     // =========================================================================
