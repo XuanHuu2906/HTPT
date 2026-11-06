@@ -1,0 +1,59 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | CLUSTER HEALTHCHECK & PORT PROBE (TV6-D06)
+================================================================================
+
+[1. THONG TIN MOI TRUONG THUC THI]
+  Thoi diem (Local)          : 2026-11-07 00:55:34 +07:00
+  Thoi diem (UTC)            : 2026-11-06T17:55:34.091Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Thu muc du an              : D:\HTPT
+  Git Branch                 : dat
+  Git Commit SHA             : 1d9d905b4db6a751805e9997b0a0da1143a14453
+
+[2. KIEM TRA TIEN TRINH DOCKER DEAMON & COMPOSE STATUS]
+  [INFO] Docker Daemon chua bat tren may host (HOANGDAT). Se tien hanh socket probe truc tiep.
+
+[3. THAM DO (PROBE) 5 POSTGRESQL INSTANCES (DOC LAP)]
+  [OFFLINE] node-1 -> postgres-1 (Host Port: 5433, DB: railway_node1) - Port chua mo / container chua bat
+  [OFFLINE] node-2 -> postgres-2 (Host Port: 5434, DB: railway_node2) - Port chua mo / container chua bat
+  [OFFLINE] node-3 -> postgres-3 (Host Port: 5435, DB: railway_node3) - Port chua mo / container chua bat
+  [OFFLINE] node-4 -> postgres-4 (Host Port: 5436, DB: railway_node4) - Port chua mo / container chua bat
+  [OFFLINE] node-5 -> postgres-5 (Host Port: 5437, DB: railway_node5) - Port chua mo / container chua bat
+  Ket qua probe Database: 0 / 5 instance dang lang nghe tren host.
+
+[4. THAM DO (PROBE) 5 BACKEND NODE CLIENT PORTS (9101..9105)]
+  [NOT_LISTENING] node-1 Client Socket tren port 9101 - [PENDING_D08: NodeMain TV3 ban giao o D08]
+  [NOT_LISTENING] node-2 Client Socket tren port 9102 - [PENDING_D08: NodeMain TV3 ban giao o D08]
+  [NOT_LISTENING] node-3 Client Socket tren port 9103 - [PENDING_D08: NodeMain TV3 ban giao o D08]
+  [NOT_LISTENING] node-4 Client Socket tren port 9104 - [PENDING_D08: NodeMain TV3 ban giao o D08]
+  [NOT_LISTENING] node-5 Client Socket tren port 9105 - [PENDING_D08: NodeMain TV3 ban giao o D08]
+  Ket qua probe Client Ports: 0 / 5 port dang lang nghe.
+
+[5. THAM DO (PROBE) 5 BACKEND NODE RAFT PEER PORTS (9201..9205)]
+  [NOT_LISTENING] node-1 Raft Peer Socket tren port 9201 - [PENDING_D08: Raft RPC Socket TV3 ban giao o D08]
+  [NOT_LISTENING] node-2 Raft Peer Socket tren port 9202 - [PENDING_D08: Raft RPC Socket TV3 ban giao o D08]
+  [NOT_LISTENING] node-3 Raft Peer Socket tren port 9203 - [PENDING_D08: Raft RPC Socket TV3 ban giao o D08]
+  [NOT_LISTENING] node-4 Raft Peer Socket tren port 9204 - [PENDING_D08: Raft RPC Socket TV3 ban giao o D08]
+  [NOT_LISTENING] node-5 Raft Peer Socket tren port 9205 - [PENDING_D08: Raft RPC Socket TV3 ban giao o D08]
+  Ket qua probe Peer Ports: 0 / 5 port dang lang nghe.
+
+[6. KIEM TRA CHUAN HOA LOGGING (LOGBACK CONFIGURATION)]
+  [FOUND] Tep cau hinh Logback: D:\HTPT\backend-node\src\main\resources\logback.xml
+  Kiem tra format cac truong MDC bat buoc:
+    - Format [nodeId]       : [PASS] Da cau hinh %X{nodeId}
+    - Format [term]         : [PASS] Da cau hinh %X{term}
+    - Format [requestId]    : [PASS] Da cau hinh %X{requestId}
+    - Quy tac bao mat Privacy: [PASS] Da tich hop chi thi cam log du lieu nhay cam (CCCD, Sdt, Password)
+
+--------------------------------------------------------------------------------
+ TONG KET DANH GIA NHIEM VU TV6-D06 (HEALTHCHECK & LOGGING)
+--------------------------------------------------------------------------------
+  1. Kich ban Healthcheck (health.ps1) : [PASS] Da san sang, tham do nhanh khong gay treo.
+  2. Quy hoach Cong mang (SPEC-08)                          : [PASS] 5 DB ports (5433..5437), 5 Client (9101..9105), 5 Peer (9201..9205).
+  3. Chuan hoa Logback XML                                  : [PASS] Day du nodeId, term, requestId, khong log du lieu nhay cam.
+  4. Trang thai tien do cac thanh vien khac                : [INFO] NodeMain va Raft TCP Socket dang duoc TV3 phat trien (du kien ban giao tai D08 theo roadmap).
+
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D06\TV6-D06-result.log
+================================================================================

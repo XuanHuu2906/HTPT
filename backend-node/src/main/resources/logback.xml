@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ==============================================================================
+  RAILWAY DISTRIBUTED SYSTEM - NHOM 6
+  CHAUAN HOA CAU HINH LOGGING CHO BACKEND NODE (TV6-D06)
+  Theo dac ta: docs/specs/02-ARCHITECTURE.md §4, docs/specs/07-TESTING.md §3,
+               SPEC-01 §6, va Task TV6-D06
+  ==============================================================================
+  QUY TAC BAT BUOC:
+  1. FORMAT CHUAN HOA: Bat buoc hien thi [nodeId], [term], [requestId] tu MDC.
+     Neu chua co trong MDC se tu dong fallback ve bien moi truong hoac '-'.
+  2. BAO MAT DU LIEU (PRIVACY & SECURITY):
+     - TUYET DOI KHONG GHI DU LIEU NHAY CAM: CCCD/CMND, mat khau (DB_PASSWORD),
+       token xac thuc, so dien thoai that cua hanh khach.
+     - Du lieu hanh khach trong demo chi gom passengerName toi gian (SPEC-05).
+  3. OBSERVABILITY: Log phai the hien ro rang trang thai Raft (term, logIndex,
+     commitIndex, lastApplied) de phuc vu dieu tra va giam sat tren Monitor.
+  ==============================================================================
+-->
+<configuration scan="true" scanPeriod="30 seconds">
+
+  <!-- Dinh nghia bien mac dinh tu bien moi truong he thong -->
+  <variable name="NODE_ID" value="${NODE_ID:-node-unknown}"/>
+  <variable name="LOG_DIR" value="${LOG_DIR:-logs}"/>
+
+  <!-- 1. CONSOLE APPENDER (Xuat ra standard output cho Docker va Console) -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <!--
+        Pattern chuan hoa cho he thong phan tan:
+        Timestamp | Thread | Level | [node=...] [term=...] [req=...] | Logger - Message
+      -->
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [node=%X{nodeId:-${NODE_ID}}] [term=%X{term:--}] [req=%X{requestId:--}] %logger{36} - %msg%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <!-- 2. FILE APPENDER (Luu tru log xoay vong tren disk/volume) -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_DIR}/backend-node.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_DIR}/backend-node-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>10MB</maxFileSize>
+      <maxHistory>7</maxHistory>
+      <totalSizeCap>100MB</totalSizeCap>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [node=%X{nodeId:-${NODE_ID}}] [term=%X{term:--}] [req=%X{requestId:--}] %logger{36} - %msg%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <!-- 3. CAU HINH MUC DO LOG THEO TUNG GOI -->
+  <!-- Ma nguon du an: INFO / DEBUG khi can dieu tra loi -->
+  <logger name="vn.nhom6.railway" level="DEBUG"/>
+  <logger name="vn.nhom6.railway.raft" level="DEBUG"/>
+  <logger name="vn.nhom6.railway.protocol" level="INFO"/>
+  <logger name="vn.nhom6.railway.booking" level="DEBUG"/>
+
+  <!-- Thu vien ben thu ba: giam do on -->
+  <logger name="org.postgresql" level="WARN"/>
+  <logger name="com.fasterxml.jackson" level="WARN"/>
+
+  <!-- 4. ROOT LOGGER -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="FILE"/>
+  </root>
+
+</configuration>
+
