@@ -128,5 +128,38 @@ class TicketViewModelTest {
         MockTicketSource.resetToDefault();
         assertEquals(7, MockTicketSource.getSharedTickets().size());
     }
+
+    @Test
+    @DisplayName("MockTicketSource - syncSeatStatusChange đồng bộ các thao tác block chuyển trạng thái trên mock bar")
+    void testSyncSeatStatusChangeFromMockControls() {
+        MockTicketSource.resetToDefault();
+
+        // 1. Chuyển G03 sang BOOKED: Ghế chưa có vé CONFIRMED -> Tự động sinh vé mới với họ tên để trống ""
+        MockTicketSource.syncSeatStatusChange("G03", SeatViewModel.SeatStatus.BOOKED);
+        ObservableList<TicketViewModel> tickets = MockTicketSource.getSharedTickets();
+        assertEquals(8, tickets.size());
+        TicketViewModel g03Ticket = tickets.get(0);
+        assertEquals("G03", g03Ticket.getSeatId());
+        assertEquals(TicketStatus.CONFIRMED, g03Ticket.getStatus());
+        assertEquals("", g03Ticket.getPassengerName()); // để trống theo yêu cầu người dùng
+        assertTrue(g03Ticket.getTicketId().contains("G03"));
+
+        // 2. Chuyển G03 sang AVAILABLE: Hủy vé -> Vé của G03 chuyển sang CANCELLED
+        MockTicketSource.syncSeatStatusChange("G03", SeatViewModel.SeatStatus.AVAILABLE);
+        assertEquals(TicketStatus.CANCELLED, g03Ticket.getStatus());
+        assertEquals("HỦY QUA THAO TÁC MOCK", g03Ticket.getReasonCode());
+
+        // 3. Chuyển G09 sang UNKNOWN: Ghế chưa có vé UNKNOWN -> Tự sinh vé UNKNOWN
+        MockTicketSource.syncSeatStatusChange("G09", SeatViewModel.SeatStatus.UNKNOWN);
+        TicketViewModel g09Ticket = tickets.get(0);
+        assertEquals("G09", g09Ticket.getSeatId());
+        assertEquals(TicketStatus.UNKNOWN, g09Ticket.getStatus());
+        assertEquals("— (Chưa cấp)", g09Ticket.getTicketId());
+        assertEquals("", g09Ticket.getPassengerName());
+
+        // 4. Reset gốc: Khôi phục lại 7 vé ban đầu
+        MockTicketSource.resetToDefault();
+        assertEquals(7, MockTicketSource.getSharedTickets().size());
+    }
 }
 

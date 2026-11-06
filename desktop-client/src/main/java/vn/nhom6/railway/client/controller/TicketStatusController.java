@@ -120,10 +120,13 @@ public class TicketStatusController {
         displayedTickets.setAll(allTickets);
         ticketTableView.setItems(displayedTickets);
 
-        // Lắng nghe vé mới được thêm vào từ màn hình Đặt vé để tự động làm mới
+        // Lắng nghe vé mới được thêm vào hoặc cập nhật để tự động làm mới
         allTickets.addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
             displayedTickets.setAll(allTickets);
-            if (!displayedTickets.isEmpty()) {
+            if (ticketTableView != null) {
+                ticketTableView.refresh();
+            }
+            if (!displayedTickets.isEmpty() && ticketTableView != null) {
                 ticketTableView.getSelectionModel().select(0);
             }
         });
@@ -133,7 +136,7 @@ public class TicketStatusController {
     }
 
     /**
-     * Làm mới lại danh sách vé hiển thị, đảm bảo các vé vừa đặt xuất hiện ngay lập tức.
+     * Làm mới lại danh sách vé hiển thị, đảm bảo các vé vừa đặt hoặc thao tác mock xuất hiện ngay lập tức.
      */
     public void refreshTicketList() {
         if (searchField != null) {
@@ -141,10 +144,13 @@ public class TicketStatusController {
         }
         displayedTickets.setAll(allTickets);
         setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "#64748b");
-        if (!displayedTickets.isEmpty()) {
+        if (!displayedTickets.isEmpty() && ticketTableView != null) {
             ticketTableView.getSelectionModel().select(0);
         } else {
             updateSelectedTicketUI(null);
+        }
+        if (ticketTableView != null) {
+            ticketTableView.refresh();
         }
     }
 

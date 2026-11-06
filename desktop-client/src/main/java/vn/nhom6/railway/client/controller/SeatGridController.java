@@ -1,8 +1,6 @@
 package vn.nhom6.railway.client.controller;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
-import javafx.beans.binding.StringBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -37,7 +35,6 @@ import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -601,8 +598,10 @@ public class SeatGridController {
     }
 
     /**
-     * Xử lý tác động kết quả đặt vé lên trạng thái ghế theo đặc tả SPEC-06 và D05/D06.
-     * Cập nhật trạng thái trực tiếp qua ViewModel, UI và tự động đồng bộ vé vào "Vé của tôi".
+     * Xử lý tác động kết quả đặt vé lên trạng thái ghế theo đặc tả SPEC-06 và
+     * D05/D06.
+     * Cập nhật trạng thái trực tiếp qua ViewModel, UI và tự động đồng bộ vé vào "Vé
+     * của tôi".
      */
     public void handleBookingOutcome(BookingOutcome outcome) {
         handleBookingOutcome(outcome, "Khách đặt vé");
@@ -613,8 +612,10 @@ public class SeatGridController {
             return;
 
         List<String> affectedSeats = getSelectedSeats();
-        String finalName = (passengerName != null && !passengerName.isBlank()) ? passengerName.trim() : "Khách hàng MOCK";
-        String nowTime = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        String finalName = (passengerName != null && !passengerName.isBlank()) ? passengerName.trim()
+                : "Khách hàng MOCK";
+        String nowTime = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
         switch (outcome.getStatus()) {
             case CONFIRMED -> {
@@ -634,8 +635,7 @@ public class SeatGridController {
                             nowTime,
                             "1.250.000 VNĐ",
                             TicketStatus.CONFIRMED,
-                            null
-                    );
+                            null);
                     MockTicketSource.addTicket(newTicket);
                 }
                 String msg = "Đặt vé thành công! Mã: " + refCode + " (Ghế: " + String.join(", ", affectedSeats) +
@@ -658,8 +658,7 @@ public class SeatGridController {
                             nowTime,
                             "1.250.000 VNĐ",
                             TicketStatus.REJECTED,
-                            outcome.getReasonCode()
-                    );
+                            outcome.getReasonCode());
                     MockTicketSource.addTicket(rejectedTicket);
                 }
                 String msg = "Ghế đã có người đặt trước (REJECTED: " + outcome.getReasonCode()
@@ -682,8 +681,7 @@ public class SeatGridController {
                             nowTime,
                             "1.250.000 VNĐ",
                             TicketStatus.UNKNOWN,
-                            "TIMEOUT_AWAITING_LEADER"
-                    );
+                            "TIMEOUT_AWAITING_LEADER");
                     MockTicketSource.addTicket(unknownTicket);
                 }
                 String msg = "Chưa xác định kết quả (TIMEOUT/MẤT KẾT NỐI). Ghế đã chuyển sang trạng thái CHƯA RÕ (UNKNOWN)!";
@@ -746,7 +744,10 @@ public class SeatGridController {
             SeatViewModel vm = getSeatViewModel(seatId);
             if (vm != null) {
                 vm.setStatus(targetStatus);
-                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus + " trong model.");
+                MockTicketSource.syncSeatStatusChange(seatId, targetStatus);
+                updateLegendCounts();
+                updateSelectedSeatsUI();
+                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus + " trong model và đồng bộ vé.");
             }
         }
     }
@@ -757,19 +758,24 @@ public class SeatGridController {
         if (vm != null) {
             SeatStatus newStatus = (vm.getStatus() == SeatStatus.BOOKED) ? SeatStatus.AVAILABLE : SeatStatus.BOOKED;
             vm.setStatus(newStatus);
-            updateStatus("MOCK: Đã đổi ghế G03 sang trạng thái " + newStatus.name() + " trong model.");
+            MockTicketSource.syncSeatStatusChange("G03", newStatus);
+            updateLegendCounts();
+            updateSelectedSeatsUI();
+            updateStatus("MOCK: Đã đổi ghế G03 sang trạng thái " + newStatus.name() + " trong model và đồng bộ vé.");
         }
     }
 
     @FXML
     public void onMockRefreshSnapshotClicked() {
         clearSelection();
-        SeatViewModel.applySnapshot(seats, MockSeatSource.createRefreshedMockSnapshot());
+        java.util.Map<String, SeatStatus> snapshot = MockSeatSource.createRefreshedMockSnapshot();
+        SeatViewModel.applySnapshot(seats, snapshot);
+        MockTicketSource.syncSnapshot(snapshot);
         screenStateModel.setState(ScreenState.IDLE,
                 "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
         updateLegendCounts();
         updateSelectedSeatsUI();
-        updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK thành công.");
+        updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK và đồng bộ vé thành công.");
     }
 
     @FXML
@@ -778,7 +784,10 @@ public class SeatGridController {
         if (vm != null) {
             SeatStatus newStatus = (vm.getStatus() == SeatStatus.UNKNOWN) ? SeatStatus.AVAILABLE : SeatStatus.UNKNOWN;
             vm.setStatus(newStatus);
-            updateStatus("MOCK: Đã đổi ghế G04 sang trạng thái " + newStatus.name() + ".");
+            MockTicketSource.syncSeatStatusChange("G04", newStatus);
+            updateLegendCounts();
+            updateSelectedSeatsUI();
+            updateStatus("MOCK: Đã đổi ghế G04 sang trạng thái " + newStatus.name() + " và đồng bộ vé.");
         }
     }
 
@@ -788,7 +797,10 @@ public class SeatGridController {
         if (vm != null) {
             SeatStatus newStatus = (vm.getStatus() == SeatStatus.BOOKED) ? SeatStatus.AVAILABLE : SeatStatus.BOOKED;
             vm.setStatus(newStatus);
-            updateStatus("MOCK: Đã đổi ghế G05 sang trạng thái " + newStatus.name() + ".");
+            MockTicketSource.syncSeatStatusChange("G05", newStatus);
+            updateLegendCounts();
+            updateSelectedSeatsUI();
+            updateStatus("MOCK: Đã đổi ghế G05 sang trạng thái " + newStatus.name() + " và đồng bộ vé.");
         }
     }
 
@@ -807,23 +819,34 @@ public class SeatGridController {
         setSeatStatusHelper("G09", SeatStatus.AVAILABLE);
         setSeatStatusHelper("G10", SeatStatus.AVAILABLE);
 
+        MockTicketSource.syncSeatStatusChange("G01", SeatStatus.AVAILABLE);
+        MockTicketSource.syncSeatStatusChange("G02", SeatStatus.BOOKED);
+        MockTicketSource.syncSeatStatusChange("G03", SeatStatus.AVAILABLE);
+        MockTicketSource.syncSeatStatusChange("G04", SeatStatus.UNKNOWN);
+        MockTicketSource.syncSeatStatusChange("G06", SeatStatus.AVAILABLE);
+        MockTicketSource.syncSeatStatusChange("G07", SeatStatus.AVAILABLE);
+        MockTicketSource.syncSeatStatusChange("G08", SeatStatus.BOOKED);
+        MockTicketSource.syncSeatStatusChange("G09", SeatStatus.AVAILABLE);
+        MockTicketSource.syncSeatStatusChange("G10", SeatStatus.AVAILABLE);
+
         updateLegendCounts();
         updateSelectedSeatsUI();
 
         screenStateModel.setState(ScreenState.IDLE,
                 "Đang hiển thị đủ 4 trạng thái ghế: AVAILABLE, BOOKED, SELECTED, UNKNOWN.");
         updateStatus(
-                "MOCK: Đã thiết lập đủ 4 trạng thái ghế (G01 AVAILABLE, G02/G08 BOOKED, G05 SELECTED, G04 UNKNOWN).");
+                "MOCK: Đã thiết lập đủ 4 trạng thái ghế (G01 AVAILABLE, G02/G08 BOOKED, G05 SELECTED, G04 UNKNOWN) và đồng bộ vé.");
     }
 
     @FXML
     public void onMockResetDefault() {
         clearSelection();
         SeatViewModel.applySnapshot(seats, MockSeatSource.createInitialSnapshot());
+        MockTicketSource.resetToDefault();
         screenStateModel.setState(ScreenState.IDLE);
         updateLegendCounts();
         updateSelectedSeatsUI();
-        updateStatus("MOCK: Đã khôi phục dữ liệu ghế MOCK ban đầu.");
+        updateStatus("MOCK: Đã khôi phục dữ liệu ghế và danh sách vé MOCK ban đầu.");
     }
 
     private void setSeatStatusHelper(String seatId, SeatStatus status) {
