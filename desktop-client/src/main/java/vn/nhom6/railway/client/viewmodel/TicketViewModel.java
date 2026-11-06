@@ -14,7 +14,8 @@ import java.util.List;
 /**
  * ViewModel đại diện cho một vé tàu mô phỏng (TASK D06).
  * <p>
- * Lưu trữ thông tin vé và trạng thái phản ứng để binding lên TableView và các điều khiển UI.
+ * Lưu trữ thông tin vé và trạng thái phản ứng để binding lên TableView và các
+ * điều khiển UI.
  * Dữ liệu hoàn toàn cục bộ (MOCK), không tương tác DB hay network.
  */
 public class TicketViewModel {
@@ -69,8 +70,8 @@ public class TicketViewModel {
     private final ReadOnlyStringWrapper statusDisplay = new ReadOnlyStringWrapper();
 
     public TicketViewModel(String requestId, String ticketId, String seatId, String tripCode,
-                           String passengerName, String createdAt, String priceFormatted,
-                           TicketStatus initialStatus, String reasonCode) {
+            String passengerName, String createdAt, String priceFormatted,
+            TicketStatus initialStatus, String reasonCode) {
         this.requestId = requestId;
         this.ticketId = (ticketId != null && !ticketId.isBlank()) ? ticketId : "— (Chưa cấp)";
         this.seatId = seatId;
@@ -167,51 +168,70 @@ public class TicketViewModel {
 
     /**
      * Nguồn dữ liệu vé MOCK duy nhất (TASK D06).
-     * 7 bản ghi đại diện đủ 4 trạng thái theo SPEC-06.
+     * Quản lý danh sách vé dùng chung giữa các màn hình Đặt vé và Tra cứu/Vé của
+     * tôi.
      */
     public static class MockTicketSource {
         public static final String MOCK_NOTICE = "DEMO / MOCK — D06";
 
+        private static final ObservableList<TicketViewModel> SHARED_TICKETS = FXCollections.observableArrayList();
+
+        static {
+            resetToDefault();
+        }
+
         public static ObservableList<TicketViewModel> createMockTickets() {
-            List<TicketViewModel> list = List.of(
+            return getSharedTickets();
+        }
+
+        public static ObservableList<TicketViewModel> getSharedTickets() {
+            if (SHARED_TICKETS.isEmpty()) {
+                resetToDefault();
+            }
+            return SHARED_TICKETS;
+        }
+
+        /**
+         * Thêm vé mới đặt thành công vào đầu danh sách để hiển thị ngay trong "Vé của
+         * tôi".
+         */
+        public static void addTicket(TicketViewModel ticket) {
+            if (ticket != null) {
+                SHARED_TICKETS.add(0, ticket);
+            }
+        }
+
+        public static void resetToDefault() {
+            SHARED_TICKETS.clear();
+            SHARED_TICKETS.addAll(
                     new TicketViewModel(
                             "REQ-20261105-001", "TCK-SE001-G02", "G02", "SE-001",
                             "Trần Thị Mai", "2026-11-05 08:15", "1.250.000 VNĐ",
-                            TicketStatus.CONFIRMED, null
-                    ),
+                            TicketStatus.CONFIRMED, null),
                     new TicketViewModel(
                             "REQ-20261105-002", "TCK-SE001-G04", "G04", "SE-001",
                             "Lê Hoàng Nam", "2026-11-05 08:30", "1.250.000 VNĐ",
-                            TicketStatus.CONFIRMED, null
-                    ),
+                            TicketStatus.CONFIRMED, null),
                     new TicketViewModel(
                             "REQ-20261105-003", "TCK-SE001-G08", "G08", "SE-001",
                             "Phạm Minh Tuấn", "2026-11-05 09:00", "1.250.000 VNĐ",
-                            TicketStatus.CONFIRMED, null
-                    ),
+                            TicketStatus.CONFIRMED, null),
                     new TicketViewModel(
                             "REQ-20261105-004", "TCK-SE001-G01", "G01", "SE-001",
                             "Hoàng Đức Anh", "2026-11-05 09:45", "1.250.000 VNĐ",
-                            TicketStatus.CANCELLED, "HỦY THEO YÊU CẦU KHÁCH HÀNG"
-                    ),
+                            TicketStatus.CANCELLED, "HỦY THEO YÊU CẦU KHÁCH HÀNG"),
                     new TicketViewModel(
                             "REQ-20261105-005", "", "G02", "SE-001",
                             "Vũ Hải Đăng", "2026-11-05 10:10", "1.250.000 VNĐ",
-                            TicketStatus.REJECTED, "SEAT_ALREADY_BOOKED"
-                    ),
+                            TicketStatus.REJECTED, "SEAT_ALREADY_BOOKED"),
                     new TicketViewModel(
                             "REQ-20261105-006", "", "G05", "SE-001",
                             "Đỗ Thu Thảo", "2026-11-05 10:30", "1.250.000 VNĐ",
-                            TicketStatus.UNKNOWN, "TIMEOUT_AWAITING_LEADER"
-                    ),
+                            TicketStatus.UNKNOWN, "TIMEOUT_AWAITING_LEADER"),
                     new TicketViewModel(
                             "REQ-20261105-007", "TCK-SE001-G07", "G07", "SE-001",
                             "Ngô Quang Vinh", "2026-11-05 11:00", "1.250.000 VNĐ",
-                            TicketStatus.CONFIRMED, null
-                    )
-            );
-            return FXCollections.observableArrayList(list);
+                            TicketStatus.CONFIRMED, null));
         }
     }
 }
-

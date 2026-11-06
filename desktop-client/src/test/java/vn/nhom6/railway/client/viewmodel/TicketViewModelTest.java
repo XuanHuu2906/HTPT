@@ -100,5 +100,33 @@ class TicketViewModelTest {
         // Trạng thái vẫn là CONFIRMED
         assertEquals(TicketStatus.CONFIRMED, ticket.getStatus());
     }
+
+    @Test
+    @DisplayName("MockTicketSource - Đặt vé mới tự động đồng bộ vào đầu danh sách Vé của tôi")
+    void testAddTicketSyncsToMyTickets() {
+        MockTicketSource.resetToDefault();
+        int initialSize = MockTicketSource.getSharedTickets().size();
+        assertEquals(7, initialSize);
+
+        TicketViewModel newBookingTicket = new TicketViewModel(
+                "REF-TEST-999", "TCK-SE001-G03", "G03", "SE-001",
+                "Phan Thanh Liêm", "2026-11-06 09:40", "1.250.000 VNĐ",
+                TicketStatus.CONFIRMED, null
+        );
+
+        MockTicketSource.addTicket(newBookingTicket);
+
+        ObservableList<TicketViewModel> currentTickets = MockTicketSource.getSharedTickets();
+        assertEquals(initialSize + 1, currentTickets.size());
+        // Vé vừa đặt nằm ngay đầu danh sách
+        assertSame(newBookingTicket, currentTickets.get(0));
+        assertEquals("Phan Thanh Liêm", currentTickets.get(0).getPassengerName());
+        assertEquals("TCK-SE001-G03", currentTickets.get(0).getTicketId());
+        assertEquals(TicketStatus.CONFIRMED, currentTickets.get(0).getStatus());
+
+        // Reset về mặc định
+        MockTicketSource.resetToDefault();
+        assertEquals(7, MockTicketSource.getSharedTickets().size());
+    }
 }
 

@@ -128,6 +128,10 @@ public class MainController {
                 cachedTicketStatusController.setOnBackAction(this::showMainView);
             }
 
+            if (cachedTicketStatusController != null) {
+                cachedTicketStatusController.refreshTicketList();
+            }
+
             if (rootBorderPane != null) {
                 rootBorderPane.setCenter(cachedTicketStatusView);
                 highlightNavButton(navMyTicketsBtn);

@@ -313,4 +313,13 @@ public class BookingDialogController {
     public Optional<BookingOutcome> getOutcome() {
         return Optional.ofNullable(outcome);
     }
+
+    /**
+     * Lấy họ tên hành khách người dùng đã nhập trên form để đồng bộ sang lịch sử "Vé của tôi".
+     */
+    public String getPassengerName() {
+        return (passengerNameField != null && passengerNameField.getText() != null)
+                ? passengerNameField.getText().trim()
+                : "";
+    }
 }

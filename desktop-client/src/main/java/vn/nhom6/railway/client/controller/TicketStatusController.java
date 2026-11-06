@@ -101,8 +101,8 @@ public class TicketStatusController {
     @FXML
     private Button cancelTicketBtn;
 
-    // Nguồn dữ liệu MOCK
-    private final ObservableList<TicketViewModel> allTickets = MockTicketSource.createMockTickets();
+    // Nguồn dữ liệu MOCK dùng chung
+    private final ObservableList<TicketViewModel> allTickets = MockTicketSource.getSharedTickets();
     private final ObservableList<TicketViewModel> displayedTickets = FXCollections.observableArrayList();
 
     // Callback quay lại màn hình chính
@@ -120,8 +120,32 @@ public class TicketStatusController {
         displayedTickets.setAll(allTickets);
         ticketTableView.setItems(displayedTickets);
 
+        // Lắng nghe vé mới được thêm vào từ màn hình Đặt vé để tự động làm mới
+        allTickets.addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
+            displayedTickets.setAll(allTickets);
+            if (!displayedTickets.isEmpty()) {
+                ticketTableView.getSelectionModel().select(0);
+            }
+        });
+
         setupTableSelectionListener();
         updateSelectedTicketUI(null);
+    }
+
+    /**
+     * Làm mới lại danh sách vé hiển thị, đảm bảo các vé vừa đặt xuất hiện ngay lập tức.
+     */
+    public void refreshTicketList() {
+        if (searchField != null) {
+            searchField.clear();
+        }
+        displayedTickets.setAll(allTickets);
+        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "#64748b");
+        if (!displayedTickets.isEmpty()) {
+            ticketTableView.getSelectionModel().select(0);
+        } else {
+            updateSelectedTicketUI(null);
+        }
     }
 
     /**
