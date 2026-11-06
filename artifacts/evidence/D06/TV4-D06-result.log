@@ -1,10 +1,10 @@
-TV4-D06 - RaftLogRepositoryAdapter + FakeRaftStorage unit tests (NOT PostgreSQL durability; JdbcRaftStorage is TV2-D12)
+TV4-D06 hardening - RaftLogRepositoryAdapter + FakeRaftStorage unit tests (NOT PostgreSQL durability; JdbcRaftStorage is TV2-D12)
 Environment: Docker image maven:3.9-eclipse-temurin-25 (JDK 25, Maven 3.9), Windows host, repo mounted at /workspace
 Command: mvn -B -ntp -pl backend-node -am clean test
-Git HEAD (code commit): e662d3faf3b43ce4054ac27595de5299c3439873
+Git HEAD (code commit): 0f06ed4d81857da354ac9b0a0cd69cc0c485a9d2
 Base: a2ac8888f099626a8eb0212ebf26acd813f2b23e (origin/main after git pull --no-edit origin main)
 Baseline on origin/main a2ac888: 367 tests, 0 failures, 0 errors, 1 skipped (SchemaMigrationTest needs PostgreSQL)
-Result on code commit e662d3f: 390 tests, 0 failures, 0 errors, 1 skipped; 23 new tests in RaftStorageAdapterTest. Docker exit code 0.
+Result on code commit 0f06ed4: 392 tests, 0 failures, 0 errors, 1 skipped; 25 tests in RaftStorageAdapterTest (23 existing + 2 unchecked-failure regressions). Docker exit code 0.
 
 [INFO] Scanning for projects...
 [INFO] ------------------------------------------------------------------------
@@ -50,13 +50,13 @@ Result on code commit e662d3f: 390 tests, 0 failures, 0 errors, 1 skipped; 23 ne
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running vn.nhom6.railway.protocol.MessageCodecNegativeTest
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.881 s -- in vn.nhom6.railway.protocol.MessageCodecNegativeTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.800 s -- in vn.nhom6.railway.protocol.MessageCodecNegativeTest
 [INFO] Running vn.nhom6.railway.protocol.MessageEnvelopeTest
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.128 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
 [INFO] Running vn.nhom6.railway.protocol.PayloadDtoTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.084 s -- in vn.nhom6.railway.protocol.PayloadDtoTest
 [INFO] Running vn.nhom6.railway.protocol.ProtocolContractTest
-[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in vn.nhom6.railway.protocol.ProtocolContractTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in vn.nhom6.railway.protocol.ProtocolContractTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -93,84 +93,84 @@ Result on code commit e662d3f: 390 tests, 0 failures, 0 errors, 1 skipped; 23 ne
 [INFO] -------------------------------------------------------
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.111 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.135 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
-[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
-[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.130 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.161 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
 [INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
-[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
-[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.454 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.536 s -- in vn.nhom6.railway.booking.BookingCommandTest
 [INFO] Running vn.nhom6.railway.booking.BookingRaftContractTest
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.153 s -- in vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.197 s -- in vn.nhom6.railway.booking.BookingRaftContractTest
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
-[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
 [INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Init
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
-[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.189 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
 [INFO] Running vn.nhom6.railway.networking.FramingTest
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.627 s -- in vn.nhom6.railway.networking.FramingTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.679 s -- in vn.nhom6.railway.networking.FramingTest
 [INFO] Running vn.nhom6.railway.persistence.SchemaMigrationTest
-[WARNING] Tests run: 2, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.040 s -- in vn.nhom6.railway.persistence.SchemaMigrationTest
+[WARNING] Tests run: 2, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.036 s -- in vn.nhom6.railway.persistence.SchemaMigrationTest
 [INFO] Running vn.nhom6.railway.raft.core.RaftCoreContractTest
-[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.158 s -- in vn.nhom6.railway.raft.core.RaftCoreContractTest
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.146 s -- in vn.nhom6.railway.raft.core.RaftCoreContractTest
 [INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTest
-[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
 [INFO] Running vn.nhom6.railway.raft.election.ElectionCoreContractTest
-[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.220 s -- in vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.188 s -- in vn.nhom6.railway.raft.election.ElectionCoreContractTest
 [INFO] Running vn.nhom6.railway.raft.election.ElectionTest
-[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in vn.nhom6.railway.raft.election.ElectionTest
 [INFO] Running vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
-[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.095 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
 [INFO] Running vn.nhom6.railway.raft.election.TimerTest
-[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in vn.nhom6.railway.raft.election.TimerTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in vn.nhom6.railway.raft.election.TimerTest
 [INFO] Running vn.nhom6.railway.raft.election.VoteRulesTest
-[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.072 s -- in vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in vn.nhom6.railway.raft.election.VoteRulesTest
 [INFO] Running vn.nhom6.railway.raft.replication.ConflictTests
-[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.089 s -- in vn.nhom6.railway.raft.replication.ConflictTests
+[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in vn.nhom6.railway.raft.replication.ConflictTests
 [INFO] Running vn.nhom6.railway.raft.replication.RaftLogTest
-[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.076 s -- in vn.nhom6.railway.raft.replication.RaftLogTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.raft.replication.RaftLogTest
 [INFO] Running vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
-[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
 [INFO] 
 [INFO] Results:
 [INFO] 
-[WARNING] Tests run: 390, Failures: 0, Errors: 0, Skipped: 1
+[WARNING] Tests run: 392, Failures: 0, Errors: 0, Skipped: 1
 [INFO] 
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
 [INFO] 
-[INFO] railway-distributed-system ......................... SUCCESS [  1.866 s]
-[INFO] shared ............................................. SUCCESS [ 18.073 s]
-[INFO] backend-node ....................................... SUCCESS [ 14.637 s]
+[INFO] railway-distributed-system ......................... SUCCESS [  2.029 s]
+[INFO] shared ............................................. SUCCESS [ 17.420 s]
+[INFO] backend-node ....................................... SUCCESS [ 14.940 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  34.735 s
-[INFO] Finished at: 2026-11-06T04:54:16Z
+[INFO] Total time:  34.559 s
+[INFO] Finished at: 2026-11-06T05:03:54Z
 [INFO] ------------------------------------------------------------------------
