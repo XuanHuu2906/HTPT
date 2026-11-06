@@ -151,6 +151,10 @@ public class CancelTicketController {
             resultDetailLabel.setStyle("-fx-text-fill: #3b82f6; -fx-font-size: 11px;");
         }
 
+        if (dialogStage != null) {
+            dialogStage.sizeToScene();
+        }
+
         CancelMockOutcome outcome = (mockOutcomeCombo != null && mockOutcomeCombo.getValue() != null)
                 ? mockOutcomeCombo.getValue()
                 : CancelMockOutcome.CANCELLED_SUCCESS;
@@ -181,7 +185,7 @@ public class CancelTicketController {
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId() + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế được giải phóng trên sơ đồ (MOCK).");
-                    resultDetailLabel.setStyle("-fx-text-fill: #047857; -fx-font-size: 11px;");
+                    resultDetailLabel.setStyle("-fx-text-fill: #047857; -fx-font-size: 11.5px;");
                 }
             }
             case REJECTED_NOT_CANCELLABLE -> {
@@ -195,7 +199,7 @@ public class CancelTicketController {
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Lý do: Vé quá thời hạn quy định hoàn vé trước giờ tàu chạy (SPEC-06). Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.");
-                    resultDetailLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: 11px;");
+                    resultDetailLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: 11.5px;");
                 }
             }
             case UNKNOWN_TIMEOUT -> {
@@ -209,7 +213,7 @@ public class CancelTicketController {
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Không nhận được phản hồi từ cụm máy chủ. Vé KHÔNG bị đổi thành Đã hủy. Vui lòng tra cứu lại theo mã Request ID!");
-                    resultDetailLabel.setStyle("-fx-text-fill: #9a3412; -fx-font-size: 11px;");
+                    resultDetailLabel.setStyle("-fx-text-fill: #9a3412; -fx-font-size: 11.5px;");
                 }
             }
         }
@@ -218,6 +222,10 @@ public class CancelTicketController {
             closeBtn.setText("Đóng");
             closeBtn.getStyleClass().clear();
             closeBtn.getStyleClass().add("btn-primary");
+        }
+
+        if (dialogStage != null) {
+            dialogStage.sizeToScene();
         }
     }
 

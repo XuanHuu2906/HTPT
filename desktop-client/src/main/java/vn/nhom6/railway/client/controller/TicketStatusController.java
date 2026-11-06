@@ -414,7 +414,10 @@ public class TicketStatusController {
 
             dialogController.setDialogStage(dialogStage);
             dialogStage.setScene(new Scene(dialogRoot));
-            dialogStage.setResizable(false);
+            dialogStage.setMinWidth(640);
+            dialogStage.setMinHeight(560);
+            dialogStage.setResizable(true);
+            dialogStage.sizeToScene();
             dialogStage.showAndWait();
 
             // Refresh lại lựa chọn trên bảng sau khi đóng dialog
