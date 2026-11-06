@@ -16,9 +16,11 @@ import vn.nhom6.railway.raft.core.RaftStorage.RaftStorageException;
  * <p>The adapter owns the ordering rule "persist first, acknowledge afterwards": the visible
  * in-memory log is only replaced after {@link RaftStorage#replaceSuffix(long, List)} returns
  * successfully. A storage failure therefore never produces an {@code accepted=true} result and
- * never makes the in-memory log run ahead of durable storage. After such a failure the adapter
- * fails closed and refuses further writes until {@link #recover()} rebuilds its state from
- * {@link RaftStorage#load()}.
+ * never makes the in-memory log run ahead of durable storage. This includes unchecked failures
+ * from {@link RaftStorage#replaceSuffix(long, List)}: a checked
+ * {@link RaftStorageException}, a runtime exception or an error marks the write outcome as
+ * ambiguous, so the adapter fails closed and refuses further writes until {@link #recover()}
+ * rebuilds its state from {@link RaftStorage#load()}.
  *
  * <p>This class decides no Raft semantics: it does not apply the commit rule, does not count
  * majorities, does not manage {@code currentTerm}/{@code votedFor} and does not touch
@@ -140,9 +142,10 @@ public final class RaftLogRepositoryAdapter {
      * Appends an entry created by this Node as Leader.
      *
      * <p>The entry is first added to a private copy of the log, then written with
-     * {@link RaftStorage#replaceSuffix(long, List)}, and only a successful storage write publishes
-     * the copy as the visible log. On {@link RaftStorageException} the visible log is unchanged,
-     * the adapter requires {@link #recover()}, and the exception is rethrown.
+     * {@link RaftStorage#replaceSuffix(long, List)}, and only a normal return from storage
+     * publishes the copy as the visible log. Any failure from storage, checked or unchecked, is
+     * propagated unchanged, leaves the visible log unchanged and requires {@link #recover()}
+     * before the next write: the outcome of the write may be ambiguous.
      *
      * @param entry entry whose index is {@code lastIndex() + 1}
      * @throws IllegalStateException    when the adapter is not recovered or requires recovery
@@ -154,11 +157,14 @@ public final class RaftLogRepositoryAdapter {
         InMemoryRaftLog updated = copyOf(log);
         updated.append(entry);
 
+        boolean persisted = false;
         try {
             storage.replaceSuffix(entry.index(), List.of(entry));
-        } catch (RaftStorageException storageFailure) {
-            needsRecovery = true;
-            throw storageFailure;
+            persisted = true;
+        } finally {
+            if (!persisted) {
+                needsRecovery = true;
+            }
         }
         this.log = updated;
     }
@@ -172,9 +178,10 @@ public final class RaftLogRepositoryAdapter {
      * entries, and only its success publishes the copy and returns an {@code accepted=true} result.
      *
      * <p>A caller may send {@code APPEND_ENTRIES_RESPONSE.success=true} only after this method
-     * returns normally with {@code result.accepted() == true} (SPEC-04 section 9). On
-     * {@link RaftStorageException} the method never returns a result: the visible log is unchanged,
-     * the adapter requires {@link #recover()}, and the exception is rethrown.
+     * returns normally with {@code result.accepted() == true} (SPEC-04 section 9). Any failure from
+     * {@link RaftStorage#replaceSuffix(long, List)}, checked or unchecked, is propagated unchanged:
+     * the method never returns a result, the visible log is unchanged, and the adapter requires
+     * {@link #recover()} before the next write because the outcome may be ambiguous.
      *
      * @param prevLogIndex index preceding the batch, {@code >= 0}
      * @param prevLogTerm  expected term at {@code prevLogIndex}, 0 only at index 0
@@ -206,11 +213,14 @@ public final class RaftLogRepositoryAdapter {
         }
 
         long fromIndex = result.appended().get(0).index();
+        boolean persisted = false;
         try {
             storage.replaceSuffix(fromIndex, result.appended());
-        } catch (RaftStorageException storageFailure) {
-            needsRecovery = true;
-            throw storageFailure;
+            persisted = true;
+        } finally {
+            if (!persisted) {
+                needsRecovery = true;
+            }
         }
         this.log = updated;
         return result;

@@ -461,6 +461,69 @@ class RaftStorageAdapterTest {
         assertInSync(adapter, storage);
     }
 
+    @Test
+    void uncheckedFailureDuringAppendLocalLocksAdapterUntilRecover() throws RaftStorageException {
+        PersistThenThrowStorage storage = new PersistThenThrowStorage();
+        RaftLogRepositoryAdapter adapter = new RaftLogRepositoryAdapter(storage);
+        adapter.recover();
+        RaftLogEntry first = entry(1L, 1L);
+        storage.throwAfterNextReplaceSuffix();
+
+        IllegalStateException original =
+                assertThrows(IllegalStateException.class, () -> adapter.appendLocal(first));
+
+        assertEquals("test storage: persisted entry but threw unchecked", original.getMessage());
+        assertEquals(List.of(), adapter.entries(),
+                "the visible log must not publish an entry whose write result is ambiguous");
+        assertEquals(List.of(first), storage.storedLog(), "the storage did persist before throwing");
+
+        IllegalStateException blocked =
+                assertThrows(IllegalStateException.class, () -> adapter.appendLocal(entry(1L, 1L)));
+        assertTrue(blocked.getMessage().contains("recover"),
+                "the adapter must ask for recover() after an unchecked storage failure");
+        assertEquals(1, storage.replaceSuffixCalls(), "the second write must not reach storage");
+
+        adapter.recover();
+        assertEquals(storage.storedLog(), adapter.entries());
+        adapter.appendLocal(entry(2L, 1L));
+        assertEquals(storage.storedLog(), adapter.entries());
+        assertEquals(2, storage.replaceSuffixCalls());
+    }
+
+    @Test
+    void uncheckedFailureDuringAppendEntriesLocksAdapterUntilRecover() throws RaftStorageException {
+        PersistThenThrowStorage storage = new PersistThenThrowStorage();
+        RaftLogEntry first = entry(1L, 1L);
+        storage.seedState(1L, null, List.of(first), 0L);
+        RaftLogRepositoryAdapter adapter = new RaftLogRepositoryAdapter(storage);
+        adapter.recover();
+        List<RaftLogEntry> batch = List.of(entry(2L, 2L));
+        storage.throwAfterNextReplaceSuffix();
+
+        IllegalStateException original = assertThrows(IllegalStateException.class,
+                () -> adapter.appendEntries(1L, 1L, batch, 1L));
+
+        assertEquals("test storage: persisted entry but threw unchecked", original.getMessage());
+        assertEquals(List.of(first), adapter.entries(),
+                "the visible log must not publish a batch whose write result is ambiguous");
+        assertEquals(List.of(first, entry(2L, 2L)), storage.storedLog(),
+                "the storage did persist before throwing");
+
+        IllegalStateException blocked = assertThrows(IllegalStateException.class,
+                () -> adapter.appendEntries(1L, 1L, batch, 1L));
+        assertTrue(blocked.getMessage().contains("recover"),
+                "the adapter must ask for recover() after an unchecked storage failure");
+        assertEquals(1, storage.replaceSuffixCalls(), "the second batch must not reach storage");
+
+        adapter.recover();
+        assertEquals(storage.storedLog(), adapter.entries());
+        LogConsistencyChecker.ReconcileResult result =
+                adapter.appendEntries(2L, 2L, List.of(entry(3L, 3L)), 2L);
+        assertTrue(result.accepted());
+        assertEquals(storage.storedLog(), adapter.entries());
+        assertEquals(2, storage.replaceSuffixCalls());
+    }
+
     // -------------------------------------------------------------------------------------------
     // Invariant over a longer successful scenario
     // -------------------------------------------------------------------------------------------
@@ -490,5 +553,58 @@ class RaftStorageAdapterTest {
 
         assertEquals(5L, adapter.lastIndex());
         assertEquals(3L, adapter.lastTerm());
+    }
+
+    /**
+     * Test-only {@link RaftStorage} wrapper that delegates to {@link FakeRaftStorage}, then throws
+     * an unchecked exception to simulate an ambiguous write whose durable effect already happened.
+     * It is in memory only and proves no PostgreSQL durability.
+     */
+    private static final class PersistThenThrowStorage implements RaftStorage {
+
+        private final FakeRaftStorage delegate = new FakeRaftStorage();
+        private boolean throwAfterNextReplaceSuffix;
+        private int replaceSuffixCalls;
+
+        void seedState(long term, String vote, List<RaftLogEntry> entries, long applied) {
+            delegate.seedState(term, vote, entries, applied);
+        }
+
+        void throwAfterNextReplaceSuffix() {
+            this.throwAfterNextReplaceSuffix = true;
+        }
+
+        int replaceSuffixCalls() {
+            return replaceSuffixCalls;
+        }
+
+        List<RaftLogEntry> storedLog() {
+            return delegate.storedLog();
+        }
+
+        @Override
+        public PersistentState load() throws RaftStorageException {
+            return delegate.load();
+        }
+
+        @Override
+        public void saveTermAndVote(long currentTerm, String votedFor) throws RaftStorageException {
+            delegate.saveTermAndVote(currentTerm, votedFor);
+        }
+
+        @Override
+        public void replaceSuffix(long fromIndex, List<RaftLogEntry> entries) throws RaftStorageException {
+            replaceSuffixCalls++;
+            delegate.replaceSuffix(fromIndex, entries);
+            if (throwAfterNextReplaceSuffix) {
+                throwAfterNextReplaceSuffix = false;
+                throw new IllegalStateException("test storage: persisted entry but threw unchecked");
+            }
+        }
+
+        @Override
+        public long loadLastApplied() throws RaftStorageException {
+            return delegate.loadLastApplied();
+        }
     }
 }
