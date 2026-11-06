@@ -8,10 +8,7 @@ import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenState;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenStateModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.SeatStatus;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("SeatViewModel & ScreenStateModel Tests (D04/D05)")
@@ -249,8 +246,8 @@ class SeatViewModelTest {
     @DisplayName("Kiểm tra kịch bản Reset gốc: chọn G06, G07 rồi bấm Reset gốc")
     void testResetDefaultScenario() {
         ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
-        javafx.collections.transformation.FilteredList<SeatViewModel> selectedSeatsList =
-                new javafx.collections.transformation.FilteredList<>(seats, SeatViewModel::isSelected);
+        javafx.collections.transformation.FilteredList<SeatViewModel> selectedSeatsList = new javafx.collections.transformation.FilteredList<>(
+                seats, SeatViewModel::isSelected);
 
         javafx.beans.binding.StringBinding binding = javafx.beans.binding.Bindings.createStringBinding(() -> {
             if (selectedSeatsList.isEmpty()) {

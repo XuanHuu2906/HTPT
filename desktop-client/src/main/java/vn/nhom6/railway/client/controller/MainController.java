@@ -61,6 +61,10 @@ public class MainController {
     private Parent cachedSeatGridView;
     private SeatGridController cachedSeatGridController;
 
+    // Cache giao diện tra cứu & quản lý vé (D06)
+    private Parent cachedTicketStatusView;
+    private TicketStatusController cachedTicketStatusController;
+
     @FXML
     public void initialize() {
         if (mockBadgeLabel != null) {
@@ -110,8 +114,41 @@ public class MainController {
         }
     }
 
+    /**
+     * Chuyển vùng center của BorderPane sang Màn hình tra cứu & quản lý vé (ticket-status.fxml - D06).
+     */
+    public void showTicketStatusView() {
+        try {
+            if (cachedTicketStatusView == null) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ticket-status.fxml"));
+                cachedTicketStatusView = loader.load();
+                cachedTicketStatusController = loader.getController();
+
+                // Gắn callback quay lại màn hình chính
+                cachedTicketStatusController.setOnBackAction(this::showMainView);
+            }
+
+            if (cachedTicketStatusController != null) {
+                cachedTicketStatusController.refreshTicketList();
+            }
+
+            if (rootBorderPane != null) {
+                rootBorderPane.setCenter(cachedTicketStatusView);
+                highlightNavButton(navMyTicketsBtn);
+                updateStatusMessage("Đang ở màn hình Tra cứu & Quản lý vé MOCK (D06).");
+            }
+        } catch (IOException e) {
+            updateStatusMessage("Lỗi khi nạp giao diện ticket-status.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public SeatGridController getCachedSeatGridController() {
         return cachedSeatGridController;
+    }
+
+    public TicketStatusController getCachedTicketStatusController() {
+        return cachedTicketStatusController;
     }
 
     // =========================================================================
@@ -133,8 +170,11 @@ public class MainController {
             navTripBtn.setOnAction(e -> showMainView());
         }
 
+        if (navMyTicketsBtn != null) {
+            navMyTicketsBtn.setOnAction(e -> showTicketStatusView());
+        }
+
         setupNavButton(navPaymentBtn, "Thanh toán");
-        setupNavButton(navMyTicketsBtn, "Vé của tôi");
     }
 
     private void highlightNavButton(Button activeBtn) {
