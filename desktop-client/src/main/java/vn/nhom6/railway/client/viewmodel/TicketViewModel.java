@@ -219,6 +219,32 @@ public class TicketViewModel {
         }
 
         /**
+         * Tìm vé theo mã yêu cầu (Request ID).
+         */
+        public static TicketViewModel findByRequestId(String requestId) {
+            if (requestId == null || requestId.isBlank()) {
+                return null;
+            }
+            return SHARED_TICKETS.stream()
+                    .filter(t -> requestId.equalsIgnoreCase(t.getRequestId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
+         * Tìm vé theo mã vé (Ticket ID).
+         */
+        public static TicketViewModel findByTicketId(String ticketId) {
+            if (ticketId == null || ticketId.isBlank()) {
+                return null;
+            }
+            return SHARED_TICKETS.stream()
+                    .filter(t -> ticketId.equalsIgnoreCase(t.getTicketId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
          * Đồng bộ sự thay đổi trạng thái của một ghế sang danh sách "Vé của tôi".
          * Mỗi ghế chỉ có DUY NHẤT một trạng thái. Trường hợp ghế đó được thay đổi thì
          * CẬP NHẬT LẠI bản ghi của ghế đó chứ không tạo thêm bản ghi trùng lặp.
