@@ -23,7 +23,13 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.geometry.Pos;
+import javafx.scene.control.TextField;
 import vn.nhom6.railway.client.BookingOutcome;
+import vn.nhom6.railway.client.ClientFactory;
+import vn.nhom6.railway.client.network.MockBookingClient;
+import vn.nhom6.railway.client.network.MockScenario;
+import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.MockSeatSource;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.ScreenState;
@@ -34,7 +40,6 @@ import vn.nhom6.railway.client.viewmodel.TicketViewModel.MockTicketSource;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -209,6 +214,63 @@ public class SeatGridController {
             mockStatusComboBox.getItems().setAll(SeatStatus.values());
             mockStatusComboBox.setValue(SeatStatus.BOOKED);
         }
+
+        // TASK D07: Thêm hàng điều khiển MockScenario và Delay bất đồng bộ vào mock-panel (không sửa FXML)
+        if (mockStatusComboBox != null && mockStatusComboBox.getParent() != null
+                && mockStatusComboBox.getParent().getParent() instanceof javafx.scene.layout.VBox mockPanel) {
+            HBox d07Row = new HBox(8);
+            d07Row.setAlignment(Pos.CENTER_LEFT);
+            d07Row.setStyle("-fx-padding: 4 0 0 0;");
+
+            Label scenarioLabel = new Label("Kịch bản D07 (MOCK):");
+            scenarioLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;");
+
+            ComboBox<MockScenario> scenarioCombo = new ComboBox<>();
+            scenarioCombo.getItems().setAll(MockScenario.values());
+            scenarioCombo.setValue(MockBookingClient.getInstance().getScenario());
+            scenarioCombo.getStyleClass().add("mock-combobox");
+            scenarioCombo.setPrefWidth(210);
+            scenarioCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    MockBookingClient.getInstance().setScenario(newVal);
+                    updateStatus("MOCK: Đã chọn kịch bản " + newVal.name() + " cho lần đặt vé tiếp theo.");
+                }
+            });
+
+            Label delayLabel = new Label("Delay (ms):");
+            delayLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;");
+
+            TextField delayField = new TextField(String.valueOf(MockBookingClient.getInstance().getDelayMs()));
+            delayField.setPrefWidth(65);
+            delayField.setStyle("-fx-font-size: 11px; -fx-pref-height: 26px;");
+            delayField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    try {
+                        long ms = Long.parseLong(newVal.trim());
+                        MockBookingClient.getInstance().setDelayMs(ms);
+                    } catch (NumberFormatException ignored) {}
+                }
+            });
+
+            Label d07Badge = new Label("MOCK D07");
+            d07Badge.getStyleClass().add("badge-mock");
+
+            d07Row.getChildren().addAll(scenarioLabel, scenarioCombo, delayLabel, delayField, d07Badge);
+            mockPanel.getChildren().add(d07Row);
+        }
+
+        // Đồng bộ trạng thái màn hình với BookingViewModel
+        BookingViewModel bookingVm = ClientFactory.getBookingViewModel();
+        bookingVm.uiStateProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) return;
+            switch (newVal) {
+                case LOADING -> screenStateModel.setState(ScreenState.LOADING, bookingVm.getMessage());
+                case ERROR -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
+                case DISCONNECTED -> screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
+                case SUCCESS, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
+                case REJECTED, UNKNOWN -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
+            }
+        });
     }
 
     /**
@@ -550,7 +612,7 @@ public class SeatGridController {
      * Mở hộp thoại modal Đặt vé (TASK D03/D04/D05).
      */
     public void openBookingDialog() {
-        URL fxmlLocation = getClass().getResource("/fxml/booking-dialog.fxml");
+        var fxmlLocation = getClass().getResource("/fxml/booking-dialog.fxml");
         if (fxmlLocation == null) {
             String errorMsg = "LỖI: Không tìm thấy tệp giao diện /fxml/booking-dialog.fxml!";
             updateStatus(errorMsg);
@@ -562,7 +624,7 @@ public class SeatGridController {
             FXMLLoader loader = new FXMLLoader(fxmlLocation);
             Parent dialogRoot = loader.load();
             BookingDialogController dialogController = loader.getController();
-
+            dialogController.setBookingViewModel(ClientFactory.getBookingViewModel());
             dialogController.setSelectedSeats(getSelectedSeats());
 
             Stage dialogStage = new Stage();

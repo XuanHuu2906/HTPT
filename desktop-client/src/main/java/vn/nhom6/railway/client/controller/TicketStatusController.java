@@ -26,7 +26,6 @@ import vn.nhom6.railway.client.viewmodel.TicketViewModel.MockTicketSource;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 /**
@@ -385,7 +384,7 @@ public class TicketStatusController {
     }
 
     public void openCancelTicketDialog(TicketViewModel ticket) {
-        URL fxmlLocation = getClass().getResource("/fxml/cancel-ticket-dialog.fxml");
+        var fxmlLocation = getClass().getResource("/fxml/cancel-ticket-dialog.fxml");
         if (fxmlLocation == null) {
             String errorMsg = "LỖI: Không tìm thấy tệp giao diện /fxml/cancel-ticket-dialog.fxml!";
             setSearchResultMessage(errorMsg, "#dc2626");
