@@ -214,14 +214,17 @@ public class TcpServer implements AutoCloseable {
                     break;
                 }
 
+                boolean handled = false;
                 if (frameHandler != null) {
                     byte[] responseBytes = frameHandler.handle(framePayload);
                     if (responseBytes != null) {
                         synchronized (writeLock) {
                             FrameCodec.writeFrame(out, responseBytes);
                         }
+                        handled = true;
                     }
-                } else if (messageHandler != null) {
+                }
+                if (!handled && messageHandler != null) {
                     try {
                         MessageEnvelope<JsonNode> requestEnvelope = MessageCodec.decode(framePayload);
                         MessageEnvelope<?> responseEnvelope = messageHandler.handle(requestEnvelope);
