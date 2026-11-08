@@ -1,6 +1,5 @@
 package vn.nhom6.railway.client.controller;
 
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -10,7 +9,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockScenario;
