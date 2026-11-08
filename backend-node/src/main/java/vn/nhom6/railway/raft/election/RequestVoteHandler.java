@@ -1,7 +1,6 @@
 package vn.nhom6.railway.raft.election;
 
 import java.util.Objects;
-import java.util.Set;
 
 import vn.nhom6.railway.raft.core.RaftNode;
 import vn.nhom6.railway.raft.core.RaftNode.RequestVoteRequest;
@@ -29,17 +28,19 @@ import vn.nhom6.railway.raft.core.Role;
  * Tests with fake storage do not establish PostgreSQL durability or runtime wiring.
  */
 public final class RequestVoteHandler {
-    private static final Set<String> VOTERS =
-            Set.of("node-1", "node-2", "node-3", "node-4", "node-5");
-
     private final RaftState state;
-    private final RaftStorage storage;
+    private final PersistentElectionState persistence;
     private final ElectionTimer timer;
     private boolean failed;
 
     public RequestVoteHandler(RaftState state, RaftStorage storage, ElectionTimer timer) {
-        this.state = Objects.requireNonNull(state, "state");
-        this.storage = Objects.requireNonNull(storage, "storage");
+        this(new PersistentElectionState(state, storage), timer);
+    }
+
+    /** Shares the core's persistence boundary without duplicating term/vote ownership. */
+    public RequestVoteHandler(PersistentElectionState persistence, ElectionTimer timer) {
+        this.persistence = Objects.requireNonNull(persistence, "persistence");
+        this.state = persistence.state();
         this.timer = Objects.requireNonNull(timer, "timer");
     }
 
@@ -57,23 +58,26 @@ public final class RequestVoteHandler {
         if (failed) {
             throw new IllegalStateException("vote handler failed closed; recover the node before reuse");
         }
-        Objects.requireNonNull(request, "request");
-        if (request.candidateId() == null || !VOTERS.contains(request.candidateId())) {
-            throw new IllegalArgumentException("candidate must be one of the five voters");
+        Role previousRole = state.role();
+        boolean granted;
+        try {
+            granted = persistence.grantVote(request);
+        } catch (RaftStorageException failure) {
+            failed = true;
+            timer.close();
+            throw failure;
+        } catch (RuntimeException failure) {
+            // Validation does not poison the node; a persistence failure does.
+            try {
+                persistence.requireHealthy();
+            } catch (IllegalStateException unhealthy) {
+                failed = true;
+                timer.close();
+            }
+            throw failure;
         }
 
-        long previousTerm = state.currentTerm();
-        String previousVote = state.votedFor();
-        Role previousRole = state.role();
-        // VoteRules validates all metadata before changing the shared state.
-        boolean granted = VoteRules.grantVote(state, request.term(), request.candidateId(),
-                request.lastLogIndex(), request.lastLogTerm());
-
         try {
-            if (previousTerm != state.currentTerm()
-                    || !Objects.equals(previousVote, state.votedFor())) {
-                storage.saveTermAndVote(state.currentTerm(), state.votedFor());
-            }
             if (previousRole == Role.LEADER && state.role() == Role.FOLLOWER) {
                 // A Leader's timer was stopped. Arm on step-down, even on a denial;
                 // this is lifecycle startup, not postponement of a running deadline.
@@ -82,7 +86,7 @@ public final class RequestVoteHandler {
                 timer.onVoteDecision(request.term(), granted);
             }
             return new RequestVoteResponse(state.currentTerm(), granted);
-        } catch (RaftStorageException | RuntimeException failure) {
+        } catch (RuntimeException failure) {
             failed = true;
             timer.close();
             throw failure;

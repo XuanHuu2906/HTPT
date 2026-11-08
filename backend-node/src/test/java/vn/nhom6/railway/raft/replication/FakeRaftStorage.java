@@ -38,6 +38,7 @@ public final class FakeRaftStorage implements RaftStorage {
     private RaftStorageException nextFailure;
     private boolean failing;
     private boolean persistThenFailNext;
+    private boolean persistTermAndVoteThenFailNext;
     private Runnable beforeReplaceSuffixHook;
 
     @Override
@@ -57,6 +58,10 @@ public final class FakeRaftStorage implements RaftStorage {
         }
         currentTerm = term;
         votedFor = vote;
+        if (persistTermAndVoteThenFailNext) {
+            persistTermAndVoteThenFailNext = false;
+            throw new RaftStorageException("fake: term/vote persisted but reported as failed");
+        }
     }
 
     @Override
@@ -131,6 +136,11 @@ public final class FakeRaftStorage implements RaftStorage {
      */
     public void persistThenFailNext() {
         this.persistThenFailNext = true;
+    }
+
+    /** Makes the next successful term/vote write persist, then report an ambiguous failure. */
+    public void persistTermAndVoteThenFailNext() {
+        this.persistTermAndVoteThenFailNext = true;
     }
 
     /** Runs a read-only observer immediately before {@link #replaceSuffix} mutates the log. */

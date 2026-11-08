@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls *)",
+      "Bash(python -c ' *)",
+      "Bash(rtk git *)",
+      "Bash(rtk grep *)",
+      "Bash(mvn -B -ntp -pl backend-node -am test)"
+    ]
+  }
+}
