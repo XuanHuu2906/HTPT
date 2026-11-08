@@ -138,7 +138,7 @@ public class CancelTicketController {
         if (resultBox != null) {
             resultBox.setVisible(true);
             resultBox.setManaged(true);
-            resultBox.setStyle("-fx-background-color: #eff6ff; -fx-border-color: #93c5fd; -fx-border-width: 1px; -fx-background-radius: 6;");
+            setBoxStyle(resultBox, "cancel-box-info");
         }
         if (resultProgress != null) {
             resultProgress.setVisible(true);
@@ -146,11 +146,11 @@ public class CancelTicketController {
         }
         if (resultTitleLabel != null) {
             resultTitleLabel.setText("Đang gửi yêu cầu hủy vé tới cụm máy chủ (Mô phỏng)...");
-            resultTitleLabel.setStyle("-fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-font-size: 12px;");
+            setLabelStyle(resultTitleLabel, "cancel-title-info");
         }
         if (resultDetailLabel != null) {
             resultDetailLabel.setText("Đang chờ phản hồi...");
-            resultDetailLabel.setStyle("-fx-text-fill: #3b82f6; -fx-font-size: 11px;");
+            setLabelStyle(resultDetailLabel, "cancel-detail-info");
         }
 
         if (dialogStage != null) {
@@ -195,44 +195,38 @@ public class CancelTicketController {
                 ticket.setStatus(TicketStatus.CANCELLED);
                 ticket.setReasonCode("HỦY BỞI KHÁCH HÀNG (MOCK)");
 
-                if (resultBox != null) {
-                    resultBox.setStyle("-fx-background-color: #ecfdf5; -fx-border-color: #10b981; -fx-border-width: 1.5px; -fx-background-radius: 6;");
-                }
+                setBoxStyle(resultBox, "cancel-box-success");
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("✓ HỦY VÉ THÀNH CÔNG (MOCK D06)!");
-                    resultTitleLabel.setStyle("-fx-text-fill: #065f46; -fx-font-weight: bold; -fx-font-size: 12px;");
+                    resultTitleLabel.setText("✓ HỦY VÉ THÀNH CÔNG (MOCK D08)!");
+                    setLabelStyle(resultTitleLabel, "cancel-title-success");
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId() + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế được giải phóng trên sơ đồ (MOCK).");
-                    resultDetailLabel.setStyle("-fx-text-fill: #047857; -fx-font-size: 11.5px;");
+                    setLabelStyle(resultDetailLabel, "cancel-detail-success");
                 }
             }
             case REJECTED_NOT_CANCELLABLE -> {
                 // Từ chối hủy: vé giữ nguyên CONFIRMED
-                if (resultBox != null) {
-                    resultBox.setStyle("-fx-background-color: #fef2f2; -fx-border-color: #ef4444; -fx-border-width: 1.5px; -fx-background-radius: 6;");
-                }
+                setBoxStyle(resultBox, "cancel-box-rejected");
                 if (resultTitleLabel != null) {
                     resultTitleLabel.setText("⛔ TỪ CHỐI HỦY VÉ (REJECTED: NOT_CANCELLABLE)!");
-                    resultTitleLabel.setStyle("-fx-text-fill: #991b1b; -fx-font-weight: bold; -fx-font-size: 12px;");
+                    setLabelStyle(resultTitleLabel, "cancel-title-rejected");
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Lý do: Vé quá thời hạn quy định hoàn vé trước giờ tàu chạy (SPEC-06). Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.");
-                    resultDetailLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: 11.5px;");
+                    setLabelStyle(resultDetailLabel, "cancel-detail-rejected");
                 }
             }
             case UNKNOWN_TIMEOUT -> {
                 // SPEC-06: UNKNOWN/timeout không được hiển thị như đã hủy thành công và không được tự đổi trạng thái vé thành CANCELLED
-                if (resultBox != null) {
-                    resultBox.setStyle("-fx-background-color: #fff7ed; -fx-border-color: #ea580c; -fx-border-style: dashed; -fx-border-width: 2px; -fx-background-radius: 6;");
-                }
+                setBoxStyle(resultBox, "cancel-box-unknown");
                 if (resultTitleLabel != null) {
                     resultTitleLabel.setText("⚠ CHƯA XÁC ĐỊNH KẾT QUẢ (TIMEOUT / MẤT KẾT NỐI)!");
-                    resultTitleLabel.setStyle("-fx-text-fill: #c2410c; -fx-font-weight: bold; -fx-font-size: 12px;");
+                    setLabelStyle(resultTitleLabel, "cancel-title-unknown");
                 }
                 if (resultDetailLabel != null) {
                     resultDetailLabel.setText("Không nhận được phản hồi từ cụm máy chủ. Vé KHÔNG bị đổi thành Đã hủy. Vui lòng tra cứu lại theo mã Request ID!");
-                    resultDetailLabel.setStyle("-fx-text-fill: #9a3412; -fx-font-size: 11.5px;");
+                    setLabelStyle(resultDetailLabel, "cancel-detail-unknown");
                 }
             }
         }
@@ -245,6 +239,25 @@ public class CancelTicketController {
 
         if (dialogStage != null) {
             dialogStage.sizeToScene();
+        }
+    }
+
+    private void setBoxStyle(VBox box, String styleClass) {
+        if (box != null) {
+            box.setStyle(null);
+            box.getStyleClass().removeAll("cancel-box-info", "cancel-box-success", "cancel-box-rejected", "cancel-box-unknown");
+            box.getStyleClass().add(styleClass);
+        }
+    }
+
+    private void setLabelStyle(Label label, String styleClass) {
+        if (label != null) {
+            label.setStyle(null);
+            label.getStyleClass().removeAll(
+                    "cancel-title-info", "cancel-title-success", "cancel-title-rejected", "cancel-title-unknown",
+                    "cancel-detail-info", "cancel-detail-success", "cancel-detail-rejected", "cancel-detail-unknown"
+            );
+            label.getStyleClass().add(styleClass);
         }
     }
 

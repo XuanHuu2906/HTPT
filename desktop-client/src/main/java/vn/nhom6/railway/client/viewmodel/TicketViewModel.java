@@ -169,7 +169,7 @@ public class TicketViewModel {
      * Quản lý danh sách vé dùng chung giữa các màn hình Đặt vé và Tra cứu/Vé của tôi.
      */
     public static class MockTicketSource {
-        public static final String MOCK_NOTICE = "DEMO / MOCK — D06";
+        public static final String MOCK_NOTICE = "DEMO / MOCK — D08";
 
         private static final ObservableList<TicketViewModel> SHARED_TICKETS = FXCollections.observableArrayList(
                 ticket -> new javafx.beans.Observable[]{ ticket.statusProperty(), ticket.reasonCodeProperty() }
