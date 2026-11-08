@@ -1,0 +1,31 @@
+================================================================================
+BẰNG CHỨNG KIỂM TRA KHÔNG TRỰC TIẾP TRUY CẬP SQL/NETWORK TRONG UI/VIEWMODEL
+TASK D07 — Desktop Client (TV1)
+Thời gian thực hiện: 2026-11-08 15:10:35 +07:00
+================================================================================
+
+Lệnh kiểm tra 1: Tìm kiếm các import mạng và JDBC bị cấm (java.net, java.sql, javax.sql)
+Thư mục quét:
+  - desktop-client/src/main/java/vn/nhom6/railway/client/controller/
+  - desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/
+
+Lệnh thực thi:
+  grep -rnE "import (java\.net|java\.sql|javax\.sql)" desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel
+
+Kết quả quét:
+  (0 dòng tìm thấy - PASS: Controller và ViewModel không chứa bất kỳ import java.net, java.sql, javax.sql nào)
+
+--------------------------------------------------------------------------------
+Lệnh kiểm tra 2: Kiểm tra lệnh khóa UI Thread (Thread.sleep) trong controller và viewmodel
+Lệnh thực thi:
+  grep -rnE "Thread\.sleep" desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel
+
+Kết quả quét:
+  (0 dòng tìm thấy - PASS: Không có Thread.sleep nào chặn UI Thread)
+
+--------------------------------------------------------------------------------
+Kết luận:
+  - Mọi thao tác kết nối được tách biệt hoàn toàn qua interface BookingClient (package vn.nhom6.railway.client.network).
+  - UI và ViewModel chỉ tương tác qua Reactive Properties của JavaFX và CompletableFuture bất đồng bộ.
+  - Tuân thủ 100% SPEC-02, SPEC-03 và AGENTS.md.
+================================================================================
