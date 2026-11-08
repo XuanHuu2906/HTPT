@@ -1,0 +1,4 @@
+233029e313016152ff70a1019dd98373d3348262db64032cb5b6eba7bd33d9f0  backend-node/src/main/java/vn/nhom6/railway/raft/election/PersistentElectionState.java
+39656713085b24990587c6d11dd15ece6d6fe0e5c7f08dc51d6286222c7ba9a3  backend-node/src/main/java/vn/nhom6/railway/raft/election/RequestVoteHandler.java
+5cc292b36f447915edf9520f7ee196dce959b027328d094bf460f7120ef97b06  backend-node/src/test/java/vn/nhom6/railway/raft/election/VotePersistenceTest.java
+0104a3be5e6e1cbbe63494e1aa311cb6f1cfbbd8cc19194583eb323656157b95  backend-node/src/test/java/vn/nhom6/railway/raft/replication/FakeRaftStorage.java
