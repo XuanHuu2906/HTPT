@@ -68,10 +68,7 @@ public record NodeConfig(
         Properties props = new Properties();
 
         if (configFilePath != null && !configFilePath.isBlank()) {
-            File file = new File(configFilePath);
-            if (!file.exists()) {
-                throw new IOException("Configuration file not found: " + configFilePath);
-            }
+            final File file = resolveConfigFile(configFilePath);
             try (InputStream in = new FileInputStream(file)) {
                 props.load(in);
                 LOGGER.info(() -> "Loaded configuration from file: " + file.getAbsolutePath());
@@ -79,6 +76,18 @@ public record NodeConfig(
         }
 
         return fromProperties(props, System.getenv());
+    }
+
+    private static File resolveConfigFile(String path) throws IOException {
+        File direct = new File(path);
+        if (direct.exists()) {
+            return direct;
+        }
+        File parentRelative = new File(".." + File.separator + path);
+        if (parentRelative.exists()) {
+            return parentRelative;
+        }
+        throw new IOException("Configuration file not found: " + path);
     }
 
     /**

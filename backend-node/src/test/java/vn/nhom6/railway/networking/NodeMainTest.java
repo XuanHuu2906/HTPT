@@ -34,9 +34,21 @@ public class NodeMainTest {
         resources.clear();
     }
 
+    private static File findConfigFile(String relativePath) {
+        File direct = new File(relativePath);
+        if (direct.exists()) {
+            return direct;
+        }
+        File parent = new File(".." + File.separator + relativePath);
+        if (parent.exists()) {
+            return parent;
+        }
+        return direct;
+    }
+
     @Test
     public void testNodeConfigFromPropertiesFile() throws Exception {
-        File configFile = new File("configs/lan/node-1.properties");
+        File configFile = findConfigFile("configs/lan/node-1.properties");
         assertTrue(configFile.exists(), "configs/lan/node-1.properties must exist");
 
         NodeConfig config = NodeConfig.load(configFile.getPath());
