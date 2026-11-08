@@ -1,0 +1,61 @@
+name: CI - Build & Test Suite
+
+on:
+  push:
+    branches:
+      - main
+      - dat
+      - master
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Maven Clean Test (Baseline D07)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'oracle'
+          cache: maven
+
+      - name: Verify Toolchain
+        run: |
+          echo "=== JAVA VERSION ==="
+          java -version
+          echo "=== MAVEN VERSION ==="
+          mvn -version
+
+      - name: Standardized Maven Clean Test
+        run: mvn -B -ntp clean test
+        env:
+          HEADLESS: "true"
+          JAVA_TOOL_OPTIONS: "-Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless"
+
+      - name: Organize Evidence & Test Results
+        if: always()
+        run: |
+          mkdir -p artifacts/test-evidence/logs
+          mkdir -p artifacts/test-evidence/test-results
+          mkdir -p artifacts/test-evidence/screenshots
+          # Sao chep bao cao Surefire tu cac modules vao thu muc test-results tap trung
+          find . -type d -name "surefire-reports" -exec cp -r {} artifacts/test-evidence/test-results/ \; || true
+
+      - name: Upload Test Results & Evidence Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-and-evidence
+          path: |
+            artifacts/test-evidence/
+            **/target/surefire-reports/
+          retention-days: 14
+

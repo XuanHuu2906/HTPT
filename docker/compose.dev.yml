@@ -47,6 +47,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata1:/var/lib/postgresql/data
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PG1_PORT:-5433}:5432"
     networks:
@@ -75,6 +76,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata2:/var/lib/postgresql/data
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PG2_PORT:-5434}:5432"
     networks:
@@ -103,6 +105,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata3:/var/lib/postgresql/data
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PG3_PORT:-5435}:5432"
     networks:
@@ -131,6 +134,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata4:/var/lib/postgresql/data
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PG4_PORT:-5436}:5432"
     networks:
@@ -159,6 +163,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata5:/var/lib/postgresql/data
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
     ports:
       - "${PG5_PORT:-5437}:5432"
     networks:

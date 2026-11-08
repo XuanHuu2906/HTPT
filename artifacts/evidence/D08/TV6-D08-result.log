@@ -1,0 +1,50 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | TEST RUNNER & CI VALIDATION (TV6-D08)
+================================================================================
+
+[1. THONG TIN MOI TRUONG THUC THI]
+  Thoi diem (Local)          : 2026-11-08 11:29:19 +07:00
+  Thoi diem (UTC)            : 2026-11-08T04:29:19.616Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Thu muc du an              : D:\HTPT
+  Git Branch                 : dat
+  Git Commit SHA             : ec7c43024426cef67cc89426d8f2781a95a8d2c5
+  Evidence Directory         : D:\HTPT\artifacts\evidence\D08
+
+[2. KIEM TRA CAU TRUC EVIDENCE CHUAN HOA (SPEC-07 §6)]
+  [OK] screenshots/           : D:\HTPT\artifacts\evidence\D08\screenshots
+  [OK] logs/                  : D:\HTPT\artifacts\evidence\D08\logs
+  [OK] test-results/          : D:\HTPT\artifacts\evidence\D08\test-results
+
+[3. KIEM TRA CAU HINH CI GITHUB ACTIONS]
+  [FOUND] ci.yml             : D:\HTPT\.github\workflows\ci.yml (60 dong)
+  [CHECK] Trigger events     : push (main, dat, master, feature/**), pull_request (main)
+  [CHECK] Chuan hoa lenh     : mvn -B -ntp clean test
+  [CHECK] Thu thap ket qua   : tu dong upload Surefire reports va artifacts/test-evidence
+
+[4. KIEM TRA TOOLCHAIN JAVA & MAVEN]
+  Java executable            : C:\Program Files (x86)\Common Files\Oracle\Java\java8path\java.exe
+    java version "1.8.0_491"
+    Java(TM) SE Runtime Environment (build 1.8.0_491-b10)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.491-b10, mixed mode)
+  [WARN] Phien ban Java hien tai (< 17) khong tuong thich bytecode Java 25 cua du an.
+  [FAIL] Khong tim thay 'mvn' tren PATH.
+
+[5. THUC THI TEST RUNNER & CHUAN HOA 'mvn clean test']
+  Lenh chuan hoa (SPEC-07)   : mvn -B -ntp clean test
+  [BLOCKED] Toolchain (JDK >= 17 va Maven) chua kha dung tren may host (HOANGDAT).
+  Ghi nhan trung thuc trang thai: BLOCKED / NOT_RUN theo AGENTS.md.
+  Cau hinh CI (.github/workflows/ci.yml) da san sang chay tren GitHub Actions runner (JDK 25 Oracle).
+
+================================================================================
+ TONG KET DANH GIA NHIEM VU TV6-D08 (TEST RUNNER & CI)
+================================================================================
+  1. Cau truc evidence chuan hoa  : [PASS] screenshots/, logs/, test-results/ da khoi tao day du.
+  2. Cau hinh CI GitHub Actions   : [PASS] .github/workflows/ci.yml da tich hop voi JDK 25.
+  3. Chuan hoa lenh kiem thu      : [PASS] mvn -B -ntp clean test.
+  4. Test Runner PowerShell Script: [PASS] scripts/run-all-tests.ps1.
+  5. Trang thai thuc thi local host: [BLOCKED]
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D08\TV6-D08-result.log
+================================================================================

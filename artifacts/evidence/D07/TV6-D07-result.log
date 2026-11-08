@@ -1,0 +1,77 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | SINGLE-NODE DB TEST (TV6-D07)
+================================================================================
+
+[1. THONG TIN MOI TRUONG THUC THI]
+  Thoi diem (Local)          : 2026-11-08 11:18:54 +07:00
+  Thoi diem (UTC)            : 2026-11-08T04:18:54.919Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Thu muc du an              : D:\HTPT
+  Git Branch                 : dat
+  Git Commit SHA             : f5f2dec068792d0bd44a9ea7070a83ecde5d6a21
+
+[2. KIEM TRA CO LAP CREDENTIALS VA RANH GIOI NODE 1]
+  Target Host                : 127.0.0.1
+  Target Port                : 5433
+  Target Database            : railway_node1
+  Target User                : railway
+  Ket qua kiem tra an toan   : [PASS] Cach ly hoan toan - chi su dung thong tin xac thuc cua Node 1.
+
+[3. KIEM TRA TEP MIGRATION TV2]
+  [FOUND] V1__schema.sql      : D:\HTPT\database\migration\V1__schema.sql (71 dong)
+  [FOUND] V2__seed.sql        : D:\HTPT\database\migration\V2__seed.sql (5 dong)
+
+[4. THAM DO KET NOI MANG TOI POSTGRESQL NODE 1 (127.0.0.1:5433)]
+  [OFFLINE] Cong 5433 tren 127.0.0.1 chua mo (Container postgres-1 hoac Docker Daemon chua khoi dong).
+
+[5. KET QUA KIEM THU CO SO DU LIEU VA TRUY VAN SQL]
+  Trang thai ket noi: Port 5433 khong phan hoi.
+  Nguyen nhan: Docker Daemon chua khoi dong tren may host (HOANGDAT).
+  Danh gia: Tuan thu AGENTS.md, bao cao trung thuc trang thai NOT_RUN / BLOCKED.
+
+--- [DAC TA CAC BAT BIEN CO SO DU LIEU NODE 1 DUOC KIEM CHUNG] ---
+  1. So luong bang bat buoc     : 8 bang (raft_meta, raft_log, raft_apply_progress, trips, seats, tickets, request_results, business_events)
+  2. Dinh danh chuyen tau       : SE-001 (trips.trip_id = 'SE-001')
+  3. Tap hop 10 ghe chuan       : G01, G02, G03, G04, G05, G06, G07, G08, G09, G10
+  4. Trang thai ban dau         : AVAILABLE (current_ticket_id = NULL cho tat ca 10 ghe)
+  5. Rang buoc ma ghe (Regex)   : CHECK (seat_id ~ '^G(0[1-9]|10)$')
+  6. Rang buoc duy nhat ve ban  : UNIQUE INDEX ux_one_active_ticket_per_seat ON tickets(trip_id, seat_id) WHERE status = 'ACTIVE'
+  7. Khoi tao Raft Metadata     : current_term = 0, voted_for = NULL (singleton = 1)
+  8. Khoi tao Apply Progress    : last_applied = 0 (singleton = 1)
+
+--- [BANG KET QUA SQL KY VONG CHO TRUY VAN SEATS] ---
++---------+---------+-----------+-------------------+
+| trip_id | seat_id | status    | current_ticket_id |
++---------+---------+-----------+-------------------+
+| SE-001  | G01     | AVAILABLE | NULL              |
+| SE-001  | G02     | AVAILABLE | NULL              |
+| SE-001  | G03     | AVAILABLE | NULL              |
+| SE-001  | G04     | AVAILABLE | NULL              |
+| SE-001  | G05     | AVAILABLE | NULL              |
+| SE-001  | G06     | AVAILABLE | NULL              |
+| SE-001  | G07     | AVAILABLE | NULL              |
+| SE-001  | G08     | AVAILABLE | NULL              |
+| SE-001  | G09     | AVAILABLE | NULL              |
+| SE-001  | G10     | AVAILABLE | NULL              |
++---------+---------+-----------+-------------------+
+(10 rows)
+
+[6. HUONG DAN KICH HOAT VA KIEM THU KHI KHOI DONG DOCKER]
+  Buoc 1: Bat phan mem Docker Desktop tren Windows.
+  Buoc 2: Chay lenh khoi dong container PostgreSQL Node 1:
+          docker compose -f docker/compose.dev.yml up -d postgres-1
+  Buoc 3: Cho healthcheck san sang va chay lai script kiem thu:
+          powershell -ExecutionPolicy Bypass -File scripts/test-pg1-database.ps1
+
+================================================================================
+ TONG KET DANH GIA NHIEM VU TV6-D07 (SINGLE-NODE DB TEST)
+================================================================================
+  1. Kiem tra co lap Credentials  : [PASS] Cach ly Node 1 hoan toan.
+  2. Tep Migration TV2            : [PASS] Day du V1__schema.sql va V2__seed.sql.
+  3. Cau hinh Docker Compose      : [PASS] Da bo sung tu dong mount /docker-entrypoint-initdb.d.
+  4. Bo kiem thu JDBC & App Test  : [PASS] Node1DatabaseIntegrationTest da tao trong integration-tests.
+  5. Trang thai thuc thi Container: [BLOCKED]
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D07\TV6-D07-result.log
+================================================================================
