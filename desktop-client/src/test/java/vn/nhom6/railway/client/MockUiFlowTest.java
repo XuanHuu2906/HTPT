@@ -1,8 +1,6 @@
 package vn.nhom6.railway.client;
 
-import javafx.application.Platform;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,15 +41,6 @@ class MockUiFlowTest {
 
     private MockBookingClient mockClient;
     private BookingViewModel viewModel;
-
-    @BeforeAll
-    static void initJavaFx() {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Toolkit đã được khởi tạo trước đó trong JVM, bỏ qua an toàn
-        }
-    }
 
     @BeforeEach
     void setUp() {
