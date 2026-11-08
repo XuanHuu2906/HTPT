@@ -222,8 +222,8 @@ public class SeatGridController {
             d07Row.setAlignment(Pos.CENTER_LEFT);
             d07Row.setStyle("-fx-padding: 4 0 0 0;");
 
-            Label scenarioLabel = new Label("Kịch bản D07 (MOCK):");
-            scenarioLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;");
+            Label scenarioLabel = new Label("Kịch bản MOCK:");
+            scenarioLabel.getStyleClass().add("mock-control-label");
 
             ComboBox<MockScenario> scenarioCombo = new ComboBox<>();
             scenarioCombo.getItems().setAll(MockScenario.values());
@@ -238,11 +238,11 @@ public class SeatGridController {
             });
 
             Label delayLabel = new Label("Delay (ms):");
-            delayLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;");
+            delayLabel.getStyleClass().add("mock-control-label");
 
             TextField delayField = new TextField(String.valueOf(MockBookingClient.getInstance().getDelayMs()));
             delayField.setPrefWidth(65);
-            delayField.setStyle("-fx-font-size: 11px; -fx-pref-height: 26px;");
+            delayField.getStyleClass().add("mock-combobox");
             delayField.textProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     try {
@@ -252,10 +252,10 @@ public class SeatGridController {
                 }
             });
 
-            Label d07Badge = new Label("MOCK D07");
-            d07Badge.getStyleClass().add("badge-mock");
+            Label d08Badge = new Label("MOCK D08");
+            d08Badge.getStyleClass().add("badge-mock");
 
-            d07Row.getChildren().addAll(scenarioLabel, scenarioCombo, delayLabel, delayField, d07Badge);
+            d07Row.getChildren().addAll(scenarioLabel, scenarioCombo, delayLabel, delayField, d08Badge);
             mockPanel.getChildren().add(d07Row);
         }
 
@@ -265,10 +265,9 @@ public class SeatGridController {
             if (newVal == null) return;
             switch (newVal) {
                 case LOADING -> screenStateModel.setState(ScreenState.LOADING, bookingVm.getMessage());
-                case ERROR -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
-                case DISCONNECTED -> screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
+                case ERROR, REJECTED -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
+                case DISCONNECTED, UNKNOWN -> screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
                 case SUCCESS, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
-                case REJECTED, UNKNOWN -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
             }
         });
     }

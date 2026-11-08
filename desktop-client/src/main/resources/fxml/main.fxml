@@ -54,7 +54,7 @@
                 <VBox spacing="4.0" style="-fx-padding: 8 6; -fx-background-color: #1e293b; -fx-background-radius: 6;">
                     <children>
                         <Label text="Thông tin hệ thống:" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;" />
-                        <Label text="• Giai đoạn: D02 (MOCK)" style="-fx-text-fill: #cbd5e1; -fx-font-size: 11px;" />
+                        <Label text="• Giai đoạn: D08 (MOCK Nghiệm thu)" style="-fx-text-fill: #cbd5e1; -fx-font-size: 11px;" />
                         <Label text="• Điều hướng: Center Swap" style="-fx-text-fill: #38bdf8; -fx-font-size: 11px;" />
                         <Label text="• Backend: Chưa kết nối" style="-fx-text-fill: #fbbf24; -fx-font-size: 11px;" />
                         <Label text="• Nhóm 6 - HTPT" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" />

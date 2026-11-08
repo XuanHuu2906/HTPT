@@ -71,7 +71,7 @@ public class BookingViewModel {
     private volatile boolean syncMode = false;
 
     private final ObjectProperty<UiState> uiState = new SimpleObjectProperty<>(UiState.IDLE);
-    private final StringProperty message = new SimpleStringProperty("Hệ thống sẵn sàng ở chế độ MOCK (D07).");
+    private final StringProperty message = new SimpleStringProperty("Hệ thống sẵn sàng ở chế độ MOCK (D08).");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty mock = new SimpleBooleanProperty(true);
     private final StringProperty errorCode = new SimpleStringProperty("");

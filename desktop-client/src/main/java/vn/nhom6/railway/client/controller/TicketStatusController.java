@@ -142,7 +142,7 @@ public class TicketStatusController {
             searchField.clear();
         }
         displayedTickets.setAll(allTickets);
-        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "#64748b");
+        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
         if (!displayedTickets.isEmpty() && ticketTableView != null) {
             ticketTableView.getSelectionModel().select(0);
         } else {
@@ -216,7 +216,7 @@ public class TicketStatusController {
             private final Label mockLabel = new Label("DEMO / MOCK");
 
             {
-                mockLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #92400e; -fx-background-color: #fef3c7; -fx-padding: 2 6; -fx-background-radius: 4; -fx-border-color: #f59e0b; -fx-border-radius: 4;");
+                mockLabel.getStyleClass().add("badge-mock");
             }
 
             @Override
@@ -246,7 +246,7 @@ public class TicketStatusController {
     private void updateSelectedTicketUI(TicketViewModel ticket) {
         if (ticket == null) {
             selectedTicketSummaryLabel.setText("(Chưa chọn vé nào — Vui lòng nhấp vào một dòng trong bảng)");
-            selectedTicketSummaryLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #64748b;");
+            setSummaryStyle(selectedTicketSummaryLabel, "ticket-summary-default");
             cancelTicketBtn.setDisable(true);
             cancelTicketBtn.setTooltip(new Tooltip("Vui lòng chọn một vé hợp lệ trong bảng để hủy."));
             return;
@@ -258,11 +258,11 @@ public class TicketStatusController {
         selectedTicketSummaryLabel.setText(summary);
 
         if (ticket.isCancellable()) {
-            selectedTicketSummaryLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #065f46;");
+            setSummaryStyle(selectedTicketSummaryLabel, "ticket-summary-cancellable");
             cancelTicketBtn.setDisable(false);
             cancelTicketBtn.setTooltip(new Tooltip("Nhấn để mở hộp thoại xác nhận hủy vé cho vé " + ticket.getTicketId() + "."));
         } else {
-            selectedTicketSummaryLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #991b1b;");
+            setSummaryStyle(selectedTicketSummaryLabel, "ticket-summary-uncancellable");
             cancelTicketBtn.setDisable(true);
 
             String reason;
@@ -273,6 +273,14 @@ public class TicketStatusController {
                 default -> reason = "Vé không ở trạng thái hợp lệ để hủy.";
             }
             cancelTicketBtn.setTooltip(new Tooltip(reason));
+        }
+    }
+
+    private void setSummaryStyle(Label label, String styleClass) {
+        if (label != null) {
+            label.setStyle(null);
+            label.getStyleClass().removeAll("ticket-summary-default", "ticket-summary-cancellable", "ticket-summary-uncancellable");
+            label.getStyleClass().add(styleClass);
         }
     }
 
@@ -287,7 +295,7 @@ public class TicketStatusController {
                 : "";
 
         if (query.isEmpty()) {
-            setSearchResultMessage("⚠️ Vui lòng nhập mã Request ID hoặc Ticket ID để tra cứu!", "#dc2626");
+            setSearchResultMessage("⚠️ Vui lòng nhập mã Request ID hoặc Ticket ID để tra cứu!", "search-msg-error");
             return;
         }
 
@@ -326,12 +334,12 @@ public class TicketStatusController {
 
         if (foundList.isEmpty()) {
             displayedTickets.clear();
-            setSearchResultMessage("✗ Không tìm thấy vé nào khớp với mã '" + query + "' (Dữ liệu MOCK).", "#dc2626");
+            setSearchResultMessage("✗ Không tìm thấy vé nào khớp với mã '" + query + "' (Dữ liệu MOCK).", "search-msg-error");
             updateSelectedTicketUI(null);
         } else {
             displayedTickets.setAll(foundList);
             ticketTableView.getSelectionModel().select(0);
-            setSearchResultMessage("✓ Đã tìm thấy " + foundList.size() + " vé khớp với từ khóa '" + query + "' (MOCK).", "#059669");
+            setSearchResultMessage("✓ Đã tìm thấy " + foundList.size() + " vé khớp với từ khóa '" + query + "' (MOCK).", "search-msg-success");
         }
     }
 
@@ -341,7 +349,7 @@ public class TicketStatusController {
             searchField.clear();
         }
         displayedTickets.setAll(allTickets);
-        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "#64748b");
+        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
         if (!displayedTickets.isEmpty()) {
             ticketTableView.getSelectionModel().select(0);
         } else {
@@ -358,14 +366,16 @@ public class TicketStatusController {
             searchBtn.setDisable(isLoading);
         }
         if (isLoading) {
-            setSearchResultMessage("Đang tra cứu dữ liệu vé từ bộ nhớ mô phỏng...", "#2563eb");
+            setSearchResultMessage("Đang tra cứu dữ liệu vé từ bộ nhớ mô phỏng...", "search-msg-info");
         }
     }
 
-    private void setSearchResultMessage(String msg, String colorHex) {
+    private void setSearchResultMessage(String msg, String styleClass) {
         if (searchResultLabel != null) {
             searchResultLabel.setText(msg);
-            searchResultLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: " + colorHex + ";");
+            searchResultLabel.setStyle(null);
+            searchResultLabel.getStyleClass().removeAll("search-msg-info", "search-msg-muted", "search-msg-success", "search-msg-error");
+            searchResultLabel.getStyleClass().add(styleClass);
         }
     }
 
@@ -387,7 +397,7 @@ public class TicketStatusController {
         var fxmlLocation = getClass().getResource("/fxml/cancel-ticket-dialog.fxml");
         if (fxmlLocation == null) {
             String errorMsg = "LỖI: Không tìm thấy tệp giao diện /fxml/cancel-ticket-dialog.fxml!";
-            setSearchResultMessage(errorMsg, "#dc2626");
+            setSearchResultMessage(errorMsg, "search-msg-error");
             System.err.println(errorMsg);
             return;
         }
@@ -400,7 +410,7 @@ public class TicketStatusController {
             dialogController.setTicket(ticket);
 
             Stage dialogStage = new Stage();
-            dialogStage.setTitle("Xác nhận hủy vé — MOCK D06");
+            dialogStage.setTitle("Xác nhận hủy vé — MOCK D08");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
 
             Window owner = null;
@@ -424,7 +434,7 @@ public class TicketStatusController {
             updateSelectedTicketUI(ticket);
         } catch (IOException e) {
             String errorMsg = "Lỗi khi mở form hủy vé: " + e.getMessage();
-            setSearchResultMessage(errorMsg, "#dc2626");
+            setSearchResultMessage(errorMsg, "search-msg-error");
             e.printStackTrace();
         }
     }
