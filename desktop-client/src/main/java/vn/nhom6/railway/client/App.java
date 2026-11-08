@@ -13,7 +13,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 
 /**
  * Lớp khởi chạy ứng dụng JavaFX Desktop Client (Bán vé tàu cao tốc).
@@ -26,7 +25,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        URL fxmlLocation = getClass().getResource("/fxml/main.fxml");
+        var fxmlLocation = getClass().getResource("/fxml/main.fxml");
         if (fxmlLocation == null) {
             throw new IllegalStateException("Không tìm thấy tệp giao diện /fxml/main.fxml trong resources!");
         }

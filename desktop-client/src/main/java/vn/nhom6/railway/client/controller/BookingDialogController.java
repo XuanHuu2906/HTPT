@@ -1,6 +1,7 @@
 package vn.nhom6.railway.client.controller;
 
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -10,8 +11,11 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import vn.nhom6.railway.client.BookingFormValidator;
 import vn.nhom6.railway.client.BookingOutcome;
+import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.MockBookingService;
 import vn.nhom6.railway.client.MockBookingServiceImpl;
+import vn.nhom6.railway.client.network.BookTicketResponseDto;
+import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +55,7 @@ public class BookingDialogController {
     @FXML
     private Label statusLabel;
 
+    private BookingViewModel bookingViewModel = ClientFactory.getBookingViewModel();
     private MockBookingService bookingService = new MockBookingServiceImpl();
     private List<String> selectedSeats = new ArrayList<>();
     private BookingOutcome outcome = null;
@@ -85,7 +90,16 @@ public class BookingDialogController {
     }
 
     /**
-     * Cung cấp MockBookingService tùy biến (phục vụ unit test / mock dependency injection).
+     * Cung cấp BookingViewModel tùy biến (phục vụ unit test / mock dependency injection).
+     */
+    public void setBookingViewModel(BookingViewModel bookingViewModel) {
+        if (bookingViewModel != null) {
+            this.bookingViewModel = bookingViewModel;
+        }
+    }
+
+    /**
+     * Cung cấp MockBookingService tùy biến (phục vụ tương thích ngược D03).
      */
     public void setBookingService(MockBookingService bookingService) {
         if (bookingService != null) {
@@ -231,30 +245,24 @@ public class BookingDialogController {
         }
 
         String normalizedName = BookingFormValidator.normalizeName(rawName);
-        List<String> seatsToBook = new ArrayList<>(selectedSeats);
+        String seatToBook = (!selectedSeats.isEmpty()) ? selectedSeats.get(0) : "G01";
 
-        // Chạy service ngầm trên background Task (không chặn UI thread)
-        Task<BookingOutcome> bookingTask = new Task<>() {
-            @Override
-            protected BookingOutcome call() {
-                return bookingService.submit(normalizedName, seatsToBook);
-            }
-        };
-
-        bookingTask.setOnSucceeded(event -> {
-            BookingOutcome result = bookingTask.getValue();
-            this.outcome = result;
-            showOutcomeAndAutoClose(result);
-        });
-
-        bookingTask.setOnFailed(event -> {
-            Throwable err = bookingTask.getException();
-            this.outcome = BookingOutcome
-                    .unknown("Lỗi hệ thống: " + (err != null ? err.getMessage() : "không rõ nguyên nhân"));
-            showOutcomeAndAutoClose(this.outcome);
-        });
-
-        new Thread(bookingTask, "mock-booking-worker").start();
+        // Gửi yêu cầu qua BookingViewModel (TASK D07 - Bất đồng bộ, không treo UI)
+        bookingViewModel.book("SE-001", seatToBook, normalizedName)
+                .whenComplete((result, throwable) -> Platform.runLater(() -> {
+                    if (throwable != null) {
+                        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                        this.outcome = BookingOutcome.unknown("Lỗi kết nối / timeout: " + cause.getMessage());
+                    } else if (result.isConfirmed()) {
+                        this.outcome = BookingOutcome.confirmed(result.getTicketId(), result.getMessage());
+                    } else if (result.isRejected()) {
+                        this.outcome = BookingOutcome.rejected(result.getReasonCode(), result.getMessage());
+                    } else {
+                        String msg = result.getMessage() != null ? result.getMessage() : result.getReasonCode();
+                        this.outcome = BookingOutcome.unknown(msg);
+                    }
+                    showOutcomeAndAutoClose(this.outcome);
+                }));
     }
 
     /**

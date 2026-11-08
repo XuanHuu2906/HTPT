@@ -1,6 +1,7 @@
 package vn.nhom6.railway.client.controller;
 
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -10,6 +11,9 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import vn.nhom6.railway.client.ClientFactory;
+import vn.nhom6.railway.client.network.MockBookingClient;
+import vn.nhom6.railway.client.network.MockScenario;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
 
@@ -159,9 +163,26 @@ public class CancelTicketController {
                 ? mockOutcomeCombo.getValue()
                 : CancelMockOutcome.CANCELLED_SUCCESS;
 
-        PauseTransition delay = new PauseTransition(Duration.millis(350));
-        delay.setOnFinished(e -> applyCancelOutcome(outcome));
-        delay.play();
+        // Cấu hình kịch bản tiếp theo cho MockBookingClient
+        switch (outcome) {
+            case CANCELLED_SUCCESS -> MockBookingClient.getInstance().setNextScenario(MockScenario.SUCCESS);
+            case REJECTED_NOT_CANCELLABLE -> MockBookingClient.getInstance().setNextScenario(MockScenario.SEAT_ALREADY_BOOKED);
+            case UNKNOWN_TIMEOUT -> MockBookingClient.getInstance().setNextScenario(MockScenario.UNKNOWN);
+        }
+
+        // Gọi bất đồng bộ qua BookingViewModel (TASK D07 - Không treo UI)
+        ClientFactory.getBookingViewModel().cancel(ticket.getTicketId())
+                .whenComplete((res, ex) -> Platform.runLater(() -> {
+                    if (ex != null) {
+                        applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT);
+                    } else if (res.isConfirmed()) {
+                        applyCancelOutcome(CancelMockOutcome.CANCELLED_SUCCESS);
+                    } else if (res.isRejected()) {
+                        applyCancelOutcome(CancelMockOutcome.REJECTED_NOT_CANCELLABLE);
+                    } else {
+                        applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT);
+                    }
+                }));
     }
 
     public void applyCancelOutcome(CancelMockOutcome outcome) {
