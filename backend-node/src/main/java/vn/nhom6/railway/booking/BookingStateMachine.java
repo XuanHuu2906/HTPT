@@ -374,7 +374,7 @@ public final class BookingStateMachine {
      * <p>KHÔNG đưa vào: requestId, ticketId (do Leader sinh), issuedAt (do Leader sinh).
      * Mục đích: cho phép nhận diện cùng ý định qua Leader khác, theo SPEC-05 §3.1.
      */
-    private static String computeBookFingerprint(String tripId, String seatId, String passengerName) {
+    public static String computeBookFingerprint(String tripId, String seatId, String passengerName) {
         return computeFingerprint(
                 BookingCommand.Type.BOOK_TICKET.name(),
                 tripId,
@@ -389,7 +389,7 @@ public final class BookingStateMachine {
      * <p>Tuple: {@code (CANCEL_TICKET, ticketId)}.
      * ticketId là input Client, được đưa vào fingerprint (khác với BOOK).
      */
-    private static String computeCancelFingerprint(String ticketId) {
+    public static String computeCancelFingerprint(String ticketId) {
         return computeFingerprint(
                 BookingCommand.Type.CANCEL_TICKET.name(),
                 ticketId
