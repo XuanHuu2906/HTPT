@@ -42,12 +42,18 @@ public class NodeMain implements AutoCloseable {
     private final MessageDispatcher raftDispatcher;
     private final TcpServer clientServer;
     private final TcpServer raftServer;
+    private final BookingService bookingService;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread shutdownHook;
 
     public NodeMain(NodeConfig config) {
+        this(config, new FakeBookingService(config.nodeId()));
+    }
+
+    public NodeMain(NodeConfig config, BookingService bookingService) {
         this.config = Objects.requireNonNull(config, "config must not be null");
+        this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
 
         this.clientRegistry = new HandlerRegistry();
         this.raftRegistry = new HandlerRegistry();
@@ -98,6 +104,14 @@ public class NodeMain implements AutoCloseable {
                     statusPayload
             );
         });
+
+        // 3. Booking Handlers on Client Server: BOOK_TICKET and GET_SEATS (SPEC-03 §4.1 / §4.2)
+        clientRegistry.register(MessageType.BOOK_TICKET, new BookTicketHandler(bookingService, config.nodeId()));
+        clientRegistry.register(MessageType.GET_SEATS, new GetSeatsHandler(bookingService, config.nodeId()));
+    }
+
+    public BookingService getBookingService() {
+        return bookingService;
     }
 
     /**

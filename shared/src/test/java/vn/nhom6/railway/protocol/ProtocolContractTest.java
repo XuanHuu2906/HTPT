@@ -12,6 +12,8 @@ import vn.nhom6.railway.protocol.dto.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -96,6 +98,21 @@ class ProtocolContractTest {
         hbEnv.getPayload().validate();
         assertTrue(hbEnv.getPayload().isHeartbeat());
         assertEquals(0, hbEnv.getPayload().getEntries().size());
+
+        // 6. BOOK_TICKET_RESPONSE golden fixture
+        JsonNode bookRespNode = fixturesRoot.get("bookTicketResponse");
+        assertNotNull(bookRespNode);
+        MessageEnvelope<BookTicketResponseDto> bookRespEnv = MessageCodec.decode(
+                bookRespNode.toString(), BookTicketResponseDto.class
+        );
+        bookRespEnv.validate();
+        bookRespEnv.getPayload().validate();
+        assertEquals(MessageType.BOOK_TICKET_RESPONSE, bookRespEnv.getType());
+        assertEquals("f1111111-2222-3333-4444-555555555555", bookRespEnv.getMessageId());
+        assertEquals("b4c410df-2b27-45dd-81ac-b7f9c0ec21e4", bookRespEnv.getCorrelationId());
+        assertTrue(bookRespEnv.getPayload().isConfirmed());
+        assertEquals("ticket-uuid", bookRespEnv.getPayload().getTicketId());
+        assertEquals(43L, bookRespEnv.getPayload().getAppliedLogIndex());
     }
 
     @Test
@@ -136,6 +153,36 @@ class ProtocolContractTest {
         );
         byte[] appendBytes = MessageCodec.encode(appendEnv);
         assertEquals(originalAppendNode, MessageCodec.getMapper().readTree(appendBytes));
+
+        // BOOK_TICKET_RESPONSE round trip
+        JsonNode originalBookRespNode = fixturesRoot.get("bookTicketResponse");
+        MessageEnvelope<BookTicketResponseDto> bookRespEnv = MessageCodec.decode(
+                originalBookRespNode.toString(), BookTicketResponseDto.class
+        );
+        byte[] bookRespBytes = MessageCodec.encode(bookRespEnv);
+        assertEquals(originalBookRespNode, MessageCodec.getMapper().readTree(bookRespBytes));
+
+        // GET_SEATS_RESPONSE round trip
+        List<SeatDto> seats = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            String seatId = String.format("G%02d", i);
+            seats.add(new SeatDto(seatId, "AVAILABLE", null));
+        }
+        GetSeatsResponseDto getSeatsRespDto = new GetSeatsResponseDto("SE-001", seats, 42L, "node-1");
+        getSeatsRespDto.validate();
+        MessageEnvelope<GetSeatsResponseDto> getSeatsRespEnv = MessageEnvelope.createResponse(
+                "a1111111-2222-3333-4444-555555555555",
+                MessageType.GET_SEATS_RESPONSE,
+                "node-1",
+                getSeatsRespDto
+        );
+        byte[] getSeatsRespBytes = MessageCodec.encode(getSeatsRespEnv);
+        MessageEnvelope<GetSeatsResponseDto> decodedGetSeats = MessageCodec.decode(getSeatsRespBytes, GetSeatsResponseDto.class);
+        decodedGetSeats.validate();
+        decodedGetSeats.getPayload().validate();
+        assertEquals(10, decodedGetSeats.getPayload().getSeats().size());
+        assertEquals(42L, decodedGetSeats.getPayload().getReadIndex());
+        assertEquals("node-1", decodedGetSeats.getPayload().getLeaderId());
     }
 
     @Test
