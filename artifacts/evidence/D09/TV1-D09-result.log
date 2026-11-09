@@ -1,0 +1,152 @@
+================================================================================
+NHẬT KÝ NGHIỆM THU TASK TV1-D09 — SOCKET BOOKING CLIENT (DESKTOP CLIENT)
+================================================================================
+Thời gian: 2026-11-10 00:32:00 (GMT+7)
+Người thực hiện: TV1 - Desktop Client (2k3hocviec <khoahoian03022003@gmail.com>)
+Môi trường kiểm thử:
+  - OS: Windows 11 Home (x86_64)
+  - JDK: Java HotSpot(TM) 64-Bit Server VM (build 21.0.12.1+1-LTS-4, 64-bit)
+  - Maven: 3.9.x
+  - Branch: feature/UI
+================================================================================
+
+1. KẾT QUẢ BƯỚC 0 — PREFLIGHT CHECK
+--------------------------------------------------------------------------------
+[x] Mục 1: Đọc SPEC-03 (APPROVED-v1)
+    - Framing: 4-byte BE unsigned length + UTF-8 JSON.
+    - Envelope: protocolVersion (1), messageId (UUID), correlationId, type, senderId, sentAt, payload.
+    - MessageType: BOOK_TICKET, BOOK_TICKET_RESPONSE, GET_SEATS, GET_SEATS_RESPONSE,
+                   CANCEL_TICKET, CANCEL_TICKET_RESPONSE, GET_REQUEST_RESULT,
+                   GET_REQUEST_RESULT_RESPONSE, ERROR_RESPONSE.
+    - Mã lỗi: NOT_LEADER, NO_QUORUM, REQUEST_ID_CONFLICT, TIMEOUT_UNKNOWN, INVALID_REQUEST, INTERNAL_ERROR.
+    - Kết quả: PASS.
+
+[x] Mục 2: Kiểm tra sự tồn tại các file TV3 trong shared & backend-node
+    - shared/.../MessageEnvelope.java: TỒN TẠI
+    - shared/.../MessageType.java: TỒN TẠI
+    - shared/.../BookTicketRequestDto.java: TỒN TẠI
+    - shared/.../GetSeatsRequestDto.java: TỒN TẠI
+    - shared/.../MessageCodec.java: TỒN TẠI
+    - shared/.../FrameCodec.java: TỒN TẠI
+    - configs/dev/cluster.properties: TỒN TẠI
+    - configs/lan/node-1.properties: TỒN TẠI
+    - backend-node/.../TcpClient.java: TỒN TẠI (trong backend-node, không import vào desktop-client)
+    - Kết quả: PASS.
+
+[x] Mục 3: Chạy test module shared
+    - Lệnh: mvn -B -ntp "-Dmaven.compiler.release=21" -pl shared clean test
+    - Kết quả: PASS (Tests run: 28, Failures: 0, Errors: 0, Skipped: 0).
+
+[x] Mục 4: Kiểm tra dependency desktop-client/pom.xml phụ thuộc shared
+    - desktop-client/pom.xml đã có dependency vn.nhom6.railway:shared.
+    - Kết quả: PASS.
+
+[!] Mục 5: Kiểm tra DTO cho GET_REQUEST_RESULT
+    - MessageType.GET_REQUEST_RESULT và MessageType.GET_REQUEST_RESULT_RESPONSE có trong MessageType.java.
+    - NHƯNG KHÔNG CÓ class GetRequestResultRequestDto hay GetRequestResultResponseDto trong module shared.
+    - Xử lý theo quy tắc Bước 0: Triển khai BOOK_TICKET và GET_SEATS; đánh dấu getRequestResult là BLOCKED
+      (trả CompletableFuture.failedFuture với UnsupportedOperationException("BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3")).
+    - Kết quả: BLOCKED (phần GET_REQUEST_RESULT).
+
+[x] Mục 6: Ranh giới TcpClient của backend-node
+    - TcpClient thuộc backend-node. desktop-client KHÔNG phụ thuộc module backend-node.
+    - Đã viết transport TCP độc lập trong SocketBookingClient dùng java.net.Socket + FrameCodec/MessageCodec của shared.
+    - Kết quả: PASS.
+
+================================================================================
+2. KẾT QUẢ KIỂM TRA CHẤT LƯỢNG MÃ NGUỒN (GREP CHECKS)
+--------------------------------------------------------------------------------
+- Kiểm tra REST / HTTP trong desktop-client:
+  Lệnh: Get-ChildItem -Path desktop-client/src/main/java -Recurse -File | Select-String "java.net.http|HttpURLConnection|HttpClient"
+  Kết quả: 0 kết quả (PASS - Không sử dụng REST/HTTP).
+
+- Kiểm tra vi phạm package java.net/java.sql trong controller & viewmodel:
+  Lệnh: Select-String "java.net|java.sql|javax.sql" trong controller và viewmodel
+  Kết quả: 0 kết quả (PASS - java.net chỉ nằm tại package network).
+
+- Kiểm tra chặn luồng (.get, .join, Thread.sleep) trong controller & viewmodel:
+  Lệnh: Select-String "\.get\(\)|\.join\(\)|Thread\.sleep" trong controller và viewmodel
+  Kết quả: 0 lệnh Future block (chỉ có Optional.get() cho dữ liệu an toàn).
+
+- Kiểm tra FXML và Controller không bị sửa:
+  Lệnh: git diff --stat -- desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/resources/fxml
+  Kết quả: 0 dòng thay đổi (PASS - FXML và Controller giữ nguyên 100%).
+
+================================================================================
+3. KẾT QUẢ KIỂM THỬ TỰ ĐỘNG (MAVEN TEST SUITE)
+--------------------------------------------------------------------------------
+Lệnh thực thi: mvn -f desktop-client/pom.xml test
+
+[INFO] Running vn.nhom6.railway.client.BookingFormValidatorTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.MockBookingServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.MockUiFlowTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.network.MockBookingClientTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.SocketBookingClientTest
+[WARNING] Tests run: 16, Failures: 0, Errors: 0, Skipped: 1
+  - testFrameFormatAndEnvelopeStructure: PASS
+  - testRetryPreservesRequestIdWithNewMessageId: PASS
+  - testBookTicketRejectedSeatAlreadyBooked: PASS
+  - testBookTicketErrorNotLeader: PASS
+  - testBookTicketErrorNoQuorum: PASS
+  - testBookTicketErrorRequestIdConflict: PASS
+  - testBookTicketReadTimeoutReturnsUnknown: PASS
+  - testConnectionRefusedThrowsException: PASS
+  - testServerClosesConnectionThrowsException: PASS
+  - testFragmentedTcpStreamHandledCorrectly: PASS
+  - testGetSeatsSuccess: PASS
+  - testGetRequestResultThrowsBlockedException: PASS
+  - testCancelThrowsUnsupportedException: PASS
+  - testClientFactoryConfigurationSelection: PASS
+  - testNoHttpClassesUsed: PASS
+  - testIntegrationWithRealNode: SKIPPED (Chưa có biến môi trường NODE_HOST)
+[INFO] Running vn.nhom6.railway.client.viewmodel.BookingViewModelTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.viewmodel.SeatViewModelTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.client.viewmodel.TicketViewModelTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+
+TỔNG KẾT TEST:
+Tests run: 97, Failures: 0, Errors: 0, Skipped: 1
+BUILD SUCCESS
+
+================================================================================
+4. MẪU DÒNG NHẬT KÝ LOG TRÊN CLIENT (CÓ REQUEST_ID & MESSAGE_ID)
+--------------------------------------------------------------------------------
+[TCP-CLIENT] requestId=6c68fc6a-89f5-480e-bb15-0df4f204aa80, messageId=e510ff15-6b79-49e9-a41c-4dbf74311dcd, type=BOOK_TICKET, endpoint=127.0.0.1:59858, outcome=NO_QUORUM, elapsedMs=435ms
+[TCP-CLIENT] requestId=ec7e2636-7d41-430c-bb3f-4fb839af531c, messageId=ad82fd47-ed86-43a7-9c2d-b2a0ff682816, type=BOOK_TICKET, endpoint=127.0.0.1:59860, outcome=NOT_LEADER, elapsedMs=10ms
+[TCP-CLIENT] requestId=8916ad97-24f7-49ea-8237-4a1da28bed8e, messageId=b2e8fef7-6c26-47d5-86b1-bb8cdbbe0062, type=BOOK_TICKET, endpoint=127.0.0.1:59862, outcome=TIMEOUT_UNKNOWN, elapsedMs=408ms
+[TCP-CLIENT] requestId=N/A, messageId=877881c9-aeb0-4ec1-bc34-4fdd4aee3e25, type=GET_SEATS, endpoint=127.0.0.1:59867, outcome=SUCCESS, elapsedMs=8ms
+[TCP-CLIENT] requestId=2098ec2c-245a-4faa-9129-dc08607a6f70, messageId=5ea3a981-134b-402d-8ac9-d7c2f86c6530, type=BOOK_TICKET, endpoint=127.0.0.1:59869, outcome=REQUEST_ID_CONFLICT, elapsedMs=4ms
+[TCP-CLIENT] requestId=73edf7b2-6391-4c05-94f9-f3429b8a648f, messageId=3ff17ea6-fb5c-4de3-b51d-59e5f8c183c9, type=BOOK_TICKET, endpoint=127.0.0.1:59874, outcome=CONFIRMED, elapsedMs=10ms
+
+================================================================================
+5. ĐÁNH GIÁ TIÊU CHÍ NGHIỆM THU (DoD)
+--------------------------------------------------------------------------------
+- Cài đặt SocketBookingClient implements BookingClient: PASS
+- Đọc/ghi frame 4-byte BE length + JSON UTF-8 theo FrameCodec: PASS
+- Envelope SPEC-03 với messageId mới, correlationId khớp: PASS
+- Giữ nguyên requestId qua retry/gửi lại: PASS
+- Ánh xạ đầy đủ CONFIRMED, REJECTED, NOT_LEADER, NO_QUORUM, UNKNOWN: PASS
+- Socket read timeout chuyển thành UNKNOWN (không thành REJECTED): PASS
+- Cờ mock: isMock() == false cho mọi phản hồi từ socket: PASS
+- Non-blocking trên daemon pool, không chặn UI thread: PASS
+- Đổi client qua -Dbooking.client=socket|mock tại ClientFactory: PASS
+- Không sửa Controller / FXML: PASS
+- getRequestResult: BLOCKED (do thiếu DTO GetRequestResultRequestDto từ TV3)
+- cancel: NOT_RUN (ngoài phạm vi D09 theo bảng phân công)
+- Kết nối tới Node thật trên môi trường: NOT_RUN (Cụm Node chưa chạy ở giai đoạn này, E2E nằm ở G3)
+
+DANH SÁCH THỨ CẦN TV3 HỖ TRỢ BÀN GIAO TIẾP:
+1. Bổ sung class DTO `GetRequestResultRequestDto` vào package `vn.nhom6.railway.protocol.dto` của module `shared`.
+2. Bổ sung các DTO phản hồi chính thức `BookTicketResponseDto`, `GetSeatsResponseDto`, `GetRequestResultResponseDto` vào module `shared` để chuẩn hóa toàn hệ thống.
+3. Chạy cụm Node thật tại G3 để hoàn thiện kiểm thử tích hợp E2E.
+
+================================================================================
+KẾT LUẬN:
+Adapter hoàn tất, test với server giả PASS. Chưa chạy với Node thật. Không kết luận Backend PASS.
+================================================================================
