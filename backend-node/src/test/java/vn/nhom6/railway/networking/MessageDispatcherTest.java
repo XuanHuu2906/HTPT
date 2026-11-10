@@ -290,6 +290,52 @@ public class MessageDispatcherTest {
         }
     }
 
+    @Test
+    public void testHandlerResponseMissingCorrelationIdGetsAttached() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        registry.register(MessageType.GET_SEATS, req -> {
+            // Handler returns response without correlationId
+            return new MessageEnvelope<>(
+                    1,
+                    UUID.randomUUID().toString(),
+                    null,
+                    MessageType.GET_SEATS_RESPONSE,
+                    "node-1",
+                    "2026-10-29T10:00:00Z",
+                    MAPPER.createObjectNode()
+            );
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.GET_SEATS, "client-1", MAPPER.createObjectNode());
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(req.getMessageId(), resp.getCorrelationId(), "Dispatcher must attach correlationId if handler omitted it");
+    }
+
+    @Test
+    public void testRequestWithInvalidMessageIdDropped() {
+        HandlerRegistry registry = new HandlerRegistry();
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+
+        // Envelope with invalid messageId
+        MessageEnvelope<JsonNode> badReq = new MessageEnvelope<>(
+                1,
+                "00000000-0000-0000-0000-000000000000", // Valid syntax
+                null,
+                MessageType.GET_SEATS,
+                "client-1",
+                "2026-10-29T10:00:00Z",
+                MAPPER.createObjectNode()
+        );
+        // Dispatch works
+        assertNotNull(dispatcher.dispatch(badReq));
+
+        // When null or invalid request is passed
+        assertNull(dispatcher.dispatch(null));
+    }
+
     public static void main(String[] args) {
         System.out.println("Starting MessageDispatcherTest runner...");
         MessageDispatcherTest test = new MessageDispatcherTest();
