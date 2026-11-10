@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import vn.nhom6.railway.protocol.dto.AppendEntriesRequestDto;
 import vn.nhom6.railway.raft.core.RaftLogEntry;
 import vn.nhom6.railway.raft.core.RaftNode;
@@ -1043,6 +1047,859 @@ class AppendEntriesHandlerTest {
         @Override
         public long loadLastApplied() throws RaftStorageException {
             return delegate.loadLastApplied();
+        }
+    }
+
+    // ===========================================================================================
+    // TV4-D10: multi-step "pure logic" network scenarios
+    // ===========================================================================================
+
+    /**
+     * Ten multi-step scenarios for the Follower side of {@code APPEND_ENTRIES}, driven by a
+     * scripted Leader over an in-test mock network.
+     *
+     * <p><strong>Honesty boundary.</strong> This nested suite uses a mock network, a scripted
+     * Leader, three or more real Follower components over {@link FakeRaftStorage} and a recording
+     * timer. It does <strong>not</strong> use TCP, a real Leader, majority counting, cluster-wide
+     * commit, {@code RaftNode}, PostgreSQL/JDBC or the state machine. {@code leaderCommit} is a
+     * scenario input, never a value computed from {@code matchIndex}. It proves only the pure logic
+     * of the D09 handler: a matching batch is accepted, a mismatching one is rejected with
+     * {@code success=false}, and {@code commitIndex} never exceeds the last log entry. Durable
+     * PostgreSQL behaviour belongs to TV2-D12; the scripted Leader is a test tool, not a second Raft
+     * implementation.
+     */
+    @Nested
+    class NetworkScenarioTests {
+
+        // ---------------------------------------------------------------------------------------
+        // S1: happy replication to three followers
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void happyReplicationConvergesAcrossThreeFollowers() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = List.of(
+                    noOp(1L, 2L), bookTicket(2L, 2L, "r-1"), noOp(3L, 2L));
+            ScriptedLeader leader = new ScriptedLeader("node-1", 2L, leaderLog);
+            List<ScenarioNode> followers = List.of(
+                    ScenarioNode.empty("node-2"),
+                    ScenarioNode.empty("node-3"),
+                    ScenarioNode.empty("node-4"));
+            MockNetwork network = new MockNetwork();
+
+            for (ScenarioNode follower : followers) {
+                AppendEntriesResponse response = leader.sendHeartbeat(network, follower, 0L, 0L).orElseThrow();
+                assertTrue(response.success());
+                assertEquals(0L, response.matchIndex());
+                assertEquals(leaderLog.subList(0, 0), follower.state.entries());
+                assertNodeInvariants(follower, 0L);
+            }
+
+            for (ScenarioNode follower : followers) {
+                AppendEntriesResponse response = leader.sendRange(network, follower, 1L, 3L, 0L).orElseThrow();
+                assertTrue(response.success());
+                assertEquals(3L, response.matchIndex());
+                assertEquals(leaderLog, follower.state.entries());
+                assertEquals(leaderLog, visibleLog(follower.appender));
+                assertEquals(leaderLog, follower.storage.storedLog());
+                assertNodeInvariants(follower, 0L);
+            }
+
+            for (ScenarioNode follower : followers) {
+                AppendEntriesResponse response = leader.sendHeartbeat(network, follower, 3L, 3L).orElseThrow();
+                assertTrue(response.success());
+                assertEquals(3L, response.matchIndex());
+                assertEquals(3L, follower.state.commitIndex());
+                assertTrue(follower.state.commitIndex() <= follower.state.lastLogIndex());
+                assertEquals(leaderLog, follower.state.entries());
+                assertEquals(leaderLog, visibleLog(follower.appender));
+                assertEquals(leaderLog, follower.storage.storedLog());
+                assertEquals(3L, timerValidCalls(follower),
+                        "every accepted heartbeat or batch must reset the timer exactly once");
+                assertNodeInvariants(follower, 3L);
+            }
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S2: lagging follower backs nextIndex off until the logs match
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void laggingFollowerCatchesUpByBackingOffNextIndex() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = List.of(
+                    noOp(1L, 1L), noOp(2L, 1L), noOp(3L, 2L),
+                    noOp(4L, 2L), noOp(5L, 3L), noOp(6L, 3L));
+            ScriptedLeader leader = new ScriptedLeader("node-2", 3L, leaderLog);
+            ScenarioNode follower = ScenarioNode.seeded("node-3", 1L, null,
+                    List.of(noOp(1L, 1L), noOp(2L, 1L)), 0L);
+            MockNetwork network = new MockNetwork();
+            List<RaftLogEntry> initialLog = follower.state.entries();
+
+            for (int attempt = 0; attempt < 4; attempt++) {
+                int writesBefore = follower.storage.replaceSuffixCalls();
+                AppendEntriesResponse response = leader.send(network, follower, 0L).orElseThrow();
+
+                assertFalse(response.success());
+                assertEquals(0L, response.matchIndex());
+                assertEquals(initialLog, follower.state.entries(), "a rejected batch must not change the log");
+                assertEquals(writesBefore, follower.storage.replaceSuffixCalls(),
+                        "a rejected batch must not write storage");
+                assertEquals(attempt + 1L, timerValidCalls(follower),
+                        "a valid request must reset the timer even when the log does not match");
+                assertNodeInvariants(follower, 0L);
+            }
+
+            AppendEntriesResponse accepted = leader.send(network, follower, 0L).orElseThrow();
+
+            assertTrue(accepted.success());
+            assertEquals(6L, accepted.matchIndex());
+            assertEquals(List.of(7L, 6L, 5L, 4L, 3L), leader.attemptedNextIndex,
+                    "the leader must try nextIndex 7, 6, 5, 4 then 3");
+            assertEquals(leaderLog, follower.state.entries());
+            assertEquals(5L, timerValidCalls(follower));
+            assertNodeInvariants(follower, 0L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S3: only the uncommitted divergent suffix is replaced
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void divergentFollowerUncommittedSuffixIsReplacedAndCommittedPrefixIsKept()
+                throws RaftStorageException {
+            List<RaftLogEntry> followerLog = List.of(
+                    noOp(1L, 1L), noOp(2L, 1L), noOp(3L, 2L), noOp(4L, 2L));
+            List<RaftLogEntry> leaderLog = List.of(
+                    noOp(1L, 1L), noOp(2L, 1L), noOp(3L, 3L), noOp(4L, 3L), noOp(5L, 3L));
+            ScenarioNode follower = ScenarioNode.seeded("node-4", 2L, null, followerLog, 2L);
+            ScriptedLeader leader = new ScriptedLeader("node-1", 3L, leaderLog);
+            MockNetwork network = new MockNetwork();
+            List<RaftLogEntry> committedPrefix = List.of(followerLog.get(0), followerLog.get(1));
+            int writesBefore = follower.storage.replaceSuffixCalls();
+
+            AppendEntriesResponse response = null;
+            for (int attempt = 0; attempt < 4; attempt++) {
+                response = leader.send(network, follower, 3L).orElseThrow();
+            }
+
+            assertTrue(response.success());
+            assertEquals(5L, response.matchIndex());
+            assertEquals(leaderLog, follower.state.entries());
+            assertEquals(committedPrefix, follower.state.entries().subList(0, 2),
+                    "the committed prefix [1, 2] must stay unchanged");
+            assertEquals(writesBefore + 1, follower.storage.replaceSuffixCalls(),
+                    "exactly one replaceSuffix starting at index 3 is expected");
+            assertEquals(1, countReplaceSuffixFrom(follower, 3L));
+            assertEquals(3L, follower.state.commitIndex(), "commit = max(2, min(3, 5))");
+            assertNodeInvariants(follower, 3L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S4: duplicated RPCs must be idempotent
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void networkDuplicatesDoNotDuplicateEntries() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = List.of(noOp(1L, 2L), noOp(2L, 2L));
+            ScriptedLeader leader = new ScriptedLeader("node-1", 2L, leaderLog);
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 2L, null, List.of(), 0L);
+            MockNetwork network = new MockNetwork();
+
+            AppendEntriesRequest heartbeat = leader.heartbeatRequest(0L, 0L);
+            List<Optional<AppendEntriesResponse>> heartbeatResponses =
+                    network.deliverTwice(follower, heartbeat);
+            AppendEntriesResponse firstHeartbeat = heartbeatResponses.get(0).orElseThrow();
+            AppendEntriesResponse secondHeartbeat = heartbeatResponses.get(1).orElseThrow();
+            assertTrue(firstHeartbeat.success());
+            assertTrue(secondHeartbeat.success());
+            assertEquals(firstHeartbeat.matchIndex(), secondHeartbeat.matchIndex());
+
+            AppendEntriesRequest batch = leader.requestRange(1L, 2L, 0L);
+            int writesBefore = follower.storage.replaceSuffixCalls();
+            List<Optional<AppendEntriesResponse>> batchResponses =
+                    network.deliverTwice(follower, batch);
+            AppendEntriesResponse firstBatch = batchResponses.get(0).orElseThrow();
+            AppendEntriesResponse secondBatch = batchResponses.get(1).orElseThrow();
+
+            assertEquals(2L, firstBatch.matchIndex());
+            assertEquals(2L, secondBatch.matchIndex(), "a duplicate must report the same matchIndex");
+            assertEquals(2, follower.state.entries().size());
+            assertEquals(2, visibleLog(follower.appender).size());
+            assertEquals(2, follower.storage.storedLog().size());
+            assertEquals(writesBefore + 1, follower.storage.replaceSuffixCalls(),
+                    "the duplicate batch must not write the same entries twice");
+            assertNodeInvariants(follower, 0L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S5: a reordered, stale RPC must not shrink the log or lower commitIndex
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void reorderedStaleRpcDoesNotShrinkLogOrLowerCommit() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = List.of(
+                    noOp(1L, 2L), noOp(2L, 2L), noOp(3L, 2L), noOp(4L, 2L), noOp(5L, 2L));
+            ScriptedLeader leader = new ScriptedLeader("node-1", 2L, leaderLog);
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 2L, null, List.of(), 0L);
+            MockNetwork network = new MockNetwork();
+
+            AppendEntriesRequest oldRpc = leader.requestRange(1L, 3L, 1L);
+            AppendEntriesRequest newRpc = leader.requestRange(1L, 5L, 4L);
+            network.deliverLater(follower, oldRpc);
+            network.deliverLater(follower, newRpc);
+
+            List<Optional<AppendEntriesResponse>> responses = network.flushLaterReversed();
+            AppendEntriesResponse newer = responses.get(0).orElseThrow();
+            assertTrue(newer.success());
+            assertEquals(5L, newer.matchIndex());
+            assertEquals(4L, follower.state.commitIndex());
+            int writesAfterNewer = follower.storage.replaceSuffixCalls();
+
+            AppendEntriesResponse stale = responses.get(1).orElseThrow();
+            assertTrue(stale.success());
+            assertEquals(3L, stale.matchIndex());
+            assertEquals(5, follower.state.entries().size(), "a stale shorter batch must keep the tail");
+            assertEquals(leaderLog, follower.state.entries());
+            assertEquals(4L, follower.state.commitIndex(), "a stale RPC must not lower commitIndex");
+            assertEquals(writesAfterNewer, follower.storage.replaceSuffixCalls(),
+                    "a matching stale prefix must not write storage");
+            assertNodeInvariants(follower, 1L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S6: dropped request and dropped response are recovered by a retry
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void droppedRequestsAndResponsesAreRecoveredByRetry() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = List.of(
+                    noOp(1L, 2L), noOp(2L, 2L), noOp(3L, 2L), noOp(4L, 2L));
+            ScriptedLeader leader = new ScriptedLeader("node-1", 2L, leaderLog);
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 2L, null, List.of(), 0L);
+            MockNetwork network = new MockNetwork();
+
+            AppendEntriesRequest first = leader.requestRange(1L, 2L, 0L);
+            NodeSnapshot before = follower.snapshot();
+            network.dropRequest(follower, first);
+            assertEquals(before, follower.snapshot(),
+                    "a dropped request must not reach the handler or touch storage/timer");
+            assertTrue(network.deliver(follower, first).orElseThrow().success());
+            assertEquals(2L, follower.state.lastLogIndex());
+
+            AppendEntriesRequest second = leader.requestRange(3L, 4L, 0L);
+            int writesBefore = follower.storage.replaceSuffixCalls();
+            network.dropResponse(follower, second);
+            assertEquals(4L, follower.state.lastLogIndex(),
+                    "the follower must have durably stored the batch before the response was lost");
+            assertEquals(writesBefore + 1, follower.storage.replaceSuffixCalls());
+
+            AppendEntriesResponse retried = network.deliver(follower, second).orElseThrow();
+            assertTrue(retried.success());
+            assertEquals(4L, retried.matchIndex());
+            assertEquals(writesBefore + 1, follower.storage.replaceSuffixCalls(),
+                    "the retry after a lost response must not write the batch twice");
+            assertEquals(4, follower.state.entries().size());
+            assertEquals(leaderLog, follower.state.entries());
+            assertEquals(leaderLog, follower.storage.storedLog());
+            assertNodeInvariants(follower, 0L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S7: an old Leader is rejected after a new Leader term
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void staleLeaderIsRejectedAfterNewLeaderTerm() throws RaftStorageException {
+            List<RaftLogEntry> oldLeaderLog = List.of(noOp(1L, 2L), noOp(2L, 2L));
+            ScriptedLeader oldLeader = new ScriptedLeader("node-1", 2L, oldLeaderLog);
+            ScriptedLeader newLeader = new ScriptedLeader("node-3", 3L, List.of(noOp(1L, 2L)));
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 0L, null, List.of(), 0L);
+            MockNetwork network = new MockNetwork();
+
+            assertTrue(oldLeader.sendRange(network, follower, 1L, 1L, 0L).orElseThrow().success());
+            assertTrue(newLeader.sendHeartbeat(network, follower, 1L, 0L).orElseThrow().success());
+            assertEquals(3L, follower.state.currentTerm());
+            assertTrue(follower.storage.calls().contains("saveTermAndVote(3, null)"),
+                    "the new term must be durable after the new Leader is accepted");
+
+            List<RaftLogEntry> logBefore = follower.state.entries();
+            int callsBefore = follower.storage.calls().size();
+            int timerBefore = follower.timer.events.size();
+
+            AppendEntriesResponse stale = oldLeader.send(network, follower, 0L).orElseThrow();
+
+            assertFalse(stale.success());
+            assertEquals(3L, stale.term());
+            assertEquals(0L, stale.matchIndex());
+            assertTrue(oldLeader.steppedDown, "the old Leader must step down after seeing a higher term");
+            assertEquals(logBefore, follower.state.entries(), "a stale term must not change the log");
+            assertEquals(callsBefore, follower.storage.calls().size(),
+                    "a stale term must not touch storage");
+            assertEquals(timerBefore, follower.timer.events.size(),
+                    "a stale term must not reset the election timer");
+            assertEquals(3L, follower.state.currentTerm());
+            assertNodeInvariants(follower, 0L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S8: commitIndex never exceeds the last log entry
+        // ---------------------------------------------------------------------------------------
+
+        @ParameterizedTest(name = "logLength={0}, prevLogIndex={1}, leaderCommit={2}, entries={3}")
+        @CsvSource({
+                "0, 0, 0, false",
+                "0, 0, 1, false",
+                "1, 0, 0, false",
+                "1, 1, 1, false",
+                "1, 1, 5, false",
+                "3, 0, 0, false",
+                "3, 2, 3, false",
+                "3, 3, 3, false",
+                "3, 3, 8, false",
+                "3, 3, MAX, false",
+                "0, 0, 1, true",
+                "1, 1, 2, true",
+                "3, 3, 4, true",
+                "3, 3, MAX, true"
+        })
+        void commitIndexNeverExceedsLastLogEntry(
+                int logLength, long prevLogIndex, String leaderCommitText, boolean withEntries)
+                throws RaftStorageException {
+            long leaderCommit = "MAX".equals(leaderCommitText)
+                    ? Long.MAX_VALUE : Long.parseLong(leaderCommitText);
+            List<RaftLogEntry> localLog = new ArrayList<>();
+            for (long index = 1L; index <= logLength; index++) {
+                localLog.add(noOp(index, 1L));
+            }
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 1L, null, localLog, 0L);
+            MockNetwork network = new MockNetwork();
+            long commitBefore = follower.state.commitIndex();
+            long prevLogTerm = prevLogIndex == 0L ? 0L : follower.state.termAt(prevLogIndex);
+
+            List<RaftLogEntry> entries = new ArrayList<>();
+            if (withEntries) {
+                entries.add(noOp(prevLogIndex + 1L, 2L));
+                entries.add(noOp(prevLogIndex + 2L, 2L));
+            }
+            AppendEntriesRequest request = new AppendEntriesRequest(
+                    2L, "node-1", prevLogIndex, prevLogTerm, entries, leaderCommit);
+
+            AppendEntriesResponse response = network.deliver(follower, request).orElseThrow();
+            long matchIndex = Math.addExact(prevLogIndex, entries.size());
+            long expectedCommit = Math.max(commitBefore, Math.min(leaderCommit, matchIndex));
+
+            assertTrue(response.success());
+            assertEquals(matchIndex, response.matchIndex());
+            assertEquals(expectedCommit, follower.state.commitIndex());
+            assertTrue(follower.state.commitIndex() <= follower.state.lastLogIndex(),
+                    "commitIndex must never exceed lastLogIndex");
+            assertTrue(follower.state.commitIndex() >= commitBefore, "commitIndex must never decrease");
+            assertNodeInvariants(follower, leaderCommit);
+        }
+
+        @Test
+        void commitIndexAfterConflictTruncationUsesThisRpcMatchIndex() throws RaftStorageException {
+            List<RaftLogEntry> localLog = List.of(
+                    noOp(1L, 1L), noOp(2L, 1L), noOp(3L, 2L), noOp(4L, 2L));
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 2L, null, localLog, 2L);
+            MockNetwork network = new MockNetwork();
+            int writesBefore = follower.storage.replaceSuffixCalls();
+            AppendEntriesRequest request = new AppendEntriesRequest(
+                    3L, "node-1", 2L, 1L,
+                    List.of(noOp(3L, 3L), noOp(4L, 3L), noOp(5L, 3L)), 4L);
+
+            AppendEntriesResponse response = network.deliver(follower, request).orElseThrow();
+
+            assertTrue(response.success());
+            assertEquals(5L, response.matchIndex());
+            assertEquals(writesBefore + 1, follower.storage.replaceSuffixCalls());
+            assertEquals(1, countReplaceSuffixFrom(follower, 3L));
+            assertEquals(4L, follower.state.commitIndex(), "commit = max(2, min(4, 5))");
+            assertEquals(5L, follower.state.lastLogIndex());
+            assertTrue(follower.state.commitIndex() <= follower.state.lastLogIndex());
+            assertNodeInvariants(follower, 4L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S9: an ACK implies durability; storage failures are never ACKed
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void ackImpliesDurableAndStorageFailuresAreNeverAcked() throws RaftStorageException {
+            List<RaftLogEntry> leaderLog = new ArrayList<>();
+            for (long index = 1L; index <= 12L; index++) {
+                leaderLog.add(bookTicket(index, 2L, "r-" + index));
+            }
+            ScriptedLeader leader = new ScriptedLeader("node-1", 2L, leaderLog);
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 2L, null, List.of(), 0L);
+            MockNetwork network = new MockNetwork();
+
+            assertTrue(leader.sendRange(network, follower, 1L, 2L, 0L).orElseThrow().success());
+            assertTrue(leader.sendRange(network, follower, 3L, 4L, 0L).orElseThrow().success());
+            assertEquals(4L, follower.state.lastLogIndex());
+
+            // RPC 3: the durable write fails before changing anything, so no response may exist.
+            AppendEntriesRequest third = leader.requestRange(5L, 6L, 0L);
+            follower.storage.failNext(new RaftStorageException("fake: RPC 3 write failed"));
+            int errorsBefore = network.errors.size();
+            int timerBefore = follower.timer.events.size();
+
+            assertTrue(network.deliver(follower, third).isEmpty(),
+                    "a failed durable write must not produce a response");
+            assertEquals(errorsBefore + 1, network.errors.size());
+            assertEquals(timerBefore + 1, follower.timer.events.size());
+            assertEquals("close", follower.timer.events.get(follower.timer.events.size() - 1));
+            assertEquals(4L, follower.state.lastLogIndex());
+            assertEquals(4, follower.storage.storedLog().size());
+            assertEquals(4, visibleLog(follower.appender).size());
+
+            follower.restart();
+            assertEquals(4L, follower.state.lastLogIndex());
+            assertTrue(network.deliver(follower, third).orElseThrow().success());
+            assertEquals(6L, follower.state.lastLogIndex());
+
+            // RPC 4: a normal write after the first recovery.
+            assertTrue(leader.sendRange(network, follower, 7L, 8L, 0L).orElseThrow().success());
+
+            // RPC 5: storage persisted and then reported a failure, so the outcome is ambiguous.
+            AppendEntriesRequest fifth = leader.requestRange(9L, 10L, 0L);
+            follower.storage.persistThenFailNext();
+            errorsBefore = network.errors.size();
+            timerBefore = follower.timer.events.size();
+
+            assertTrue(network.deliver(follower, fifth).isEmpty(),
+                    "an ambiguous durable write must not produce a response");
+            assertEquals(errorsBefore + 1, network.errors.size());
+            assertEquals(timerBefore + 1, follower.timer.events.size());
+            assertEquals("close", follower.timer.events.get(follower.timer.events.size() - 1));
+            assertEquals(8, follower.state.entries().size(),
+                    "the appender must not publish a write whose result was an error");
+            assertEquals(10, follower.storage.storedLog().size(),
+                    "the fake storage did persist the ambiguous write");
+
+            int writesBeforeRetry = follower.storage.replaceSuffixCalls();
+            follower.restart();
+            assertTrue(network.deliver(follower, fifth).orElseThrow().success());
+            assertEquals(writesBeforeRetry, follower.storage.replaceSuffixCalls(),
+                    "a retry of an already durable replacement must not write it twice");
+            assertEquals(10, follower.state.entries().size());
+            assertEquals(10, follower.storage.storedLog().size());
+
+            // RPC 6: a normal write; the whole prefix must converge to the Leader log.
+            assertTrue(leader.sendRange(network, follower, 11L, 12L, 0L).orElseThrow().success());
+            assertEquals(12, follower.state.entries().size());
+            assertEquals(leaderLog, follower.state.entries());
+            assertEquals(leaderLog, follower.storage.storedLog());
+            assertNodeInvariants(follower, 0L);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // S10: restart resumes from durable state without replay
+        // ---------------------------------------------------------------------------------------
+
+        @Test
+        void restartResumesFromDurableStateWithoutReplay() throws RaftStorageException {
+            List<RaftLogEntry> durableLog = List.of(
+                    noOp(1L, 1L), noOp(2L, 1L), noOp(3L, 2L), noOp(4L, 2L));
+            ScenarioNode follower = ScenarioNode.seeded("node-2", 3L, "node-2", durableLog, 2L);
+            MockNetwork network = new MockNetwork();
+
+            assertEquals(2L, follower.state.commitIndex());
+            assertNodeInvariants(follower, 0L);
+
+            follower.restart();
+
+            assertEquals(2L, follower.state.commitIndex(),
+                    "commitIndex must be reconstructed from lastApplied, not from lastLogIndex");
+            assertEquals(3L, follower.state.currentTerm());
+            assertEquals("node-2", follower.state.votedFor());
+            assertEquals(4L, follower.state.lastLogIndex());
+            assertNodeInvariants(follower, 0L);
+
+            ScriptedLeader leader = new ScriptedLeader("node-2", 3L, durableLog);
+            assertTrue(leader.sendHeartbeat(network, follower, 4L, 3L).orElseThrow().success());
+            assertEquals(3L, follower.state.commitIndex());
+
+            AppendEntriesRequest resend = leader.requestRange(1L, 4L, 3L);
+            int writesBefore = follower.storage.replaceSuffixCalls();
+            AppendEntriesResponse replayed = network.deliver(follower, resend).orElseThrow();
+            assertTrue(replayed.success());
+            assertEquals(4L, replayed.matchIndex());
+            assertEquals(writesBefore, follower.storage.replaceSuffixCalls(),
+                    "an idempotent batch after restart must not be written again");
+            assertEquals(4, follower.state.entries().size());
+
+            AppendEntriesRequest committedConflict = new AppendEntriesRequest(
+                    3L, "node-2", 1L, 1L, List.of(noOp(2L, 3L)), 3L);
+            List<String> callsBefore = follower.storage.calls();
+            int errorsBefore = network.errors.size();
+            int timerBefore = follower.timer.events.size();
+
+            assertTrue(network.deliver(follower, committedConflict).isEmpty(),
+                    "a conflict at a committed index must fail closed");
+            assertEquals(errorsBefore + 1, network.errors.size());
+            assertTrue(network.errors.get(network.errors.size() - 1) instanceof IllegalStateException);
+            assertEquals(callsBefore, follower.storage.calls(),
+                    "a committed conflict must abort before reaching storage");
+            assertEquals(durableLog, follower.state.entries());
+            assertEquals(3L, follower.state.commitIndex());
+            assertEquals(timerBefore + 1, follower.timer.events.size());
+            assertEquals("close", follower.timer.events.get(follower.timer.events.size() - 1));
+            assertThrows(IllegalStateException.class,
+                    () -> follower.handler.handle(committedConflict, "node-2"),
+                    "a handler that failed closed must refuse every later request");
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // Test helpers: fixture entries, timer helpers and invariant checks
+        // ---------------------------------------------------------------------------------------
+
+        private static RaftLogEntry bookTicket(long index, long term, String requestId) {
+            return new RaftLogEntry(index, term, RaftLogEntry.COMMAND_TYPE_BOOK_TICKET,
+                    "{\"requestId\":\"" + requestId + "\",\"seatId\":\"G01\",\"ticketId\":\"t-"
+                            + index + "\",\"tripId\":\"SE-001\"}");
+        }
+
+        private static long timerValidCalls(ScenarioNode node) {
+            return node.timer.events.stream()
+                    .filter(event -> event.startsWith("onValidAppendEntries("))
+                    .count();
+        }
+
+        private static int countReplaceSuffixFrom(ScenarioNode node, long fromIndex) {
+            String expected = "replaceSuffix(" + fromIndex + ", ";
+            int count = 0;
+            for (String call : node.storage.calls()) {
+                if (call.startsWith(expected)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /** Full cross-layer invariant; only valid when storage, appender and state are in sync. */
+        private static void assertNodeInvariants(ScenarioNode node, long leaderCommitSeen) {
+            List<RaftLogEntry> visible = visibleLog(node.appender);
+            assertEquals(visible, node.state.entries(),
+                    "RaftState log must equal the appender's visible log");
+            assertEquals(node.storage.storedLog(), visible,
+                    "storage must hold exactly the appender's visible log");
+            assertEquals(node.appender.lastIndex(), node.state.lastLogIndex());
+            assertEquals(node.appender.lastTerm(), node.state.lastLogTerm());
+            assertStableInvariants(node, leaderCommitSeen);
+        }
+
+        /**
+         * Invariants that hold even in the ambiguous window after a storage error, when storage may
+         * be ahead of the unpublished appender log (S9).
+         */
+        private static void assertStableInvariants(ScenarioNode node, long leaderCommitSeen) {
+            long commit = node.state.commitIndex();
+            assertTrue(commit <= node.state.lastLogIndex(), "commitIndex must never exceed lastLogIndex");
+            assertTrue(node.state.lastApplied() <= commit, "lastApplied must not exceed commitIndex");
+            assertTrue(commit >= node.lastCheckedCommit, "commitIndex must never decrease");
+            assertTrue(commit <= Math.max(node.lastCheckedCommit, leaderCommitSeen),
+                    "commitIndex must never exceed max(previous commit, leaderCommit)");
+            assertTrue(node.state.currentTerm() >= node.lastCheckedTerm, "term must never decrease");
+            assertEquals(Role.FOLLOWER, node.state.role());
+            node.lastCheckedCommit = commit;
+            node.lastCheckedTerm = node.state.currentTerm();
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // One Follower: real state, real appender, real handler, fake storage and timer
+        // ---------------------------------------------------------------------------------------
+
+        private static final class ScenarioNode {
+            final String id;
+            final FakeRaftStorage storage;
+            RaftState state;
+            PersistentLogAppender appender;
+            PersistentElectionState persistence;
+            RecordingTimer timer;
+            AppendEntriesHandler handler;
+            long lastCheckedCommit;
+            long lastCheckedTerm;
+
+            private ScenarioNode(String id, FakeRaftStorage storage) throws RaftStorageException {
+                this.id = id;
+                this.storage = storage;
+                open();
+            }
+
+            static ScenarioNode empty(String id) throws RaftStorageException {
+                return seeded(id, 0L, null, List.of(), 0L);
+            }
+
+            static ScenarioNode seeded(
+                    String id, long term, String votedFor, List<RaftLogEntry> log, long lastApplied)
+                    throws RaftStorageException {
+                FakeRaftStorage storage = new FakeRaftStorage();
+                storage.seedState(term, votedFor, log, lastApplied);
+                return new ScenarioNode(id, storage);
+            }
+
+            /** Rebuilds state, appender, election persistence, timer and handler from storage. */
+            void restart() throws RaftStorageException {
+                open();
+            }
+
+            private void open() throws RaftStorageException {
+                RaftStorage.PersistentState persisted = storage.load();
+                this.state = RaftState.restore(
+                        persisted.currentTerm(), persisted.votedFor(),
+                        persisted.log(), persisted.lastApplied());
+                this.appender = new PersistentLogAppender(storage);
+                this.appender.recover();
+                this.persistence = new PersistentElectionState(state, storage);
+                this.timer = new RecordingTimer();
+                this.handler = new AppendEntriesHandler(
+                        persistence, appender, new LogConflictResolver(appender), timer);
+                this.lastCheckedCommit = state.commitIndex();
+                this.lastCheckedTerm = state.currentTerm();
+            }
+
+            NodeSnapshot snapshot() {
+                return new NodeSnapshot(
+                        state.currentTerm(), state.votedFor(), state.role(), state.leaderId(),
+                        state.entries(), state.commitIndex(), timer.events.size(),
+                        storage.calls(), storage.replaceSuffixCalls());
+            }
+        }
+
+        private record NodeSnapshot(
+                long term,
+                String votedFor,
+                Role role,
+                String leaderId,
+                List<RaftLogEntry> log,
+                long commitIndex,
+                int timerCalls,
+                List<String> storageCalls,
+                int replaceSuffixCalls) {
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // Mock network: ordering, drops, duplication and the ACK durability audit
+        // ---------------------------------------------------------------------------------------
+
+        private static final class MockNetwork {
+            final List<String> events = new ArrayList<>();
+            final List<Exception> errors = new ArrayList<>();
+            private final List<PendingDelivery> pending = new ArrayList<>();
+
+            Optional<AppendEntriesResponse> deliver(ScenarioNode node, AppendEntriesRequest request) {
+                events.add("deliver " + describe(request));
+                return invoke(node, request);
+            }
+
+            List<Optional<AppendEntriesResponse>> deliverTwice(
+                    ScenarioNode node, AppendEntriesRequest request) {
+                List<Optional<AppendEntriesResponse>> responses = new ArrayList<>(2);
+                responses.add(deliver(node, request));
+                responses.add(deliver(node, request));
+                return responses;
+            }
+
+            /** The handler never sees the request, like a packet lost before the Node. */
+            void dropRequest(ScenarioNode node, AppendEntriesRequest request) {
+                events.add("drop-request " + describe(request));
+                assertNodeInvariants(node, request.leaderCommit());
+            }
+
+            /** The handler processes the request but the response is lost on the way back. */
+            void dropResponse(ScenarioNode node, AppendEntriesRequest request) {
+                events.add("drop-response " + describe(request));
+                invoke(node, request);
+            }
+
+            void deliverLater(ScenarioNode node, AppendEntriesRequest request) {
+                pending.add(new PendingDelivery(node, request));
+                events.add("queued " + describe(request));
+            }
+
+            List<Optional<AppendEntriesResponse>> flushLaterReversed() {
+                List<Optional<AppendEntriesResponse>> responses = new ArrayList<>(pending.size());
+                for (int position = pending.size() - 1; position >= 0; position--) {
+                    PendingDelivery delivery = pending.get(position);
+                    responses.add(deliver(delivery.node(), delivery.request()));
+                }
+                pending.clear();
+                return responses;
+            }
+
+            private Optional<AppendEntriesResponse> invoke(
+                    ScenarioNode node, AppendEntriesRequest request) {
+                AppendEntriesResponse response = null;
+                try {
+                    response = node.handler.handle(request, request.leaderId());
+                } catch (RaftStorageException failure) {
+                    // Fail closed: no response exists and the Node must recover from storage.
+                    errors.add(failure);
+                    events.add("storage-failure " + failure.getMessage());
+                } catch (RuntimeException failure) {
+                    errors.add(failure);
+                    events.add("failure " + failure.getClass().getSimpleName()
+                            + ": " + failure.getMessage());
+                }
+
+                if (response == null) {
+                    assertStableInvariants(node, request.leaderCommit());
+                    return Optional.empty();
+                }
+                auditDurability(node, response);
+                assertNodeInvariants(node, request.leaderCommit());
+                events.add("response " + describe(response));
+                return Optional.of(response);
+            }
+
+            /** SPEC-04 section 9: a visible {@code success=true} implies the entry is durable. */
+            private static void auditDurability(
+                    ScenarioNode node, AppendEntriesResponse response) {
+                if (!response.success()) {
+                    return;
+                }
+                List<RaftLogEntry> stored = node.storage.storedLog();
+                assertTrue(stored.size() >= response.matchIndex(),
+                        "an ACK for matchIndex " + response.matchIndex()
+                                + " requires storage to hold that index");
+                if (response.matchIndex() > 0L) {
+                    assertEquals(response.matchIndex(),
+                            stored.get((int) Math.toIntExact(response.matchIndex() - 1L)).index(),
+                            "the ACKed index must exist in durable storage");
+                }
+                assertTrue(node.appender.lastIndex() >= response.matchIndex(),
+                        "the appender must not lag behind an ACKed matchIndex");
+            }
+
+            private static String describe(AppendEntriesRequest request) {
+                return "term=" + request.term() + " leader=" + request.leaderId()
+                        + " prev=(" + request.prevLogIndex() + "," + request.prevLogTerm() + ")"
+                        + " entries=" + request.entries().size()
+                        + " leaderCommit=" + request.leaderCommit();
+            }
+
+            private static String describe(AppendEntriesResponse response) {
+                return "term=" + response.term() + " success=" + response.success()
+                        + " match=" + response.matchIndex();
+            }
+
+            private record PendingDelivery(ScenarioNode node, AppendEntriesRequest request) {
+            }
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // Scripted Leader: a test driver, not a Raft Leader implementation
+        // ---------------------------------------------------------------------------------------
+
+        private static final class ScriptedLeader {
+            final String id;
+            final long term;
+            final List<RaftLogEntry> log;
+            final Map<String, Long> nextIndexByPeer = new LinkedHashMap<>();
+            final List<Long> attemptedNextIndex = new ArrayList<>();
+            boolean steppedDown;
+
+            ScriptedLeader(String id, long term, List<RaftLogEntry> log) {
+                this.id = id;
+                this.term = term;
+                this.log = List.copyOf(log);
+            }
+
+            long nextIndexOf(String peer) {
+                return nextIndexByPeer.getOrDefault(
+                        peer, Math.addExact((long) log.size(), 1L));
+            }
+
+            long termAt(long index) {
+                if (index == 0L) {
+                    return 0L;
+                }
+                if (index < 0L || index > log.size()) {
+                    throw new IllegalArgumentException(
+                            "no term at index " + index + " in a log of " + log.size() + " entries");
+                }
+                return log.get((int) index - 1).term();
+            }
+
+            AppendEntriesRequest heartbeatRequest(long prevLogIndex, long leaderCommit) {
+                return new AppendEntriesRequest(
+                        term, id, prevLogIndex, termAt(prevLogIndex), List.of(), leaderCommit);
+            }
+
+            AppendEntriesRequest requestRange(long fromIndex, long toIndex, long leaderCommit) {
+                if (fromIndex < 1L) {
+                    throw new IllegalArgumentException("fromIndex must be >= 1");
+                }
+                if (toIndex < fromIndex - 1L) {
+                    throw new IllegalArgumentException("toIndex must be >= fromIndex - 1");
+                }
+                if (toIndex > log.size()) {
+                    throw new IllegalArgumentException(
+                            "toIndex " + toIndex + " is beyond the leader log " + log.size());
+                }
+                long prevIndex = fromIndex - 1L;
+                List<RaftLogEntry> entries = toIndex == prevIndex
+                        ? List.of() : log.subList((int) prevIndex, (int) toIndex);
+                return new AppendEntriesRequest(
+                        term, id, prevIndex, termAt(prevIndex), entries, leaderCommit);
+            }
+
+            /** Sends starting at this peer's nextIndex and backs nextIndex off on a rejection. */
+            Optional<AppendEntriesResponse> send(
+                    MockNetwork network, ScenarioNode node, long leaderCommit) {
+                long next = nextIndexOf(node.id);
+                attemptedNextIndex.add(next);
+                return sendRequest(network, node, requestRange(next, log.size(), leaderCommit));
+            }
+
+            Optional<AppendEntriesResponse> sendRange(
+                    MockNetwork network, ScenarioNode node,
+                    long fromIndex, long toIndex, long leaderCommit) {
+                return sendRequest(network, node, requestRange(fromIndex, toIndex, leaderCommit));
+            }
+
+            Optional<AppendEntriesResponse> sendHeartbeat(
+                    MockNetwork network, ScenarioNode node,
+                    long prevLogIndex, long leaderCommit) {
+                return sendRequest(network, node, heartbeatRequest(prevLogIndex, leaderCommit));
+            }
+
+            private Optional<AppendEntriesResponse> sendRequest(
+                    MockNetwork network, ScenarioNode node, AppendEntriesRequest request) {
+                Optional<AppendEntriesResponse> response = network.deliver(node, request);
+                response.ifPresent(value -> applyResponse(node.id, request, value));
+                return response;
+            }
+
+            private void applyResponse(
+                    String peer, AppendEntriesRequest request, AppendEntriesResponse response) {
+                if (response.term() > term) {
+                    steppedDown = true;
+                    return;
+                }
+                if (response.term() < term) {
+                    return;
+                }
+                if (response.success()) {
+                    long expectedMatch = Math.addExact(
+                            request.prevLogIndex(), request.entries().size());
+                    if (response.matchIndex() != expectedMatch) {
+                        throw new AssertionError("success response matchIndex "
+                                + response.matchIndex()
+                                + " does not equal prevLogIndex + entries.size() = "
+                                + expectedMatch);
+                    }
+                    long next = Math.addExact(response.matchIndex(), 1L);
+                    if (next > nextIndexOf(peer)) {
+                        nextIndexByPeer.put(peer, next);
+                    }
+                    return;
+                }
+                if (response.matchIndex() != 0L) {
+                    throw new AssertionError("a rejected response must report matchIndex=0");
+                }
+                nextIndexByPeer.put(peer, Math.max(1L, nextIndexOf(peer) - 1L));
+            }
         }
     }
 }
