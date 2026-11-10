@@ -88,19 +88,49 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         MessageType type = request.getType();
         String requestId = extractRequestId(request);
 
-        // 1. Check for missing type
+        // 1. Enforce Protocol Version (SPEC-03 Section 3.0)
+        if (request.getProtocolVersion() != MessageEnvelope.CURRENT_PROTOCOL_VERSION) {
+            LOGGER.warning(() -> "Unsupported protocolVersion: " + request.getProtocolVersion() + ", messageId=" + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Unsupported protocolVersion: " + request.getProtocolVersion() + ", expected: " + MessageEnvelope.CURRENT_PROTOCOL_VERSION, requestId);
+        }
+
+        // 2. Check for missing type
         if (type == null) {
             LOGGER.warning("Missing or null message type in request: " + messageId);
             return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or null message type", requestId);
         }
 
-        // 2. Reject response messages arriving on the request dispatcher
+        // 3. Reject response messages arriving on the request dispatcher (SPEC-03 Section 3.1)
         if (type.isResponse()) {
             LOGGER.warning(() -> "Unexpected response message type arriving on request dispatcher: " + type + ", messageId=" + messageId);
             return createErrorResponse(messageId, "INVALID_REQUEST", "Unexpected response message type on request dispatcher: " + type, requestId);
         }
 
-        // 3. Enforce Channel / Port Isolation (SPEC-08 Section 64 & SPEC-07 TC-TCP-04)
+        // 4. Enforce null correlationId on Requests (SPEC-03 Section 3.0)
+        if (request.getCorrelationId() != null) {
+            LOGGER.warning(() -> "Request envelope must have null correlationId, got: " + request.getCorrelationId() + ", messageId=" + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Request envelope must have null correlationId", requestId);
+        }
+
+        // 5. Check for missing or blank senderId
+        if (request.getSenderId() == null || request.getSenderId().isBlank()) {
+            LOGGER.warning(() -> "Missing or blank senderId in request: " + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or blank senderId", requestId);
+        }
+
+        // 6. Check for missing or blank sentAt
+        if (request.getSentAt() == null || request.getSentAt().isBlank()) {
+            LOGGER.warning(() -> "Missing or blank sentAt in request: " + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or blank sentAt", requestId);
+        }
+
+        // 7. Check for missing payload
+        if (request.getPayload() == null) {
+            LOGGER.warning(() -> "Missing payload in request: " + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing payload in request", requestId);
+        }
+
+        // 8. Enforce Channel / Port Isolation (SPEC-08 Section 64 & SPEC-07 TC-TCP-04)
         if (channelType == ChannelType.CLIENT && type.isRaftRpc()) {
             LOGGER.warning(() -> "Raft RPC rejected on CLIENT channel: " + type + " from sender=" + request.getSenderId());
             return createErrorResponse(messageId, "INVALID_REQUEST", "Raft RPC messages are not allowed on client channel: " + type, requestId);
@@ -114,16 +144,22 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
         }
 
-        // 4. Lookup handler in registry
+        // 9. Lookup handler in registry
         HandlerRegistry.RequestHandler handler = registry.getHandler(type);
         if (handler == null) {
             LOGGER.warning(() -> "No handler registered for message type: " + type);
             return createErrorResponse(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
         }
 
-        // 5. Execute handler and catch any exceptions safely
+        // 10. Execute handler and catch any exceptions safely
         try {
-            return handler.handle(request);
+            MessageEnvelope<?> response = handler.handle(request);
+            if (response != null && response.getCorrelationId() == null) {
+                // Ensure correlationId invariant is never violated
+                LOGGER.warning(() -> "Handler response missing correlationId, attaching request messageId=" + messageId);
+                return MessageEnvelope.createResponse(messageId, response.getType(), response.getSenderId(), response.getPayload());
+            }
+            return response;
         } catch (IllegalArgumentException ex) {
             LOGGER.log(Level.WARNING, "Handler validation failed for type " + type + ": " + ex.getMessage(), ex);
             return createErrorResponse(messageId, "INVALID_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Invalid request parameter", requestId);
@@ -141,7 +177,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         if (request != null && request.getPayload() != null && request.getPayload().has("requestId")) {
             JsonNode reqIdNode = request.getPayload().get("requestId");
             if (reqIdNode.isTextual()) {
-                String text = reqIdNode.asText();
+                String text = reqIdNode.asText().strip();
                 if (isValidUuid(text)) {
                     return text;
                 }

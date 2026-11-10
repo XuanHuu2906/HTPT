@@ -1,0 +1,111 @@
+================================================================================
+NHẬT KÝ NGHIỆM THU TASK TV3-D10 — TCP SINGLE-NODE PROTOCOL TESTS & HARDENING
+================================================================================
+Thời gian: 2026-11-10 23:26:00 (GMT+7)
+Người thực hiện: TV3 - Protocol & TCP Networking
+Môi trường kiểm thử:
+  - OS: Linux (7.3.0-4-cachyos, x86_64)
+  - JDK: OpenJDK 64-Bit Server VM (build 27.0.1.0.3)
+  - Maven: Apache Maven 3.10.0
+  - Branch: feat/tv3-d10
+  - Base Commit: 8ccf0e09fddd3b3ea8577c059546b5500314aacb
+================================================================================
+
+1. KẾT QUẢ GIA CỐ MESSAGE DISPATCHER (HARDENING)
+--------------------------------------------------------------------------------
+[x] Mục 1: Kiểm tra cấu trúc Envelope (SPEC-03 §3.0)
+    - Enforce protocolVersion == 1; từ chối phiên bản khác với INVALID_REQUEST.
+    - Enforce correlationId == null trên mọi incoming request; từ chối INVALID_REQUEST.
+    - Enforce senderId, sentAt, payload non-null/non-blank.
+[x] Mục 2: Kiểm tra loại thông điệp (SPEC-03 §3.1)
+    - Từ chối các response type vô tình gửi đến request dispatcher.
+    - Phân tách kênh (ChannelType): Client port chặn Raft RPC; Peer port chặn Booking.
+[x] Mục 3: Đảm bảo tương quan phản hồi (Correlation Guarantee)
+    - Trích xuất an toàn requestId chữ thường chuẩn (UUID).
+    - Mọi response envelope trả về từ handler đều bảo đảm có correlationId == request.messageId.
+[x] Mục 4: Fail-closed Exception Handling
+    - Bắt mọi ngoại lệ (Throwable) không để crash tiến trình Node; trả ERROR_RESPONSE(INTERNAL_ERROR).
+
+2. KẾT QUẢ KIỂM THỬ GIAO THỨC TCP SINGLE-NODE (JUNIT)
+--------------------------------------------------------------------------------
+Lệnh kiểm thử:
+mvn -B -ntp test -pl backend-node -Dtest=MessageDispatcherTest,TcpSingleNodeProtocolTest
+
+--- vn.nhom6.railway.networking.MessageDispatcherTest ---
+[PASS] testDispatchBookingHandler
+[PASS] testDispatchRaftHandler
+[PASS] testDispatchStatusHandler
+[PASS] testUnregisteredMessageTypeReturnsError
+[PASS] testRejectResponseTypesOnDispatcher
+[PASS] testChannelTypeEnforcementClientPortRejectsRaftRpc
+[PASS] testChannelTypeEnforcementPeerPortRejectsBookingRequest
+[PASS] testChannelTypeEnforcementMonitorPortRejectsNonStatus
+[PASS] testHandlerExceptionReturnsInternalError
+[PASS] testEndToEndWithTcpServerAndClient
+[PASS] testHandlerResponseMissingCorrelationIdGetsAttached
+[PASS] testRequestWithInvalidMessageIdDropped
+Kết quả: Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+
+--- vn.nhom6.railway.networking.TcpSingleNodeProtocolTest ---
+[PASS] testSmokePingPong
+       - Gửi raw frame "PING" -> nhận "PONG" tức thì qua TCP socket.
+[PASS] testSmokeNodeStatus
+       - Gửi NODE_STATUS -> nhận NODE_STATUS_RESPONSE chuẩn SPEC-03 §5.1.
+[PASS] testSmokeGetSeatsAndBookTicketWorkflow
+       - GET_SEATS -> 10 ghế AVAILABLE.
+       - BOOK_TICKET G03 -> CONFIRMED, cấp ticketId, appliedLogIndex=1.
+       - BOOK_TICKET G03 lần 2 khác requestId -> REJECTED, reasonCode=SEAT_ALREADY_BOOKED.
+       - Retry BOOK_TICKET G03 cùng requestId -> CONFIRMED (Idempotency replay AC10).
+       - GET_SEATS -> cập nhật G03 thành BOOKED, 9 ghế còn lại AVAILABLE.
+[PASS] testGoldenFixturesBookAndSeats
+       - Gửi fixture với tên tiếng Việt Unicode "Nguyễn Trần Khánh Đan - Phòng vé Hà Nội"
+         qua TCP socket thật -> giải mã UTF-8 và xác nhận chính xác.
+[PASS] testDisconnectResilienceClientAbruptClose
+       - Client đóng socket đột ngột giữa chừng; server giải phóng tài nguyên sạch sẽ,
+         client mới kết nối và giao tiếp bình thường không bị tắc nghẽn.
+[PASS] testRapidConnectDisconnectLoop
+       - 15 kết nối mở và đóng liên tục; server không rò rỉ thread pool hay cạn socket.
+[PASS] testMalformedFrameLengthClosesConnection
+       - Gửi frame length 2,000,000 (> 1 MiB); server đóng kết nối ngay per SPEC-03 §2.
+[PASS] testCorruptJsonClosesConnection
+       - Gửi frame chứa JSON hỏng; server đóng kết nối không gửi rác lại per SPEC-03 §2.
+[PASS] testCorrelationIdStrictMatching
+       - 5 request liên tiếp với messageId UUID ngẫu nhiên; 100% response trả về
+         có correlationId khớp tuyệt đối với messageId tương ứng.
+[PASS] testRequestWithNonNullCorrelationIdRejected
+       - Request envelope có correlationId != null vi phạm SPEC-03 §3.0;
+         server đóng kết nối per SPEC-03 §2.
+[PASS] testRequestWithInvalidMessageIdDropped
+       - Request có messageId không phải UUID bị bỏ qua, không trả về uncorrelatable response.
+[PASS] testPortIsolationRaftRpcOnClientPortRejected
+       - REQUEST_VOTE gửi vào Client port bị từ chối bằng ERROR_RESPONSE(INVALID_REQUEST).
+Kết quả: Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+
+3. KẾT QUẢ KIỂM THỬ TOÀN BỘ MAVEN REACTOR (REGRESSION CHECK)
+--------------------------------------------------------------------------------
+Lệnh kiểm thử:
+mvn -B -ntp clean test
+
+Kết quả tóm tắt:
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.555 s]
+[INFO] shared ............................................. SUCCESS [  4.299 s]
+[INFO] backend-node ....................................... SUCCESS [  8.818 s]
+[INFO] desktop-client ..................................... SUCCESS [  3.825 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.096 s]
+[INFO] integration-tests .................................. SUCCESS [  1.378 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.092 s
+[INFO] Finished at: 2026-11-10T23:25:51+07:00
+
+Toàn bộ 540+ ca kiểm thử trong hệ thống đều đạt PASS 100%, 0 failures, 0 errors.
+
+4. KẾT LUẬN & ĐÁNH GIÁ TIÊU CHÍ PASS
+--------------------------------------------------------------------------------
+- Socket/protocol tests chạy độc lập qua JUnit/Maven: PASS.
+- Nghiệm thu Gate G3 cho 1-Node TCP booking & seat queries: PASS.
+- Không có sự phụ thuộc vào JavaFX UI (TV1-D10).
+================================================================================
