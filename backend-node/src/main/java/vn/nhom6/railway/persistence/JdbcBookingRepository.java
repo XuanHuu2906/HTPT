@@ -28,19 +28,13 @@ public final class JdbcBookingRepository implements BookingRepository {
             "SELECT last_applied FROM raft_apply_progress WHERE singleton = ?";
     private static final String PROGRESS_LOCK_SELECT =
             "SELECT last_applied FROM raft_apply_progress WHERE singleton = ? FOR UPDATE";
-    private static final String STORED_RESULT_SELECT =
-            "SELECT command_type, intent_fingerprint, result_json ->> 'requestId', "
-                    + "result_json ->> 'outcome', result_json ->> 'ticketId', "
-                    + "result_json ->> 'reasonCode', result_json ->> 'appliedLogIndex' "
-                    + "FROM request_results WHERE request_id = ?";
-    private static final String STORED_RESULT_LOCK_SELECT = STORED_RESULT_SELECT + " FOR UPDATE";
-
     @FunctionalInterface
     interface ConnectionProvider {
         Connection getConnection();
     }
 
     private final ConnectionProvider connectionProvider;
+    private final JdbcRequestResultStore requestResultStore = new JdbcRequestResultStore();
 
     public JdbcBookingRepository(ConnectionFactory connectionFactory) {
         this(Objects.requireNonNull(connectionFactory, "connectionFactory")::getConnection);
@@ -210,13 +204,15 @@ public final class JdbcBookingRepository implements BookingRepository {
             Connection connection, long logIndex, BookingCommand.BookTicket book) throws SQLException {
         String fingerprint = BookingStateMachine.computeBookFingerprint(
                 book.tripId(), book.seatId(), book.passengerName());
-        Optional<StoredRequestResult> existing = findStoredResult(connection, book.requestId(), true);
-        if (existing.isPresent()) {
-            StoredRequestResult stored = existing.orElseThrow();
-            if (stored.commandType.equals(BookingCommand.Type.BOOK_TICKET.name())
-                    && stored.fingerprint.equals(fingerprint)) {
+        Optional<JdbcRequestResultStore.StoredRequestResult> existing =
+                requestResultStore.findForUpdate(connection, book.requestId());
+        JdbcRequestResultStore.Classification classification =
+                JdbcRequestResultStore.classify(
+                        existing, BookingCommand.Type.BOOK_TICKET.name(), fingerprint);
+        if (classification != JdbcRequestResultStore.Classification.NEW) {
+            if (classification == JdbcRequestResultStore.Classification.REPLAY) {
                 return new BookingStateMachine.ApplyOutcome.BusinessResult(
-                        stored.result, true);
+                        existing.orElseThrow().toApplyResult(), true);
             }
             return new BookingStateMachine.ApplyOutcome.RequestIdConflict(book.requestId(), logIndex);
         }
@@ -259,9 +255,9 @@ public final class JdbcBookingRepository implements BookingRepository {
             throw integrityFailure("Unknown seat status for " + book.seatId() + ": " + seat.status);
         }
 
-        String resultJson = bookResponseJson(book.requestId(), result, book.tripId(), book.seatId());
-        insertRequestResult(connection, book.requestId(), BookingCommand.Type.BOOK_TICKET,
-                fingerprint, result, resultJson);
+        String resultJson = requestResultStore.insert(
+                connection, book.requestId(), BookingCommand.Type.BOOK_TICKET.name(),
+                fingerprint, result, book.tripId(), book.seatId());
         insertBusinessEvent(connection, logIndex, book.requestId(), eventType, resultJson);
         return new BookingStateMachine.ApplyOutcome.BusinessResult(result, false);
     }
@@ -270,12 +266,15 @@ public final class JdbcBookingRepository implements BookingRepository {
             Connection connection, long logIndex, BookingCommand.CancelTicket cancel)
             throws SQLException {
         String fingerprint = BookingStateMachine.computeCancelFingerprint(cancel.ticketId());
-        Optional<StoredRequestResult> existing = findStoredResult(connection, cancel.requestId(), true);
-        if (existing.isPresent()) {
-            StoredRequestResult stored = existing.orElseThrow();
-            if (stored.commandType.equals(BookingCommand.Type.CANCEL_TICKET.name())
-                    && stored.fingerprint.equals(fingerprint)) {
-                return new BookingStateMachine.ApplyOutcome.BusinessResult(stored.result, true);
+        Optional<JdbcRequestResultStore.StoredRequestResult> existing =
+                requestResultStore.findForUpdate(connection, cancel.requestId());
+        JdbcRequestResultStore.Classification classification =
+                JdbcRequestResultStore.classify(
+                        existing, BookingCommand.Type.CANCEL_TICKET.name(), fingerprint);
+        if (classification != JdbcRequestResultStore.Classification.NEW) {
+            if (classification == JdbcRequestResultStore.Classification.REPLAY) {
+                return new BookingStateMachine.ApplyOutcome.BusinessResult(
+                        existing.orElseThrow().toApplyResult(), true);
             }
             return new BookingStateMachine.ApplyOutcome.RequestIdConflict(cancel.requestId(), logIndex);
         }
@@ -321,9 +320,9 @@ public final class JdbcBookingRepository implements BookingRepository {
             eventType = "CANCEL_CONFIRMED";
         }
 
-        String resultJson = cancelResponseJson(cancel.requestId(), result);
-        insertRequestResult(connection, cancel.requestId(), BookingCommand.Type.CANCEL_TICKET,
-                fingerprint, result, resultJson);
+        String resultJson = requestResultStore.insert(
+                connection, cancel.requestId(), BookingCommand.Type.CANCEL_TICKET.name(),
+                fingerprint, result, null, null);
         insertBusinessEvent(connection, logIndex, cancel.requestId(), eventType, resultJson);
         return new BookingStateMachine.ApplyOutcome.BusinessResult(result, false);
     }
@@ -383,57 +382,6 @@ public final class JdbcBookingRepository implements BookingRepository {
         }
     }
 
-    private static Optional<StoredRequestResult> findStoredResult(
-            Connection connection, String requestId, boolean forUpdate) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                forUpdate ? STORED_RESULT_LOCK_SELECT : STORED_RESULT_SELECT)) {
-            statement.setObject(1, java.util.UUID.fromString(requestId));
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return Optional.empty();
-                }
-                String commandType = resultSet.getString(1);
-                String fingerprint = resultSet.getString(2).trim();
-                ApplyResult result = toApplyResult(
-                        commandType, resultSet.getString(3), resultSet.getString(4),
-                        resultSet.getString(5), resultSet.getString(6), resultSet.getString(7));
-                if (!requestId.equals(result.requestId())) {
-                    throw integrityFailure("result_json requestId does not match request_results key");
-                }
-                if (resultSet.next()) {
-                    throw integrityFailure("Duplicate request_results requestId " + requestId);
-                }
-                return Optional.of(new StoredRequestResult(commandType, fingerprint, result));
-            }
-        }
-    }
-
-    private static void insertRequestResult(
-            Connection connection,
-            String requestId,
-            BookingCommand.Type type,
-            String fingerprint,
-            ApplyResult result,
-            String resultJson) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO request_results(request_id, command_type, intent_fingerprint, "
-                        + "state, reason_code, ticket_id, applied_log_index, result_json) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb)")) {
-            statement.setObject(1, java.util.UUID.fromString(requestId));
-            statement.setString(2, type.name());
-            statement.setString(3, fingerprint);
-            statement.setString(4, result.outcome() == ApplyResult.Outcome.CONFIRMED
-                    ? "APPLIED_SUCCESS" : "APPLIED_REJECTED");
-            statement.setString(5, result.reasonCode());
-            statement.setString(6, result.ticketId());
-            statement.setLong(7, result.appliedLogIndex());
-            statement.setString(8, resultJson);
-            if (statement.executeUpdate() != 1) {
-                throw integrityFailure("request_results insert did not affect one row");
-            }
-        }
-    }
-
     private static void insertBusinessEvent(
             Connection connection, long logIndex, String requestId, String eventType, String resultJson)
             throws SQLException {
@@ -454,7 +402,8 @@ public final class JdbcBookingRepository implements BookingRepository {
     public Optional<ApplyResult> findResultByRequestId(String requestId) {
         BookingCommand.requireValidRequestId(requestId);
         try (Connection connection = connectionProvider.getConnection()) {
-            return findStoredResult(connection, requestId, false).map(StoredRequestResult::result);
+            return requestResultStore.find(connection, requestId)
+                    .map(JdbcRequestResultStore.StoredRequestResult::toApplyResult);
         } catch (SQLException exception) {
             throw storageFailure("read request result", exception);
         }
@@ -513,18 +462,20 @@ public final class JdbcBookingRepository implements BookingRepository {
             } else {
                 throw integrityFailure("Unknown applied command type at index " + logIndex);
             }
-            Optional<StoredRequestResult> stored =
-                    findStoredResult(connection, entry.requestId, false);
+            Optional<JdbcRequestResultStore.StoredRequestResult> stored =
+                    requestResultStore.find(connection, entry.requestId);
             if (stored.isEmpty()) {
                 throw integrityFailure("Applied request result is missing at index " + logIndex);
             }
-            StoredRequestResult value = stored.orElseThrow();
-            if (!value.commandType.equals(entry.commandType) || !value.fingerprint.equals(fingerprint)) {
+            JdbcRequestResultStore.StoredRequestResult value = stored.orElseThrow();
+            if (JdbcRequestResultStore.classify(
+                            stored, entry.commandType, fingerprint)
+                    == JdbcRequestResultStore.Classification.CONFLICT) {
                 return Optional.of(new BookingStateMachine.ApplyOutcome.RequestIdConflict(
                         entry.requestId, logIndex));
             }
             return Optional.of(new BookingStateMachine.ApplyOutcome.BusinessResult(
-                    value.result, value.result.appliedLogIndex() != logIndex));
+                    value.toApplyResult(), value.appliedLogIndex() != logIndex));
         } catch (SQLException exception) {
             throw storageFailure("read applied outcome", exception);
         }
@@ -567,95 +518,6 @@ public final class JdbcBookingRepository implements BookingRepository {
         return Collections.unmodifiableMap(seats);
     }
 
-    private static ApplyResult toApplyResult(
-            String commandType,
-            String requestId,
-            String outcome,
-            String ticketId,
-            String reasonCode,
-            String logIndex) {
-        if (requestId == null || outcome == null || logIndex == null) {
-            throw integrityFailure("Incomplete persisted request result");
-        }
-        long appliedLogIndex;
-        try {
-            appliedLogIndex = Long.parseLong(logIndex);
-        } catch (NumberFormatException exception) {
-            throw new BookingRepository.StorageException("Invalid appliedLogIndex in result_json", exception);
-        }
-        if ("CONFIRMED".equals(outcome)) {
-            try {
-                return BookingCommand.Type.BOOK_TICKET.name().equals(commandType)
-                        ? ApplyResult.bookConfirmed(requestId, ticketId, appliedLogIndex)
-                        : BookingCommand.Type.CANCEL_TICKET.name().equals(commandType)
-                                ? ApplyResult.cancelConfirmed(requestId, ticketId, appliedLogIndex)
-                                : failUnknownCommandType(commandType);
-            } catch (IllegalArgumentException exception) {
-                throw new BookingRepository.StorageException(
-                        "Invalid persisted request result", exception);
-            }
-        }
-        if ("REJECTED".equals(outcome)) {
-            try {
-                return BookingCommand.Type.BOOK_TICKET.name().equals(commandType)
-                        ? ApplyResult.bookRejected(requestId, reasonCode, appliedLogIndex)
-                        : BookingCommand.Type.CANCEL_TICKET.name().equals(commandType)
-                                ? ApplyResult.cancelRejected(requestId, ticketId, appliedLogIndex)
-                                : failUnknownCommandType(commandType);
-            } catch (IllegalArgumentException exception) {
-                throw new BookingRepository.StorageException(
-                        "Invalid persisted request result", exception);
-            }
-        }
-        throw integrityFailure("Non-persistable result outcome in request_results: " + outcome);
-    }
-
-    private static String bookResponseJson(
-            String requestId, ApplyResult result, String tripId, String seatId) {
-        return "{\"requestId\":" + jsonString(requestId)
-                + ",\"outcome\":" + jsonString(result.outcome().name())
-                + ",\"ticketId\":" + jsonString(result.ticketId())
-                + ",\"tripId\":" + jsonString(tripId)
-                + ",\"seatId\":" + jsonString(seatId)
-                + ",\"reasonCode\":" + jsonString(result.reasonCode())
-                + ",\"appliedLogIndex\":" + result.appliedLogIndex() + "}";
-    }
-
-    private static String cancelResponseJson(String requestId, ApplyResult result) {
-        return "{\"requestId\":" + jsonString(requestId)
-                + ",\"outcome\":" + jsonString(result.outcome().name())
-                + ",\"ticketId\":" + jsonString(result.ticketId())
-                + ",\"reasonCode\":" + jsonString(result.reasonCode())
-                + ",\"appliedLogIndex\":" + result.appliedLogIndex() + "}";
-    }
-
-    private static String jsonString(String value) {
-        if (value == null) {
-            return "null";
-        }
-        StringBuilder json = new StringBuilder(value.length() + 2).append('"');
-        for (int index = 0; index < value.length(); index++) {
-            char character = value.charAt(index);
-            switch (character) {
-                case '"' -> json.append("\\\"");
-                case '\\' -> json.append("\\\\");
-                case '\b' -> json.append("\\b");
-                case '\f' -> json.append("\\f");
-                case '\n' -> json.append("\\n");
-                case '\r' -> json.append("\\r");
-                case '\t' -> json.append("\\t");
-                default -> {
-                    if (character < 0x20) {
-                        json.append(String.format("\\u%04x", (int) character));
-                    } else {
-                        json.append(character);
-                    }
-                }
-            }
-        }
-        return json.append('"').toString();
-    }
-
     private static void rollback(Connection connection, Throwable failure) {
         try {
             connection.rollback();
@@ -692,16 +554,9 @@ public final class JdbcBookingRepository implements BookingRepository {
         return new BookingRepository.StorageException("Database integrity violation: " + message);
     }
 
-    private static ApplyResult failUnknownCommandType(String commandType) {
-        throw integrityFailure("Unknown request_results command_type: " + commandType);
-    }
-
     private record SeatRow(String status, String currentTicketId) {}
 
     private record TicketRow(String tripId, String seatId, String status) {}
-
-    private record StoredRequestResult(
-            String commandType, String fingerprint, ApplyResult result) {}
 
     private record AppliedLogEntry(
             String commandType,
