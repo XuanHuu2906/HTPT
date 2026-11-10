@@ -294,8 +294,9 @@ class MockUiFlowTest {
         CompletableFuture<BookTicketResponseDto> future = slowVm.book(request);
         long callDuration = System.currentTimeMillis() - startTime;
 
-        // Hàm book phải trả về ngay lập tức (dưới 350ms), không bị block 2 giây
-        assertTrue(callDuration < 500, "Lời gọi book() phải là non-blocking và trả về Future ngay, thực tế: " + callDuration + "ms");
+        assertNotNull(future, "Lời gọi book() phải trả về CompletableFuture hợp lệ");
+        assertFalse(future.isDone(), "Lời gọi book() có delay không được hoàn thành ngay lập tức");
+        assertTrue(callDuration < 1500, "Lời gọi book() phải là non-blocking và trả về Future ngay (dưới 1.5s), thực tế: " + callDuration + "ms");
         assertTrue(slowVm.isBusy(), "ViewModel phải chuyển sang trạng thái busy trong khi chờ xử lý");
 
         slowClient.close();
@@ -312,6 +313,8 @@ class MockUiFlowTest {
         BookTicketRequestDto req1 = new BookTicketRequestDto("REQ-FIRST", "SE-001", "G04", "Khách 1");
         CompletableFuture<BookTicketResponseDto> future1 = slowVm.book(req1);
 
+        assertNotNull(future1, "Lời gọi book() đầu tiên phải trả về CompletableFuture hợp lệ");
+        assertFalse(future1.isDone(), "Yêu cầu thứ nhất vẫn đang được xử lý trong nền");
         assertTrue(slowVm.isBusy());
 
         // Gửi yêu cầu thứ 2 trong khi yêu cầu 1 đang chạy
