@@ -1,6 +1,7 @@
 package vn.nhom6.railway.networking;
 
 import vn.nhom6.railway.booking.ConnectionFactory;
+import vn.nhom6.railway.raft.election.RaftElectionComponent;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 
@@ -36,6 +37,7 @@ public class NodeMain implements AutoCloseable {
     public static final String APP_VERSION = "1.0.0-SNAPSHOT";
 
     private final NodeConfig config;
+    private final RaftElectionComponent election;
     private final HandlerRegistry clientRegistry;
     private final HandlerRegistry raftRegistry;
     private final MessageDispatcher clientDispatcher;
@@ -48,12 +50,17 @@ public class NodeMain implements AutoCloseable {
     private Thread shutdownHook;
 
     public NodeMain(NodeConfig config) {
-        this(config, new FakeBookingService(config.nodeId()));
+        this(config, new FakeBookingService(config.nodeId()), null);
     }
 
     public NodeMain(NodeConfig config, BookingService bookingService) {
+        this(config, bookingService, null);
+    }
+
+    public NodeMain(NodeConfig config, BookingService bookingService, RaftElectionComponent election) {
         this.config = Objects.requireNonNull(config, "config must not be null");
         this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
+        this.election = election;
 
         this.clientRegistry = new HandlerRegistry();
         this.raftRegistry = new HandlerRegistry();
@@ -68,6 +75,7 @@ public class NodeMain implements AutoCloseable {
         this.raftServer.setMessageHandler(raftDispatcher);
 
         configureDefaultHandlers();
+        if (election != null) election.register(raftRegistry);
     }
 
     private void configureDefaultHandlers() {
@@ -88,7 +96,15 @@ public class NodeMain implements AutoCloseable {
             statusPayload.put("currentTerm", 0L);
             statusPayload.put("commitIndex", 0L);
             statusPayload.put("lastApplied", 0L);
-            statusPayload.put("storageHealthy", config.dbConfig() != null);
+            statusPayload.put("storageHealthy", false);
+            if (election != null) {
+                var snapshot = election.status();
+                statusPayload.put("role", snapshot.role());
+                statusPayload.put("currentTerm", snapshot.currentTerm());
+                statusPayload.put("commitIndex", snapshot.commitIndex());
+                statusPayload.put("lastApplied", snapshot.lastApplied());
+                statusPayload.put("storageHealthy", snapshot.storageHealthy());
+            }
             statusPayload.put("peerConnectivity", Map.of(
                     "node-2", false,
                     "node-3", false,
@@ -123,14 +139,21 @@ public class NodeMain implements AutoCloseable {
         }
 
         printBanner();
+        if (election == null) {
+            LOGGER.warning("Election disabled: durable core and peer transport adapters were not supplied.");
+        }
 
         // 1. Start Client TCP Server
-        clientServer.start();
-        LOGGER.info(() -> "[" + config.nodeId() + "] Client TCP Server bound to " + config.clientHost() + ":" + clientServer.getPort());
-
-        // 2. Start Raft Peer TCP Server
-        raftServer.start();
-        LOGGER.info(() -> "[" + config.nodeId() + "] Raft Peer TCP Server bound to " + config.raftHost() + ":" + raftServer.getPort());
+        try {
+            clientServer.start();
+            raftServer.start();
+            if (election != null) election.start();
+        } catch (Exception failure) {
+            clientServer.stop();
+            raftServer.stop();
+            if (election != null) election.close();
+            throw new IOException("Cannot start node runtime", failure);
+        }
 
         System.out.println("[READY] " + config.nodeId() + " client=" + clientServer.getPort() + " raft=" + raftServer.getPort());
         System.out.flush();
@@ -182,10 +205,13 @@ public class NodeMain implements AutoCloseable {
      */
     public synchronized void stop() {
         if (!running.compareAndSet(true, false)) {
+            if (election != null) election.close();
             return;
         }
 
         LOGGER.info(() -> "Shutting down Backend Node [" + config.nodeId() + "]...");
+
+        if (election != null) election.close();
 
         // Stop network servers
         clientServer.stop();
