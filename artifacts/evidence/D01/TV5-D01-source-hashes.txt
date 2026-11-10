@@ -1,0 +1,23 @@
+﻿
+
+Algorithm : SHA256
+Hash      : 7FC62FBB4C2667D9B5CE4B95E5AEB2F0C23AB8EB6E934CBCD3F1CE4AAE0B2F84
+Path      : D:\HTPT\railway-distributed-system\backend-node\pom.xml
+
+Algorithm : SHA256
+Hash      : F0ACD582786BAA53DF7BEF83DB01F9D914F774FDCBF71FCAD68CE8570A3C7469
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\ElectionConfig
+            .java
+
+Algorithm : SHA256
+Hash      : A9F0D817CCFBBDBF18EA2C634BF268BE0A77295E5562782F55014EB462821F90
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\ElectionTimeou
+            tPolicy.java
+
+Algorithm : SHA256
+Hash      : 2F02325C70164EB011A1EA3549003E6EED24203C7528234EF9280767943534E3
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\test\java\vn\nhom6\railway\raft\election\ElectionTimeou
+            tPolicyTest.java
+
+
+

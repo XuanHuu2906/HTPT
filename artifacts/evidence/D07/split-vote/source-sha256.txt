@@ -1,0 +1,3 @@
+ffe5b23f72eee0d88082820522d45aea06bb209374c1e9f204d8a13633e989b0  backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionTimer.java
+1aa94dd3115c8846f306f0f31937755f460567084a942360f1ac9f961bcf458b  backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionRetryCoordinator.java
+c6b45d7b743f3ebe85cadd47b1723426df3472d7056633e30253023739c57b66  backend-node/src/test/java/vn/nhom6/railway/raft/election/SplitVoteTest.java

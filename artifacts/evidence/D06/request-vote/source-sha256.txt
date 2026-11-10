@@ -1,0 +1,14 @@
+﻿
+
+Algorithm : SHA256
+Hash      : 59FE7EEF4B2185E19FF464F230C9A0F8548C8C22512DD6025D480502206FCAAD
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\RequestVoteHan
+            dler.java
+
+Algorithm : SHA256
+Hash      : E6EB5CF9F1DC5AD7D888EDAC6E960F09052CEB11C138DEDD12793E150BCE186A
+Path      : D:\HTPT\railway-distributed-system\backend-node\src\test\java\vn\nhom6\railway\raft\election\VoteSafetyTest
+            .java
+
+
+

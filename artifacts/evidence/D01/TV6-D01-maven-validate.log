@@ -1,0 +1,62 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | TOOLCHAIN VALIDATION (TV6-D01)
+================================================================================
+
+[1. HE THONG VA BAN MA NGUON]
+  Thoi diem kiem tra (Local) : 2026-11-01 12:31:23 +07:00
+  Thoi diem kiem tra (UTC)   : 2026-11-01T05:31:23.598Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Phien ban PowerShell       : 5.1.26100.9711
+  Thu muc du an (Repo Root)  : D:\HTPT
+  Git Branch                 : main
+  Git Commit SHA             : 49ec1d313fac19d0d6fcd111931ebcd593139594
+
+[2. KIEM TRA JAVA / JDK]
+  [OK] Duong dan thuc thi : C:\Program Files (x86)\Common Files\Oracle\Java\java8path\java.exe
+  Chi tiet phien ban:
+    java version "1.8.0_491"
+    Java(TM) SE Runtime Environment (build 1.8.0_491-b10)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.491-b10, mixed mode)
+  [CANH BAO BLOCKED] Phien ban Java qua cu (< 17). Can cai dat JDK 17/21/25 cho du an.
+  Bien JAVA_HOME             : (Chua thiet lap)
+
+[3. KIEM TRA APACHE MAVEN]
+  [FAIL] Khong tim thay lenh 'mvn' trong PATH he thong.
+
+[4. KIEM TRA DOCKER CLI & COMPOSE]
+  [OK] Duong dan thuc thi : C:\Program Files\Docker\Docker\resources\bin\docker.exe
+  Docker CLI Version         : Docker version 29.4.3, build 055a478
+  Docker Compose Version     : Docker Compose version v5.1.4
+  Docker Daemon Status       : Dang chay (ServerVersion: , Containers: 0)
+
+[5. KIEM TRA CAU TRUC 5 MAVEN MODULES CUA REPOSITORY]
+  [FOUND] Root Reactor -> pom.xml
+  [FOUND] Shared (TV3) -> shared/pom.xml
+  [FOUND] Backend Node (TV2/4/5) -> backend-node/pom.xml
+  [FOUND] Desktop Client (TV1) -> desktop-client/pom.xml
+  [FOUND] Desktop Monitor (TV6) -> desktop-monitor/pom.xml
+  [FOUND] Integration Tests (TV6) -> integration-tests/pom.xml
+
+[6. THUC THI KIEM CHUNG CU PHAP: mvn -B -ntp validate]
+  [SKIPPED] Bo qua kiem tra Maven validate vi may thieu lenh 'mvn'.
+  Ma ket thuc (Exit Code)   : 127 (Command Not Found)
+
+--------------------------------------------------------------------------------
+ TONG KET TINH TRANG MAY (HOST: HOANGDAT)
+--------------------------------------------------------------------------------
+
+>>> TRANG THAI MAY: [BLOCKED] <<<
+May chua san sang tham gia phat trien/kiem thu do cac nguyen nhan sau:
+  1. Phien ban Java khong tuong thich (< 17, hien tai dang la Java 8). Can cai JDK 21 hoac 25.
+  2. Thieu Apache Maven (lenh 'mvn' khong ton tai trong PATH)
+
+[HUONG DAN MO CHAN (UNBLOCK)]:
+  1. Cai dat JDK 21 hoac JDK 25 va cau hinh JAVA_HOME, them thu muc bin vao PATH.
+  2. Tai Apache Maven (vi du Maven 3.9+) va them thu muc bin vao PATH.
+  3. Khoi dong Docker Desktop truoc khi chay cac lenh Docker.
+  4. Chay lai script nay sau khi hoan tat thiet lap: .\scripts\check-environment.ps1
+
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D01\TV6-D01-maven-validate.log
+================================================================================

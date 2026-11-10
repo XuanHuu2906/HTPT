@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="rootBorderPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="vn.nhom6.railway.client.controller.MainController"
+            prefWidth="1020.0" prefHeight="660.0"
+            style="-fx-background-color: #f8fafc; -fx-font-family: 'Segoe UI', Tahoma, sans-serif;">
+
+    <!-- TOP: Tiêu đề ứng dụng + Nhãn MOCK nổi bật -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12.0"
+              style="-fx-background-color: #1e293b; -fx-padding: 12 24; -fx-border-color: #334155; -fx-border-width: 0 0 1 0;">
+            <children>
+                <Label fx:id="tripTitleLabel" text="HỆ THỐNG BÁN VÉ TÀU CAO TỐC — CHUYẾN SE-001"
+                       style="-fx-text-fill: #ffffff; -fx-font-size: 17px; -fx-font-weight: bold;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label text="CHẾ ĐỘ:" style="-fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold;" />
+                <Label fx:id="mockBadgeLabel" text="MOCK DATA"
+                       style="-fx-background-color: #f59e0b; -fx-text-fill: #78350f; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 4 14; -fx-background-radius: 6; -fx-border-color: #d97706; -fx-border-radius: 6;" />
+            </children>
+        </HBox>
+    </top>
+
+    <!-- LEFT: Vùng điều hướng bên trái -->
+    <left>
+        <VBox fx:id="navRegion" prefWidth="190.0" spacing="10.0"
+              style="-fx-background-color: #0f172a; -fx-padding: 20 12; -fx-border-color: #334155; -fx-border-width: 0 1 0 0;">
+            <children>
+                <Label text="ĐIỀU HƯỚNG"
+                       style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 0 0 4 6;" />
+
+                <Button fx:id="navTripBtn" maxWidth="Infinity" alignment="BASELINE_LEFT" text="🚆 Chọn chuyến"
+                        style="-fx-background-color: #3b82f6; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;" />
+
+                <Button fx:id="navSeatBtn" maxWidth="Infinity" alignment="BASELINE_LEFT" text="💺 Chọn ghế (10 ghế)"
+                        style="-fx-background-color: #1e293b; -fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;" />
+
+                <Button fx:id="navPaymentBtn" maxWidth="Infinity" alignment="BASELINE_LEFT" text="💳 Thanh toán"
+                        style="-fx-background-color: #1e293b; -fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;" />
+
+                <Button fx:id="navMyTicketsBtn" maxWidth="Infinity" alignment="BASELINE_LEFT" text="🎫 Vé của tôi"
+                        style="-fx-background-color: #1e293b; -fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;" />
+
+                <Separator style="-fx-opacity: 0.3; -fx-padding: 10 0;" />
+
+                <VBox spacing="4.0" style="-fx-padding: 8 6; -fx-background-color: #1e293b; -fx-background-radius: 6;">
+                    <children>
+                        <Label text="Thông tin hệ thống:" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;" />
+                        <Label text="• Giai đoạn: D02 (MOCK)" style="-fx-text-fill: #cbd5e1; -fx-font-size: 11px;" />
+                        <Label text="• Điều hướng: Center Swap" style="-fx-text-fill: #38bdf8; -fx-font-size: 11px;" />
+                        <Label text="• Backend: Chưa kết nối" style="-fx-text-fill: #fbbf24; -fx-font-size: 11px;" />
+                        <Label text="• Nhóm 6 - HTPT" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </left>
+
+    <!-- CENTER: Màn hình chính (Tổng quan chuyến tàu & Nút điều hướng sang đặt vé) -->
+    <center>
+        <VBox fx:id="mainCenterContainer" spacing="18.0" style="-fx-padding: 24;">
+            <children>
+                <!-- Card 1: Thông tin chuyến tàu SE-001 -->
+                <VBox spacing="14.0"
+                      style="-fx-background-color: #ffffff; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+                    <children>
+                        <HBox alignment="CENTER_LEFT">
+                            <children>
+                                <VBox spacing="4.0">
+                                    <children>
+                                        <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                            <children>
+                                                <Label text="CHUYẾN TÀU CAO TỐC SE-001"
+                                                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                                                <Label text="TIÊU CHUẨN VIP"
+                                                       style="-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 2 8; -fx-background-radius: 4;" />
+                                            </children>
+                                        </HBox>
+                                        <Label text="Tuyến đường sắt cao tốc Bắc — Nam · Toa 01 khoang VIP (10 ghế)"
+                                               style="-fx-font-size: 13px; -fx-text-fill: #64748b;" />
+                                    </children>
+                                </VBox>
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Label text="Trạng thái: MOCK OFFLINE"
+                                       style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 6 12; -fx-background-radius: 4; -fx-border-color: #cbd5e1; -fx-border-radius: 4;" />
+                            </children>
+                        </HBox>
+
+                        <Separator style="-fx-opacity: 0.6;" />
+
+                        <!-- Chi tiết lịch trình -->
+                        <HBox spacing="20.0" alignment="CENTER_LEFT">
+                            <children>
+                                <VBox spacing="2.0">
+                                    <children>
+                                        <Label text="Ga đi (Khởi hành):" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;" />
+                                        <Label text="Hà Nội (06:00)" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                    </children>
+                                </VBox>
+
+                                <Label text="➔" style="-fx-font-size: 18px; -fx-text-fill: #3b82f6; -fx-font-weight: bold;" />
+
+                                <VBox spacing="2.0">
+                                    <children>
+                                        <Label text="Ga đến (Dự kiến):" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;" />
+                                        <Label text="Sài Gòn (19:30)" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                    </children>
+                                </VBox>
+
+                                <Separator orientation="VERTICAL" style="-fx-padding: 0 10;" />
+
+                                <VBox spacing="2.0">
+                                    <children>
+                                        <Label text="Thời gian di chuyển:" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;" />
+                                        <Label text="13 giờ 30 phút" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                    </children>
+                                </VBox>
+
+                                <Separator orientation="VERTICAL" style="-fx-padding: 0 10;" />
+
+                                <VBox spacing="2.0">
+                                    <children>
+                                        <Label text="Giá vé niêm yết:" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;" />
+                                        <Label text="1.250.000 VNĐ / ghế" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #059669;" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
+                <!-- Card 2: Khu vực hành động chính - Nút điều hướng sang đặt vé -->
+                <VBox spacing="14.0" alignment="CENTER"
+                      style="-fx-background-color: #ffffff; -fx-padding: 28 20; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;"
+                      VBox.vgrow="ALWAYS">
+                    <children>
+                        <Label text="SƠ ĐỒ CHỌN GHẾ TƯƠNG TÁC (TASK D02)"
+                               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                        <Label text="Nhấn nút bên dưới để chuyển sang sơ đồ chọn ghế trực quan (10 ghế G01–G10), xem trạng thái ghế trống/đã đặt và chọn các ghế mong muốn."
+                               style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-text-alignment: center;" wrapText="true" maxWidth="600.0" />
+
+                        <!-- NÚT ĐIỀU HƯỚNG NỔI BẬT SANG ĐẶT VÉ -->
+                        <Button fx:id="openSeatGridBtn" text="💺 ĐẶT VÉ — MỞ SƠ ĐỒ CHỌN GHẾ ➔"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: #ffffff; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 14 32; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.3), 8, 0, 0, 3);" />
+
+                        <HBox spacing="16.0" alignment="CENTER" style="-fx-padding: 8 0 0 0;">
+                            <children>
+                                <Label text="✓ 10 ghế mô phỏng (G01–G10)" style="-fx-font-size: 12px; -fx-text-fill: #475569;" />
+                                <Label text="•" style="-fx-text-fill: #cbd5e1;" />
+                                <Label text="✓ Chọn/bỏ chọn đa ghế" style="-fx-font-size: 12px; -fx-text-fill: #475569;" />
+                                <Label text="•" style="-fx-text-fill: #cbd5e1;" />
+                                <Label text="✓ Điều hướng khứ hồi" style="-fx-font-size: 12px; -fx-text-fill: #475569;" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </center>
+
+    <!-- BOTTOM: Thanh trạng thái -->
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="10.0"
+              style="-fx-background-color: #e2e8f0; -fx-padding: 6 16; -fx-border-color: #cbd5e1; -fx-border-width: 1 0 0 0;">
+            <children>
+                <Label text="Trạng thái:" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #475569;" />
+                <Label fx:id="statusMessageLabel" text="Hệ thống sẵn sàng ở chế độ MOCK (D02). Nhấn 'Đặt vé' để vào sơ đồ ghế."
+                       style="-fx-font-size: 11px; -fx-text-fill: #1e293b;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label text="v1.0.0-MOCK | Nhóm 6" style="-fx-font-size: 11px; -fx-text-fill: #64748b;" />
+            </children>
+        </HBox>
+    </bottom>
+
+</BorderPane>

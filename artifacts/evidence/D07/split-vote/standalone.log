@@ -1,0 +1,4 @@
+PASS standalone: same-term competing candidates / duplicate votes
+PASS standalone: split vote / new-term retry / stale votes
+PASS standalone: fresh randomized intervals per retry
+PASS standalone: no quorum / bounded one-shot scheduling

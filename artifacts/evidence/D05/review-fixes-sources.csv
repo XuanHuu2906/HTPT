@@ -1,0 +1,8 @@
+﻿"Algorithm","Hash","Path"
+"SHA256","78063148B04F21DA3F9FCEE57E9565C2065345FA9AD82608A892EBF49D86F73E","D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\replication\LogConsistencyChecker.java"
+"SHA256","CEBF1ADD424D1F7165200B3DA223C71884558FFABA9C7660084A8F2A3F589D05","D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\ElectionTimer.java"
+"SHA256","160387883472E49AACCCB16CA526082846581A8318C9CE755716E0DD3F77567F","D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\CandidateElection.java"
+"SHA256","820230131383767BE71DF12AD4FBB427E5E168C3325FBE61A5D904DB03E7CDB6","D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\election\ElectionService.java"
+"SHA256","BFE5C001320D9F8F2DE35201FA55A6C88BE457AF7EE80C5B90F576618EC42FDC","D:\HTPT\railway-distributed-system\backend-node\src\main\java\vn\nhom6\railway\raft\core\RaftNode.java"
+"SHA256","0F2F8B4D016C48E09FEE62AB716FB2597788B59BA38984DF0B5031B6E14B12CC","D:\HTPT\railway-distributed-system\backend-node\src\test\java\vn\nhom6\railway\raft\replication\ConflictTests.java"
+"SHA256","9C697025EE783C1409719803C2FA2ADDCD57EA328FD4F3074325FE81C8001A23","D:\HTPT\railway-distributed-system\backend-node\src\test\java\vn\nhom6\railway\raft\election\TimerTest.java"

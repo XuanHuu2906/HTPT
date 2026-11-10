@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="vn.nhom6.railway.client.controller.BookingDialogController"
+      stylesheets="@../css/railway.css"
+      spacing="16.0" prefWidth="480.0"
+      style="-fx-background-color: #f8fafc; -fx-padding: 24;">
+
+    <!-- TIÊU ĐỀ HỘP THOẠI -->
+    <HBox alignment="CENTER_LEFT" spacing="10.0">
+        <children>
+            <VBox spacing="2.0">
+                <children>
+                    <Label text="XÁC NHẬN ĐẶT VÉ"
+                           style="-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                    <Label text="Chuyến tàu SE-001 · Hà Nội ➔ TP. Hồ Chí Minh"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
+                </children>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label text="MOCK D04" styleClass="badge-mock" />
+        </children>
+    </HBox>
+
+    <Separator style="-fx-opacity: 0.6;" />
+
+    <!-- VÙNG TÓM TẮT GHẾ (CHỈ ĐỌC) -->
+    <VBox spacing="6.0"
+          style="-fx-background-color: #ffffff; -fx-padding: 14; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <children>
+            <Label text="Danh sách ghế đã chọn:"
+                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;" />
+            <Label fx:id="selectedSeatsSummaryLabel" text="(Chưa có ghế nào)"
+                   styleClass="summary-seats-empty" />
+        </children>
+    </VBox>
+
+    <!-- FORM NHẬP HỌ TÊN -->
+    <VBox spacing="6.0">
+        <children>
+            <HBox alignment="CENTER_LEFT">
+                <children>
+                    <Label text="Họ và tên hành khách:"
+                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+                    <Label text=" *" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #ef4444;" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <!-- Nhãn đếm ký tự x/50 -->
+                    <Label fx:id="charCountLabel" text="0/50" styleClass="char-count-normal" />
+                </children>
+            </HBox>
+
+            <TextField fx:id="passengerNameField" promptText="Nhập họ tên (ví dụ: Nguyễn Văn A)..."
+                       style="-fx-padding: 10 12; -fx-font-size: 13px; -fx-background-color: #ffffff; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6;" />
+
+            <!-- Nhãn thông báo lỗi (ẩn khi hợp lệ) -->
+            <Label fx:id="errorLabel" text="" visible="false" managed="false"
+                   style="-fx-font-size: 11px; -fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-padding: 2 0 0 2;" />
+        </children>
+    </VBox>
+
+    <Separator style="-fx-opacity: 0.6;" />
+
+    <!-- HÀNG NÚT XÁC NHẬN VÀ HỦY -->
+    <HBox alignment="CENTER_RIGHT" spacing="12.0">
+        <children>
+            <Button fx:id="cancelBtn" onAction="#onCancel" text="Hủy" styleClass="btn-reset" />
+
+            <Button fx:id="confirmBtn" onAction="#onConfirm" text="Xác nhận đặt vé" disable="true"
+                    styleClass="btn-primary" />
+        </children>
+    </HBox>
+
+    <!-- NHÃN TRẠNG THÁI KẾT QUẢ Ở DƯỚI CÙNG -->
+    <HBox alignment="CENTER" style="-fx-min-height: 20px;">
+        <children>
+            <Label fx:id="statusLabel" text="" wrapText="true"
+                   style="-fx-font-size: 12px; -fx-text-alignment: center;" />
+        </children>
+    </HBox>
+
+</VBox>

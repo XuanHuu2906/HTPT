@@ -1,0 +1,12 @@
+{
+  "duplicateKeys": "{\"protocolVersion\":1,\"messageId\":\"b4c410df-2b27-45dd-81ac-b7f9c0ec21e4\",\"correlationId\":null,\"type\":\"BOOK_TICKET\",\"type\":\"GET_SEATS\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"payload\":{}}",
+  "unknownProperties": "{\"protocolVersion\":1,\"messageId\":\"b4c410df-2b27-45dd-81ac-b7f9c0ec21e4\",\"correlationId\":null,\"type\":\"BOOK_TICKET\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"unknownPropertyField\":\"unauthorized\",\"payload\":{}}",
+  "unknownEnum": "{\"protocolVersion\":1,\"messageId\":\"b4c410df-2b27-45dd-81ac-b7f9c0ec21e4\",\"correlationId\":null,\"type\":\"HACK_OR_UNKNOWN_COMMAND\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"payload\":{}}",
+  "stringToNumberCoercion": "{\"term\":\"8\",\"candidateId\":\"node-3\",\"lastLogIndex\":42,\"lastLogTerm\":7}",
+  "numberToStringCoercion": "{\"tripId\":100}",
+  "numberOverflow": "{\"term\":999999999999999999999999999,\"candidateId\":\"node-3\",\"lastLogIndex\":42,\"lastLogTerm\":7}",
+  "illegalNullMessageId": "{\"protocolVersion\":1,\"messageId\":null,\"correlationId\":null,\"type\":\"GET_SEATS\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"payload\":{\"tripId\":\"SE-001\"}}",
+  "unsupportedVersion": "{\"protocolVersion\":2,\"messageId\":\"b4c410df-2b27-45dd-81ac-b7f9c0ec21e4\",\"correlationId\":null,\"type\":\"GET_SEATS\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"payload\":{\"tripId\":\"SE-001\"}}",
+  "malformedJson": "{\"protocolVersion\":1,\"messageId\":\"b4c410df-2b27-45dd-81ac-b7f9c0ec21e4\",broken_json...",
+  "invalidUuid": "{\"protocolVersion\":1,\"messageId\":\"not-a-valid-uuid-12345\",\"correlationId\":null,\"type\":\"GET_SEATS\",\"senderId\":\"client-1\",\"sentAt\":\"2026-10-29T10:00:00Z\",\"payload\":{\"tripId\":\"SE-001\"}}"
+}
