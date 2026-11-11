@@ -8,7 +8,6 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import vn.nhom6.railway.client.controller.MainController;
 import vn.nhom6.railway.client.network.ClusterStatusClient.DataSource;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.NodeStatus;
@@ -48,7 +46,6 @@ public class ClusterStatusUiEvidenceTest {
 
     private Stage stage;
     private Scene scene;
-    private MainController mainController;
     private ClusterConnectionViewModel viewModel;
     private MockClusterStatusClient mockClient;
 
@@ -87,7 +84,6 @@ public class ClusterStatusUiEvidenceTest {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
                 Parent root = loader.load();
-                mainController = loader.getController();
 
                 stage = new Stage();
                 stage.setTitle("BẰNG CHỨNG GIAO DIỆN TASK TV1-D11 — CLUSTER STATUS BAR");
@@ -116,6 +112,9 @@ public class ClusterStatusUiEvidenceTest {
                 latch.countDown();
             });
             latch.await(2, TimeUnit.SECONDS);
+        }
+        if (viewModel != null) {
+            viewModel.close();
         }
     }
 

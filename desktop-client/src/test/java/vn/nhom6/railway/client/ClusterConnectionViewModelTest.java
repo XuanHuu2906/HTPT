@@ -4,13 +4,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import vn.nhom6.railway.client.network.ClusterStatusClient;
 import vn.nhom6.railway.client.network.ClusterStatusClient.DataSource;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.NodeStatus;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
 import vn.nhom6.railway.client.smoke.FakeNodeServer;
-import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel.ConnectionState;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel.NodeRole;
@@ -203,9 +201,7 @@ class ClusterConnectionViewModelTest {
         NodeStatus ok = new NodeStatus("node-2", "LEADER", 2L, "node-2", 10L, 10L, 10L, true, Instant.now());
         viewModel.applyStatus(ok, DataSource.MOCK);
 
-        // Đánh dấu thời điểm cũ hơn 12 giây trước
-        Instant twelveSecondsAgo = Instant.now().minusSeconds(12);
-        // Dùng markStale trực tiếp hoặc checkStaleCondition
+        // Đánh dấu stale trực tiếp
         viewModel.markStale();
 
         assertTrue(viewModel.isStale(), "Cờ stale phải bật true");

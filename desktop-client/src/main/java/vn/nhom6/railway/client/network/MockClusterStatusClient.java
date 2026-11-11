@@ -6,16 +6,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Triển khai MOCK của {@link ClusterStatusClient} phục vụ kiểm thử giao diện và chạy offline (D11).
+ * Triển khai MOCK của {@link ClusterStatusClient} phục vụ kiểm thử giao diện và
+ * chạy offline (D11).
  *
- * <p>Đặc điểm:
+ * <p>
+ * Đặc điểm:
  * <ul>
- *   <li>Luôn trả về nguồn dữ liệu là {@link DataSource#MOCK} để UI hiển thị nhãn "MOCK" rõ ràng.</li>
- *   <li>Cho phép cấu hình động trạng thái để kiểm thử các kịch bản: Leader, Follower có hint, Candidate, mất mạng.</li>
- *   <li>Không bao giờ giả mạo dữ liệu là REAL.</li>
+ * <li>Luôn trả về nguồn dữ liệu là {@link DataSource#MOCK} để UI hiển thị nhãn
+ * "MOCK" rõ ràng.</li>
+ * <li>Cho phép cấu hình động trạng thái để kiểm thử các kịch bản: Leader,
+ * Follower có hint, Candidate, mất mạng.</li>
+ * <li>Không bao giờ giả mạo dữ liệu là REAL.</li>
  * </ul>
  */
 public class MockClusterStatusClient implements ClusterStatusClient {
@@ -48,8 +51,7 @@ public class MockClusterStatusClient implements ClusterStatusClient {
                 10L,
                 10L,
                 true,
-                Instant.now()
-        );
+                Instant.now());
     }
 
     @Override
@@ -58,7 +60,8 @@ public class MockClusterStatusClient implements ClusterStatusClient {
 
         Runnable task = () -> {
             if (simulateOffline) {
-                future.completeExceptionally(new java.net.ConnectException("Mô phỏng mất kết nối tới Node (MOCK OFFLINE)"));
+                future.completeExceptionally(
+                        new java.net.ConnectException("Mô phỏng mất kết nối tới Node (MOCK OFFLINE)"));
             } else {
                 NodeStatus status = currentStatus;
                 // Cập nhật timestamp thời điểm quan sát mới
@@ -71,8 +74,7 @@ public class MockClusterStatusClient implements ClusterStatusClient {
                         status.commitIndex(),
                         status.lastApplied(),
                         status.storageHealthy(),
-                        Instant.now()
-                );
+                        Instant.now());
                 future.complete(fresh);
             }
         };
@@ -111,8 +113,7 @@ public class MockClusterStatusClient implements ClusterStatusClient {
                 100L,
                 100L,
                 true,
-                Instant.now()
-        );
+                Instant.now());
         this.simulateOffline = false;
     }
 
@@ -126,8 +127,7 @@ public class MockClusterStatusClient implements ClusterStatusClient {
                 100L,
                 100L,
                 true,
-                Instant.now()
-        );
+                Instant.now());
         this.simulateOffline = false;
     }
 
