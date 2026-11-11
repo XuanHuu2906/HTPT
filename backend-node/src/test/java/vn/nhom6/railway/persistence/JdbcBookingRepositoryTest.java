@@ -102,10 +102,10 @@ class JdbcBookingRepositoryTest {
         assertEquals(1, count("request_results"));
         assertEquals(1, count("business_events"));
         assertEquals(7, queryInt(
-                "SELECT jsonb_object_length(result_json) FROM request_results WHERE request_id = '"
+                "SELECT (SELECT count(*) FROM jsonb_object_keys(result_json)) FROM request_results WHERE request_id = '"
                         + REQUEST_1 + "'"));
         assertEquals(7, queryInt(
-                "SELECT jsonb_object_length(event_json) FROM business_events WHERE log_index = 1"));
+                "SELECT (SELECT count(*) FROM jsonb_object_keys(event_json)) FROM business_events WHERE log_index = 1"));
         assertEquals("G01", queryString(
                 "SELECT result_json ->> 'seatId' FROM request_results WHERE request_id = '"
                         + REQUEST_1 + "'"));
@@ -176,7 +176,8 @@ class JdbcBookingRepositoryTest {
 
         var replay = assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class,
                 apply(repository, 2,
-                        book(REQUEST_1, "G01", "ticket-from-new-leader", TIME_2)));
+                        new BookingCommand.BookTicket(REQUEST_1, original.tripId(), original.seatId(),
+                                original.passengerName(), "ticket-from-new-leader", TIME_2)));
 
         assertTrue(replay.isReplay());
         assertEquals(ApplyResult.bookConfirmed(REQUEST_1, "ticket-original", 1), replay.applyResult());
@@ -185,6 +186,21 @@ class JdbcBookingRepositoryTest {
         assertEquals(1, count("business_events"));
         assertEquals(2L, repository.lastApplied());
         assertEquals(replay, repository.findAppliedOutcome(2).orElseThrow());
+        // Ten retries, including freshly constructed repository instances, reuse the durable result.
+        for (long index = 3; index <= 11; index++) {
+            JdbcBookingRepository reopened = repository(null);
+            var retried = assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class,
+                    apply(reopened, index, new BookingCommand.BookTicket(REQUEST_1,
+                            original.tripId(), original.seatId(), original.passengerName(),
+                            "ticket-retry-" + index, TIME_2)));
+            assertTrue(retried.isReplay());
+            assertEquals(replay.applyResult(), retried.applyResult());
+            assertEquals(replay.applyResult(), reopened.findResultByRequestId(REQUEST_1).orElseThrow());
+            assertEquals(index, reopened.lastApplied());
+            assertEquals(1, count("tickets"));
+            assertEquals(1, count("request_results"));
+            assertEquals(1, count("business_events"));
+        }
     }
 
     @Test
@@ -246,10 +262,16 @@ class JdbcBookingRepositoryTest {
         assertEquals(ApplyResult.cancelRejected(REQUEST_4, "ticket-1", 4),
                 alreadyCancelled.applyResult());
         assertEquals(4L, repository.lastApplied());
-        assertEquals(3, count("request_results"));
+        // SPEC-05 persists every new intent, including both rejected cancellations.
+        assertEquals(4, count("request_results"));
+        assertEquals(2, countWhere("request_results", "state = 'APPLIED_SUCCESS'"));
+        assertEquals(2, countWhere("request_results", "state = 'APPLIED_REJECTED'"));
+        assertEquals(missing.applyResult(), repository.findResultByRequestId(REQUEST_3).orElseThrow());
+        assertEquals(alreadyCancelled.applyResult(),
+                repository.findResultByRequestId(REQUEST_4).orElseThrow());
         assertEquals(4, count("business_events"));
         assertEquals(5, queryInt(
-                "SELECT jsonb_object_length(result_json) FROM request_results WHERE request_id = '"
+                "SELECT (SELECT count(*) FROM jsonb_object_keys(result_json)) FROM request_results WHERE request_id = '"
                         + REQUEST_2 + "'"));
         assertEquals("CANCEL_REJECTED", queryString(
                 "SELECT event_type FROM business_events WHERE log_index = 4"));
@@ -281,7 +303,8 @@ class JdbcBookingRepositoryTest {
         List<BookingCommand> commands = List.of(
                 book(REQUEST_1, "G01", "ticket-a", TIME_1),
                 book(REQUEST_2, "G01", "ticket-b", TIME_2),
-                book(REQUEST_1, "G01", "ticket-replay", TIME_2),
+                new BookingCommand.BookTicket(REQUEST_1, "SE-001", "G01",
+                        "Passenger ticket-a", "ticket-replay", TIME_2),
                 book(REQUEST_1, "G02", "ticket-conflict", TIME_2),
                 new BookingCommand.NoOp(),
                 new BookingCommand.CancelTicket(REQUEST_3, "ticket-a", TIME_2));

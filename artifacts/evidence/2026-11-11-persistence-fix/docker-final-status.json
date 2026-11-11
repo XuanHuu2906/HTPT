@@ -1,0 +1,16 @@
+{
+  "command": [
+    "docker",
+    "compose",
+    "-f",
+    "docker/compose.dev.yml",
+    "--profile",
+    "nodes",
+    "ps"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T09:33:10.085234+00:00",
+  "finished_utc": "2026-11-11T09:33:10.184891+00:00",
+  "commit": "adc4607b916cedcdbe654f6fdb6a5cdda229fa83",
+  "patch_sha256": "2fdfa09305dc9810a71dcf6f3a69e0ecd441142c25fb39e3f9f20061c118b0d9"
+}

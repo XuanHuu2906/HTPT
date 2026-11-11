@@ -1,0 +1,263 @@
+diff --git a/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java b/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
+index 76e70c8..9d34ebd 100644
+--- a/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
++++ b/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
+@@ -1,6 +1,11 @@
+ package vn.nhom6.railway.networking;
+ 
+ import vn.nhom6.railway.booking.ConnectionFactory;
++import vn.nhom6.railway.booking.BookingRequestHandler;
++import vn.nhom6.railway.persistence.JdbcBookingRepository;
++import java.time.Clock;
++import java.time.Duration;
++import java.util.UUID;
+ import vn.nhom6.railway.raft.election.RaftElectionComponent;
+ import vn.nhom6.railway.protocol.dto.MessageEnvelope;
+ import vn.nhom6.railway.protocol.dto.MessageType;
+@@ -50,7 +55,11 @@ public class NodeMain implements AutoCloseable {
+     private Thread shutdownHook;
+ 
+     public NodeMain(NodeConfig config) {
+-        this(config, new FakeBookingService(config.nodeId()), null);
++        this(config, new UnavailableBookingService(), null,
++                config.dbConfig() == null ? null : persistentHandler(config,
++                        command -> { throw new BookingRequestHandler.NoQuorumException(); },
++                        timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
++                                "Raft read barrier is not wired"); }));
+     }
+ 
+     public NodeMain(NodeConfig config, BookingService bookingService) {
+@@ -58,6 +67,32 @@ public class NodeMain implements AutoCloseable {
+     }
+ 
+     public NodeMain(NodeConfig config, BookingService bookingService, RaftElectionComponent election) {
++        this(config, bookingService, election, null);
++    }
++
++    /**
++     * Composition boundary for TV2/TV3 and the Raft owner. Submitter completion must mean
++     * Raft commit AND durable JDBC apply, never merely append acceptance. Read barrier must
++     * await a committed/applied current-term NO_OP. This factory does not implement consensus.
++     */
++    public static NodeMain withPersistentBooking(NodeConfig config,
++            BookingRequestHandler.CommandSubmitter submitter,
++            BookingRequestHandler.ReadBarrier barrier, RaftElectionComponent election) {
++        return new NodeMain(config, new UnavailableBookingService(), election,
++                persistentHandler(config, submitter, barrier));
++    }
++
++    private static BookingRequestHandler persistentHandler(NodeConfig config,
++            BookingRequestHandler.CommandSubmitter submitter,
++            BookingRequestHandler.ReadBarrier barrier) {
++        var repository = new JdbcBookingRepository(new ConnectionFactory(
++                Objects.requireNonNull(config.dbConfig(), "Persistent booking requires DB configuration")));
++        return new BookingRequestHandler(submitter, barrier, () -> UUID.randomUUID().toString(),
++                Clock.systemUTC(), repository, config.nodeId(), Duration.ofSeconds(3));
++    }
++
++    private NodeMain(NodeConfig config, BookingService bookingService,
++            RaftElectionComponent election, BookingRequestHandler persistentBooking) {
+         this.config = Objects.requireNonNull(config, "config must not be null");
+         this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
+         this.election = election;
+@@ -75,6 +110,7 @@ public class NodeMain implements AutoCloseable {
+         this.raftServer.setMessageHandler(raftDispatcher);
+ 
+         configureDefaultHandlers();
++        if (persistentBooking != null) persistentBooking.register(clientRegistry);
+         if (election != null) election.register(raftRegistry);
+     }
+ 
+@@ -162,7 +198,7 @@ public class NodeMain implements AutoCloseable {
+         if (config.dbConfig() != null) {
+             checkDatabaseConnection();
+         } else {
+-            LOGGER.info(() -> "[" + config.nodeId() + "] Running without PostgreSQL configuration (in-memory mode).");
++            LOGGER.info(() -> "[" + config.nodeId() + "] PostgreSQL is not configured; booking is unavailable.");
+         }
+ 
+         // 4. Register Shutdown Hook
+diff --git a/backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java b/backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java
+index e303c56..65c90c7 100644
+--- a/backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java
++++ b/backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java
+@@ -16,11 +16,12 @@ import java.util.logging.Logger;
+ import vn.nhom6.railway.booking.ApplyResult;
+ import vn.nhom6.railway.booking.BookingCommand;
+ import vn.nhom6.railway.booking.BookingRepository;
++import vn.nhom6.railway.booking.BookingRequestHandler;
+ import vn.nhom6.railway.booking.BookingStateMachine;
+ import vn.nhom6.railway.booking.ConnectionFactory;
+ 
+ /** PostgreSQL repository that applies each committed booking command atomically. */
+-public final class JdbcBookingRepository implements BookingRepository {
++public final class JdbcBookingRepository implements BookingRepository, BookingRequestHandler.SeatSnapshotReader {
+     private static final Logger LOGGER =
+             Logger.getLogger(JdbcBookingRepository.class.getName());
+     private static final String TRIP_ID = "SE-001";
+@@ -483,7 +484,14 @@ public final class JdbcBookingRepository implements BookingRepository {
+ 
+     @Override
+     public Map<String, String> readSeatSnapshot() {
+-        Map<String, String> seats = new LinkedHashMap<>();
++        Map<String, String> statuses = new LinkedHashMap<>();
++        readSnapshot().forEach((seat, state) -> statuses.put(seat, state.status()));
++        return Collections.unmodifiableMap(statuses);
++    }
++
++    @Override
++    public Map<String, BookingRequestHandler.SeatState> readSnapshot() {
++        Map<String, BookingRequestHandler.SeatState> seats = new LinkedHashMap<>();
+         try (Connection connection = connectionProvider.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(
+                         "SELECT seat_id, status, current_ticket_id FROM seats "
+@@ -494,7 +502,7 @@ public final class JdbcBookingRepository implements BookingRepository {
+                     String seatId = resultSet.getString(1);
+                     String status = resultSet.getString(2);
+                     String ticketId = resultSet.getString(3);
+-                    if (seats.putIfAbsent(seatId, status) != null) {
++                    if (seats.putIfAbsent(seatId, new BookingRequestHandler.SeatState(status, ticketId)) != null) {
+                         throw integrityFailure("Duplicate seat in snapshot: " + seatId);
+                     }
+                     if ("AVAILABLE".equals(status) != (ticketId == null)
+diff --git a/backend-node/src/test/java/vn/nhom6/railway/booking/BookingRequestHandlerTest.java b/backend-node/src/test/java/vn/nhom6/railway/booking/BookingRequestHandlerTest.java
+index e734ae6..031762c 100644
+--- a/backend-node/src/test/java/vn/nhom6/railway/booking/BookingRequestHandlerTest.java
++++ b/backend-node/src/test/java/vn/nhom6/railway/booking/BookingRequestHandlerTest.java
+@@ -337,7 +337,8 @@ class BookingRequestHandlerTest {
+             JdbcCommittedCommandApplier applier =
+                     new JdbcCommittedCommandApplier(database.connectionFactory());
+             DatabaseCommitter committer = new DatabaseCommitter(database, repository, applier);
+-            BookingRequestHandler handler = handler(
++            AtomicInteger ticketSequence = new AtomicInteger();
++            BookingRequestHandler handler = new BookingRequestHandler(
+                     committer,
+                     timeout -> {
+                         long index = repository.lastApplied() + 1;
+@@ -346,8 +347,12 @@ class BookingRequestHandlerTest {
+                         return CompletableFuture.completedFuture(
+                                 new BookingRequestHandler.ReadBarrierResult(index, "node-1"));
+                     },
++                    () -> "ticket-db-" + ticketSequence.incrementAndGet(),
++                    Clock.fixed(FIXED_TIME, ZoneOffset.UTC),
+                     repository,
+-                    database::readSeatSnapshot);
++                    database::readSeatSnapshot,
++                    "node-1",
++                    TEST_TIMEOUT);
+ 
+             MessageEnvelope<?> confirmed =
+                     handler.handleBooking(bookRequest(REQUEST_1, "G01", "Linh"));
+diff --git a/backend-node/src/test/java/vn/nhom6/railway/networking/BookingTcpIntegrationTest.java b/backend-node/src/test/java/vn/nhom6/railway/networking/BookingTcpIntegrationTest.java
+index cc63b8a..01b0eeb 100644
+--- a/backend-node/src/test/java/vn/nhom6/railway/networking/BookingTcpIntegrationTest.java
++++ b/backend-node/src/test/java/vn/nhom6/railway/networking/BookingTcpIntegrationTest.java
+@@ -20,7 +20,7 @@ import java.util.UUID;
+ 
+ import static org.junit.jupiter.api.Assertions.*;
+ 
+-@DisplayName("1-Node Booking TCP End-to-End Integration Test (Gate G3)")
++@DisplayName("TCP protocol integration with explicit in-memory booking fake")
+ public class BookingTcpIntegrationTest {
+ 
+     private final List<AutoCloseable> resources = new ArrayList<>();
+@@ -31,7 +31,7 @@ public class BookingTcpIntegrationTest {
+     public void setUp() throws IOException {
+         // Start live NodeMain on random dynamic ports
+         NodeConfig config = new NodeConfig("node-1", "railway-demo-5", "127.0.0.1", 0, "127.0.0.1", 0, null, 8, 5000);
+-        node = new NodeMain(config);
++        node = new NodeMain(config, new FakeBookingService(config.nodeId()));
+         resources.add(node);
+         node.start();
+ 
+diff --git a/backend-node/src/test/java/vn/nhom6/railway/networking/TcpSingleNodeProtocolTest.java b/backend-node/src/test/java/vn/nhom6/railway/networking/TcpSingleNodeProtocolTest.java
+index 1ca6e92..6709f06 100644
+--- a/backend-node/src/test/java/vn/nhom6/railway/networking/TcpSingleNodeProtocolTest.java
++++ b/backend-node/src/test/java/vn/nhom6/railway/networking/TcpSingleNodeProtocolTest.java
+@@ -42,7 +42,7 @@ public class TcpSingleNodeProtocolTest {
+     @BeforeEach
+     public void setUp() throws IOException {
+         NodeConfig config = new NodeConfig("node-1", "railway-demo-5", "127.0.0.1", 0, "127.0.0.1", 0, null, 8, 5000);
+-        node = new NodeMain(config);
++        node = new NodeMain(config, new FakeBookingService(config.nodeId()));
+         resources.add(node);
+         node.start();
+         clientPort = node.getClientPort();
+diff --git a/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingRepositoryTest.java b/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingRepositoryTest.java
+index 6ba3380..8f96272 100644
+--- a/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingRepositoryTest.java
++++ b/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingRepositoryTest.java
+@@ -102,10 +102,10 @@ class JdbcBookingRepositoryTest {
+         assertEquals(1, count("request_results"));
+         assertEquals(1, count("business_events"));
+         assertEquals(7, queryInt(
+-                "SELECT jsonb_object_length(result_json) FROM request_results WHERE request_id = '"
++                "SELECT (SELECT count(*) FROM jsonb_object_keys(result_json)) FROM request_results WHERE request_id = '"
+                         + REQUEST_1 + "'"));
+         assertEquals(7, queryInt(
+-                "SELECT jsonb_object_length(event_json) FROM business_events WHERE log_index = 1"));
++                "SELECT (SELECT count(*) FROM jsonb_object_keys(event_json)) FROM business_events WHERE log_index = 1"));
+         assertEquals("G01", queryString(
+                 "SELECT result_json ->> 'seatId' FROM request_results WHERE request_id = '"
+                         + REQUEST_1 + "'"));
+@@ -176,7 +176,8 @@ class JdbcBookingRepositoryTest {
+ 
+         var replay = assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class,
+                 apply(repository, 2,
+-                        book(REQUEST_1, "G01", "ticket-from-new-leader", TIME_2)));
++                        new BookingCommand.BookTicket(REQUEST_1, original.tripId(), original.seatId(),
++                                original.passengerName(), "ticket-from-new-leader", TIME_2)));
+ 
+         assertTrue(replay.isReplay());
+         assertEquals(ApplyResult.bookConfirmed(REQUEST_1, "ticket-original", 1), replay.applyResult());
+@@ -185,6 +186,21 @@ class JdbcBookingRepositoryTest {
+         assertEquals(1, count("business_events"));
+         assertEquals(2L, repository.lastApplied());
+         assertEquals(replay, repository.findAppliedOutcome(2).orElseThrow());
++        // Ten retries, including freshly constructed repository instances, reuse the durable result.
++        for (long index = 3; index <= 11; index++) {
++            JdbcBookingRepository reopened = repository(null);
++            var retried = assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class,
++                    apply(reopened, index, new BookingCommand.BookTicket(REQUEST_1,
++                            original.tripId(), original.seatId(), original.passengerName(),
++                            "ticket-retry-" + index, TIME_2)));
++            assertTrue(retried.isReplay());
++            assertEquals(replay.applyResult(), retried.applyResult());
++            assertEquals(replay.applyResult(), reopened.findResultByRequestId(REQUEST_1).orElseThrow());
++            assertEquals(index, reopened.lastApplied());
++            assertEquals(1, count("tickets"));
++            assertEquals(1, count("request_results"));
++            assertEquals(1, count("business_events"));
++        }
+     }
+ 
+     @Test
+@@ -246,10 +262,16 @@ class JdbcBookingRepositoryTest {
+         assertEquals(ApplyResult.cancelRejected(REQUEST_4, "ticket-1", 4),
+                 alreadyCancelled.applyResult());
+         assertEquals(4L, repository.lastApplied());
+-        assertEquals(3, count("request_results"));
++        // SPEC-05 persists every new intent, including both rejected cancellations.
++        assertEquals(4, count("request_results"));
++        assertEquals(2, countWhere("request_results", "state = 'APPLIED_SUCCESS'"));
++        assertEquals(2, countWhere("request_results", "state = 'APPLIED_REJECTED'"));
++        assertEquals(missing.applyResult(), repository.findResultByRequestId(REQUEST_3).orElseThrow());
++        assertEquals(alreadyCancelled.applyResult(),
++                repository.findResultByRequestId(REQUEST_4).orElseThrow());
+         assertEquals(4, count("business_events"));
+         assertEquals(5, queryInt(
+-                "SELECT jsonb_object_length(result_json) FROM request_results WHERE request_id = '"
++                "SELECT (SELECT count(*) FROM jsonb_object_keys(result_json)) FROM request_results WHERE request_id = '"
+                         + REQUEST_2 + "'"));
+         assertEquals("CANCEL_REJECTED", queryString(
+                 "SELECT event_type FROM business_events WHERE log_index = 4"));
+@@ -281,7 +303,8 @@ class JdbcBookingRepositoryTest {
+         List<BookingCommand> commands = List.of(
+                 book(REQUEST_1, "G01", "ticket-a", TIME_1),
+                 book(REQUEST_2, "G01", "ticket-b", TIME_2),
+-                book(REQUEST_1, "G01", "ticket-replay", TIME_2),
++                new BookingCommand.BookTicket(REQUEST_1, "SE-001", "G01",
++                        "Passenger ticket-a", "ticket-replay", TIME_2),
+                 book(REQUEST_1, "G02", "ticket-conflict", TIME_2),
+                 new BookingCommand.NoOp(),
+                 new BookingCommand.CancelTicket(REQUEST_3, "ticket-a", TIME_2));

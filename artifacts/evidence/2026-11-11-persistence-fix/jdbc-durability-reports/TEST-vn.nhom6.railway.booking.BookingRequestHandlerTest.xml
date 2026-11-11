@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="1.225" tests="12" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="25"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/test-classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar:/home/nguyenhuu/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar:/home/nguyenhuu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar:"/>
+    <property name="java.vm.vendor" value="Red Hat, Inc."/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://www.redhat.com/"/>
+    <property name="user.timezone" value="Asia/Ho_Chi_Minh"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="25"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-25-openjdk/lib"/>
+    <property name="sun.java.command" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire/surefirebooter-20261111161245276_6.jar /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire 2026-11-11T16-12-44_348-jvmRun1 surefire-20261111161245276_4tmp surefire_1-20261111161245276_5tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/test-classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar:/home/nguyenhuu/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar:/home/nguyenhuu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/nguyenhuu"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-08-18"/>
+    <property name="java.home" value="/usr/lib/jvm/java-25-openjdk"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="surefire.real.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire/surefirebooter-20261111161245276_6.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="25.0.4.1+1"/>
+    <property name="user.name" value="nguyenhuu"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="7.2.15-300.fc45.x86_64"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="(Red_Hat-25.0.4.1.1-1)"/>
+    <property name="localRepository" value="/home/nguyenhuu/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugzilla.redhat.com/enter_bug.cgi?product=Fedora&amp;component=java-25-openjdk&amp;version=43"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="25.0.4.1"/>
+    <property name="user.dir" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vendor" value="Red Hat, Inc."/>
+    <property name="java.vm.version" value="25.0.4.1+1"/>
+    <property name="stdin.encoding" value="UTF-8"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="69.0"/>
+  </properties>
+  <testcase name="test01_validBook_confirmedPayload_injectedValues_correlatedMessageId" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.032"/>
+  <testcase name="test02_malformedBookPayload_invalidRequest_commitPathNotInvoked" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.029"/>
+  <testcase name="test05_sameRequestIdDifferentPayload_requestIdConflict" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.002"/>
+  <testcase name="postgresBackedHandlerExercisesCommittedApplyAndPrintsDatabaseSnapshot" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="1.072">
+    <system-out><![CDATA[=== FAKE/LOCAL PostgreSQL snapshot (1 Node; no Raft cluster proof) ===
+-- seats: SELECT trip_id, seat_id, status, current_ticket_id FROM seats ORDER BY trip_id, seat_id
+trip_id | seat_id | status | current_ticket_id
+SE-001 | G01 | BOOKED | ticket-db-1
+SE-001 | G02 | AVAILABLE | null
+SE-001 | G03 | AVAILABLE | null
+SE-001 | G04 | AVAILABLE | null
+SE-001 | G05 | AVAILABLE | null
+SE-001 | G06 | AVAILABLE | null
+SE-001 | G07 | AVAILABLE | null
+SE-001 | G08 | AVAILABLE | null
+SE-001 | G09 | AVAILABLE | null
+SE-001 | G10 | AVAILABLE | null
+-- tickets: SELECT ticket_id, trip_id, seat_id, passenger_name, status, issued_at FROM tickets ORDER BY ticket_id
+ticket_id | trip_id | seat_id | passenger_name | status | issued_at
+ticket-db-1 | SE-001 | G01 | Linh | ACTIVE | 2026-11-11 07:00:00.123
+-- request_results: SELECT request_id, command_type, state, reason_code, ticket_id, applied_log_index, result_json FROM request_results ORDER BY request_id
+request_id | command_type | state | reason_code | ticket_id | applied_log_index | result_json
+11111111-1111-1111-1111-111111111111 | BOOK_TICKET | APPLIED_SUCCESS | null | ticket-db-1 | 1 | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+22222222-2222-2222-2222-222222222222 | BOOK_TICKET | APPLIED_REJECTED | SEAT_ALREADY_BOOKED | null | 4 | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- business_events: SELECT log_index, request_id, event_type, event_json FROM business_events ORDER BY log_index
+log_index | request_id | event_type | event_json
+1 | 11111111-1111-1111-1111-111111111111 | BOOK_CONFIRMED | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+4 | 22222222-2222-2222-2222-222222222222 | BOOK_REJECTED | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- raft_apply_progress: SELECT singleton, last_applied FROM raft_apply_progress ORDER BY singleton
+singleton | last_applied
+1 | 5
+SPEC-07 §5 checks: seats=10 (expected 10), duplicate ACTIVE seats=0 (expected 0), duplicate requestIds=0 (expected 0), last_applied=5
+=== END FAKE/LOCAL PostgreSQL snapshot ===
+]]></system-out>
+  </testcase>
+  <testcase name="test06_timeout_outcomeUnknown_noPersistedRequestResults" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.008"/>
+  <testcase name="test07_notLeaderAndNoQuorum_neverConfirmed" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.003"/>
+  <testcase name="test10_unsupportedMessageType_errorResponse" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.002"/>
+  <testcase name="registersOnlyBookAndGetSeatsWithTv3Registry" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.003"/>
+  <testcase name="test09_getSeats_orderedTenSeats_bookedWithTicketId_barrierFailures" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.004"/>
+  <testcase name="test08_doesNotIssueConfirmedBeforeApplyCompletes" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.002"/>
+  <testcase name="test04_retrySameRequestIdDifferentMessageId_sameResult_noExtraTicket" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.001"/>
+  <testcase name="test03_seatAlreadyBooked_rejected_onlyOneActiveTicket" classname="vn.nhom6.railway.booking.BookingRequestHandlerTest" time="0.001"/>
+</testsuite>

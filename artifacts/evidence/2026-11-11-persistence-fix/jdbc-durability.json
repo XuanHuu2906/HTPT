@@ -1,0 +1,441 @@
+{
+  "command": [
+    "python3",
+    "artifacts/evidence/2026-11-11-persistence-fix/restart-jdbc.py"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T09:17:49.727482+00:00",
+  "finished_utc": "2026-11-11T09:17:52.160393+00:00",
+  "commit": "adc4607b916cedcdbe654f6fdb6a5cdda229fa83",
+  "patch_sha256": "2fdfa09305dc9810a71dcf6f3a69e0ecd441142c25fb39e3f9f20061c118b0d9",
+  "previous_maven_report_inventory_not_executed_by_this_command": [
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations",
+      "tests": "16",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$NoOpTests",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid",
+      "tests": "19",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingCommandTest",
+      "tests": "0",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingRaftContractTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$Determinism",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest$Init",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingStateMachineTest",
+      "tests": "0",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.booking.BookingRequestHandlerTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.FramingTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.NodeMainTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.BookTicketHandlerTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.BookingTcpIntegrationTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.GetSeatsHandlerTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.TcpSingleNodeProtocolTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.MessageDispatcherTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.networking.TcpServerClientTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.SchemaMigrationTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcRequestResultStoreTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcRaftStorageTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcBookingRepositoryTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.core.RaftCoreContractTest",
+      "tests": "30",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.core.RaftCoreModelTest",
+      "tests": "54",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.ElectionCoreContractTest",
+      "tests": "28",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.ElectionTest",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest",
+      "tests": "19",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.TimerTest",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.VoteRulesTest",
+      "tests": "33",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.VoteSafetyTest",
+      "tests": "41",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.VoteRpcAdapterTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.ElectionSimulationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.RaftElectionComponentTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.SplitVoteTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.election.VotePersistenceTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.ConflictTests",
+      "tests": "31",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.LogConflictResolverTest",
+      "tests": "27",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.RaftLogTest",
+      "tests": "17",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.RaftStorageAdapterTest",
+      "tests": "25",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests",
+      "tests": "56",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest",
+      "tests": "0",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.raft.replication.PersistenceAckTest",
+      "tests": "29",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.protocol.MessageCodecNegativeTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.protocol.MessageEnvelopeTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.protocol.PayloadDtoTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.protocol.ProtocolContractTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.tests.Node1DatabaseIntegrationTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "annotation": "This command runs Java source probes and docker restart, not Maven. Report inventory was copied by runner; see jdbc-regression-fixed.json for the actual Maven execution."
+}

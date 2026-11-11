@@ -16,11 +16,12 @@ import java.util.logging.Logger;
 import vn.nhom6.railway.booking.ApplyResult;
 import vn.nhom6.railway.booking.BookingCommand;
 import vn.nhom6.railway.booking.BookingRepository;
+import vn.nhom6.railway.booking.BookingRequestHandler;
 import vn.nhom6.railway.booking.BookingStateMachine;
 import vn.nhom6.railway.booking.ConnectionFactory;
 
 /** PostgreSQL repository that applies each committed booking command atomically. */
-public final class JdbcBookingRepository implements BookingRepository {
+public final class JdbcBookingRepository implements BookingRepository, BookingRequestHandler.SeatSnapshotReader {
     private static final Logger LOGGER =
             Logger.getLogger(JdbcBookingRepository.class.getName());
     private static final String TRIP_ID = "SE-001";
@@ -483,7 +484,14 @@ public final class JdbcBookingRepository implements BookingRepository {
 
     @Override
     public Map<String, String> readSeatSnapshot() {
-        Map<String, String> seats = new LinkedHashMap<>();
+        Map<String, String> statuses = new LinkedHashMap<>();
+        readSnapshot().forEach((seat, state) -> statuses.put(seat, state.status()));
+        return Collections.unmodifiableMap(statuses);
+    }
+
+    @Override
+    public Map<String, BookingRequestHandler.SeatState> readSnapshot() {
+        Map<String, BookingRequestHandler.SeatState> seats = new LinkedHashMap<>();
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(
                         "SELECT seat_id, status, current_ticket_id FROM seats "
@@ -494,7 +502,7 @@ public final class JdbcBookingRepository implements BookingRepository {
                     String seatId = resultSet.getString(1);
                     String status = resultSet.getString(2);
                     String ticketId = resultSet.getString(3);
-                    if (seats.putIfAbsent(seatId, status) != null) {
+                    if (seats.putIfAbsent(seatId, new BookingRequestHandler.SeatState(status, ticketId)) != null) {
                         throw integrityFailure("Duplicate seat in snapshot: " + seatId);
                     }
                     if ("AVAILABLE".equals(status) != (ticketId == null)

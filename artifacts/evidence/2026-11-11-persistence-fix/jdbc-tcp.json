@@ -1,0 +1,17 @@
+{
+  "command": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "-pl",
+    "backend-node",
+    "-am",
+    "-Dtest=JdbcBookingTcpIntegrationTest",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "test"
+  ],
+  "exit_code": 1,
+  "started_utc": "2026-11-11T08:44:04.826521+00:00",
+  "finished_utc": "2026-11-11T08:44:13.278083+00:00",
+  "commit": "adc4607b916cedcdbe654f6fdb6a5cdda229fa83"
+}

@@ -1,0 +1,11 @@
+COMMAND: ['java', '-cp', '/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar', 'artifacts/evidence/2026-11-11-persistence-fix/JdbcDurabilityProbe.java', 'prepare', 'railway_test_62bbc33c0d354faa9286a8a24a4f35e7']
+prepare: JDBC SQL tickets=1, request_results=1, last_applied=1; requestId=11111111-1111-1111-1111-111111111111, G02 BOOKED, ticket=durability-ticket; controlled fixture, NOT Raft
+EXIT_CODE: 0
+COMMAND: ['docker', 'compose', '-f', 'docker/compose.dev.yml', 'restart', 'postgres-1']
+ Container railway-postgres-1 Restarting 
+ Container railway-postgres-1 Started 
+EXIT_CODE: 0
+COMMAND: ['java', '-cp', '/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar', 'artifacts/evidence/2026-11-11-persistence-fix/JdbcDurabilityProbe.java', 'verify', 'railway_test_62bbc33c0d354faa9286a8a24a4f35e7']
+verify: JDBC SQL tickets=1, request_results=1, last_applied=1; requestId=11111111-1111-1111-1111-111111111111, G02 BOOKED, ticket=durability-ticket; controlled fixture, NOT Raft
+EXIT_CODE: 0
+PASS JDBC data survives graceful PostgreSQL restart plus a fresh JVM. Not a Raft/crash durability claim.

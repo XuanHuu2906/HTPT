@@ -1,6 +1,11 @@
 package vn.nhom6.railway.networking;
 
 import vn.nhom6.railway.booking.ConnectionFactory;
+import vn.nhom6.railway.booking.BookingRequestHandler;
+import vn.nhom6.railway.persistence.JdbcBookingRepository;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.UUID;
 import vn.nhom6.railway.raft.election.RaftElectionComponent;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
@@ -50,7 +55,11 @@ public class NodeMain implements AutoCloseable {
     private Thread shutdownHook;
 
     public NodeMain(NodeConfig config) {
-        this(config, new FakeBookingService(config.nodeId()), null);
+        this(config, new UnavailableBookingService(), null,
+                config.dbConfig() == null ? null : persistentHandler(config,
+                        command -> { throw new BookingRequestHandler.NotLeaderException(null); },
+                        timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
+                                "Raft read barrier is not wired"); }));
     }
 
     public NodeMain(NodeConfig config, BookingService bookingService) {
@@ -58,6 +67,32 @@ public class NodeMain implements AutoCloseable {
     }
 
     public NodeMain(NodeConfig config, BookingService bookingService, RaftElectionComponent election) {
+        this(config, bookingService, election, null);
+    }
+
+    /**
+     * Composition boundary for TV2/TV3 and the Raft owner. Submitter completion must mean
+     * Raft commit AND durable JDBC apply, never merely append acceptance. Read barrier must
+     * await a committed/applied current-term NO_OP. This factory does not implement consensus.
+     */
+    public static NodeMain withPersistentBooking(NodeConfig config,
+            BookingRequestHandler.CommandSubmitter submitter,
+            BookingRequestHandler.ReadBarrier barrier, RaftElectionComponent election) {
+        return new NodeMain(config, new UnavailableBookingService(), election,
+                persistentHandler(config, submitter, barrier));
+    }
+
+    private static BookingRequestHandler persistentHandler(NodeConfig config,
+            BookingRequestHandler.CommandSubmitter submitter,
+            BookingRequestHandler.ReadBarrier barrier) {
+        var repository = new JdbcBookingRepository(new ConnectionFactory(
+                Objects.requireNonNull(config.dbConfig(), "Persistent booking requires DB configuration")));
+        return new BookingRequestHandler(submitter, barrier, () -> UUID.randomUUID().toString(),
+                Clock.systemUTC(), repository, config.nodeId(), Duration.ofSeconds(3));
+    }
+
+    private NodeMain(NodeConfig config, BookingService bookingService,
+            RaftElectionComponent election, BookingRequestHandler persistentBooking) {
         this.config = Objects.requireNonNull(config, "config must not be null");
         this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
         this.election = election;
@@ -75,6 +110,7 @@ public class NodeMain implements AutoCloseable {
         this.raftServer.setMessageHandler(raftDispatcher);
 
         configureDefaultHandlers();
+        if (persistentBooking != null) persistentBooking.register(clientRegistry);
         if (election != null) election.register(raftRegistry);
     }
 
@@ -162,7 +198,7 @@ public class NodeMain implements AutoCloseable {
         if (config.dbConfig() != null) {
             checkDatabaseConnection();
         } else {
-            LOGGER.info(() -> "[" + config.nodeId() + "] Running without PostgreSQL configuration (in-memory mode).");
+            LOGGER.info(() -> "[" + config.nodeId() + "] PostgreSQL is not configured; booking is unavailable.");
         }
 
         // 4. Register Shutdown Hook

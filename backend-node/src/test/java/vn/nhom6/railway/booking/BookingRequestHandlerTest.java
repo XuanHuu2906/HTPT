@@ -337,7 +337,8 @@ class BookingRequestHandlerTest {
             JdbcCommittedCommandApplier applier =
                     new JdbcCommittedCommandApplier(database.connectionFactory());
             DatabaseCommitter committer = new DatabaseCommitter(database, repository, applier);
-            BookingRequestHandler handler = handler(
+            AtomicInteger ticketSequence = new AtomicInteger();
+            BookingRequestHandler handler = new BookingRequestHandler(
                     committer,
                     timeout -> {
                         long index = repository.lastApplied() + 1;
@@ -346,8 +347,12 @@ class BookingRequestHandlerTest {
                         return CompletableFuture.completedFuture(
                                 new BookingRequestHandler.ReadBarrierResult(index, "node-1"));
                     },
+                    () -> "ticket-db-" + ticketSequence.incrementAndGet(),
+                    Clock.fixed(FIXED_TIME, ZoneOffset.UTC),
                     repository,
-                    database::readSeatSnapshot);
+                    database::readSeatSnapshot,
+                    "node-1",
+                    TEST_TIMEOUT);
 
             MessageEnvelope<?> confirmed =
                     handler.handleBooking(bookRequest(REQUEST_1, "G01", "Linh"));
