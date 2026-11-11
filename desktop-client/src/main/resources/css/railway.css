@@ -729,3 +729,119 @@
 }
 
 
+
+/* =============================================================================
+   TASK TV1-D11: THANH TRẠNG THÁI KẾT NỐI CỤM, NODE VÀ LEADER
+   ============================================================================= */
+
+/* Chấm tròn biểu thị trạng thái kết nối */
+.status-dot-base {
+    -fx-min-width: 10px;
+    -fx-min-height: 10px;
+    -fx-max-width: 10px;
+    -fx-max-height: 10px;
+    -fx-pref-width: 10px;
+    -fx-pref-height: 10px;
+    -fx-background-radius: 5px;
+}
+
+.status-dot-connected {
+    -fx-background-color: #10b981;
+    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.6), 4, 0, 0, 0);
+}
+
+.status-dot-connecting {
+    -fx-background-color: #f59e0b;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.6), 4, 0, 0, 0);
+}
+
+.status-dot-disconnected {
+    -fx-background-color: #ef4444;
+    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.6), 4, 0, 0, 0);
+}
+
+.status-dot-unknown {
+    -fx-background-color: #94a3b8;
+}
+
+/* Huy hiệu vai trò Node (Role Badge) */
+.role-badge {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8;
+    -fx-background-radius: 4px;
+}
+
+.role-leader {
+    -fx-background-color: #065f46;
+    -fx-text-fill: #6ee7b7;
+    -fx-border-color: #10b981;
+    -fx-border-radius: 4px;
+}
+
+.role-follower {
+    -fx-background-color: #1e3a8a;
+    -fx-text-fill: #93c5fd;
+    -fx-border-color: #3b82f6;
+    -fx-border-radius: 4px;
+}
+
+.role-candidate {
+    -fx-background-color: #581c87;
+    -fx-text-fill: #d8b4fe;
+    -fx-border-color: #a855f7;
+    -fx-border-radius: 4px;
+}
+
+.role-unknown {
+    -fx-background-color: #334155;
+    -fx-text-fill: #94a3b8;
+    -fx-border-color: #475569;
+    -fx-border-radius: 4px;
+}
+
+/* Huy hiệu Nguồn dữ liệu (DataSource Badge) */
+.badge-source {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 7;
+    -fx-background-radius: 4px;
+}
+
+.badge-real {
+    -fx-background-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #059669;
+    -fx-border-radius: 4px;
+}
+
+.badge-mock {
+    -fx-background-color: #b45309;
+    -fx-text-fill: #fef3c7;
+    -fx-border-color: #d97706;
+    -fx-border-radius: 4px;
+}
+
+.badge-none {
+    -fx-background-color: #334155;
+    -fx-text-fill: #cbd5e1;
+    -fx-border-color: #475569;
+    -fx-border-radius: 4px;
+}
+
+/* Nút làm mới trạng thái cụm */
+.cluster-refresh-btn {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8;
+    -fx-background-radius: 4px;
+    -fx-border-color: #475569;
+    -fx-border-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.cluster-refresh-btn:hover {
+    -fx-background-color: #334155;
+    -fx-text-fill: #ffffff;
+}

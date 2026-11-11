@@ -158,8 +158,20 @@ public class BookingViewModel {
                 errorCode.set(reason);
                 if ("NOT_LEADER".equalsIgnoreCase(reason)) {
                     uiState.set(UiState.ERROR);
-                    leaderHint.set(result.getLeaderHint() != null ? result.getLeaderHint() : "node-2");
-                    message.set("⚡ Lỗi định tuyến: Node không phải Leader! Gợi ý kết nối: " + leaderHint.get() + " [MOCK]");
+                    String hint = (result.getLeaderHint() != null && !result.getLeaderHint().isBlank()) ? result.getLeaderHint().trim() : "";
+                    leaderHint.set(hint);
+                    message.set("⚡ Lỗi định tuyến: Node không phải Leader!"
+                            + (hint.isEmpty() ? "" : " Gợi ý kết nối: " + hint)
+                            + (result.isMock() ? " [MOCK]" : ""));
+                    try {
+                        ClusterConnectionViewModel clusterVm = vn.nhom6.railway.client.ClientFactory.getClusterConnectionViewModel();
+                        if (clusterVm != null && !hint.isEmpty()) {
+                            clusterVm.applyLeaderHint(hint, result.isMock()
+                                    ? vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.MOCK
+                                    : vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.REAL);
+                        }
+                    } catch (Exception ignored) {
+                    }
                 } else if ("NO_QUORUM".equalsIgnoreCase(reason)) {
                     uiState.set(UiState.ERROR);
                     message.set("⚡ Lỗi cụm: Không đủ đa số (Quorum 3/5) để cam kết an toàn! [MOCK]");

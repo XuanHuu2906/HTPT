@@ -37,6 +37,9 @@ public class MainController {
     @FXML
     private Label mockBadgeLabel;
 
+    @FXML
+    private ClusterStatusBarController clusterStatusBarController;
+
     // === Vùng điều hướng bên trái (Navigation Region) ===
     @FXML
     private VBox navRegion;
@@ -198,5 +201,9 @@ public class MainController {
         if (statusMessageLabel != null) {
             statusMessageLabel.setText(message);
         }
+    }
+
+    public ClusterStatusBarController getClusterStatusBarController() {
+        return clusterStatusBarController;
     }
 }

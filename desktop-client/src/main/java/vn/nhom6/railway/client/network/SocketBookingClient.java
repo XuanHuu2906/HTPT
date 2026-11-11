@@ -18,12 +18,10 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -34,15 +32,22 @@ import java.util.concurrent.ThreadFactory;
  * Triển khai {@link BookingClient} kết nối TCP Socket tới Node backend thật
  * theo đặc tả SPEC-03 Section 2, Section 3, Section 4.1 và Section 4.2.
  *
- * <p>Đặc tính kỹ thuật:
+ * <p>
+ * Đặc tính kỹ thuật:
  * <ul>
- *   <li>Sử dụng framing 4-byte big-endian length prefix + UTF-8 JSON envelope của module {@code shared}.</li>
- *   <li>Chạy hoàn toàn bất đồng bộ trên daemon thread pool, không chặn JavaFX thread.</li>
- *   <li>Tuyệt đối không dùng thư viện HTTP hay REST.</li>
- *   <li>Kết quả trả về mang cờ {@code mock = false} (dữ liệu thật từ socket).</li>
- *   <li>Tuân thủ timeout: SocketTimeout sau khi gửi BOOK ánh xạ về kết quả UNKNOWN (TIMEOUT_UNKNOWN)
- *       để UI tra cứu lại cùng requestId, không tự ý chuyển thành REJECTED hay sinh requestId mới.</li>
- *   <li>Ghi log mỗi lời gọi gồm requestId, messageId, type, endpoint, kết quả/mã lỗi, thời gian phản hồi.</li>
+ * <li>Sử dụng framing 4-byte big-endian length prefix + UTF-8 JSON envelope của
+ * module {@code shared}.</li>
+ * <li>Chạy hoàn toàn bất đồng bộ trên daemon thread pool, không chặn JavaFX
+ * thread.</li>
+ * <li>Tuyệt đối không dùng thư viện HTTP hay REST.</li>
+ * <li>Kết quả trả về mang cờ {@code mock = false} (dữ liệu thật từ
+ * socket).</li>
+ * <li>Tuân thủ timeout: SocketTimeout sau khi gửi BOOK ánh xạ về kết quả
+ * UNKNOWN (TIMEOUT_UNKNOWN)
+ * để UI tra cứu lại cùng requestId, không tự ý chuyển thành REJECTED hay sinh
+ * requestId mới.</li>
+ * <li>Ghi log mỗi lời gọi gồm requestId, messageId, type, endpoint, kết quả/mã
+ * lỗi, thời gian phản hồi.</li>
  * </ul>
  */
 public class SocketBookingClient implements BookingClient, AutoCloseable {
@@ -74,7 +79,8 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     };
 
     /**
-     * Khởi tạo với host và port cấu hình tự động từ System properties hoặc file cấu hình.
+     * Khởi tạo với host và port cấu hình tự động từ System properties hoặc file cấu
+     * hình.
      */
     public SocketBookingClient() {
         this(resolveConfiguredHost(), resolveConfiguredPort());
@@ -146,8 +152,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
             MessageEnvelope<GetSeatsRequestDto> reqEnvelope = MessageEnvelope.createRequest(
                     MessageType.GET_SEATS,
                     senderId,
-                    request
-            );
+                    request);
             String messageId = reqEnvelope.getMessageId();
 
             try {
@@ -158,18 +163,23 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                 if (resType == MessageType.GET_SEATS_RESPONSE) {
                     JsonNode payload = resEnvelope.getPayload();
                     String tripId = (payload != null && payload.hasNonNull("tripId"))
-                            ? payload.get("tripId").asText() : request.getTripId();
+                            ? payload.get("tripId").asText()
+                            : request.getTripId();
                     Long readIndex = (payload != null && payload.hasNonNull("readIndex"))
-                            ? payload.get("readIndex").asLong() : null;
+                            ? payload.get("readIndex").asLong()
+                            : null;
                     String leaderId = (payload != null && payload.hasNonNull("leaderId"))
-                            ? payload.get("leaderId").asText() : null;
+                            ? payload.get("leaderId").asText()
+                            : null;
 
                     List<SeatInfoDto> seats = new ArrayList<>();
                     if (payload != null && payload.has("seats") && payload.get("seats").isArray()) {
                         for (JsonNode seatNode : payload.get("seats")) {
                             String seatId = seatNode.hasNonNull("seatId") ? seatNode.get("seatId").asText() : "";
-                            String status = seatNode.hasNonNull("status") ? seatNode.get("status").asText() : "AVAILABLE";
-                            String ticketId = seatNode.hasNonNull("ticketId") ? seatNode.get("ticketId").asText() : null;
+                            String status = seatNode.hasNonNull("status") ? seatNode.get("status").asText()
+                                    : "AVAILABLE";
+                            String ticketId = seatNode.hasNonNull("ticketId") ? seatNode.get("ticketId").asText()
+                                    : null;
                             seats.add(new SeatInfoDto(seatId, status, ticketId));
                         }
                     }
@@ -196,7 +206,8 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     /**
      * Gửi yêu cầu đặt vé qua TCP (SPEC-03 §4.2 - BOOK_TICKET).
      * <p>
-     * Giữ nguyên {@code requestId} từ lớp gọi (ViewModel) truyền vào, không tự sinh requestId mới.
+     * Giữ nguyên {@code requestId} từ lớp gọi (ViewModel) truyền vào, không tự sinh
+     * requestId mới.
      * Mỗi lần gửi sinh {@code messageId} mới theo chuẩn envelope.
      */
     @Override
@@ -212,8 +223,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
             MessageEnvelope<BookTicketRequestDto> reqEnvelope = MessageEnvelope.createRequest(
                     MessageType.BOOK_TICKET,
                     senderId,
-                    request
-            );
+                    request);
             String messageId = reqEnvelope.getMessageId();
 
             try {
@@ -224,19 +234,26 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                 if (resType == MessageType.BOOK_TICKET_RESPONSE) {
                     JsonNode payload = resEnvelope.getPayload();
                     String outRequestId = (payload != null && payload.hasNonNull("requestId"))
-                            ? payload.get("requestId").asText() : requestId;
+                            ? payload.get("requestId").asText()
+                            : requestId;
                     String outcome = (payload != null && payload.hasNonNull("outcome"))
-                            ? payload.get("outcome").asText() : "UNKNOWN";
+                            ? payload.get("outcome").asText()
+                            : "UNKNOWN";
                     String ticketId = (payload != null && payload.hasNonNull("ticketId"))
-                            ? payload.get("ticketId").asText() : null;
+                            ? payload.get("ticketId").asText()
+                            : null;
                     String tripId = (payload != null && payload.hasNonNull("tripId"))
-                            ? payload.get("tripId").asText() : request.getTripId();
+                            ? payload.get("tripId").asText()
+                            : request.getTripId();
                     String seatId = (payload != null && payload.hasNonNull("seatId"))
-                            ? payload.get("seatId").asText() : request.getSeatId();
+                            ? payload.get("seatId").asText()
+                            : request.getSeatId();
                     String reasonCode = (payload != null && payload.hasNonNull("reasonCode"))
-                            ? payload.get("reasonCode").asText() : null;
+                            ? payload.get("reasonCode").asText()
+                            : null;
                     Long appliedLogIndex = (payload != null && payload.hasNonNull("appliedLogIndex"))
-                            ? payload.get("appliedLogIndex").asLong() : null;
+                            ? payload.get("appliedLogIndex").asLong()
+                            : null;
 
                     logCall(requestId, messageId, "BOOK_TICKET", outcome, elapsed);
                     return new BookTicketResponseDto(
@@ -249,8 +266,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                             appliedLogIndex,
                             false, // Không phải mock!
                             null,
-                            "CONFIRMED".equalsIgnoreCase(outcome) ? "Đặt vé thành công" : "Bị từ chối"
-                    );
+                            "CONFIRMED".equalsIgnoreCase(outcome) ? "Đặt vé thành công" : "Bị từ chối");
 
                 } else if (resType == MessageType.ERROR_RESPONSE) {
                     ErrorResponseDto err = MessageCodec.decodePayload(resEnvelope, ErrorResponseDto.class);
@@ -285,7 +301,8 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
             } catch (SocketTimeoutException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 logCall(requestId, messageId, "BOOK_TICKET", "TIMEOUT_UNKNOWN", elapsed);
-                // Timeout sau khi đã gửi lệnh BOOK → kết quả UNKNOWN (không ánh xạ thành REJECTED)
+                // Timeout sau khi đã gửi lệnh BOOK → kết quả UNKNOWN (không ánh xạ thành
+                // REJECTED)
                 return new BookTicketResponseDto(
                         requestId,
                         "UNKNOWN",
@@ -296,8 +313,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                         null,
                         false,
                         null,
-                        "Hết thời gian chờ phản hồi từ máy chủ (read timeout)"
-                );
+                        "Hết thời gian chờ phản hồi từ máy chủ (read timeout)");
             } catch (IOException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 logCall(requestId, messageId, "BOOK_TICKET", "CONNECTION_LOST", elapsed);
@@ -315,32 +331,31 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                         null,
                         false,
                         null,
-                        "Lỗi xử lý phản hồi: " + e.getMessage()
-                );
+                        "Lỗi xử lý phản hồi: " + e.getMessage());
             }
         }, executor);
     }
 
     /**
-     * Hủy vé (CANCEL_TICKET): Ngoài phạm vi D09 (chỉ yêu cầu BOOK_TICKET, GET_SEATS, GET_REQUEST_RESULT).
+     * Hủy vé (CANCEL_TICKET): Ngoài phạm vi D09 (chỉ yêu cầu BOOK_TICKET,
+     * GET_SEATS, GET_REQUEST_RESULT).
      */
     @Override
     public CompletableFuture<CancelTicketResponseDto> cancel(CancelTicketRequestDto request) {
         return CompletableFuture.failedFuture(
-                new UnsupportedOperationException("CANCEL chưa hỗ trợ ở SocketBookingClient (ngoài phạm vi D09)")
-        );
+                new UnsupportedOperationException("CANCEL chưa hỗ trợ ở SocketBookingClient (ngoài phạm vi D09)"));
     }
 
     /**
      * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT):
-     * Do TV3 chưa cung cấp DTO GetRequestResultRequestDto trong module {@code shared},
+     * Do TV3 chưa cung cấp DTO GetRequestResultRequestDto trong module
+     * {@code shared},
      * phương thức đánh dấu BLOCKED theo quy định Bước 0 của SPEC-03/D09.
      */
     @Override
     public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
         return CompletableFuture.failedFuture(
-                new UnsupportedOperationException("BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3")
-        );
+                new UnsupportedOperationException("BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3"));
     }
 
     // =========================================================================
@@ -355,7 +370,8 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                 byte[] responseBytes = FrameCodec.readFrame(in);
                 MessageEnvelope<JsonNode> responseEnvelope = MessageCodec.decode(responseBytes);
 
-                // Kiểm tra correlationId khớp messageId gửi đi per SPEC-03 Section 2 & Section 3
+                // Kiểm tra correlationId khớp messageId gửi đi per SPEC-03 Section 2 & Section
+                // 3
                 String expectedCorrelationId = requestEnvelope.getMessageId();
                 String actualCorrelationId = responseEnvelope.getCorrelationId();
                 if (!Objects.equals(expectedCorrelationId, actualCorrelationId)) {
@@ -403,7 +419,8 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     }
 
     private void logCall(String requestId, String messageId, String type, String outcome, long elapsedMs) {
-        String logLine = String.format("[TCP-CLIENT] requestId=%s, messageId=%s, type=%s, endpoint=%s:%d, outcome=%s, elapsedMs=%dms",
+        String logLine = String.format(
+                "[TCP-CLIENT] requestId=%s, messageId=%s, type=%s, endpoint=%s:%d, outcome=%s, elapsedMs=%dms",
                 requestId != null ? requestId : "N/A",
                 messageId != null ? messageId : "N/A",
                 type,

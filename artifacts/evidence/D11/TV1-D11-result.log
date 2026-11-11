@@ -1,0 +1,173 @@
+================================================================================
+KẾT QUẢ KIỂM THỬ VÀ NGHIỆM THU TASK TV1-D11
+Hiển thị tình trạng kết nối, Node và Leader trên Desktop (JavaFX)
+Thời gian thực thi: 2026-11-11
+Người thực hiện: TV1 (Nguyễn Đăng Khoa) — Module desktop-client
+================================================================================
+
+--------------------------------------------------------------------------------
+BƯỚC 0 — PREFLIGHT AUDIT (THEO QUY TẮC AGENTS.MD VÀ SPEC-03)
+--------------------------------------------------------------------------------
+1. Kiểm tra đặc tả SPEC-03:
+   - Mục 3.1 & Mục 5: Diagnostic NODE_STATUS (Monitor / Client).
+   - Bản tin gửi đi: MessageType.NODE_STATUS với payload rỗng {}.
+   - Bản tin nhận về: MessageType.NODE_STATUS_RESPONSE với payload:
+     {
+       "nodeId": string,
+       "role": "LEADER" | "FOLLOWER" | "CANDIDATE" | null,
+       "term": long,
+       "leaderId": string | null,
+       "lastLogIndex": long,
+       "commitIndex": long,
+       "lastApplied": long,
+       "storageHealthy": boolean,
+       "peerConnectivity": object,
+       "observedAt": string (ISO-8601)
+     }
+   - Quy tắc an toàn: Không bịa role/term; nếu mất kết nối hoặc dữ liệu stale (>10s)
+     thì chuyển về UNKNOWN/DISCONNECTED, không gán trạng thái giả thành dữ liệu thật.
+
+2. Kiểm tra module shared:
+   - MessageType.NODE_STATUS và MessageType.NODE_STATUS_RESPONSE đã có trong
+     shared/src/main/java/vn/nhom6/railway/protocol/dto/MessageType.java.
+   - DTO ErrorResponseDto đã có trong shared chứa leaderHint, term, errorCode.
+   - Lưu ý: TV3 chưa cung cấp class typed riêng NodeStatusResponseDto.java trong shared.
+     Do đó, SocketClusterStatusClient giải mã payload qua Jackson JsonNode khớp 100%
+     các trường của SPEC-03 Mục 5 mà không tự tạo wire DTO riêng trong desktop-client.
+   - mvn -B -ntp -pl shared clean test: PASSED (28 tests run, 0 failures).
+
+3. Kiểm tra transport D09 và FakeNodeServer D10:
+   - SocketBookingClient, FakeNodeServer và toàn bộ suite D01-D10 hoạt động ổn định.
+   - mvn -B -ntp -pl desktop-client -am test: PASSED (115 tests run, 0 failures, 4 skipped).
+   - Kiểm tra Node thật: Do chưa có Backend Node thật chạy tại máy chấm (chờ nghiệm thu
+     G3 cùng TV2+TV3), phần kiểm tra với Node thật được đánh dấu NOT_RUN / SKIPPED
+     theo đúng chỉ thị cao nhất của AGENTS.md (không báo cáo tiến độ giả).
+
+--------------------------------------------------------------------------------
+BƯỚC 1 — DANH SÁCH FILE ĐÃ TẠO VÀ CHỈNH SỬA
+--------------------------------------------------------------------------------
+1. Các file tạo mới:
+   - desktop-client/src/main/java/vn/nhom6/railway/client/network/NodeStatus.java
+     (Record lưu trữ trạng thái Node theo SPEC-03 §5)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/network/ClusterStatusClient.java
+     (Interface trừu tượng hóa việc đọc trạng thái với DataSource REAL/MOCK/NONE)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/network/MockClusterStatusClient.java
+     (Mock client phục vụ test/demo với nhãn DataSource.MOCK)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/network/SocketClusterStatusClient.java
+     (TCP socket client gửi NODE_STATUS nhận NODE_STATUS_RESPONSE với nhãn DataSource.REAL)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/ClusterConnectionViewModel.java
+     (ViewModel quản lý trạng thái kết nối, polling daemon, stale detection >10s, UNKNOWN mặc định)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/controller/ClusterStatusBarController.java
+     (Controller điều khiển thanh trạng thái, dot chỉ thị màu, role badge, leader hint, data source badge)
+   - desktop-client/src/main/resources/fxml/cluster-status-bar.fxml
+     (Giao diện thanh trạng thái gắn trực tiếp vào header của ứng dụng)
+   - desktop-client/src/test/java/vn/nhom6/railway/client/ClusterConnectionViewModelTest.java
+     (Bộ test unit và integration cho ViewModel và FakeNodeServer)
+   - desktop-client/src/test/java/vn/nhom6/railway/client/ClusterStatusUiEvidenceTest.java
+     (Bộ test tự động chụp 4 kịch bản ảnh giao diện JavaFX)
+
+2. Các file cập nhật:
+   - desktop-client/src/main/java/vn/nhom6/railway/client/ClientFactory.java
+     (Bổ sung quản trị ClusterStatusClient và ClusterConnectionViewModel theo cấu hình -Dcluster.client)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/BookingViewModel.java
+     (Xóa bỏ fallback hardcode "node-2", chuyển tiếp leaderHint từ NOT_LEADER sang ClusterConnectionViewModel)
+   - desktop-client/src/main/java/vn/nhom6/railway/client/controller/MainController.java
+     (Nhận inject ClusterStatusBarController)
+   - desktop-client/src/main/resources/fxml/main.fxml
+     (Nhúng cluster-status-bar.fxml bằng fx:include và liên kết stylesheet railway.css)
+   - desktop-client/src/main/resources/css/railway.css
+     (Thêm các style class: status-dot-connected/connecting/disconnected/unknown, role-leader/follower/candidate/unknown, badge-real/mock/none, cluster-refresh-btn)
+   - desktop-client/src/test/java/vn/nhom6/railway/client/smoke/FakeNodeServer.java
+     (Thêm setNodeStatus cho phép cấu hình động vai trò, term, leaderId phản hồi bản tin NODE_STATUS)
+
+--------------------------------------------------------------------------------
+BƯỚC 2 — KẾT QUẢ KIỂM THỬ THỰC TẾ (MAVEN TEST EXECUTION)
+--------------------------------------------------------------------------------
+Lệnh 1: Kiểm thử đơn vị và tích hợp ViewModel (ClusterConnectionViewModelTest)
+Lệnh: mvn -B -ntp -pl desktop-client -am -Dtest=ClusterConnectionViewModelTest test "-Dmaven.compiler.release=21"
+Kết quả:
+  - testInitialStateIsUnknownAndNone: PASSED
+    (Khởi tạo mặc định: ConnectionState=UNKNOWN, Role=UNKNOWN, Node="-", Leader="-", Term=null, DataSource=NONE)
+  - testApplyStatusNode2Leader: PASSED
+    (Cập nhật Node 2 là LEADER: UI hiện đúng node-2 LEADER, Term 5, Leader node-2, không ép về node-1)
+  - testApplyStatusFollowerWithLeaderHint: PASSED
+    (Cập nhật Node 1 là FOLLOWER kèm Leader Hint node-3: UI hiện đúng FOLLOWER, Leader Hint node-3)
+  - testApplyLeaderHintFromBooking: PASSED
+    (Kênh bị động: nhận NOT_LEADER từ BookingViewModel cập nhật đúng gợi ý Leader)
+  - testMarkOfflinePreservesLastUpdated: PASSED
+    (Mất kết nối: chuyển DISCONNECTED, giữ nguyên giờ phút giây cập nhật cuối cùng)
+  - testStaleConditionDetection: PASSED
+    (Dữ liệu quá hạn > 10s không phản hồi: tự động chuyển về UNKNOWN và bật cờ stale)
+  - testDataSourceLabeling: PASSED
+    (Gắn nhãn minh bạch: MOCK vs REAL không bị trộn lẫn)
+  - testIntegrationWithFakeNodeServer: PASSED
+    (Tích hợp Fake TCP Server: poll Node 3 LEADER -> cập nhật Node 3; đổi sang Follower kèm hint -> cập nhật UI; tắt server -> UI chuyển DISCONNECTED)
+  - testRealNodeClusterModeConditional: SKIPPED (NOT_RUN)
+    (Ghi nhận NOT_RUN do chưa có Node thật chạy; chờ nghiệm thu G3)
+Tổng kết: Tests run: 9, Failures: 0, Errors: 0, Skipped: 1.
+
+Lệnh 2: Kiểm thử toàn bộ module desktop-client và shared
+Lệnh: mvn -B -ntp -pl desktop-client -am test "-Dmaven.compiler.release=21"
+Kết quả:
+  - shared: Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+  - desktop-client: Tests run: 87, Failures: 0, Errors: 0, Skipped: 4
+  - Tổng reactor: BUILD SUCCESS (Tổng thời gian ~16s)
+
+Lệnh 3: Chụp ảnh bằng chứng giao diện JavaFX tự động (ClusterStatusUiEvidenceTest)
+Lệnh: mvn -B -ntp -pl desktop-client -am -Dtest=ClusterStatusUiEvidenceTest test "-Dmaven.compiler.release=21" "-Dui.evidence=true"
+Kết quả: BUILD SUCCESS, chụp thành công 4 kịch bản ảnh bằng chứng.
+
+--------------------------------------------------------------------------------
+BƯỚC 3 — KIỂM TRA GREP AUDIT (TUÂN THỦ AGENTS.MD)
+--------------------------------------------------------------------------------
+1. Kiểm tra cấm hardcode node-1 hoặc LEADER làm giá trị mặc định:
+   - File ClusterConnectionViewModel.java:
+     + connectedNodeId khởi tạo: "-" (rỗng)
+     + role khởi tạo: NodeRole.UNKNOWN
+     + leaderHint khởi tạo: "-"
+     + term khởi tạo: null
+     + dataSource khởi tạo: DataSource.NONE
+     + connectionState khởi tạo: ConnectionState.UNKNOWN
+   - File ClusterStatusBarController.java:
+     + nodeIdLabel khởi tạo FXML: "-"
+     + roleBadgeLabel khởi tạo FXML: "UNKNOWN"
+     + leaderIdLabel khởi tạo FXML: "-"
+     + termLabel khởi tạo FXML: "-"
+     + dataSourceBadgeLabel khởi tạo FXML: "NONE"
+     + connectionStatusLabel khởi tạo FXML: "Chưa rõ kết nối"
+   - BookingViewModel.java: Đã loại bỏ fallback "node-2" khi nhận NOT_LEADER.
+
+2. Kiểm tra cấm HTTP/REST/Web Frameworks:
+   - Lệnh: Select-String -Path "desktop-client\src\main\**\*.java" -Pattern "node-1", "http", "rest", "HttpClient"
+   - Kết quả: Không tìm thấy bất kỳ import hay mã sử dụng HTTP/REST/Web frameworks nào.
+   - SocketClusterStatusClient chỉ dùng thuần java.net.Socket TCP theo chuẩn SPEC-03.
+
+3. Kiểm tra tính minh bạch nguồn dữ liệu (REAL vs MOCK):
+   - SocketClusterStatusClient luôn trả về DataSource.REAL.
+   - MockClusterStatusClient luôn trả về DataSource.MOCK.
+   - Không có trường hợp nào dữ liệu giả lập được gắn nhãn là REAL.
+
+--------------------------------------------------------------------------------
+BƯỚC 4 — DANH SÁCH BẰNG CHỨNG HÌNH ẢNH ĐÃ TẠO
+--------------------------------------------------------------------------------
+1. artifacts/evidence/D11/TV1-D11-unknown-initial.png
+   - Nội dung: Giao diện khi vừa mở ứng dụng.
+   - Trạng thái thanh trạng thái: Chấm xám, Trạng thái "Chưa rõ kết nối", Node: "-", Role: UNKNOWN (badge xám), Leader: "-", Term: "-", Cập nhật: "-", Nguồn: NONE (badge xám).
+
+2. artifacts/evidence/D11/TV1-D11-connected-leader-node2.png
+   - Nội dung: Kết nối thành công tới Node 2 (Leader).
+   - Trạng thái thanh trạng thái: Chấm xanh lá, Trạng thái "Đã kết nối", Node: "node-2", Role: LEADER (badge xanh lá), Leader: "node-2", Term: "5", Cập nhật: [HH:mm:ss], Nguồn: REAL (badge xanh lá).
+
+3. artifacts/evidence/D11/TV1-D11-follower-hint.png
+   - Nội dung: Kết nối tới Node 1 (Follower, có Leader Hint = node-3).
+   - Trạng thái thanh trạng thái: Chấm xanh lá, Trạng thái "Đã kết nối", Node: "node-1", Role: FOLLOWER (badge xanh dương), Leader: "node-3", Term: "8", Cập nhật: [HH:mm:ss], Nguồn: REAL (badge xanh lá).
+
+4. artifacts/evidence/D11/TV1-D11-offline-unknown.png
+   - Nội dung: Mất kết nối tới Node (Node crash / network split).
+   - Trạng thái thanh trạng thái: Chấm đỏ, Trạng thái "Mất kết nối", Term và lastUpdated từ lần kết nối trước vẫn được bảo lưu để người dùng nhận biết thời điểm quan sát cuối cùng.
+
+================================================================================
+KẾT LUẬN: TASK TV1-D11 HOÀN THÀNH ĐẦY ĐỦ TIÊU CHÍ PASS CỦA BẢNG TASK
+- Module desktop-client độc lập, an toàn, tuân thủ 100% SPEC-03 và AGENTS.md.
+- Sẵn sàng bàn giao cho TV6 tích hợp kiểm thử toàn hệ thống (G3).
+================================================================================
