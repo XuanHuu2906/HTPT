@@ -1,0 +1,172 @@
+================================================================================
+NHẬT KÝ NGHIỆM THU TASK TV1-D10 — JAVAFX→TCP SINGLE-NODE SMOKE TEST
+================================================================================
+Thời gian: 2026-11-11 09:05:00 (GMT+7)
+Người thực hiện: TV1 - Desktop Client (2k3hocviec <khoahoian03022003@gmail.com>)
+Môi trường kiểm thử:
+  - OS: Windows 11 Home (x86_64)
+  - JDK: Java HotSpot(TM) 64-Bit Server VM (build 21.0.12.1+1-LTS-4, 64-bit)
+  - Maven: 3.9.x
+  - Branch: feature/UI (sau khi merge origin/main mới nhất từ PR #58)
+================================================================================
+
+1. KẾT QUẢ BƯỚC 0 — PREFLIGHT CHECK
+--------------------------------------------------------------------------------
+[x] Mục 1: Đọc SPEC-03 (APPROVED-v1)
+    - Framing: 4 bytes unsigned length (big-endian) + N bytes UTF-8 JSON envelope.
+    - Envelope: protocolVersion (1), messageId (UUID duy nhất từng lần gửi),
+      correlationId (null ở request, bằng messageId ở response), type, senderId, sentAt, payload.
+    - MessageType chuẩn: GET_SEATS, GET_SEATS_RESPONSE, BOOK_TICKET, BOOK_TICKET_RESPONSE,
+      CANCEL_TICKET, CANCEL_TICKET_RESPONSE, GET_REQUEST_RESULT, GET_REQUEST_RESULT_RESPONSE,
+      NODE_STATUS, NODE_STATUS_RESPONSE, ERROR_RESPONSE.
+    - Mã lỗi chuẩn: NOT_LEADER, NO_QUORUM, REQUEST_ID_CONFLICT, TIMEOUT_UNKNOWN,
+      SEAT_ALREADY_BOOKED, TICKET_NOT_ACTIVE, INVALID_REQUEST, INTERNAL_ERROR.
+    - Kết quả: PASS.
+
+[x] Mục 2: Kiểm tra SocketBookingClient.java (D09) và shared classes
+    - desktop-client/.../SocketBookingClient.java: TỒN TẠI
+    - shared/.../FrameCodec.java: TỒN TẠI
+    - shared/.../MessageCodec.java: TỒN TẠI
+    - shared/.../MessageEnvelope.java: TỒN TẠI
+    - shared/.../MessageType.java: TỒN TẠI
+    - shared/.../BookTicketRequestDto.java: TỒN TẠI
+    - shared/.../BookTicketResponseDto.java: TỒN TẠI (TV3 vừa bàn giao ở TV3-D10)
+    - shared/.../GetSeatsRequestDto.java: TỒN TẠI
+    - shared/.../GetSeatsResponseDto.java: TỒN TẠI (TV3 vừa bàn giao ở TV3-D10)
+    - shared/.../SeatDto.java: TỒN TẠI (TV3 vừa bàn giao ở TV3-D10)
+    - shared/.../ErrorResponseDto.java: TỒN TẠI
+    - Kết quả: PASS.
+
+[x] Mục 3: Cơ chế chọn SocketBookingClient qua cấu hình không sửa FXML/Controller
+    - ClientFactory.setBookingClient(BookingClient) cho phép tiêm client kiểm thử.
+    - ClientFactory.createDefaultClient() hỗ trợ -Dbooking.client=socket|mock.
+    - FXML và Controller giữ nguyên 100%.
+    - Kết quả: PASS.
+
+[!] Mục 4: Tình trạng DTO GET_REQUEST_RESULT từ TV3
+    - MessageType.GET_REQUEST_RESULT có trong enum shared.
+    - Chưa có class GetRequestResultRequestDto trong shared.
+    - Xử lý đúng quy định Bước 0: SocketBookingClient.getRequestResult() trả failedFuture
+      với thông báo "BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3".
+    - Kịch bản tra cứu/duplicate được thực hiện bằng cách gửi lại BOOK_TICKET cùng requestId
+      theo cơ chế Idempotent chuẩn của SPEC-03 §4.2, §4.4 và SPEC-05 §3.2.
+    - Kết quả: BLOCKED (phần DTO tra cứu riêng); PASS phần Idempotent retry.
+
+================================================================================
+2. CÁC TỆP ĐÃ TẠO MỚI TRONG TASK TV1-D10
+--------------------------------------------------------------------------------
+1. desktop-client/src/test/java/vn/nhom6/railway/client/smoke/FakeNodeServer.java
+   - Máy chủ giả lập TCP (FAKE SERVER — không phải Node thật).
+   - ServerSocket trên cổng 0 ngẫu nhiên, daemon thread xử lý kết nối song song.
+   - Sử dụng FrameCodec, MessageCodec và DTO của shared.
+   - Hỗ trợ PING / NODE_STATUS, GET_SEATS (10 ghế G01–G10), BOOK_TICKET (CONFIRMED,
+     REJECTED SEAT_ALREADY_BOOKED, ERROR REQUEST_ID_CONFLICT, Idempotent retry cùng kết quả),
+     GET_REQUEST_RESULT.
+   - Quản lý bộ đếm vé active: getActiveTicketCount(seatId).
+
+2. desktop-client/src/test/java/vn/nhom6/railway/client/smoke/SingleNodeSmokeTest.java
+   - Bộ kiểm thử khói headless độc lập, không yêu cầu màn hình hay đồ họa JavaFX.
+   - Kết nối SocketBookingClient thật tới FakeNodeServer (hoặc REAL NODE khi có NODE_HOST/PORT).
+   - Bao phủ 7 kịch bản:
+     + 1. Preflight smoke (kết nối, PING/STATUS, cờ mock = false).
+     + 2. GET_SEATS (đúng 10 ghế G01–G10, G02 AVAILABLE).
+     + 3. BOOK G02 (CONFIRMED, ticketId non-null, appliedLogIndex >= 1; sau đó GET_SEATS
+          thấy G02 BOOKED, 9 ghế còn lại AVAILABLE; SeatViewModel cập nhật đồng bộ).
+     + 4. Duplicate request (gửi lại 1 lần rồi 10 lần liên tiếp cùng requestId -> kết quả nhất quán,
+          duy nhất 1 vé ACTIVE trên G02, requestId giữ nguyên, messageId riêng biệt từng frame).
+     + 5. Conflict request (cùng requestId nhưng đổi payload sang ghế khác -> REQUEST_ID_CONFLICT,
+          không bị coi là thành công).
+     + 6. Cờ MOCK (kết quả từ socket và ViewModel không mang cờ MOCK).
+     + 7. GET_REQUEST_RESULT (ghi nhận trạng thái BLOCKED đúng thiết kế).
+
+3. desktop-client/src/test/java/vn/nhom6/railway/client/smoke/UiSmokeTest.java
+   - UI smoke test có JavaFX thật.
+   - Bật bằng cờ: -Dui.smoke=true hoặc biến môi trường UI_SMOKE=1.
+   - Khi không có cờ hoặc môi trường headless không có màn hình: Tự động SKIPPED (không tính PASS giả).
+   - Tiêu đề cửa sổ: "SMOKE — FAKE TCP SERVER (không phải Backend thật)".
+   - Nạp /fxml/main.fxml, mở sơ đồ ghế, đặt vé G02 qua Socket, gửi lại duplicate,
+     chụp snapshot giao diện lưu vào artifacts/evidence/D10/TV1-D10-ui.png.
+
+4. artifacts/evidence/D10/TV1-D10-result.log (file này)
+5. artifacts/evidence/D10/TV1-D10-ui.png (ảnh chụp màn hình JavaFX thật)
+
+================================================================================
+3. KẾT QUẢ CHẠY KIỂM THỬ THỰC TẾ (EVIDENCE RUN)
+--------------------------------------------------------------------------------
+A. Chạy toàn bộ test suite của desktop-client và shared:
+   Lệnh: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+   Kết quả: BUILD SUCCESS
+   - shared: Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+   - desktop-client: Tests run: 105, Failures: 0, Errors: 0, Skipped: 2
+     (1 test tích hợp chờ Node thật trong SocketBookingClientTest, 1 UiSmokeTest chờ bật cờ).
+
+B. Chạy SingleNodeSmokeTest độc lập:
+   Lệnh: mvn -B -ntp -pl desktop-client -am test -Dtest=SingleNodeSmokeTest "-Dsurefire.failIfNoSpecifiedTests=false" "-Dmaven.compiler.release=21"
+   Kết quả: Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 (PASS 100%)
+   Thời gian chạy: 4.264 s
+
+   Các log requestId thực tế ghi nhận:
+   - [SMOKE-STEP-1] Preflight check: requestId=34076305-1e37-469a-89ad-f8142d03e704 -> PASS
+   - [SMOKE-STEP-2] GET_SEATS: requestId=8c464339-fcd5-46e1-8aa4-865c607f6845 -> PASS (10 ghế, G02 AVAILABLE)
+   - [SMOKE-STEP-3] BOOK G02: requestId=2ffa90ed-db27-4aca-9680-3b787640ce07 -> CONFIRMED, G02 BOOKED -> PASS
+   - [SMOKE-STEP-4] Duplicate request: requestId=8c464339-fcd5-46e1-8aa4-865c607f6845
+     + Lần 1: CONFIRMED
+     + Lần 2: CONFIRMED (cùng ticketId, cùng appliedLogIndex)
+     + Lần 3..12 (10 lần gửi lặp): CONFIRMED (nhất quán tuyệt đối)
+     + Khẳng định Server: getActiveTicketCount("G02") = 1 (DUY NHẤT 1 VÉ ACTIVE)
+     + Khẳng định Envelope: 12 messageId phân biệt, duy nhất 1 requestId -> PASS
+   - [SMOKE-STEP-5] Conflict payload: requestId=b76e3c7c-c097-45ec-b665-04f89dd66484 -> REQUEST_ID_CONFLICT -> PASS
+   - [SMOKE-STEP-6] Check isMock(): requestId=3c892e3d-f383-44c4-9a7b-3cbe32b24546 -> isMock() == false -> PASS
+   - [SMOKE-STEP-7] GET_REQUEST_RESULT: requestId=72926e1c-b720-4111-b1f7-6d5f08e1d1db -> BLOCKED đúng thiết kế -> PASS
+
+C. Chạy UiSmokeTest (bật cờ -Dui.smoke=true):
+   Lệnh: mvn -B -ntp -pl desktop-client -am test -Dtest=UiSmokeTest "-Dui.smoke=true" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dmaven.compiler.release=21"
+   Kết quả: Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 (PASS 100%)
+   Log:
+   - [UI-SMOKE-SETUP] Khởi động FakeNodeServer tại cổng 52254
+   - [UI-SMOKE] Platform.runLater execution started on thread: JavaFX Application Thread
+   - [UI-SMOKE] showSeatGridView completed successfully!
+   - [UI-SMOKE] Bắt đầu đặt vé ghế G02 qua Socket với requestId=599c7072-221c-4df4-9267-60c837d998bd
+   - [TCP-CLIENT] outcome=CONFIRMED
+   - [UI-SMOKE] Gửi lại cùng yêu cầu đặt vé (duplicate) với requestId=599c7072-221c-4df4-9267-60c837d998bd -> CONFIRMED
+   - [UI-SMOKE-PASS] Đã chụp ảnh snapshot thành công: artifacts/evidence/D10/TV1-D10-ui.png
+
+================================================================================
+4. KẾT QUẢ KIỂM TRA CHẤT LƯỢNG MÃ NGUỒN (GREP AUDIT)
+--------------------------------------------------------------------------------
+1. Kiểm tra thư viện REST / HTTP:
+   Lệnh: Get-ChildItem -Path desktop-client/src/main/java -Recurse -File | Select-String "java.net.http|HttpURLConnection|HttpClient"
+   Kết quả: TRỐNG (Không sử dụng bất kỳ thư viện HTTP hay REST nào).
+
+2. Kiểm tra ranh giới kiến trúc (Không có java.net hoặc java.sql trong controller/viewmodel):
+   Lệnh: Get-ChildItem -Path desktop-client/src/main/java/vn/nhom6/railway/client/controller, desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel -Recurse -File | Select-String "java\.net\.|java\.sql\."
+   Kết quả: TRỐNG (Ranh giới kiến trúc được bảo toàn 100%).
+
+================================================================================
+5. HƯỚNG DẪN TỰ CHẠY UI SMOKE TRÊN MÁY WINDOWS
+--------------------------------------------------------------------------------
+Để tự chạy kiểm thử UI JavaFX mở cửa sổ trực quan và chụp lại ảnh, thực hiện lệnh PowerShell:
+
+```powershell
+mvn -B -ntp -pl desktop-client -am test -Dtest=UiSmokeTest "-Dui.smoke=true" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dmaven.compiler.release=21"
+```
+
+Cửa sổ JavaFX sẽ xuất hiện với tiêu đề:
+"SMOKE — FAKE TCP SERVER (không phải Backend thật)"
+và ảnh snapshot tự động cập nhật vào:
+artifacts/evidence/D10/TV1-D10-ui.png
+
+================================================================================
+6. CHẾ ĐỘ BACKEND THẬT & TIẾN ĐỘ NHÓM
+--------------------------------------------------------------------------------
+- REAL NODE: NOT_RUN (chờ G3 1-node E2E, nhóm nghiệm thu riêng).
+- SingleNodeSmokeTest đã viết sẵn cơ chế chuyển đổi sang Node thật thông qua
+  NODE_HOST và NODE_PORT (System property hoặc Environment variable).
+
+================================================================================
+7. KẾT LUẬN TRUNG THỰC (THEO CHỈ THỊ AGENTS.md)
+--------------------------------------------------------------------------------
+- Smoke test Desktop↔TCP với FAKE SERVER: PASS.
+- Backend thật: NOT_RUN (chờ G3 1-node E2E).
+- Không kết luận Backend PASS.
+================================================================================
