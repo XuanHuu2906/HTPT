@@ -1,7 +1,6 @@
 package vn.nhom6.railway.client.network;
 
 import java.time.Instant;
-import java.util.Objects;
 
 /**
  * Bản ghi trạng thái Node quan sát được theo đặc tả SPEC-03 Section 5.

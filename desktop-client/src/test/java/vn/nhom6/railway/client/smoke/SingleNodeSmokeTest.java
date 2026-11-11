@@ -11,7 +11,6 @@ import vn.nhom6.railway.client.network.GetSeatsResponseDto;
 import vn.nhom6.railway.client.network.SeatInfoDto;
 import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
-import vn.nhom6.railway.client.viewmodel.BookingViewModel.UiState;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.SeatStatus;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
@@ -25,7 +24,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;

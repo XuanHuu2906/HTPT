@@ -1,10 +1,8 @@
 package vn.nhom6.railway.client.smoke;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
-import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.BookTicketResponseDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 import vn.nhom6.railway.protocol.dto.FrameCodec;
@@ -27,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;

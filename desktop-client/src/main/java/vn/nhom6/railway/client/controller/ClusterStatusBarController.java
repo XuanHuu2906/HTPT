@@ -1,6 +1,5 @@
 package vn.nhom6.railway.client.controller;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
