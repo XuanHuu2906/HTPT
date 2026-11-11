@@ -22,29 +22,23 @@ import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 
-import java.io.BufferedOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Bộ kiểm thử cho {@link SocketBookingClient} sử dụng server giả trong cùng JVM (TASK TV1-D09).
+ * Bộ kiểm thử cho {@link SocketBookingClient} sử dụng server giả trong cùng JVM
+ * (TASK TV1-D09).
  * <p>
- * Lưu ý: Các kiểm thử sử dụng {@link FakeTcpServer} (FAKE SERVER, không phải Node thật).
- * Kiểm thử với Node thật chỉ chạy khi có biến môi trường NODE_HOST và NODE_PORT.
+ * Lưu ý: Các kiểm thử sử dụng {@link FakeTcpServer} (FAKE SERVER, không phải
+ * Node thật).
+ * Kiểm thử với Node thật chỉ chạy khi có biến môi trường NODE_HOST và
+ * NODE_PORT.
  */
 class SocketBookingClientTest {
 
@@ -82,7 +76,8 @@ class SocketBookingClientTest {
             payload.put("seatId", "G01");
             payload.putNull("reasonCode");
             payload.put("appliedLogIndex", 101L);
-            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1", payload);
+            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    payload);
         });
 
         BookTicketResponseDto response = client.book(bookReq).get(3, TimeUnit.SECONDS);
@@ -119,7 +114,8 @@ class SocketBookingClientTest {
             payload.put("seatId", "G02");
             payload.putNull("reasonCode");
             payload.put("appliedLogIndex", 102L);
-            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1", payload);
+            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    payload);
         });
 
         // Lần 1
@@ -154,7 +150,8 @@ class SocketBookingClientTest {
             payload.put("seatId", "G03");
             payload.put("reasonCode", "SEAT_ALREADY_BOOKED");
             payload.put("appliedLogIndex", 103L);
-            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1", payload);
+            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    payload);
         });
 
         BookTicketResponseDto response = client.book(bookReq).get(3, TimeUnit.SECONDS);
@@ -174,7 +171,8 @@ class SocketBookingClientTest {
         BookTicketRequestDto bookReq = new BookTicketRequestDto(reqId, "SE-001", "G04", "Khach Gui Nham Node");
 
         fakeServer.setHandler(reqEnv -> {
-            ErrorResponseDto err = new ErrorResponseDto("NOT_LEADER", "Node hien tai khong phai Leader", "node-3", 5L, reqId);
+            ErrorResponseDto err = new ErrorResponseDto("NOT_LEADER", "Node hien tai khong phai Leader", "node-3", 5L,
+                    reqId);
             return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.ERROR_RESPONSE, "node-1", err);
         });
 
@@ -213,7 +211,8 @@ class SocketBookingClientTest {
         BookTicketRequestDto bookReq = new BookTicketRequestDto(reqId, "SE-001", "G06", "Khach Xung Dot RequestId");
 
         fakeServer.setHandler(reqEnv -> {
-            ErrorResponseDto err = new ErrorResponseDto("REQUEST_ID_CONFLICT", "RequestId da ton tai voi payload khac", null, 5L, reqId);
+            ErrorResponseDto err = new ErrorResponseDto("REQUEST_ID_CONFLICT", "RequestId da ton tai voi payload khac",
+                    null, 5L, reqId);
             return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.ERROR_RESPONSE, "node-1", err);
         });
 
@@ -229,7 +228,8 @@ class SocketBookingClientTest {
     @DisplayName("Read Timeout sau khi đã gửi lệnh BOOK: trả về UNKNOWN (TIMEOUT_UNKNOWN), không thành công và không REJECTED")
     void testBookTicketReadTimeoutReturnsUnknown() throws Exception {
         // Cấu hình client với read timeout ngắn 400ms để test nhanh
-        SocketBookingClient quickTimeoutClient = new SocketBookingClient("127.0.0.1", fakeServer.getPort(), 2000, 400, "client-timeout-test");
+        SocketBookingClient quickTimeoutClient = new SocketBookingClient("127.0.0.1", fakeServer.getPort(), 2000, 400,
+                "client-timeout-test");
         fakeServer.setDelayMs(1000); // Server phản hồi chậm hơn timeout
 
         String reqId = UUID.randomUUID().toString();
@@ -252,7 +252,8 @@ class SocketBookingClientTest {
     void testConnectionRefusedThrowsException() {
         // Kết nối tới cổng không tồn tại
         SocketBookingClient deadClient = new SocketBookingClient("127.0.0.1", 65530, 500, 500, "dead-client");
-        BookTicketRequestDto bookReq = new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G08", "Khach Mat Ket Noi");
+        BookTicketRequestDto bookReq = new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G08",
+                "Khach Mat Ket Noi");
 
         CompletableFuture<BookTicketResponseDto> future = deadClient.book(bookReq);
         ExecutionException ex = assertThrows(ExecutionException.class, () -> future.get(3, TimeUnit.SECONDS));
@@ -265,7 +266,8 @@ class SocketBookingClientTest {
     @DisplayName("Server đóng kết nối sau khi nhận request: hoàn thành exceptionally")
     void testServerClosesConnectionThrowsException() {
         fakeServer.setCloseAfterRead(true);
-        BookTicketRequestDto bookReq = new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G08", "Khach Server Close");
+        BookTicketRequestDto bookReq = new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G08",
+                "Khach Server Close");
 
         CompletableFuture<BookTicketResponseDto> future = client.book(bookReq);
         ExecutionException ex = assertThrows(ExecutionException.class, () -> future.get(3, TimeUnit.SECONDS));
@@ -293,8 +295,7 @@ class SocketBookingClientTest {
                     requestEnvelope.getMessageId(),
                     MessageType.BOOK_TICKET_RESPONSE,
                     "node-1",
-                    payload
-            );
+                    payload);
 
             byte[] fullFrame = FrameCodec.frame(MessageCodec.encode(responseEnv));
             OutputStream out = socket.getOutputStream();
@@ -304,7 +305,8 @@ class SocketBookingClientTest {
             out.flush();
             try {
                 Thread.sleep(30);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+            }
             out.write(fullFrame, 6, fullFrame.length - 6);
             out.flush();
         });
@@ -344,7 +346,8 @@ class SocketBookingClientTest {
             }
             payload.set("seats", seatsArray);
 
-            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.GET_SEATS_RESPONSE, "node-3", payload);
+            return MessageEnvelope.createResponse(reqEnv.getMessageId(), MessageType.GET_SEATS_RESPONSE, "node-3",
+                    payload);
         });
 
         GetSeatsResponseDto seatsRes = client.getSeats(getSeatsReq).get(3, TimeUnit.SECONDS);
@@ -422,119 +425,5 @@ class SocketBookingClientTest {
     void testIntegrationWithRealNode() {
         // Không chạy khi không có môi trường thật
         fail("Không có Node thật đang chạy trong môi trường test");
-    }
-
-    // =========================================================================
-    // Fake TCP Server trong cùng JVM phục vụ test (FAKE SERVER, không phải Node thật)
-    // =========================================================================
-
-    static class FakeTcpServer implements AutoCloseable {
-
-        @FunctionalInterface
-        interface CustomResponseSender {
-            void sendResponse(Socket socket, MessageEnvelope<JsonNode> request) throws Exception;
-        }
-
-        private final ServerSocket serverSocket;
-        private final Thread acceptThread;
-        private volatile Function<MessageEnvelope<JsonNode>, MessageEnvelope<?>> handler;
-        private volatile CustomResponseSender customResponseSender;
-        private volatile long delayMs = 0;
-        private volatile boolean closeAfterRead = false;
-        private final List<MessageEnvelope<JsonNode>> receivedRequests = new CopyOnWriteArrayList<>();
-
-        public FakeTcpServer() throws IOException {
-            this.serverSocket = new ServerSocket(0);
-            this.acceptThread = new Thread(this::acceptLoop, "fake-tcp-server-acceptor");
-            this.acceptThread.setDaemon(true);
-            this.acceptThread.start();
-        }
-
-        public int getPort() {
-            return serverSocket.getLocalPort();
-        }
-
-        public void setHandler(Function<MessageEnvelope<JsonNode>, MessageEnvelope<?>> handler) {
-            this.handler = handler;
-            this.customResponseSender = null;
-        }
-
-        public void setCustomResponseSender(CustomResponseSender sender) {
-            this.customResponseSender = sender;
-            this.handler = null;
-        }
-
-        public void setDelayMs(long delayMs) {
-            this.delayMs = delayMs;
-        }
-
-        public void setCloseAfterRead(boolean closeAfterRead) {
-            this.closeAfterRead = closeAfterRead;
-        }
-
-        public List<MessageEnvelope<JsonNode>> getReceivedRequests() {
-            return receivedRequests;
-        }
-
-        private void acceptLoop() {
-            try {
-                while (!serverSocket.isClosed()) {
-                    Socket clientSocket = serverSocket.accept();
-                    Thread handlerThread = new Thread(() -> handleClient(clientSocket), "fake-client-handler");
-                    handlerThread.setDaemon(true);
-                    handlerThread.start();
-                }
-            } catch (IOException ignored) {
-            }
-        }
-
-        private void handleClient(Socket socket) {
-            try (socket) {
-                InputStream in = socket.getInputStream();
-                OutputStream out = new BufferedOutputStream(socket.getOutputStream());
-
-                while (!socket.isClosed()) {
-                    byte[] requestPayload;
-                    try {
-                        requestPayload = FrameCodec.readFrame(in);
-                    } catch (EOFException e) {
-                        break;
-                    }
-
-                    MessageEnvelope<JsonNode> requestEnvelope = MessageCodec.decode(requestPayload);
-                    receivedRequests.add(requestEnvelope);
-
-                    if (closeAfterRead) {
-                        socket.close();
-                        break;
-                    }
-
-                    if (delayMs > 0) {
-                        try {
-                            Thread.sleep(delayMs);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-
-                    if (customResponseSender != null) {
-                        customResponseSender.sendResponse(socket, requestEnvelope);
-                    } else if (handler != null) {
-                        MessageEnvelope<?> response = handler.apply(requestEnvelope);
-                        if (response != null) {
-                            FrameCodec.writeMessage(out, response);
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-            }
-        }
-
-        @Override
-        public void close() {
-            try {
-                serverSocket.close();
-            } catch (IOException ignored) {
-            }
-        }
     }
 }

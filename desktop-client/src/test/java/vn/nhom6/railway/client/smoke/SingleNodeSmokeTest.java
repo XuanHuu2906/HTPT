@@ -29,16 +29,21 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Kiểm thử khói đơn Node (Single-Node Smoke Test) không phụ thuộc Backend thật (TASK TV1-D10).
+ * Kiểm thử khói đơn Node (Single-Node Smoke Test) không phụ thuộc Backend thật
+ * (TASK TV1-D10).
  * <p>
  * Đặc tính:
  * <ul>
- *   <li>Headless hoàn toàn, không yêu cầu môi trường đồ họa JavaFX (chạy được trên mọi CI/CD và terminal).</li>
- *   <li>Sử dụng {@link SocketBookingClient} (D09) thật kết nối tới {@link FakeNodeServer} theo SPEC-03.</li>
- *   <li>Hỗ trợ chuyển mục tiêu sang Node thật khi có cấu hình {@code NODE_HOST} và {@code NODE_PORT}
- *       (mặc định chạy với server giả lập).</li>
- *   <li>Kiểm tra 3 kịch bản cốt lõi: BOOK ghế G02, GET_SEATS, Duplicate request (cùng requestId).</li>
- *   <li>Mọi bước đều ghi log requestId rõ ràng.</li>
+ * <li>Headless hoàn toàn, không yêu cầu môi trường đồ họa JavaFX (chạy được
+ * trên mọi CI/CD và terminal).</li>
+ * <li>Sử dụng {@link SocketBookingClient} (D09) thật kết nối tới
+ * {@link FakeNodeServer} theo SPEC-03.</li>
+ * <li>Hỗ trợ chuyển mục tiêu sang Node thật khi có cấu hình {@code NODE_HOST}
+ * và {@code NODE_PORT}
+ * (mặc định chạy với server giả lập).</li>
+ * <li>Kiểm tra 3 kịch bản cốt lõi: BOOK ghế G02, GET_SEATS, Duplicate request
+ * (cùng requestId).</li>
+ * <li>Mọi bước đều ghi log requestId rõ ràng.</li>
  * </ul>
  */
 @Timeout(value = 15, unit = TimeUnit.SECONDS)
@@ -136,8 +141,7 @@ public class SingleNodeSmokeTest {
                     bookRequestId,
                     "SE-001",
                     "G02",
-                    "Nguyễn Văn Smoke G02"
-            );
+                    "Nguyễn Văn Smoke G02");
 
             // Đặt vé qua SocketBookingClient
             BookTicketResponseDto bookRes = client.book(bookReq).get(3, TimeUnit.SECONDS);
@@ -152,7 +156,8 @@ public class SingleNodeSmokeTest {
             assertTrue(bookRes.getAppliedLogIndex() >= 1L);
             assertFalse(bookRes.isMock(), "isMock() phải là false");
 
-            LOGGER.info("[SMOKE-STEP-3] Đặt vé G02 thành công với ticketId=" + bookRes.getTicketId() + ", logIndex=" + bookRes.getAppliedLogIndex());
+            LOGGER.info("[SMOKE-STEP-3] Đặt vé G02 thành công với ticketId=" + bookRes.getTicketId() + ", logIndex="
+                    + bookRes.getAppliedLogIndex());
 
             // Kiểm tra trạng thái ghế sau khi đặt: G02 phải BOOKED, 9 ghế khác AVAILABLE
             GetSeatsResponseDto seatsRes = client.getSeats(new GetSeatsRequestDto("SE-001")).get(3, TimeUnit.SECONDS);
@@ -190,8 +195,7 @@ public class SingleNodeSmokeTest {
                     duplicateRequestId,
                     "SE-001",
                     "G02",
-                    "Trần Khách Trùng Lặp"
-            );
+                    "Trần Khách Trùng Lặp");
 
             // Lần gửi 1 (gốc)
             BookTicketResponseDto firstResponse = client.book(originalRequest).get(3, TimeUnit.SECONDS);
@@ -201,14 +205,16 @@ public class SingleNodeSmokeTest {
             assertNotNull(initialTicketId);
             Long initialLogIndex = firstResponse.getAppliedLogIndex();
 
-            LOGGER.info("[SMOKE-STEP-4] Lần 1: Thành công, ticketId=" + initialTicketId + ", appliedIndex=" + initialLogIndex);
+            LOGGER.info("[SMOKE-STEP-4] Lần 1: Thành công, ticketId=" + initialTicketId + ", appliedIndex="
+                    + initialLogIndex);
 
             // Lần gửi 2 (duplicate lần 1): cùng requestId và cùng payload
             BookTicketResponseDto secondResponse = client.book(originalRequest).get(3, TimeUnit.SECONDS);
             assertNotNull(secondResponse);
             assertEquals("CONFIRMED", secondResponse.getOutcome());
             assertEquals(initialTicketId, secondResponse.getTicketId(), "Duplicate lần 1 phải trả về đúng ticketId cũ");
-            assertEquals(initialLogIndex, secondResponse.getAppliedLogIndex(), "Duplicate lần 1 phải giữ nguyên appliedLogIndex");
+            assertEquals(initialLogIndex, secondResponse.getAppliedLogIndex(),
+                    "Duplicate lần 1 phải giữ nguyên appliedLogIndex");
 
             LOGGER.info("[SMOKE-STEP-4] Lần 2 (duplicate): Trả về đúng kết quả cũ!");
 
@@ -227,11 +233,13 @@ public class SingleNodeSmokeTest {
             if (!isRealNode && fakeServer != null) {
                 // Đếm số vé ACTIVE: Đúng 1 vé cho G02
                 int activeTickets = fakeServer.getActiveTicketCount("G02");
-                assertEquals(1, activeTickets, "BẤT BIẾN: Sau 12 lần gửi cùng requestId, chỉ được có DUY NHẤT 1 vé ACTIVE trên G02");
+                assertEquals(1, activeTickets,
+                        "BẤT BIẾN: Sau 12 lần gửi cùng requestId, chỉ được có DUY NHẤT 1 vé ACTIVE trên G02");
 
                 // Tổng số lần request tới server là 12
                 int totalAttempts = fakeServer.getRequestAttemptCount(duplicateRequestId);
-                assertEquals(12, totalAttempts, "Server phải nhận đúng 12 lần request với requestId=" + duplicateRequestId);
+                assertEquals(12, totalAttempts,
+                        "Server phải nhận đúng 12 lần request với requestId=" + duplicateRequestId);
 
                 // Kiểm tra mỗi lần gửi có messageId khác nhau nhưng requestId giữ nguyên
                 List<MessageEnvelope<JsonNode>> allRequests = fakeServer.getReceivedRequests().stream()
@@ -246,10 +254,12 @@ public class SingleNodeSmokeTest {
                         .map(MessageEnvelope::getMessageId)
                         .distinct()
                         .count();
-                assertEquals(12, distinctMessageIds, "Mỗi lần gửi phải sinh một messageId mới theo SPEC-03 Section 1 & Section 3");
+                assertEquals(12, distinctMessageIds,
+                        "Mỗi lần gửi phải sinh một messageId mới theo SPEC-03 Section 1 & Section 3");
             }
 
-            LOGGER.info("[SMOKE-STEP-4-PASS] Duplicate idempotent kiểm tra thành công: 1 + 10 lần gửi = duy nhất 1 vé!");
+            LOGGER.info(
+                    "[SMOKE-STEP-4-PASS] Duplicate idempotent kiểm tra thành công: 1 + 10 lần gửi = duy nhất 1 vé!");
         });
     }
 
@@ -265,8 +275,7 @@ public class SingleNodeSmokeTest {
                     conflictRequestId,
                     "SE-001",
                     "G02",
-                    "Khách Ban Đầu"
-            );
+                    "Khách Ban Đầu");
             BookTicketResponseDto firstRes = client.book(firstReq).get(3, TimeUnit.SECONDS);
             assertEquals("CONFIRMED", firstRes.getOutcome());
 
@@ -275,14 +284,14 @@ public class SingleNodeSmokeTest {
                     conflictRequestId,
                     "SE-001",
                     "G05",
-                    "Khách Xung Đột"
-            );
+                    "Khách Xung Đột");
             BookTicketResponseDto conflictRes = client.book(conflictingReq).get(3, TimeUnit.SECONDS);
 
             assertNotNull(conflictRes);
             assertEquals("REJECTED", conflictRes.getOutcome(), "Outcome phải là REJECTED");
             assertFalse(conflictRes.isConfirmed(), "Conflict không được coi là thành công");
-            assertEquals("REQUEST_ID_CONFLICT", conflictRes.getReasonCode(), "Mã lỗi/lý do phải là REQUEST_ID_CONFLICT");
+            assertEquals("REQUEST_ID_CONFLICT", conflictRes.getReasonCode(),
+                    "Mã lỗi/lý do phải là REQUEST_ID_CONFLICT");
 
             LOGGER.info("[SMOKE-STEP-5-PASS] Xung đột REQUEST_ID_CONFLICT được phát hiện và từ chối chính xác!");
         });
@@ -302,9 +311,9 @@ public class SingleNodeSmokeTest {
             assertFalse(res.isMock(), "BookTicketResponseDto từ socket phải có isMock() == false");
 
             // Kiểm tra ViewModel
-            CompletableFuture<BookTicketResponseDto> vmFuture = viewModel.book(
-                    new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G03", "Khách VM")
-            );
+            BookTicketRequestDto vmReq = new BookTicketRequestDto(UUID.randomUUID().toString(), "SE-001", "G03",
+                    "Khách VM");
+            CompletableFuture<BookTicketResponseDto> vmFuture = viewModel.book(vmReq);
             BookTicketResponseDto vmRes = vmFuture.get(3, TimeUnit.SECONDS);
             assertNotNull(vmRes);
             assertFalse(vmRes.isMock());

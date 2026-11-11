@@ -24,7 +24,6 @@ import javax.imageio.ImageIO;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +34,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Kiểm thử tự động sinh 4 ảnh bằng chứng UI cho TASK TV1-D11:
  * <ol>
- *   <li>TV1-D11-unknown-initial.png: Trạng thái UNKNOWN ban đầu.</li>
- *   <li>TV1-D11-connected-leader-node2.png: Kết nối tới Node 2 (Leader).</li>
- *   <li>TV1-D11-follower-hint.png: Kết nối tới Node 1 (Follower có Leader Hint là node-3).</li>
- *   <li>TV1-D11-offline-unknown.png: Mất kết nối, chuyển UNKNOWN bảo lưu lastUpdated.</li>
+ * <li>TV1-D11-unknown-initial.png: Trạng thái UNKNOWN ban đầu.</li>
+ * <li>TV1-D11-connected-leader-node2.png: Kết nối tới Node 2 (Leader).</li>
+ * <li>TV1-D11-follower-hint.png: Kết nối tới Node 1 (Follower có Leader Hint là
+ * node-3).</li>
+ * <li>TV1-D11-offline-unknown.png: Mất kết nối, chuyển UNKNOWN bảo lưu
+ * lastUpdated.</li>
  * </ol>
  */
 @Timeout(value = 30, unit = TimeUnit.SECONDS)
@@ -51,13 +52,15 @@ public class ClusterStatusUiEvidenceTest {
 
     @BeforeAll
     static void initJavaFxToolkit() {
-        boolean enabled = Boolean.getBoolean("ui.evidence") || Boolean.getBoolean("ui.smoke") || "1".equals(System.getenv("UI_EVIDENCE"));
+        boolean enabled = Boolean.getBoolean("ui.evidence") || Boolean.getBoolean("ui.smoke")
+                || "1".equals(System.getenv("UI_EVIDENCE"));
         if (!enabled || GraphicsEnvironment.isHeadless()) {
             return;
         }
 
         try {
-            Platform.startup(() -> {});
+            Platform.startup(() -> {
+            });
             Platform.setImplicitExit(false);
         } catch (IllegalStateException ignored) {
         }
@@ -65,7 +68,8 @@ public class ClusterStatusUiEvidenceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        boolean enabled = Boolean.getBoolean("ui.evidence") || Boolean.getBoolean("ui.smoke") || "1".equals(System.getenv("UI_EVIDENCE"));
+        boolean enabled = Boolean.getBoolean("ui.evidence") || Boolean.getBoolean("ui.smoke")
+                || "1".equals(System.getenv("UI_EVIDENCE"));
         Assumptions.assumeTrue(enabled,
                 "ClusterStatusUiEvidenceTest chỉ chạy khi có cờ -Dui.evidence=true hoặc -Dui.smoke=true");
         Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(),
@@ -144,8 +148,7 @@ public class ClusterStatusUiEvidenceTest {
                     46L,
                     46L,
                     true,
-                    Instant.now()
-            );
+                    Instant.now());
             ClientFactory.getClusterConnectionViewModel().applyStatus(node2Leader, DataSource.REAL);
         });
         captureSnapshot(new File(evidenceDir, "TV1-D11-connected-leader-node2.png"));
@@ -163,8 +166,7 @@ public class ClusterStatusUiEvidenceTest {
                     50L,
                     50L,
                     true,
-                    Instant.now()
-            );
+                    Instant.now());
             ClientFactory.getClusterConnectionViewModel().applyStatus(node1Follower, DataSource.REAL);
         });
         captureSnapshot(new File(evidenceDir, "TV1-D11-follower-hint.png"));
@@ -173,7 +175,8 @@ public class ClusterStatusUiEvidenceTest {
         // Kịch bản 4: Mất kết nối / Offline -> UNKNOWN (bảo lưu lastUpdated)
         // =====================================================================
         runOnFxWait(() -> {
-            ClientFactory.getClusterConnectionViewModel().markOffline("ConnectException: Connection refused", DataSource.REAL);
+            ClientFactory.getClusterConnectionViewModel().markOffline("ConnectException: Connection refused",
+                    DataSource.REAL);
         });
         captureSnapshot(new File(evidenceDir, "TV1-D11-offline-unknown.png"));
 
@@ -231,18 +234,13 @@ public class ClusterStatusUiEvidenceTest {
     }
 
     private File resolveEvidenceDir() {
-        try {
-            File currentDir = new File(".").getCanonicalFile();
-            File rootDir = "desktop-client".equalsIgnoreCase(currentDir.getName()) ? currentDir.getParentFile() : currentDir;
-            File dir = new File(rootDir, "artifacts/evidence/D11");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            return dir;
-        } catch (IOException e) {
-            File dir = new File("artifacts/evidence/D11");
-            dir.mkdirs();
-            return dir;
+        File dir = new File("artifacts/evidence/D11").getAbsoluteFile();
+        if (dir.getPath().contains("desktop-client")) {
+            dir = new File("../artifacts/evidence/D11").getAbsoluteFile();
         }
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
     }
 }
