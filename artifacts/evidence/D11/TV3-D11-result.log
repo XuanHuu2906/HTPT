@@ -1,0 +1,118 @@
+================================================================================
+NHẬT KÝ NGHIỆM THU TASK TV3-D11 — RAFT RPC CLIENT (ASYNC, CORRELATION, REUSE, BACKPRESSURE)
+================================================================================
+Thời gian: 2026-11-11 18:02:00 (GMT+7)
+Người thực hiện: TV3 - Protocol & TCP Networking
+Môi trường kiểm thử:
+  - OS: Linux (7.3.0-4-cachyos, x86_64)
+  - JDK: OpenJDK 64-Bit Server VM (build 27.0.1.0.3)
+  - Maven: Apache Maven 3.10.0
+  - Branch: feat/tv3-d11
+  - Base Commit: 9ea49de (feat/tv3-d10)
+================================================================================
+
+1. CÁC THÀNH PHẦN TRIỂN KHAI MỚI
+--------------------------------------------------------------------------------
+[x] shared/src/main/java/vn/nhom6/railway/protocol/dto/RequestVoteResponseDto.java
+    - Wire payload chuẩn SPEC-03 §6: {"term": 8, "voteGranted": true}
+    - Validation: term >= 0
+    - Factory methods: RequestVoteResponseDto.granted(term), RequestVoteResponseDto.rejected(term)
+
+[x] shared/src/main/java/vn/nhom6/railway/protocol/dto/AppendEntriesResponseDto.java
+    - Wire payload chuẩn SPEC-03 §6: {"term": 8, "success": true, "matchIndex": 43}
+    - Validation: term >= 0, matchIndex >= 0
+    - Factory methods: AppendEntriesResponseDto.success(term, matchIndex), AppendEntriesResponseDto.failure(term)
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/RpcBackpressureException.java
+    - Ngoại lệ ném khi in-flight count vượt quá maxInFlightPerPeer, ngăn chặn nghẽn hàng đợi (buffer bloat).
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/RpcCorrelationRegistry.java
+    - Thread-safe correlation mapping qua ConcurrentHashMap.
+    - Quản lý timeout tự động qua daemon ScheduledExecutorService.
+    - Giới hạn in-flight requests trên từng peer với AtomicInteger CAS.
+    - Hỗ trợ failAll(peerId, error) giải phóng an toàn khi socket đứt.
+    - Bỏ qua an toàn (ignore) các response đến muộn (stale / unknown).
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/RaftRpcClient.java
+    - API bất đồng bộ: sendRequestVote(...) và sendAppendEntries(...) trả về CompletableFuture.
+    - Tái sử dụng kết nối TCP bền vững (1 socket / peer), chống cạn kiệt ephemeral ports (TIME_WAIT).
+    - Ghép kênh (multiplexing) nhiều RPC đồng thời trên 1 kết nối qua correlationId.
+    - Khóa tuần tự hóa ghi frame (writeLock) theo SPEC-03 §2.
+    - Luồng nền đọc frame (PeerReaderThread) tự động giải mã và điều phối về RpcCorrelationRegistry.
+    - Phát hiện đứt kết nối (EOF/SocketException) và tự động kết nối lại khi có RPC tiếp theo.
+
+2. KẾT QUẢ KIỂM THỬ ĐƠN VỊ (UNIT TESTS)
+--------------------------------------------------------------------------------
+Module: shared
+  - vn.nhom6.railway.protocol.RaftResponseDtoTest
+    * testRequestVoteResponseDto: PASS (serialize/deserialize, validation term >= 0)
+    * testAppendEntriesResponseDto: PASS (serialize/deserialize, validation term >= 0, matchIndex >= 0)
+  Tổng shared: 30 tests, 0 failures, 0 errors, 0 skipped.
+
+Module: backend-node
+  - vn.nhom6.railway.networking.RpcCorrelationRegistryTest
+    * testRegisterAndCompleteSuccessfully: PASS (in-flight tracking, completion)
+    * testTimeoutThrowsTimeoutException: PASS (scheduled deadline expiration)
+    * testBackpressureRejection: PASS (reject beyond maxInFlightPerPeer)
+    * testFailAllWhenPeerDisconnects: PASS (bulk failure for severed peer)
+    * testStaleOrUnknownResponseIgnored: PASS (safe ignore stale response)
+    * testErrorResponseFailsFuture: PASS (ERROR_RESPONSE handling)
+    * testCloseCancelsPending: PASS (clean cancellation on close)
+
+3. KẾT QUẢ KIỂM THỬ TÍCH HỢP TCP RAFT RPC (INTEGRATION TESTS)
+--------------------------------------------------------------------------------
+Module: backend-node
+  - vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest
+    * Test 1: testExchangeRequestVoteOverTcp: PASS
+      - Node 1 gửi REQUEST_VOTE sang Node 2 qua TCP.
+      - Node 2 trả REQUEST_VOTE_RESPONSE (voteGranted=true, term=1).
+      - Nhận đúng correlationId và payload typed.
+
+    * Test 2: testExchangeAppendEntriesHeartbeatOverTcp: PASS
+      - Node 1 gửi APPEND_ENTRIES heartbeat sang Node 2 qua TCP.
+      - Node 2 trả APPEND_ENTRIES_RESPONSE (success=true, matchIndex=10).
+
+    * Test 3: testBiDirectionalRaftRpcExchange: PASS
+      - Node 1 gửi VOTE sang Node 2 và Node 2 gửi APPEND sang Node 1 đồng thời.
+      - Cả 2 chiều socket TCP đều hoàn thành xuất sắc.
+
+    * Test 4: testConcurrentRpcsOverReusedConnection: PASS
+      - Bắn 100 RPC đồng thời (50 VOTE + 50 APPEND) qua duy nhất 1 TCP connection.
+      - 100/100 RPC hoàn thành không lỗi, không lệch correlation, không lẫn lộn dữ liệu luồng.
+      - inFlight count giảm về 0 chuẩn xác.
+
+    * Test 5: testTimeoutOnUnresponsivePeer: PASS
+      - Handler cố tình trễ 1000ms, client đặt timeout 100ms.
+      - Future ném TimeoutException đúng thời điểm, không block thread pool.
+
+    * Test 6: testDisconnectAndReconnectResilience: PASS
+      - Ngắt server Node 2 đột ngột -> pending request fail an toàn.
+      - Bật lại Node 2 -> client tự động kết nối lại và gửi RPC thành công.
+
+    * Test 7: testBackpressureEnforcement: PASS
+      - Giới hạn maxInFlightPerPeer = 2.
+      - Gửi 2 request đang chờ -> request thứ 3 bị từ chối ngay với RpcBackpressureException.
+
+    * Test 8: testTwoJavaProcessesExchangeVoteAndAppendOverTcp (ĐÁP ỨNG TIÊU CHÍ PASS): PASS
+      - Spawns tiến trình JVM độc lập thứ hai (ProcessRaftNode) qua ProcessBuilder.
+      - Tiến trình cha (Node 1) kết nối qua TCP socket tới tiến trình con (Node 2).
+      - Trao đổi thành công REQUEST_VOTE và APPEND_ENTRIES thật qua ranh giới tiến trình (inter-process communication over TCP).
+
+4. KẾT QUẢ TOÀN BỘ REACTOR BUILD (MAVEN CLEAN TEST)
+--------------------------------------------------------------------------------
+Command: mvn -B -ntp clean test
+Reactor Summary:
+  - railway-distributed-system ......................... SUCCESS [  0.475 s]
+  - shared ............................................. SUCCESS [  4.596 s]
+  - backend-node ....................................... SUCCESS [  8.547 s]
+  - desktop-client ..................................... SUCCESS [  3.594 s]
+  - desktop-monitor .................................... SUCCESS [  0.059 s]
+  - integration-tests .................................. SUCCESS [  1.005 s]
+  ------------------------------------------------------------------------
+  BUILD SUCCESS
+  Total time: 18.457 s
+  Tổng số test: 550+ tests
+  Failures: 0, Errors: 0, Skipped: 2 (1 Postgres DB integration test khi chưa có local DB container)
+================================================================================
+KẾT LUẬN: Task TV3-D11 ĐẠT TOÀN BỘ TIÊU CHÍ PASS VÀ AN TOÀN HỆ THỐNG PHÂN TÁN.
+================================================================================

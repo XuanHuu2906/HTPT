@@ -2,7 +2,9 @@ package vn.nhom6.railway.persistence;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 import vn.nhom6.railway.booking.*;
 import vn.nhom6.railway.networking.*;
 import vn.nhom6.railway.protocol.dto.*;
@@ -19,6 +21,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Real TCP and PostgreSQL. Commit delivery is a controlled harness, NOT a Raft cluster. */
 class JdbcBookingTcpIntegrationTest {
+
+    @BeforeEach
+    void checkDatabaseAvailable() {
+        Assumptions.assumeTrue(
+                System.getenv("RAILWAY_TEST_JDBC_URL") != null
+                && System.getenv("RAILWAY_TEST_DB_USER") != null
+                && System.getenv("RAILWAY_TEST_DB_PASSWORD") != null,
+                "Real PostgreSQL required");
+    }
+
     @Test
     void tcpWaitsForDurableApplyAndPreservesReplayConflictAndSnapshot() throws Exception {
         try (Database db = new Database()) {
