@@ -11,22 +11,28 @@
 
 <BorderPane fx:id="rootBorderPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="vn.nhom6.railway.client.controller.MainController"
+            stylesheets="@../css/railway.css"
             prefWidth="1020.0" prefHeight="660.0"
             style="-fx-background-color: #f8fafc; -fx-font-family: 'Segoe UI', Tahoma, sans-serif;">
 
-    <!-- TOP: Tiêu đề ứng dụng + Nhãn MOCK nổi bật -->
+    <!-- TOP: Tiêu đề ứng dụng + Thanh trạng thái cụm/Node/Leader (TV1-D11) -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12.0"
-              style="-fx-background-color: #1e293b; -fx-padding: 12 24; -fx-border-color: #334155; -fx-border-width: 0 0 1 0;">
+        <VBox>
             <children>
-                <Label fx:id="tripTitleLabel" text="HỆ THỐNG BÁN VÉ TÀU CAO TỐC — CHUYẾN SE-001"
-                       style="-fx-text-fill: #ffffff; -fx-font-size: 17px; -fx-font-weight: bold;" />
-                <Region HBox.hgrow="ALWAYS" />
-                <Label text="CHẾ ĐỘ:" style="-fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold;" />
-                <Label fx:id="mockBadgeLabel" text="MOCK DATA"
-                       style="-fx-background-color: #f59e0b; -fx-text-fill: #78350f; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 4 14; -fx-background-radius: 6; -fx-border-color: #d97706; -fx-border-radius: 6;" />
+                <HBox alignment="CENTER_LEFT" spacing="12.0"
+                      style="-fx-background-color: #1e293b; -fx-padding: 12 24; -fx-border-color: #334155; -fx-border-width: 0 0 1 0;">
+                    <children>
+                        <Label fx:id="tripTitleLabel" text="HỆ THỐNG BÁN VÉ TÀU CAO TỐC — CHUYẾN SE-001"
+                               style="-fx-text-fill: #ffffff; -fx-font-size: 17px; -fx-font-weight: bold;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label text="CHẾ ĐỘ:" style="-fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold;" />
+                        <Label fx:id="mockBadgeLabel" text="MOCK DATA"
+                               style="-fx-background-color: #f59e0b; -fx-text-fill: #78350f; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 4 14; -fx-background-radius: 6; -fx-border-color: #d97706; -fx-border-radius: 6;" />
+                    </children>
+                </HBox>
+                <fx:include fx:id="clusterStatusBar" source="cluster-status-bar.fxml" />
             </children>
-        </HBox>
+        </VBox>
     </top>
 
     <!-- LEFT: Vùng điều hướng bên trái -->
