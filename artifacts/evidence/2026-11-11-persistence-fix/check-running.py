@@ -16,7 +16,7 @@ for n in range(1,6):
    response=json.loads(read(s,size))
   assert response['correlationId']==request['messageId']
   assert response['type']=='ERROR_RESPONSE'
-  assert response['payload']['errorCode']==('NO_QUORUM' if kind=='BOOK_TICKET' else 'READ_UNAVAILABLE')
+  assert response['payload']['errorCode']==('NOT_LEADER' if kind=='BOOK_TICKET' else 'READ_UNAVAILABLE')
   print(json.dumps(dict(node=n,request=request,response=response)),flush=True)
  cmd=['docker','compose','-f','docker/compose.dev.yml','exec','-T',f'postgres-{n}','sh','-c','exec psql -X -A -t -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
  sql="SELECT (SELECT count(*) FROM public.tickets),(SELECT count(*) FROM public.request_results),(SELECT count(*) FROM public.raft_log),(SELECT last_applied FROM public.raft_apply_progress);"

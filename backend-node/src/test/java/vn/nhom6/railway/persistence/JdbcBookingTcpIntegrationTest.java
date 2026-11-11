@@ -82,7 +82,7 @@ class JdbcBookingTcpIntegrationTest {
             node.start();
             var response = book(node, UUID.randomUUID().toString(), "G02", "Demo");
             assertEquals(MessageType.ERROR_RESPONSE, response.getType());
-            assertEquals("NO_QUORUM", response.getPayload().get("errorCode").asText());
+            assertEquals("NOT_LEADER", response.getPayload().get("errorCode").asText());
             assertEquals(0, db.count("tickets"));
             assertEquals(0, db.repository.lastApplied());
         }

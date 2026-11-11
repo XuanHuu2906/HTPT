@@ -1,0 +1,19 @@
+{
+  "source": "jdbc-regression-authority.json",
+  "command": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "-pl",
+    "integration-tests",
+    "-am",
+    "test"
+  ],
+  "commit": "32656979e3b3cde7f313c0cbc05caedbf6c6815c",
+  "total": 698,
+  "required_jdbc_tests": 39,
+  "skipped": 0,
+  "failures": 0,
+  "errors": 0,
+  "validation": "PASS"
+}

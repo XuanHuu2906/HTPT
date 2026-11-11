@@ -57,7 +57,7 @@ public class NodeMain implements AutoCloseable {
     public NodeMain(NodeConfig config) {
         this(config, new UnavailableBookingService(), null,
                 config.dbConfig() == null ? null : persistentHandler(config,
-                        command -> { throw new BookingRequestHandler.NoQuorumException(); },
+                        command -> { throw new BookingRequestHandler.NotLeaderException(null); },
                         timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
                                 "Raft read barrier is not wired"); }));
     }
