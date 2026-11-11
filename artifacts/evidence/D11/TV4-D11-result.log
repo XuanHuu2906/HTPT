@@ -1,0 +1,1095 @@
+﻿TV4-D11 - AppendEntries transport adapter tested with FakeRaftRpcClient + manual clock ONLY (NOT TCP, NOT a real peer client, NOT replication/majority/commit/RaftNode wiring, NOT PostgreSQL durability)
+Environment/Image: Local JDK 25 (Eclipse Adoptium 25.0.5+8) + Apache Maven 3.9.16; Windows 11 amd64 (Docker daemon not used)
+Command: mvn -B -ntp -pl backend-node -am clean test
+Git HEAD (code commit): ab90f5dd852aad4a2d064c88521816ddec65f88c
+Base: d8a046ba94827dba54e7f88dfb61c4f0e3469392 (origin/main; git pull --no-edit origin main)
+Baseline: Tests run: 667, Failures: 0, Errors: 0, Skipped: 36 (clean run at base d8a046b; D10 log had 623/25 before later main merges) | Current: Tests run: 694, Failures: 0, Errors: 0, Skipped: 36 | Delta: +27 tests, 0 failures, skipped unchanged | Maven result: BUILD SUCCESS
+New suite stability: RaftTransportAdapterTest + TransportToFollowerRoundTripTest run 3 times: Tests run: 27, Failures: 0, Errors: 0, Skipped: 0 each run; no Thread.sleep and no real clock in RaftTransportAdapterTest
+Skipped (PostgreSQL not available): BookingRequestHandlerTest 1, JdbcBookingRepositoryTest 11, JdbcCommittedCommandApplierTest 9, JdbcRaftStorageTest 10, JdbcRequestResultStoreTest 4, SchemaMigrationTest 1
+
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ railway-distributed-system ---
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ shared ---
+[INFO] Deleting D:\HOCTAP\HTPT\shared\target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HOCTAP\HTPT\shared\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 12 source files with javac [debug release 25] to target\classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.protocol.MessageCodecNegativeTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.282 s -- in vn.nhom6.railway.protocol.MessageCodecNegativeTest
+[INFO] Running vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Running vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Running vn.nhom6.railway.protocol.ProtocolContractTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in vn.nhom6.railway.protocol.ProtocolContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ backend-node ---
+[INFO] Deleting D:\HOCTAP\HTPT\backend-node\target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 46 source files with javac [debug release 25] to target\classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HOCTAP\HTPT\backend-node\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 40 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.231 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Running vn.nhom6.railway.booking.BookingRequestHandlerTest
+[WARNING] Tests run: 12, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.258 s -- in vn.nhom6.railway.booking.BookingRequestHandlerTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.networking.BookingTcpIntegrationTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+[READY] node-1 client=61373 raft=61374
+mvn : Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+At line:1 char:216
++ ... ;$env:PATH"; mvn -B -ntp -pl backend-node -am clean test 2>&1 | Tee-O ...
++                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Nov 11, 2026 4:....NodeMain start:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61373 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61374 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: seatId must be within G01-G10, got: G99
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61373 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61374 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.129 s -- in vn.nhom6.railway.networking.BookingTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.BookTicketHandlerTest
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: seatId must be within G01-G10, got: G11
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: tripId must be SE-001, got: SE-999
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: passengerName must not be blank
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.BookTicketHandler handle
+INFO: [node-1] Rejecting BOOK_TICKET as NOT_LEADER, leaderHint=node-2
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in vn.nhom6.railway.networking.BookTicketHandlerTest
+[INFO] Running vn.nhom6.railway.networking.FramingTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in vn.nhom6.railway.networking.FramingTest
+[INFO] Running vn.nhom6.railway.networking.GetSeatsHandlerTest
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.GetSeatsHandler handle
+WARNING: GET_SEATS validation failure: tripId must be SE-001 in v1, got: SE-999
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.GetSeatsHandler handle
+INFO: [node-1] Rejecting GET_SEATS as NOT_LEADER, leaderHint=node-3
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.networking.GetSeatsHandlerTest
+[INFO] Running vn.nhom6.railway.networking.MessageDispatcherTest
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-monitor message rejected on MONITOR channel: GET_SEATS from sender=client-1
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Handler validation failed for type GET_SEATS: Response ph?i c≤ correlationId lα UUID h?p l?
+java.lang.IllegalArgumentException: Response ph?i c≤ correlationId lα UUID h?p l?
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:146)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.lambda$testHandlerResponseMissingCorrelationIdGetsAttached$0(Mess
+ageDispatcherTest.java:305)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.testHandlerResponseMissingCorrelationIdGetsAttached(MessageDispat
+cherTest.java:312)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorCha
+in.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(In
+terceptingExecutableInvoker.java:103)
+	at 
+org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorCh
+ain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.jav
+a:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchi
+calTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.jav
+a:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+SEVERE: Handler threw unhandled exception for type BOOK_TICKET: Simulated unexpected database failure
+java.lang.RuntimeException: Simulated unexpected database failure
+	at vn.nhom6.railway.networking.MessageDispatcherTest.lambda$testHandlerExceptionReturnsInternalError$0(MessageDispatch
+erTest.java:224)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.testHandlerExceptionReturnsInternalError(MessageDispatcherTest.ja
+va:232)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorCha
+in.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(In
+terceptingExecutableInvoker.java:103)
+	at 
+org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorCh
+ain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.jav
+a:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchi
+calTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.jav
+a:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Unexpected response message type arriving on request dispatcher: BOOK_TICKET_RESPONSE, 
+messageId=77d503d6-6d23-4ac5-8b5d-295e5488d4cb
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61376 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-hack
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61376 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: No handler registered for message type: GET_SEATS
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Received null request envelope in MessageDispatcher
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: No handler registered for message type: CANCEL_TICKET
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: BOOK_TICKET from sender=client-1
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in vn.nhom6.railway.networking.MessageDispatcherTest
+[INFO] Running vn.nhom6.railway.networking.NodeMainTest
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HOCTAP\HTPT\backend-node\..\configs\lan\node-1.properties
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61378 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61379 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61378 raft=61379
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61378 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61379 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[Subprocess Node] Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeConfig load
+[Subprocess Node] INFO: Loaded configuration from file: C:\Users\Nguyen\AppData\Local\Temp\node-subprocess-14710852561710643157.properties
+[Subprocess Node] ================================================================================
+[Subprocess Node]  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+[Subprocess Node] ================================================================================
+[Subprocess Node]   Node ID          : node-sub-1
+[Subprocess Node]   Cluster ID       : railway-demo-5
+[Subprocess Node]   Client Port      : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Raft Peer Port   : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Database Target  : None (In-Memory / Test Mode)
+[Subprocess Node] ================================================================================
+[Subprocess Node] Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.NodeMain start
+[Subprocess Node] WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+[Subprocess Node] Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 61381 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 61382 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] [READY] node-sub-1 client=61381 raft=61382
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.550 s -- in vn.nhom6.railway.networking.NodeMainTest
+[INFO] Running vn.nhom6.railway.networking.TcpServerClientTest
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61384 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61384 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61386 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61387 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61386 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61387 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61390 (maxThreads=4, soTimeout=1000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61390 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61393 (maxThreads=4, soTimeout=5000ms)
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61393 stopped.
+Nov 11, 2026 4:49:35 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61405 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61406 (maxThreads=16, soTimeout=10000ms)
+[ChildProcess] ProcessEchoNode: Server started on port 61406
+[ChildProcess] ProcessEchoNode: Connected to target port 61405, sending 100 messages...
+[ChildProcess] ProcessEchoNode: Successfully sent 100 messages and verified responses.
+[ChildProcess] ProcessEchoNode: All 100 messages from peer successfully processed.
+[ChildProcess] ProcessEchoNode: Exiting with success (code 0).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61405 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61409 (maxThreads=4, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61409 stopped.
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.862 s -- in vn.nhom6.railway.networking.TcpServerClientTest
+[INFO] Running vn.nhom6.railway.networking.TcpSingleNodeProtocolTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61411 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61412 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61411 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61412 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[READY] node-1 client=61411 raft=61412
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61415 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61416 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61415 raft=61416
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61415 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61416 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61418 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61419 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+[READY] node-1 client=61418 raft=61419
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61418 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61419 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61421 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61422 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+[READY] node-1 client=61421 raft=61422
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61421 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61422 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61439 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61440 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61439 raft=61440
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61439 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61440 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61443 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61444 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+[READY] node-1 client=61443 raft=61444
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61443 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61444 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61446 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61447 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61446 raft=61447
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61446 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61447 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61449 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61450 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61449 raft=61450
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Unexpected character ('b' (code 98)): was expecting double-quote to start 
+field name
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+com.fasterxml.jackson.core.JsonParseException: Unexpected character ('b' (code 98)): was expecting double-quote to 
+start field name
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.JsonParser._constructReadException(JsonParser.java:2672)
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportUnexpectedChar(ParserMinimalBase.java:742)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._handleOddName(UTF8StreamJsonParser.java:2103)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._parseName(UTF8StreamJsonParser.java:1753)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser.nextToken(UTF8StreamJsonParser.java:757)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:173)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java
+:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61449 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61450 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61453 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61454 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61453 raft=61454
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Cannot construct instance of 
+`vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Invalid messageId: must be a valid lowercase UUID, got: 
+not-a-valid-uuid
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 176]
+com.fasterxml.jackson.databind.exc.ValueInstantiationException: Cannot construct instance of 
+`vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Invalid messageId: must be a valid lowercase UUID, got: 
+not-a-valid-uuid
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 176]
+	at com.fasterxml.jackson.databind.exc.ValueInstantiationException.from(ValueInstantiationException.java:46)
+	at com.fasterxml.jackson.databind.DeserializationContext.instantiationException(DeserializationContext.java:2042)
+	at 
+com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.wrapAsJsonMappingException(StdValueInstantiator.java:622)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.rewrapCtorProblem(StdValueInstantiator.java:645)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:293)
+	at com.fasterxml.jackson.databind.deser.ValueInstantiator.createFromObjectWith(ValueInstantiator.java:301)
+	at com.fasterxml.jackson.databind.deser.impl.PropertyBasedCreator.build(PropertyBasedCreator.java:267)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:446)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase
+.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java
+:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.lang.IllegalArgumentException: Invalid messageId: must be a valid lowercase UUID, got: not-a-valid-uuid
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:139)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at com.fasterxml.jackson.databind.introspect.AnnotatedConstructor.call(AnnotatedConstructor.java:126)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:291)
+	... 17 more
+
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61453 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61454 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61457 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61458 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61457 raft=61458
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61457 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61458 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61460 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61461 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61460 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61461 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+[READY] node-1 client=61460 raft=61461
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61463 (maxThreads=8, soTimeout=5000ms)
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 61464 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=61463 raft=61464
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: [node-1] Running without PostgreSQL configuration (in-memory mode).
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Cannot construct instance of 
+`vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Request ph?i c≤ correlationId = null
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 230]
+com.fasterxml.jackson.databind.exc.ValueInstantiationException: Cannot construct instance of 
+`vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Request ph?i c≤ correlationId = null
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 230]
+	at com.fasterxml.jackson.databind.exc.ValueInstantiationException.from(ValueInstantiationException.java:46)
+	at com.fasterxml.jackson.databind.DeserializationContext.instantiationException(DeserializationContext.java:2042)
+	at 
+com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.wrapAsJsonMappingException(StdValueInstantiator.java:622)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.rewrapCtorProblem(StdValueInstantiator.java:645)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:293)
+	at com.fasterxml.jackson.databind.deser.ValueInstantiator.createFromObjectWith(ValueInstantiator.java:301)
+	at com.fasterxml.jackson.databind.deser.impl.PropertyBasedCreator.build(PropertyBasedCreator.java:267)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:446)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase
+.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java
+:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.lang.IllegalArgumentException: Request ph?i c≤ correlationId = null
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:151)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at com.fasterxml.jackson.databind.introspect.AnnotatedConstructor.call(AnnotatedConstructor.java:126)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:291)
+	... 17 more
+
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61463 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 61464 stopped.
+Nov 11, 2026 4:49:36 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in vn.nhom6.railway.networking.TcpSingleNodeProtocolTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+[WARNING] Tests run: 11, Failures: 0, Errors: 0, Skipped: 11, Time elapsed: 0.011 s -- in vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+[WARNING] Tests run: 9, Failures: 0, Errors: 0, Skipped: 9, Time elapsed: 0.014 s -- in vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRaftStorageTest
+[WARNING] Tests run: 10, Failures: 0, Errors: 0, Skipped: 10, Time elapsed: 0.007 s -- in vn.nhom6.railway.persistence.JdbcRaftStorageTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+[WARNING] Tests run: 9, Failures: 0, Errors: 0, Skipped: 4, Time elapsed: 0.009 s -- in vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+[INFO] Running vn.nhom6.railway.persistence.SchemaMigrationTest
+[WARNING] Tests run: 2, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.009 s -- in vn.nhom6.railway.persistence.SchemaMigrationTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreContractTest
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in vn.nhom6.railway.raft.core.RaftCoreContractTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftTransportAdapterTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.113 s -- in vn.nhom6.railway.raft.core.RaftTransportAdapterTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionSimulationTest
+D09 rotation=0 leader=node-1 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+D09 rotation=1 leader=node-3 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+D09 rotation=2 leader=node-2 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.raft.election.ElectionSimulationTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionComponentTest
+Nov 11, 2026 4:49:37 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Handler validation failed for type REQUEST_VOTE: RequestVote sender must be the remote candidate voter
+java.lang.IllegalArgumentException: RequestVote sender must be the remote candidate voter
+	at vn.nhom6.railway.raft.election.RaftElectionComponent.handleVote(RaftElectionComponent.java:88)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.raft.election.RaftElectionComponentTest.nodeMainRegistersVoteOnlyOnPeerDispatcher(RaftElectionComp
+onentTest.java:90)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorCha
+in.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(In
+terceptingExecutableInvoker.java:103)
+	at 
+org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorCh
+ain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.jav
+a:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchi
+calTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.jav
+a:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.261 s -- in vn.nhom6.railway.raft.election.RaftElectionComponentTest
+[INFO] Running vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Running vn.nhom6.railway.raft.election.TimerTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.raft.election.TimerTest
+[INFO] Running vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteRpcAdapterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.162 s -- in vn.nhom6.railway.raft.election.VoteRpcAdapterTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteSafetyTest
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in vn.nhom6.railway.raft.election.VoteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.ConflictTests
+[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.raft.replication.ConflictTests
+[INFO] Running vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO] Running vn.nhom6.railway.raft.replication.PersistenceAckTest
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.raft.replication.PersistenceAckTest
+[INFO] Running vn.nhom6.railway.raft.replication.RaftLogTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.raft.replication.RaftLogTest
+[INFO] Running vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
+[INFO] Running vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 694, Failures: 0, Errors: 0, Skipped: 36
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.175 s]
+[INFO] shared ............................................. SUCCESS [  3.046 s]
+[INFO] backend-node ....................................... SUCCESS [  8.382 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.716 s
+[INFO] Finished at: 2026-11-11T16:49:37+07:00
+[INFO] ------------------------------------------------------------------------
+
