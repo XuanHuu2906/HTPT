@@ -82,6 +82,13 @@ public class FakeNodeServer implements AutoCloseable {
     private volatile long delayMs = 0;
     private volatile boolean closeAfterRead = false;
 
+    // Cấu hình trạng thái trả về cho bản tin NODE_STATUS (TASK D11)
+    private volatile String configuredNodeId;
+    private volatile String configuredRole = "LEADER";
+    private volatile Long configuredTerm = 1L;
+    private volatile String configuredLeaderId;
+    private volatile boolean storageHealthy = true;
+
     public static record SeatState(String seatId, String status, String ticketId) {}
 
     public static record StoredBooking(
@@ -244,16 +251,36 @@ public class FakeNodeServer implements AutoCloseable {
         };
     }
 
+    public void setNodeStatus(String nodeId, String role, Long term, String leaderId) {
+        this.configuredNodeId = nodeId;
+        this.configuredRole = role;
+        this.configuredTerm = term;
+        this.configuredLeaderId = leaderId;
+    }
+
+    public void setStorageHealthy(boolean storageHealthy) {
+        this.storageHealthy = storageHealthy;
+    }
+
     private MessageEnvelope<?> handleNodeStatus(String correlationId) {
         ObjectNode statusPayload = MessageCodec.getMapper().createObjectNode();
-        statusPayload.put("nodeId", nodeId);
-        statusPayload.put("role", "LEADER");
-        statusPayload.put("term", 1L);
-        statusPayload.put("leaderId", nodeId);
+        String effectiveNodeId = (configuredNodeId != null) ? configuredNodeId : nodeId;
+        statusPayload.put("nodeId", effectiveNodeId);
+        statusPayload.put("role", configuredRole != null ? configuredRole : "UNKNOWN");
+        if (configuredTerm != null) {
+            statusPayload.put("term", configuredTerm);
+        } else {
+            statusPayload.putNull("term");
+        }
+        if (configuredLeaderId != null) {
+            statusPayload.put("leaderId", configuredLeaderId);
+        } else {
+            statusPayload.putNull("leaderId");
+        }
         statusPayload.put("lastLogIndex", logIndexSequence.get());
         statusPayload.put("commitIndex", logIndexSequence.get());
         statusPayload.put("lastApplied", logIndexSequence.get());
-        statusPayload.put("storageHealthy", true);
+        statusPayload.put("storageHealthy", storageHealthy);
 
         ObjectNode peerConn = statusPayload.putObject("peerConnectivity");
         peerConn.put("node-2", true);
@@ -266,7 +293,7 @@ public class FakeNodeServer implements AutoCloseable {
         return MessageEnvelope.createResponse(
                 correlationId,
                 MessageType.NODE_STATUS_RESPONSE,
-                nodeId,
+                effectiveNodeId,
                 statusPayload
         );
     }
