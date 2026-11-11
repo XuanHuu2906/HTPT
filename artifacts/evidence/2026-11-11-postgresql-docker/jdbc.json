@@ -1,0 +1,17 @@
+{
+  "command": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "-pl",
+    "integration-tests",
+    "-am",
+    "-Dtest=Node1DatabaseIntegrationTest,JdbcBookingRepositoryTest,JdbcRequestResultStoreTest,JdbcRaftStorageTest,JdbcCommittedCommandApplierTest",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "test"
+  ],
+  "exit_code": 1,
+  "started_utc": "2026-11-11T07:59:50.289231+00:00",
+  "finished_utc": "2026-11-11T08:00:13.658498+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

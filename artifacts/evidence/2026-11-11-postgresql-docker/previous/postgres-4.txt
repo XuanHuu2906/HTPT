@@ -1,0 +1,20 @@
+ current_database |                                         version                                          
+------------------+------------------------------------------------------------------------------------------
+ railway_node4    | PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+(1 row)
+
+ public_tables 
+---------------
+             8
+(1 row)
+
+ trip_id | seats | available |                seat_ids                 
+---------+-------+-----------+-----------------------------------------
+ SE-001  |    10 |        10 | G01,G02,G03,G04,G05,G06,G07,G08,G09,G10
+(1 row)
+
+ tickets | request_results | raft_log | last_applied 
+---------+-----------------+----------+--------------
+       0 |               0 |        0 |            0
+(1 row)
+

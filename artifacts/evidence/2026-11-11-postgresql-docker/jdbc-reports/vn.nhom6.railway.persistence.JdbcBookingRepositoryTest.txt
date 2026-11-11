@@ -1,0 +1,51 @@
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 4.936 s <<< FAILURE! -- in vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.replayReturnsOriginalResultAndIndexWhileCheckpointAdvances -- Time elapsed: 0.219 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected type, expected: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.BusinessResult> but was: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.RequestIdConflict>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertInstanceOf.assertInstanceOf(AssertInstanceOf.java:49)
+	at org.junit.jupiter.api.AssertInstanceOf.assertInstanceOf(AssertInstanceOf.java:31)
+	at org.junit.jupiter.api.Assertions.assertInstanceOf(Assertions.java:3614)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.replayReturnsOriginalResultAndIndexWhileCheckpointAdvances(JdbcBookingRepositoryTest.java:177)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.cancelUpdatesTicketAndSeatAndRejectsMissingOrCancelledTickets -- Time elapsed: 0.707 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <3> but was: <4>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:145)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:531)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.cancelUpdatesTicketAndSeatAndRejectsMissingOrCancelledTickets(JdbcBookingRepositoryTest.java:249)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.bookAvailableSeatPersistsOneAtomicBusinessResult -- Time elapsed: 0.229 s <<< ERROR!
+java.lang.IllegalStateException: Test query failed
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.queryInt(JdbcBookingRepositoryTest.java:488)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.bookAvailableSeatPersistsOneAtomicBusinessResult(JdbcBookingRepositoryTest.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+Caused by: org.postgresql.util.PSQLException: ERROR: function jsonb_object_length(jsonb) does not exist
+  Hint: No function matches the given name and argument types. You might need to add explicit type casts.
+  Position: 8
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2734)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2421)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:372)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:518)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:435)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:357)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:342)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:318)
+	at org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:267)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.queryInt(JdbcBookingRepositoryTest.java:484)
+	... 4 more
+

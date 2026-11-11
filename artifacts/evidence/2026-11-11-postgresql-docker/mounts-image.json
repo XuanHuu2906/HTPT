@@ -1,0 +1,22 @@
+{
+  "command": [
+    "docker",
+    "inspect",
+    "--format",
+    "{{.Name}} image={{.Image}} mounts={{json .Mounts}}",
+    "railway-postgres-1",
+    "railway-postgres-2",
+    "railway-postgres-3",
+    "railway-postgres-4",
+    "railway-postgres-5",
+    "railway-backend-node-1",
+    "railway-backend-node-2",
+    "railway-backend-node-3",
+    "railway-backend-node-4",
+    "railway-backend-node-5"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:03:02.231205+00:00",
+  "finished_utc": "2026-11-11T08:03:02.273888+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

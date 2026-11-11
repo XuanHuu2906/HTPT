@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "artifacts/evidence/2026-11-11-postgresql-docker/check-databases.py"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:01:09.099191+00:00",
+  "finished_utc": "2026-11-11T08:01:16.675778+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

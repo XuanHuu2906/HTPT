@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "artifacts/evidence/2026-11-11-postgresql-docker/check-tcp.py"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:02:45.218637+00:00",
+  "finished_utc": "2026-11-11T08:02:46.084347+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

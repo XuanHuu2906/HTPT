@@ -1,0 +1,6 @@
+NAME                 IMAGE                COMMAND                  SERVICE      CREATED         STATUS                   PORTS
+railway-postgres-1   postgres:16-alpine   "docker-entrypoint.s…"   postgres-1   5 minutes ago   Up 5 minutes (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+railway-postgres-2   postgres:16-alpine   "docker-entrypoint.s…"   postgres-2   5 minutes ago   Up 5 minutes (healthy)   0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+railway-postgres-3   postgres:16-alpine   "docker-entrypoint.s…"   postgres-3   5 minutes ago   Up 5 minutes (healthy)   0.0.0.0:5435->5432/tcp, [::]:5435->5432/tcp
+railway-postgres-4   postgres:16-alpine   "docker-entrypoint.s…"   postgres-4   5 minutes ago   Up 5 minutes (healthy)   0.0.0.0:5436->5432/tcp, [::]:5436->5432/tcp
+railway-postgres-5   postgres:16-alpine   "docker-entrypoint.s…"   postgres-5   5 minutes ago   Up 5 minutes (healthy)   0.0.0.0:5437->5432/tcp, [::]:5437->5432/tcp
