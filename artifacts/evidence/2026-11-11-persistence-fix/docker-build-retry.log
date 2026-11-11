@@ -1,0 +1,219 @@
+ Image railway-backend-node:dev Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 610B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.backend
+#2 transferring dockerfile: 3.11kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#3 DONE 1.4s
+
+#4 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#4 DONE 1.5s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 202B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [builder  1/11] FROM docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d5728c3c9c7614661b
+#7 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d5728c3c9c7614661b 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 1/7] FROM docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474
+#8 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474 0.0s done
+#8 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 65.13kB 0.0s done
+#6 DONE 0.0s
+
+#9 [builder  3/11] COPY pom.xml ./
+#9 CACHED
+
+#10 [builder  8/11] COPY integration-tests/pom.xml integration-tests/
+#10 CACHED
+
+#11 [builder  4/11] COPY shared/pom.xml shared/
+#11 CACHED
+
+#12 [builder  5/11] COPY backend-node/pom.xml backend-node/
+#12 CACHED
+
+#13 [builder  6/11] COPY desktop-client/pom.xml desktop-client/
+#13 CACHED
+
+#14 [builder  7/11] COPY desktop-monitor/pom.xml desktop-monitor/
+#14 CACHED
+
+#15 [builder  2/11] WORKDIR /build
+#15 CACHED
+
+#16 [builder  9/11] COPY shared/src shared/src
+#16 CACHED
+
+#17 [builder 10/11] COPY backend-node/src backend-node/src
+#17 DONE 0.1s
+
+#18 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#18 1.189 [INFO] Scanning for projects...
+#18 1.242 [INFO] ------------------------------------------------------------------------
+#18 1.242 [INFO] Reactor Build Order:
+#18 1.242 [INFO] 
+#18 1.243 [INFO] railway-distributed-system                                         [pom]
+#18 1.243 [INFO] shared                                                             [jar]
+#18 1.243 [INFO] backend-node                                                       [jar]
+#18 1.258 [INFO] 
+#18 1.259 [INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+#18 1.259 [INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+#18 1.259 [INFO]   from pom.xml
+#18 1.259 [INFO] --------------------------------[ pom ]---------------------------------
+#18 2.972 [INFO] 
+#18 2.972 [INFO] --- clean:3.2.0:clean (default-clean) @ railway-distributed-system ---
+#18 4.163 [INFO] 
+#18 4.163 [INFO] --- install:3.1.4:install (default-install) @ railway-distributed-system ---
+#18 5.623 [INFO] Installing /build/pom.xml to /root/.m2/repository/vn/nhom6/railway/railway-distributed-system/1.0.0-SNAPSHOT/railway-distributed-system-1.0.0-SNAPSHOT.pom
+#18 5.628 [INFO] 
+#18 5.628 [INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+#18 5.628 [INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+#18 5.628 [INFO]   from shared/pom.xml
+#18 5.628 [INFO] --------------------------------[ jar ]---------------------------------
+#18 8.408 [INFO] 
+#18 8.408 [INFO] --- clean:3.2.0:clean (default-clean) @ shared ---
+#18 8.410 [INFO] 
+#18 8.410 [INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+#18 10.47 [INFO] skip non existing resourceDirectory /build/shared/src/main/resources
+#18 10.47 [INFO] 
+#18 10.47 [INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+#18 12.56 [INFO] Recompiling the module because of changed source code.
+#18 12.57 [INFO] Compiling 12 source files with javac [debug release 21] to target/classes
+#18 13.37 [INFO] 
+#18 13.37 [INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+#18 13.38 [INFO] Copying 3 resources from src/test/resources to target/test-classes
+#18 13.38 [INFO] 
+#18 13.38 [INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+#18 13.39 [INFO] Recompiling the module because of changed dependency.
+#18 13.39 [INFO] Compiling 4 source files with javac [debug release 21] to target/test-classes
+#18 13.78 [INFO] 
+#18 13.78 [INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+#18 15.84 [INFO] Tests are skipped.
+#18 15.84 [INFO] 
+#18 15.84 [INFO] --- jar:3.5.0:jar (default-jar) @ shared ---
+#18 19.24 [INFO] Building jar: /build/shared/target/shared-1.0.0-SNAPSHOT.jar
+#18 19.27 [INFO] 
+#18 19.27 [INFO] --- install:3.1.4:install (default-install) @ shared ---
+#18 19.27 [INFO] Installing /build/shared/pom.xml to /root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.pom
+#18 19.27 [INFO] Installing /build/shared/target/shared-1.0.0-SNAPSHOT.jar to /root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.jar
+#18 19.28 [INFO] 
+#18 19.28 [INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+#18 19.28 [INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+#18 19.28 [INFO]   from backend-node/pom.xml
+#18 19.28 [INFO] --------------------------------[ jar ]---------------------------------
+#18 20.15 [INFO] 
+#18 20.15 [INFO] --- clean:3.2.0:clean (default-clean) @ backend-node ---
+#18 20.15 [INFO] 
+#18 20.15 [INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+#18 20.16 [INFO] Copying 1 resource from src/main/resources to target/classes
+#18 20.16 [INFO] 
+#18 20.16 [INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+#18 20.16 [INFO] Recompiling the module because of changed dependency.
+#18 20.16 [INFO] Compiling 46 source files with javac [debug release 21] to target/classes
+#18 20.71 [INFO] 
+#18 20.71 [INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+#18 20.72 [INFO] skip non existing resourceDirectory /build/backend-node/src/test/resources
+#18 20.72 [INFO] 
+#18 20.72 [INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+#18 20.72 [INFO] Recompiling the module because of changed dependency.
+#18 20.72 [INFO] Compiling 39 source files with javac [debug release 21] to target/test-classes
+#18 22.27 [INFO] 
+#18 22.27 [INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+#18 22.28 [INFO] Tests are skipped.
+#18 22.29 [INFO] 
+#18 22.29 [INFO] --- jar:3.5.0:jar (default-jar) @ backend-node ---
+#18 22.29 [INFO] Building jar: /build/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar
+#18 22.33 [INFO] 
+#18 22.33 [INFO] --- install:3.1.4:install (default-install) @ backend-node ---
+#18 22.33 [INFO] Installing /build/backend-node/pom.xml to /root/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.pom
+#18 22.34 [INFO] Installing /build/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar to /root/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.jar
+#18 22.34 [INFO] ------------------------------------------------------------------------
+#18 22.34 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+#18 22.34 [INFO] 
+#18 22.34 [INFO] railway-distributed-system ......................... SUCCESS [  4.370 s]
+#18 22.34 [INFO] shared ............................................. SUCCESS [ 13.647 s]
+#18 22.34 [INFO] backend-node ....................................... SUCCESS [  3.066 s]
+#18 22.34 [INFO] ------------------------------------------------------------------------
+#18 22.34 [INFO] BUILD SUCCESS
+#18 22.34 [INFO] ------------------------------------------------------------------------
+#18 22.34 [INFO] Total time:  21.170 s
+#18 22.34 [INFO] Finished at: 2026-11-11T09:13:08Z
+#18 22.34 [INFO] ------------------------------------------------------------------------
+#18 23.27 [INFO] Scanning for projects...
+#18 24.11 [INFO] 
+#18 24.11 [INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+#18 24.11 [INFO] Building backend-node 1.0.0-SNAPSHOT
+#18 24.11 [INFO]   from pom.xml
+#18 24.11 [INFO] --------------------------------[ jar ]---------------------------------
+#18 24.18 [INFO] 
+#18 24.18 [INFO] --- dependency:3.7.0:copy-dependencies (default-cli) @ backend-node ---
+#18 34.77 [INFO] Copying artifact 'vn.nhom6.railway:shared:jar:1.0.0-SNAPSHOT:compile' (/root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.jar) to /build/backend-node/target/lib/shared-1.0.0-SNAPSHOT.jar
+#18 34.77 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-databind:jar:2.19.2:compile' (/root/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar) to /build/backend-node/target/lib/jackson-databind-2.19.2.jar
+#18 34.77 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-annotations:jar:2.19.2:compile' (/root/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar) to /build/backend-node/target/lib/jackson-annotations-2.19.2.jar
+#18 34.77 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-core:jar:2.19.2:compile' (/root/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar) to /build/backend-node/target/lib/jackson-core-2.19.2.jar
+#18 34.77 [INFO] Copying artifact 'org.postgresql:postgresql:jar:42.7.7:compile' (/root/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar) to /build/backend-node/target/lib/postgresql-42.7.7.jar
+#18 34.77 [INFO] Copying artifact 'org.checkerframework:checker-qual:jar:3.49.3:runtime' (/root/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar) to /build/backend-node/target/lib/checker-qual-3.49.3.jar
+#18 34.77 [INFO] Copying artifact 'org.slf4j:slf4j-api:jar:2.0.16:compile' (/root/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar) to /build/backend-node/target/lib/slf4j-api-2.0.16.jar
+#18 34.77 [INFO] Copying artifact 'ch.qos.logback:logback-classic:jar:1.5.16:compile' (/root/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar) to /build/backend-node/target/lib/logback-classic-1.5.16.jar
+#18 34.77 [INFO] Copying artifact 'ch.qos.logback:logback-core:jar:1.5.16:compile' (/root/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar) to /build/backend-node/target/lib/logback-core-1.5.16.jar
+#18 34.77 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter:jar:5.11.4:test' (/root/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar) to /build/backend-node/target/lib/junit-jupiter-5.11.4.jar
+#18 34.77 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-api:jar:5.11.4:test' (/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar) to /build/backend-node/target/lib/junit-jupiter-api-5.11.4.jar
+#18 34.78 [INFO] Copying artifact 'org.opentest4j:opentest4j:jar:1.3.0:test' (/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar) to /build/backend-node/target/lib/opentest4j-1.3.0.jar
+#18 34.78 [INFO] Copying artifact 'org.junit.platform:junit-platform-commons:jar:1.11.4:test' (/root/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar) to /build/backend-node/target/lib/junit-platform-commons-1.11.4.jar
+#18 34.78 [INFO] Copying artifact 'org.apiguardian:apiguardian-api:jar:1.1.2:test' (/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar) to /build/backend-node/target/lib/apiguardian-api-1.1.2.jar
+#18 34.78 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-params:jar:5.11.4:test' (/root/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar) to /build/backend-node/target/lib/junit-jupiter-params-5.11.4.jar
+#18 34.78 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-engine:jar:5.11.4:test' (/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar) to /build/backend-node/target/lib/junit-jupiter-engine-5.11.4.jar
+#18 34.78 [INFO] Copying artifact 'org.junit.platform:junit-platform-engine:jar:1.11.4:test' (/root/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar) to /build/backend-node/target/lib/junit-platform-engine-1.11.4.jar
+#18 34.78 [INFO] ------------------------------------------------------------------------
+#18 34.78 [INFO] BUILD SUCCESS
+#18 34.78 [INFO] ------------------------------------------------------------------------
+#18 34.78 [INFO] Total time:  11.528 s
+#18 34.78 [INFO] Finished at: 2026-11-11T09:13:21Z
+#18 34.78 [INFO] ------------------------------------------------------------------------
+#18 DONE 34.8s
+
+#19 [stage-1 2/7] WORKDIR /app
+#19 CACHED
+
+#20 [stage-1 3/7] RUN apk add --no-cache bash netcat-openbsd
+#20 CACHED
+
+#21 [stage-1 4/7] COPY --from=builder /build/backend-node/target/*.jar /app/backend-node.jar
+#21 DONE 0.1s
+
+#22 [stage-1 5/7] COPY --from=builder /build/backend-node/target/lib /app/lib
+#22 DONE 0.1s
+
+#23 [stage-1 6/7] COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
+#23 DONE 0.1s
+
+#24 [stage-1 7/7] RUN chmod +x /app/entrypoint-backend.sh
+#24 DONE 0.2s
+
+#25 exporting to image
+#25 exporting layers
+#25 exporting layers 0.3s done
+#25 exporting manifest sha256:b032cf919236bd3cc7411a1f3d4315c0eef12cc4a5f9bd6d65a38d8d7f3444d9 0.0s done
+#25 exporting config sha256:bb39999f6ed6149f5c5d3e1cbab29931a695dc3c3509223fc635e3e535b2053f 0.0s done
+#25 exporting attestation manifest sha256:75d4396833e1574607cc768d07ebae8e4bdfa9063abceb18d972dddaaef25242 0.0s done
+#25 exporting manifest list sha256:72d755ea87673aef5968fbb8573036c6f50fb8bcf4b06e81bcb8a1a522c63f39 0.0s done
+#25 naming to docker.io/library/railway-backend-node:dev
+#25 naming to docker.io/library/railway-backend-node:dev done
+#25 unpacking to docker.io/library/railway-backend-node:dev 0.1s done
+#25 DONE 0.6s
+
+#26 resolving provenance for metadata file
+#26 DONE 0.0s
+ Image railway-backend-node:dev Built 

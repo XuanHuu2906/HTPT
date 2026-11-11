@@ -20,7 +20,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("1-Node Booking TCP End-to-End Integration Test (Gate G3)")
+@DisplayName("TCP protocol integration with explicit in-memory booking fake")
 public class BookingTcpIntegrationTest {
 
     private final List<AutoCloseable> resources = new ArrayList<>();
@@ -31,7 +31,7 @@ public class BookingTcpIntegrationTest {
     public void setUp() throws IOException {
         // Start live NodeMain on random dynamic ports
         NodeConfig config = new NodeConfig("node-1", "railway-demo-5", "127.0.0.1", 0, "127.0.0.1", 0, null, 8, 5000);
-        node = new NodeMain(config);
+        node = new NodeMain(config, new FakeBookingService(config.nodeId()));
         resources.add(node);
         node.start();
 

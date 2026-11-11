@@ -1,0 +1,125 @@
+ Image railway-backend-node:dev Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 610B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.backend
+#2 transferring dockerfile: 3.11kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#3 ...
+
+#4 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#4 DONE 1.6s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#3 DONE 1.7s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 202B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/7] FROM docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474
+#6 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474 0.0s done
+#6 DONE 0.0s
+
+#7 [builder  1/11] FROM docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d5728c3c9c7614661b
+#7 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d5728c3c9c7614661b 0.0s done
+#7 DONE 0.1s
+
+#8 [internal] load build context
+#8 transferring context: 132.62kB 0.0s done
+#8 DONE 0.1s
+
+#9 [builder  2/11] WORKDIR /build
+#9 CACHED
+
+#10 [builder  4/11] COPY shared/pom.xml shared/
+#10 CACHED
+
+#11 [builder  7/11] COPY desktop-monitor/pom.xml desktop-monitor/
+#11 CACHED
+
+#12 [builder  5/11] COPY backend-node/pom.xml backend-node/
+#12 CACHED
+
+#13 [builder  8/11] COPY integration-tests/pom.xml integration-tests/
+#13 CACHED
+
+#14 [builder  6/11] COPY desktop-client/pom.xml desktop-client/
+#14 CACHED
+
+#15 [builder  3/11] COPY pom.xml ./
+#15 CACHED
+
+#16 [builder  9/11] COPY shared/src shared/src
+#16 CACHED
+
+#17 [builder 10/11] COPY backend-node/src backend-node/src
+#17 DONE 0.1s
+
+#18 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#18 1.562 [INFO] Scanning for projects...
+#18 1.620 [INFO] ------------------------------------------------------------------------
+#18 1.620 [INFO] Reactor Build Order:
+#18 1.620 [INFO] 
+#18 1.621 [INFO] railway-distributed-system                                         [pom]
+#18 1.622 [INFO] shared                                                             [jar]
+#18 1.622 [INFO] backend-node                                                       [jar]
+#18 1.636 [INFO] 
+#18 1.636 [INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+#18 1.636 [INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+#18 1.637 [INFO]   from pom.xml
+#18 1.637 [INFO] --------------------------------[ pom ]---------------------------------
+#18 6.920 [INFO] ------------------------------------------------------------------------
+#18 6.920 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+#18 6.920 [INFO] 
+#18 6.920 [INFO] railway-distributed-system ......................... FAILURE [  5.284 s]
+#18 6.920 [INFO] shared ............................................. SKIPPED
+#18 6.920 [INFO] backend-node ....................................... SKIPPED
+#18 6.920 [INFO] ------------------------------------------------------------------------
+#18 6.921 [INFO] BUILD FAILURE
+#18 6.921 [INFO] ------------------------------------------------------------------------
+#18 6.921 [INFO] Total time:  5.384 s
+#18 6.921 [INFO] Finished at: 2026-11-11T09:06:50Z
+#18 6.921 [INFO] ------------------------------------------------------------------------
+#18 6.921 [ERROR] Plugin org.apache.maven.plugins:maven-clean-plugin:3.2.0 or one of its dependencies could not be resolved:
+#18 6.922 [ERROR] 	The following artifacts could not be resolved: org.apache.maven.plugins:maven-clean-plugin:pom:3.2.0 (absent): Could not transfer artifact org.apache.maven.plugins:maven-clean-plugin:pom:3.2.0 from/to central (https://repo.maven.apache.org/maven2): repo.maven.apache.org: Try again
+#18 6.922 [ERROR] -> [Help 1]
+#18 6.922 [ERROR] 
+#18 6.922 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+#18 6.922 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+#18 6.922 [ERROR] 
+#18 6.922 [ERROR] For more information about the errors and possible solutions, please read the following articles:
+#18 6.922 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginResolutionException
+#18 ERROR: process "/bin/sh -c mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib" did not complete successfully: exit code: 1
+------
+ > [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib:
+6.921 [INFO] ------------------------------------------------------------------------
+6.921 [ERROR] Plugin org.apache.maven.plugins:maven-clean-plugin:3.2.0 or one of its dependencies could not be resolved:
+6.922 [ERROR] 	The following artifacts could not be resolved: org.apache.maven.plugins:maven-clean-plugin:pom:3.2.0 (absent): Could not transfer artifact org.apache.maven.plugins:maven-clean-plugin:pom:3.2.0 from/to central (https://repo.maven.apache.org/maven2): repo.maven.apache.org: Try again
+6.922 [ERROR] -> [Help 1]
+6.922 [ERROR] 
+6.922 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+6.922 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+6.922 [ERROR] 
+6.922 [ERROR] For more information about the errors and possible solutions, please read the following articles:
+6.922 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginResolutionException
+------
+Dockerfile.backend:28
+
+--------------------
+
+  27 |     # Install reactor artifacts so the separate dependency-copy invocation can resolve shared.
+
+  28 | >>> RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 && \
+
+  29 | >>>     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+
+  30 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib" did not complete successfully: exit code: 1
+

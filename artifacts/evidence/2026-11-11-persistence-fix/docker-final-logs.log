@@ -1,0 +1,430 @@
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-5
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  |   Node ID          : node-5
+railway-backend-node-5  |   Cluster ID       : railway-demo-5
+railway-backend-node-5  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9105)
+railway-backend-node-5  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-5:9200)
+railway-backend-node-5  |   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+railway-backend-node-5  |   Database Target  : railway@postgres-5:5432/railway_node5
+railway-backend-node-5  |   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  | [INFO] Kiem tra ket noi mang toi Database postgres-5:5432...
+railway-backend-node-5  | Connection to postgres-5 (172.18.0.3) 5432 port [tcp/postgresql] succeeded!
+railway-backend-node-5  |   [OK] Ket noi mang thanh cong toi Database postgres-5:5432!
+railway-backend-node-5  | [INFO] Khoi dong Backend Node runtime...
+railway-backend-node-5  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  |   Node ID          : node-5
+railway-backend-node-5  |   Cluster ID       : railway-demo-5
+railway-backend-node-5  |   Client Port      : 9100 (Host: 0.0.0.0)
+railway-backend-node-5  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+railway-backend-node-5  |   Database Target  : railway@postgres-5:5432/railway_node5
+railway-backend-node-5  | ================================================================================
+railway-backend-node-5  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-5  | WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+railway-backend-node-5  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-5  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-5  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-5  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-5  | [READY] node-5 client=9100 raft=9200
+railway-backend-node-5  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+railway-backend-node-5  | INFO: [node-5] Database connection verified: jdbc:postgresql://postgres-5:5432/railway_node5
+railway-backend-node-5  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-5  | INFO: Backend Node [node-5] initialized and ready for traffic.
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-3
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  |   Node ID          : node-3
+railway-backend-node-3  |   Cluster ID       : railway-demo-5
+railway-backend-node-3  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9103)
+railway-backend-node-3  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-3:9200)
+railway-backend-node-3  |   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+railway-backend-node-3  |   Database Target  : railway@postgres-3:5432/railway_node3
+railway-backend-node-3  |   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  | [INFO] Kiem tra ket noi mang toi Database postgres-3:5432...
+railway-backend-node-3  | Connection to postgres-3 (172.18.0.2) 5432 port [tcp/postgresql] succeeded!
+railway-backend-node-3  |   [OK] Ket noi mang thanh cong toi Database postgres-3:5432!
+railway-backend-node-3  | [INFO] Khoi dong Backend Node runtime...
+railway-backend-node-3  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  |   Node ID          : node-3
+railway-backend-node-3  |   Cluster ID       : railway-demo-5
+railway-backend-node-3  |   Client Port      : 9100 (Host: 0.0.0.0)
+railway-backend-node-3  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+railway-backend-node-3  |   Database Target  : railway@postgres-3:5432/railway_node3
+railway-backend-node-3  | ================================================================================
+railway-backend-node-3  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-3  | WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+railway-backend-node-3  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-3  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-3  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-3  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-3  | [READY] node-3 client=9100 raft=9200
+railway-backend-node-3  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+railway-backend-node-1  | ================================================================================
+railway-backend-node-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-1
+railway-backend-node-1  | ================================================================================
+railway-backend-node-1  |   Node ID          : node-1
+railway-backend-node-1  |   Cluster ID       : railway-demo-5
+railway-backend-node-1  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+railway-backend-node-1  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+railway-backend-node-1  |   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+railway-backend-node-1  |   Database Target  : railway@postgres-1:5432/railway_node1
+railway-backend-node-1  |   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+railway-backend-node-1  | ================================================================================
+railway-backend-node-3  | INFO: [node-3] Database connection verified: jdbc:postgresql://postgres-3:5432/railway_node3
+railway-backend-node-3  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-3  | INFO: Backend Node [node-3] initialized and ready for traffic.
+railway-backend-node-4  | ================================================================================
+railway-backend-node-1  | [INFO] Kiem tra ket noi mang toi Database postgres-1:5432...
+railway-backend-node-1  | Connection to postgres-1 (172.18.0.6) 5432 port [tcp/postgresql] succeeded!
+railway-backend-node-1  |   [OK] Ket noi mang thanh cong toi Database postgres-1:5432!
+railway-backend-node-1  | [INFO] Khoi dong Backend Node runtime...
+railway-backend-node-1  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+railway-backend-node-1  | ================================================================================
+railway-backend-node-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+railway-backend-node-1  | ================================================================================
+railway-backend-node-1  |   Node ID          : node-1
+railway-backend-node-1  |   Cluster ID       : railway-demo-5
+railway-backend-node-1  |   Client Port      : 9100 (Host: 0.0.0.0)
+railway-backend-node-1  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+railway-backend-node-1  |   Database Target  : railway@postgres-1:5432/railway_node1
+railway-backend-node-1  | ================================================================================
+railway-backend-node-1  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-1  | WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+railway-backend-node-1  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-1  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-1  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-1  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-1  | [READY] node-1 client=9100 raft=9200
+railway-backend-node-1  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+railway-backend-node-1  | INFO: [node-1] Database connection verified: jdbc:postgresql://postgres-1:5432/railway_node1
+railway-backend-node-1  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-1  | INFO: Backend Node [node-1] initialized and ready for traffic.
+railway-backend-node-4  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-4
+railway-backend-node-4  | ================================================================================
+railway-backend-node-4  |   Node ID          : node-4
+railway-backend-node-4  |   Cluster ID       : railway-demo-5
+railway-backend-node-4  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9104)
+railway-backend-node-4  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-4:9200)
+railway-backend-node-4  |   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+railway-backend-node-4  |   Database Target  : railway@postgres-4:5432/railway_node4
+railway-backend-node-4  |   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+railway-backend-node-4  | ================================================================================
+railway-backend-node-4  | [INFO] Kiem tra ket noi mang toi Database postgres-4:5432...
+railway-backend-node-4  | Connection to postgres-4 (172.18.0.5) 5432 port [tcp/postgresql] succeeded!
+railway-backend-node-4  |   [OK] Ket noi mang thanh cong toi Database postgres-4:5432!
+railway-backend-node-4  | [INFO] Khoi dong Backend Node runtime...
+railway-backend-node-4  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+railway-backend-node-4  | ================================================================================
+railway-backend-node-4  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+railway-backend-node-4  | ================================================================================
+railway-backend-node-4  |   Node ID          : node-4
+railway-backend-node-4  |   Cluster ID       : railway-demo-5
+railway-backend-node-4  |   Client Port      : 9100 (Host: 0.0.0.0)
+railway-backend-node-4  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+railway-backend-node-4  |   Database Target  : railway@postgres-4:5432/railway_node4
+railway-backend-node-4  | ================================================================================
+railway-backend-node-4  | Nov 11, 2026 9:18:42 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-4  | WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+railway-backend-node-4  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-4  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-4  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-4  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-4  | [READY] node-4 client=9100 raft=9200
+railway-backend-node-4  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+railway-backend-node-4  | INFO: [node-4] Database connection verified: jdbc:postgresql://postgres-4:5432/railway_node4
+railway-backend-node-4  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-4  | INFO: Backend Node [node-4] initialized and ready for traffic.
+railway-postgres-1      | 	
+railway-postgres-1      | 2026-11-11 09:12:51.892 UTC [8228] ERROR:  new row for relation "raft_log" violates check constraint "raft_log_log_index_check"
+railway-postgres-1      | 2026-11-11 09:12:51.892 UTC [8228] DETAIL:  Failing row contains (0, 1, NO_OP, {}).
+railway-postgres-1      | 2026-11-11 09:12:51.892 UTC [8228] STATEMENT:  INSERT INTO raft_log(log_index, term, command_type, command_json)
+railway-postgres-1      | 	VALUES (0, 1, 'NO_OP', '{}'::jsonb)
+railway-postgres-1      | 	
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] ERROR:  new row for relation "request_results" violates check constraint "request_results_state_check"
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] DETAIL:  Failing row contains (9bbf524c-8709-4b56-a2d3-25d48abfce60, BOOK_TICKET, 0000000000000000000000000000000000000000000000000000000000000000, UNKNOWN, null, null, 1, {}).
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] STATEMENT:  INSERT INTO request_results(
+railway-postgres-1      | 	  request_id, command_type, intent_fingerprint, state, applied_log_index, result_json
+railway-postgres-1      | 	)
+railway-postgres-1      | 	VALUES ('9bbf524c-8709-4b56-a2d3-25d48abfce60', 'BOOK_TICKET', '0000000000000000000000000000000000000000000000000000000000000000', 'UNKNOWN', 1, '{}'::jsonb)
+railway-postgres-1      | 	
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] ERROR:  new row for relation "request_results" violates check constraint "request_results_applied_log_index_check"
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] DETAIL:  Failing row contains (763890a7-c2a0-4298-9ae3-c7a167e99a4b, BOOK_TICKET, 0000000000000000000000000000000000000000000000000000000000000000, APPLIED_SUCCESS, null, null, 0, {}).
+railway-postgres-1      | 2026-11-11 09:12:51.893 UTC [8228] STATEMENT:  INSERT INTO request_results(
+railway-postgres-1      | 	  request_id, command_type, intent_fingerprint, state, applied_log_index, result_json
+railway-postgres-1      | 	)
+railway-postgres-1      | 	VALUES ('763890a7-c2a0-4298-9ae3-c7a167e99a4b', 'BOOK_TICKET', '0000000000000000000000000000000000000000000000000000000000000000', 'APPLIED_SUCCESS', 0, '{}'::jsonb)
+railway-postgres-1      | 	
+railway-postgres-1      | 2026-11-11 09:12:51.896 UTC [8228] ERROR:  duplicate key value violates unique constraint "request_results_pkey"
+railway-postgres-1      | 2026-11-11 09:12:51.896 UTC [8228] DETAIL:  Key (request_id)=(9bbf524c-8709-4b56-a2d3-25d48abfce60) already exists.
+railway-postgres-1      | 2026-11-11 09:12:51.896 UTC [8228] STATEMENT:  INSERT INTO request_results(
+railway-postgres-1      | 	  request_id, command_type, intent_fingerprint, state, applied_log_index, result_json
+railway-postgres-1      | 	)
+railway-postgres-1      | 	VALUES ('9bbf524c-8709-4b56-a2d3-25d48abfce60', 'BOOK_TICKET', '0000000000000000000000000000000000000000000000000000000000000000', 'APPLIED_SUCCESS', 1, '{}'::jsonb)
+railway-postgres-1      | 	
+railway-postgres-1      | 2026-11-11 09:12:52.222 UTC [8239] ERROR:  duplicate key value violates unique constraint "request_results_pkey"
+railway-postgres-1      | 2026-11-11 09:12:52.222 UTC [8239] DETAIL:  Key (request_id)=(11111111-1111-1111-1111-111111111111) already exists.
+railway-postgres-1      | 2026-11-11 09:12:52.222 UTC [8239] STATEMENT:  INSERT INTO request_results(request_id, command_type, intent_fingerprint, state, reason_code, ticket_id, applied_log_index, result_json) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+railway-postgres-1      | 2026-11-11 09:16:10.886 UTC [27] LOG:  checkpoint starting: time
+railway-postgres-1      | 2026-11-11 09:16:33.590 UTC [27] LOG:  checkpoint complete: wrote 228 buffers (1.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=22.665 s, sync=0.024 s, total=22.705 s; sync files=998, longest=0.005 s, average=0.001 s; distance=6987 kB, estimate=7058 kB; lsn=0/3B5A410, redo lsn=0/3B5A3D8
+railway-postgres-1      | 2026-11-11 09:17:50.986 UTC [1] LOG:  received fast shutdown request
+railway-postgres-1      | 2026-11-11 09:17:50.991 UTC [1] LOG:  aborting any active transactions
+railway-postgres-1      | 2026-11-11 09:17:50.993 UTC [1] LOG:  background worker "logical replication launcher" (PID 32) exited with exit code 1
+railway-postgres-1      | 2026-11-11 09:17:50.994 UTC [27] LOG:  shutting down
+railway-postgres-1      | 2026-11-11 09:17:50.997 UTC [27] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-1      | 2026-11-11 09:17:51.023 UTC [27] LOG:  checkpoint complete: wrote 112 buffers (0.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.005 s, sync=0.009 s, total=0.029 s; sync files=70, longest=0.005 s, average=0.001 s; distance=222 kB, estimate=6374 kB; lsn=0/3B91EA0, redo lsn=0/3B91EA0
+railway-postgres-1      | 2026-11-11 09:17:51.027 UTC [1] LOG:  database system is shut down
+railway-postgres-1      | 
+railway-postgres-1      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+railway-postgres-1      | 
+railway-postgres-1      | 2026-11-11 09:17:51.415 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-1      | 2026-11-11 09:17:51.415 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-1      | 2026-11-11 09:17:51.415 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-1      | 2026-11-11 09:17:51.422 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-1      | 2026-11-11 09:17:51.431 UTC [29] LOG:  database system was shut down at 2026-11-11 09:17:51 UTC
+railway-postgres-1      | 2026-11-11 09:17:51.438 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-1      | 2026-11-11 09:22:51.480 UTC [27] LOG:  checkpoint starting: time
+railway-postgres-1      | 2026-11-11 09:22:54.042 UTC [27] LOG:  checkpoint complete: wrote 28 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=2.513 s, sync=0.034 s, total=2.562 s; sync files=17, longest=0.031 s, average=0.002 s; distance=144 kB, estimate=144 kB; lsn=0/3BB5F00, redo lsn=0/3BB5EC8
+railway-postgres-5      | CREATE TABLE
+railway-postgres-3      | CREATE TABLE
+railway-postgres-3      | CREATE TABLE
+railway-postgres-3      | CREATE INDEX
+railway-postgres-3      | CREATE TABLE
+railway-postgres-3      | CREATE TABLE
+railway-postgres-5      | CREATE TABLE
+railway-postgres-5      | CREATE INDEX
+railway-postgres-5      | CREATE TABLE
+railway-postgres-5      | CREATE TABLE
+railway-postgres-5      | 
+railway-postgres-5      | 
+railway-postgres-5      | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V2__seed.sql
+railway-postgres-5      | INSERT 0 1
+railway-postgres-5      | INSERT 0 10
+railway-postgres-5      | 
+railway-postgres-5      | 
+railway-postgres-5      | waiting for server to shut down....2026-11-11 07:42:55.181 UTC [42] LOG:  received fast shutdown request
+railway-postgres-5      | 2026-11-11 07:42:55.188 UTC [42] LOG:  aborting any active transactions
+railway-postgres-5      | 2026-11-11 07:42:55.190 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+railway-postgres-5      | 2026-11-11 07:42:55.190 UTC [43] LOG:  shutting down
+railway-postgres-5      | 2026-11-11 07:42:55.199 UTC [43] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-5      | 2026-11-11 07:42:55.394 UTC [43] LOG:  checkpoint complete: wrote 953 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.029 s, sync=0.122 s, total=0.204 s; sync files=324, longest=0.009 s, average=0.001 s; distance=4420 kB, estimate=4420 kB; lsn=0/19481C8, redo lsn=0/19481C8
+railway-postgres-5      | 2026-11-11 07:42:55.399 UTC [42] LOG:  database system is shut down
+railway-postgres-5      |  done
+railway-postgres-5      | server stopped
+railway-postgres-5      | 
+railway-postgres-5      | PostgreSQL init process complete; ready for start up.
+railway-postgres-5      | 
+railway-postgres-5      | 2026-11-11 07:42:55.509 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-5      | 2026-11-11 07:42:55.509 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-5      | 2026-11-11 07:42:55.509 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-5      | 2026-11-11 07:42:55.519 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-5      | 2026-11-11 07:42:55.537 UTC [62] LOG:  database system was shut down at 2026-11-11 07:42:55 UTC
+railway-postgres-5      | 2026-11-11 07:42:55.548 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-5      | 2026-11-11 07:47:55.647 UTC [60] LOG:  checkpoint starting: time
+railway-postgres-5      | 2026-11-11 07:48:00.301 UTC [60] LOG:  checkpoint complete: wrote 49 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.624 s, sync=0.013 s, total=4.654 s; sync files=14, longest=0.008 s, average=0.001 s; distance=260 kB, estimate=260 kB; lsn=0/19895E8, redo lsn=0/19895B0
+railway-postgres-5      | 2026-11-11 08:01:09.826 UTC [1] LOG:  received fast shutdown request
+railway-postgres-5      | 2026-11-11 08:01:09.831 UTC [1] LOG:  aborting any active transactions
+railway-postgres-5      | 2026-11-11 08:01:09.833 UTC [1] LOG:  background worker "logical replication launcher" (PID 65) exited with exit code 1
+railway-postgres-5      | 2026-11-11 08:01:09.835 UTC [60] LOG:  shutting down
+railway-postgres-5      | 2026-11-11 08:01:09.838 UTC [60] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-5      | 2026-11-11 08:01:09.877 UTC [60] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.008 s, total=0.043 s; sync files=6, longest=0.006 s, average=0.002 s; distance=0 kB, estimate=234 kB; lsn=0/1989698, redo lsn=0/1989698
+railway-postgres-5      | 2026-11-11 08:01:09.881 UTC [1] LOG:  database system is shut down
+railway-postgres-5      | 
+railway-postgres-5      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+railway-postgres-5      | 
+railway-postgres-5      | 2026-11-11 08:01:10.352 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-5      | 2026-11-11 08:01:10.353 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-3      | 
+railway-postgres-3      | 
+railway-postgres-3      | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V2__seed.sql
+railway-postgres-3      | INSERT 0 1
+railway-postgres-3      | INSERT 0 10
+railway-postgres-3      | 
+railway-postgres-3      | 
+railway-postgres-3      | waiting for server to shut down....2026-11-11 07:42:55.189 UTC [42] LOG:  received fast shutdown request
+railway-postgres-3      | 2026-11-11 07:42:55.199 UTC [42] LOG:  aborting any active transactions
+railway-postgres-3      | 2026-11-11 07:42:55.202 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+railway-postgres-3      | 2026-11-11 07:42:55.202 UTC [43] LOG:  shutting down
+railway-postgres-5      | 2026-11-11 08:01:10.353 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-5      | 2026-11-11 08:01:10.361 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-5      | 2026-11-11 08:01:10.385 UTC [28] LOG:  database system was shut down at 2026-11-11 08:01:09 UTC
+railway-postgres-5      | 2026-11-11 08:01:10.395 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-5      | 2026-11-11 08:06:10.488 UTC [26] LOG:  checkpoint starting: time
+railway-postgres-5      | 2026-11-11 08:06:10.533 UTC [26] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.018 s, sync=0.005 s, total=0.045 s; sync files=2, longest=0.003 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/1989780, redo lsn=0/1989748
+railway-postgres-3      | 2026-11-11 07:42:55.207 UTC [43] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-3      | 2026-11-11 07:42:55.408 UTC [43] LOG:  checkpoint complete: wrote 953 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.039 s, sync=0.132 s, total=0.206 s; sync files=324, longest=0.007 s, average=0.001 s; distance=4420 kB, estimate=4420 kB; lsn=0/19481C8, redo lsn=0/19481C8
+railway-postgres-3      | 2026-11-11 07:42:55.412 UTC [42] LOG:  database system is shut down
+railway-postgres-3      |  done
+railway-postgres-3      | server stopped
+railway-postgres-3      | 
+railway-postgres-3      | PostgreSQL init process complete; ready for start up.
+railway-postgres-3      | 
+railway-postgres-3      | 2026-11-11 07:42:55.510 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-3      | 2026-11-11 07:42:55.510 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-3      | 2026-11-11 07:42:55.510 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-3      | 2026-11-11 07:42:55.523 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-3      | 2026-11-11 07:42:55.540 UTC [62] LOG:  database system was shut down at 2026-11-11 07:42:55 UTC
+railway-postgres-3      | 2026-11-11 07:42:55.549 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-3      | 2026-11-11 07:47:55.650 UTC [60] LOG:  checkpoint starting: time
+railway-postgres-3      | 2026-11-11 07:48:00.301 UTC [60] LOG:  checkpoint complete: wrote 49 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.621 s, sync=0.010 s, total=4.651 s; sync files=14, longest=0.005 s, average=0.001 s; distance=260 kB, estimate=260 kB; lsn=0/19895E8, redo lsn=0/19895B0
+railway-postgres-3      | 2026-11-11 08:01:09.825 UTC [1] LOG:  received fast shutdown request
+railway-postgres-3      | 2026-11-11 08:01:09.831 UTC [1] LOG:  aborting any active transactions
+railway-postgres-3      | 2026-11-11 08:01:09.835 UTC [1] LOG:  background worker "logical replication launcher" (PID 65) exited with exit code 1
+railway-postgres-3      | 2026-11-11 08:01:09.835 UTC [60] LOG:  shutting down
+railway-postgres-3      | 2026-11-11 08:01:09.838 UTC [60] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-3      | 2026-11-11 08:01:09.872 UTC [60] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.005 s, total=0.038 s; sync files=6, longest=0.005 s, average=0.001 s; distance=0 kB, estimate=234 kB; lsn=0/1989698, redo lsn=0/1989698
+railway-postgres-3      | 2026-11-11 08:01:09.875 UTC [1] LOG:  database system is shut down
+railway-postgres-3      | 
+railway-postgres-3      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+railway-postgres-3      | 
+railway-postgres-3      | 2026-11-11 08:01:10.350 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-3      | 2026-11-11 08:01:10.351 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-3      | 2026-11-11 08:01:10.351 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-3      | 2026-11-11 08:01:10.361 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-3      | 2026-11-11 08:01:10.385 UTC [29] LOG:  database system was shut down at 2026-11-11 08:01:09 UTC
+railway-postgres-3      | 2026-11-11 08:01:10.395 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-3      | 2026-11-11 08:06:10.447 UTC [27] LOG:  checkpoint starting: time
+railway-postgres-4      | CREATE TABLE
+railway-postgres-4      | CREATE TABLE
+railway-postgres-4      | CREATE INDEX
+railway-postgres-4      | CREATE TABLE
+railway-postgres-4      | CREATE TABLE
+railway-postgres-4      | 
+railway-postgres-4      | 
+railway-postgres-4      | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V2__seed.sql
+railway-postgres-4      | INSERT 0 1
+railway-postgres-4      | INSERT 0 10
+railway-postgres-4      | 
+railway-postgres-4      | 
+railway-postgres-4      | waiting for server to shut down....2026-11-11 07:42:55.330 UTC [42] LOG:  received fast shutdown request
+railway-postgres-4      | 2026-11-11 07:42:55.339 UTC [42] LOG:  aborting any active transactions
+railway-postgres-4      | 2026-11-11 07:42:55.341 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+railway-postgres-4      | 2026-11-11 07:42:55.342 UTC [43] LOG:  shutting down
+railway-postgres-4      | 2026-11-11 07:42:55.348 UTC [43] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-4      | 2026-11-11 07:42:55.457 UTC [43] LOG:  checkpoint complete: wrote 953 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.029 s, sync=0.056 s, total=0.115 s; sync files=324, longest=0.006 s, average=0.001 s; distance=4420 kB, estimate=4420 kB; lsn=0/19481C8, redo lsn=0/19481C8
+railway-postgres-4      | 2026-11-11 07:42:55.462 UTC [42] LOG:  database system is shut down
+railway-postgres-4      |  done
+railway-postgres-4      | server stopped
+railway-postgres-4      | 
+railway-postgres-4      | PostgreSQL init process complete; ready for start up.
+railway-postgres-4      | 
+railway-postgres-4      | 2026-11-11 07:42:55.561 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-4      | 2026-11-11 07:42:55.561 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-4      | 2026-11-11 07:42:55.561 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-4      | 2026-11-11 07:42:55.576 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-4      | 2026-11-11 07:42:55.587 UTC [62] LOG:  database system was shut down at 2026-11-11 07:42:55 UTC
+railway-postgres-4      | 2026-11-11 07:42:55.595 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-4      | 2026-11-11 07:47:55.697 UTC [60] LOG:  checkpoint starting: time
+railway-postgres-4      | 2026-11-11 07:48:00.332 UTC [60] LOG:  checkpoint complete: wrote 49 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.617 s, sync=0.005 s, total=4.636 s; sync files=14, longest=0.002 s, average=0.001 s; distance=260 kB, estimate=260 kB; lsn=0/19895E8, redo lsn=0/19895B0
+railway-postgres-4      | 2026-11-11 08:01:09.826 UTC [1] LOG:  received fast shutdown request
+railway-postgres-4      | 2026-11-11 08:01:09.831 UTC [1] LOG:  aborting any active transactions
+railway-postgres-4      | 2026-11-11 08:01:09.833 UTC [1] LOG:  background worker "logical replication launcher" (PID 65) exited with exit code 1
+railway-postgres-4      | 2026-11-11 08:01:09.834 UTC [60] LOG:  shutting down
+railway-postgres-4      | 2026-11-11 08:01:09.838 UTC [60] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-4      | 2026-11-11 08:01:09.884 UTC [60] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.008 s, sync=0.015 s, total=0.050 s; sync files=6, longest=0.010 s, average=0.003 s; distance=0 kB, estimate=234 kB; lsn=0/1989698, redo lsn=0/1989698
+railway-postgres-4      | 2026-11-11 08:01:09.889 UTC [1] LOG:  database system is shut down
+railway-postgres-4      | 
+railway-postgres-4      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+railway-postgres-4      | 
+railway-postgres-4      | 2026-11-11 08:01:10.429 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-4      | 2026-11-11 08:01:10.429 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-4      | 2026-11-11 08:01:10.429 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-4      | 2026-11-11 08:01:10.441 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-4      | 2026-11-11 08:01:10.454 UTC [29] LOG:  database system was shut down at 2026-11-11 08:01:09 UTC
+railway-postgres-4      | 2026-11-11 08:01:10.462 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-4      | 2026-11-11 08:06:10.538 UTC [27] LOG:  checkpoint starting: time
+railway-postgres-3      | 2026-11-11 08:06:10.474 UTC [27] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.003 s, total=0.028 s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=0 kB; lsn=0/1989780, redo lsn=0/1989748
+railway-postgres-4      | 2026-11-11 08:06:10.558 UTC [27] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.006 s, sync=0.003 s, total=0.021 s; sync files=2, longest=0.002 s, average=0.002 s; distance=0 kB, estimate=0 kB; lsn=0/1989780, redo lsn=0/1989748
+railway-postgres-2      | CREATE TABLE
+railway-postgres-2      | CREATE TABLE
+railway-postgres-2      | CREATE INDEX
+railway-postgres-2      | CREATE TABLE
+railway-postgres-2      | CREATE TABLE
+railway-postgres-2      | 
+railway-postgres-2      | 
+railway-postgres-2      | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V2__seed.sql
+railway-postgres-2      | INSERT 0 1
+railway-postgres-2      | INSERT 0 10
+railway-postgres-2      | 
+railway-postgres-2      | 
+railway-postgres-2      | waiting for server to shut down....2026-11-11 07:42:55.622 UTC [42] LOG:  received fast shutdown request
+railway-postgres-2      | 2026-11-11 07:42:55.625 UTC [42] LOG:  aborting any active transactions
+railway-postgres-2      | 2026-11-11 07:42:55.627 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+railway-postgres-2      | 2026-11-11 07:42:55.627 UTC [43] LOG:  shutting down
+railway-postgres-2      | 2026-11-11 07:42:55.631 UTC [43] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-2      | 2026-11-11 07:42:55.699 UTC [43] LOG:  checkpoint complete: wrote 953 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.016 s, sync=0.028 s, total=0.072 s; sync files=324, longest=0.005 s, average=0.001 s; distance=4420 kB, estimate=4420 kB; lsn=0/19481C8, redo lsn=0/19481C8
+railway-postgres-2      | 2026-11-11 07:42:55.703 UTC [42] LOG:  database system is shut down
+railway-postgres-2      |  done
+railway-postgres-2      | server stopped
+railway-postgres-2      | 
+railway-postgres-2      | PostgreSQL init process complete; ready for start up.
+railway-postgres-2      | 
+railway-postgres-2      | 2026-11-11 07:42:55.744 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-2      | 2026-11-11 07:42:55.744 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-2      | 2026-11-11 07:42:55.744 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-2      | 2026-11-11 07:42:55.751 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-2      | 2026-11-11 07:42:55.758 UTC [62] LOG:  database system was shut down at 2026-11-11 07:42:55 UTC
+railway-postgres-2      | 2026-11-11 07:42:55.764 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-2      | 2026-11-11 07:47:55.774 UTC [60] LOG:  checkpoint starting: time
+railway-postgres-2      | 2026-11-11 07:48:00.411 UTC [60] LOG:  checkpoint complete: wrote 49 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.618 s, sync=0.006 s, total=4.638 s; sync files=14, longest=0.003 s, average=0.001 s; distance=260 kB, estimate=260 kB; lsn=0/19895E8, redo lsn=0/19895B0
+railway-postgres-2      | 2026-11-11 08:01:09.823 UTC [1] LOG:  received fast shutdown request
+railway-postgres-2      | 2026-11-11 08:01:09.828 UTC [1] LOG:  aborting any active transactions
+railway-postgres-2      | 2026-11-11 08:01:09.831 UTC [1] LOG:  background worker "logical replication launcher" (PID 65) exited with exit code 1
+railway-postgres-2      | 2026-11-11 08:01:09.831 UTC [60] LOG:  shutting down
+railway-postgres-2      | 2026-11-11 08:01:09.835 UTC [60] LOG:  checkpoint starting: shutdown immediate
+railway-postgres-2      | 2026-11-11 08:01:09.880 UTC [60] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.007 s, sync=0.011 s, total=0.049 s; sync files=6, longest=0.006 s, average=0.002 s; distance=0 kB, estimate=234 kB; lsn=0/1989698, redo lsn=0/1989698
+railway-postgres-2      | 2026-11-11 08:01:09.884 UTC [1] LOG:  database system is shut down
+railway-postgres-2      | 
+railway-postgres-2      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+railway-postgres-2      | 
+railway-postgres-2      | 2026-11-11 08:01:10.406 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+railway-postgres-2      | 2026-11-11 08:01:10.407 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+railway-postgres-2      | 2026-11-11 08:01:10.407 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+railway-postgres-2      | 2026-11-11 08:01:10.416 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+railway-postgres-2      | 2026-11-11 08:01:10.429 UTC [29] LOG:  database system was shut down at 2026-11-11 08:01:09 UTC
+railway-postgres-2      | 2026-11-11 08:01:10.440 UTC [1] LOG:  database system is ready to accept connections
+railway-postgres-2      | 2026-11-11 08:06:10.487 UTC [27] LOG:  checkpoint starting: time
+railway-postgres-2      | 2026-11-11 08:06:10.530 UTC [27] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.016 s, sync=0.005 s, total=0.044 s; sync files=2, longest=0.003 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/1989780, redo lsn=0/1989748
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-2
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  |   Node ID          : node-2
+railway-backend-node-2  |   Cluster ID       : railway-demo-5
+railway-backend-node-2  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9102)
+railway-backend-node-2  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-2:9200)
+railway-backend-node-2  |   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+railway-backend-node-2  |   Database Target  : railway@postgres-2:5432/railway_node2
+railway-backend-node-2  |   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  | [INFO] Kiem tra ket noi mang toi Database postgres-2:5432...
+railway-backend-node-2  | Connection to postgres-2 (172.18.0.4) 5432 port [tcp/postgresql] succeeded!
+railway-backend-node-2  |   [OK] Ket noi mang thanh cong toi Database postgres-2:5432!
+railway-backend-node-2  | [INFO] Khoi dong Backend Node runtime...
+railway-backend-node-2  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  |   Node ID          : node-2
+railway-backend-node-2  |   Cluster ID       : railway-demo-5
+railway-backend-node-2  |   Client Port      : 9100 (Host: 0.0.0.0)
+railway-backend-node-2  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+railway-backend-node-2  |   Database Target  : railway@postgres-2:5432/railway_node2
+railway-backend-node-2  | ================================================================================
+railway-backend-node-2  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-2  | WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+railway-backend-node-2  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-2  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-2  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.TcpServer start
+railway-backend-node-2  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+railway-backend-node-2  | [READY] node-2 client=9100 raft=9200
+railway-backend-node-2  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+railway-backend-node-2  | INFO: [node-2] Database connection verified: jdbc:postgresql://postgres-2:5432/railway_node2
+railway-backend-node-2  | Nov 11, 2026 9:18:43 AM vn.nhom6.railway.networking.NodeMain start
+railway-backend-node-2  | INFO: Backend Node [node-2] initialized and ready for traffic.

@@ -42,7 +42,7 @@ public class TcpSingleNodeProtocolTest {
     @BeforeEach
     public void setUp() throws IOException {
         NodeConfig config = new NodeConfig("node-1", "railway-demo-5", "127.0.0.1", 0, "127.0.0.1", 0, null, 8, 5000);
-        node = new NodeMain(config);
+        node = new NodeMain(config, new FakeBookingService(config.nodeId()));
         resources.add(node);
         node.start();
         clientPort = node.getClientPort();

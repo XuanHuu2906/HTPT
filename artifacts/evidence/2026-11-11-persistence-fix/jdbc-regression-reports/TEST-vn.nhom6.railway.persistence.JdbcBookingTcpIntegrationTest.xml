@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest" time="0.561" tests="2" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="25"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/test-classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar:/home/nguyenhuu/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar:/home/nguyenhuu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar:"/>
+    <property name="java.vm.vendor" value="Red Hat, Inc."/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://www.redhat.com/"/>
+    <property name="user.timezone" value="Asia/Ho_Chi_Minh"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="25"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-25-openjdk/lib"/>
+    <property name="sun.java.command" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire/surefirebooter-20261111160644806_6.jar /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire 2026-11-11T16-06-43_846-jvmRun1 surefire-20261111160644806_4tmp surefire_1-20261111160644806_5tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/test-classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/classes:/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/classes:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar:/home/nguyenhuu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar:/home/nguyenhuu/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar:/home/nguyenhuu/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar:/home/nguyenhuu/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/nguyenhuu/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar:/home/nguyenhuu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar:/home/nguyenhuu/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/nguyenhuu"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2026-08-18"/>
+    <property name="java.home" value="/usr/lib/jvm/java-25-openjdk"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="surefire.real.class.path" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire/surefirebooter-20261111160644806_6.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="25.0.4.1+1"/>
+    <property name="user.name" value="nguyenhuu"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="7.2.15-300.fc45.x86_64"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="(Red_Hat-25.0.4.1.1-1)"/>
+    <property name="localRepository" value="/home/nguyenhuu/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugzilla.redhat.com/enter_bug.cgi?product=Fedora&amp;component=java-25-openjdk&amp;version=43"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="25.0.4.1"/>
+    <property name="user.dir" value="/home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vendor" value="Red Hat, Inc."/>
+    <property name="java.vm.version" value="25.0.4.1+1"/>
+    <property name="stdin.encoding" value="UTF-8"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="69.0"/>
+  </properties>
+  <testcase name="defaultBackendWithDatabaseCannotConfirmWithoutRaft" classname="vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest" time="0.156">
+    <system-out><![CDATA[================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway@127.0.0.1:5433/railway_node1?currentSchema=railway_test_438e66e37c194c6a917d00cf46be9720
+================================================================================
+[READY] node-1 client=41557 raft=44805
+]]></system-out>
+    <system-err><![CDATA[Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41557 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44805 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+INFO: [node-1] Database connection verified: jdbc:postgresql://127.0.0.1:5433/railway_node1?currentSchema=railway_test_438e66e37c194c6a917d00cf46be9720
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41557 stopped.
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44805 stopped.
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+]]></system-err>
+  </testcase>
+  <testcase name="tcpWaitsForDurableApplyAndPreservesReplayConflictAndSnapshot" classname="vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest" time="0.405">
+    <system-out><![CDATA[================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway@127.0.0.1:5433/railway_node1?currentSchema=railway_test_ef15d8328887427293efe364f8b25e9e
+================================================================================
+[READY] node-1 client=33145 raft=45129
+SQL EVIDENCE (isolated schema; controlled commit harness, NOT real Raft): {"seats" : [{"trip_id":"SE-001","seat_id":"G01","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G02","status":"BOOKED","current_ticket_id":"bc084084-39c7-48d3-95ca-adce287204b0"}, 
+ {"trip_id":"SE-001","seat_id":"G03","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G04","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G05","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G06","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G07","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G08","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G09","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G10","status":"AVAILABLE","current_ticket_id":null}], "tickets" : [{"ticket_id":"bc084084-39c7-48d3-95ca-adce287204b0","trip_id":"SE-001","seat_id":"G02","passenger_name":"Demo Passenger","status":"ACTIVE","issued_at":"2026-11-11T16:06:53.842+07:00","cancelled_at":null}], "results" : [{"request_id":"11111111-1111-1111-1111-111111111111","command_type":"BOOK_TICKET","intent_fingerprint":"55ee68051e697547141dc644f7d2fcb0da953da74eb1a0906f5c897fccd0d4cd","state":"APPLIED_SUCCESS","reason_code":null,"ticket_id":"bc084084-39c7-48d3-95ca-adce287204b0","applied_log_index":1,"result_json":{"seatId": "G02", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "bc084084-39c7-48d3-95ca-adce287204b0", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}}, 
+ {"request_id":"93391ca7-adf2-454e-81fa-927466fa39c5","command_type":"BOOK_TICKET","intent_fingerprint":"e0de6c44a1a2a4418e1f85644dd7848d1aeca7bb38069be48a912bf24148883b","state":"APPLIED_REJECTED","reason_code":"SEAT_ALREADY_BOOKED","ticket_id":null,"applied_log_index":4,"result_json":{"seatId": "G02", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "93391ca7-adf2-454e-81fa-927466fa39c5", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}}], "lastApplied" : 5}
+]]></system-out>
+    <system-err><![CDATA[Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33145 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45129 (maxThreads=8, soTimeout=10000ms)
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain checkDatabaseConnection
+INFO: [node-1] Database connection verified: jdbc:postgresql://127.0.0.1:5433/railway_node1?currentSchema=railway_test_ef15d8328887427293efe364f8b25e9e
+Nov 11, 2026 4:06:53 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 11, 2026 4:06:54 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 11, 2026 4:06:54 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33145 stopped.
+Nov 11, 2026 4:06:54 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45129 stopped.
+Nov 11, 2026 4:06:54 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+]]></system-err>
+  </testcase>
+</testsuite>
