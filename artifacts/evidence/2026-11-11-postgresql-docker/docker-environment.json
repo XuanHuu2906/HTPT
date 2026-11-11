@@ -1,0 +1,10 @@
+{
+  "command": [
+    "docker",
+    "version"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:02:25.036346+00:00",
+  "finished_utc": "2026-11-11T08:02:25.087172+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

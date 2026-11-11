@@ -1,0 +1,37 @@
+[
+  {
+    "name": "vn.nhom6.railway.persistence.JdbcBookingRepositoryTest",
+    "tests": "11",
+    "failures": "2",
+    "errors": "1",
+    "skipped": "0"
+  },
+  {
+    "name": "vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "vn.nhom6.railway.persistence.JdbcRaftStorageTest",
+    "tests": "10",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "vn.nhom6.railway.persistence.JdbcRequestResultStoreTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "vn.nhom6.railway.tests.Node1DatabaseIntegrationTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

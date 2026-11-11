@@ -24,7 +24,8 @@ COPY shared/src shared/src
 COPY backend-node/src backend-node/src
 
 # Build backend-node va shared, sao chep dependencies vao target/lib
-RUN mvn -B -ntp clean package -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 && \
+# Install reactor artifacts so the separate dependency-copy invocation can resolve shared.
+RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 && \
     mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
 
 # ------------------------------------------------------------------------------
