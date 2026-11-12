@@ -242,16 +242,21 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
                 );
             }
 
+            long remainingTotal = redirectPolicy.totalTimeoutMs() - (System.currentTimeMillis() - startTime);
+            long stepTimeout = Math.min(redirectPolicy.stepTimeoutMs(), Math.max(100, remainingTotal));
+
             BookTicketResponseDto response;
             try {
                 // Gửi nguyên request với cùng requestId và cùng payload
-                long remainingTotal = redirectPolicy.totalTimeoutMs() - (System.currentTimeMillis() - startTime);
-                long stepTimeout = Math.min(redirectPolicy.stepTimeoutMs(), Math.max(100, remainingTotal));
-
                 response = client.book(request).get(stepTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
+                long totalElapsed = System.currentTimeMillis() - startTime;
+                boolean isTotalTimeout = totalElapsed >= redirectPolicy.totalTimeoutMs() || remainingTotal <= stepTimeout;
+                String msg = isTotalTimeout
+                        ? "Hết thời gian chờ tổng thể của lệnh đặt vé (" + redirectPolicy.totalTimeoutMs() + "ms)"
+                        : "Hết thời gian chờ phản hồi từ Node " + targetNodeId + " (" + redirectPolicy.stepTimeoutMs() + "ms)";
                 logStep(requestId, "N/A", "BOOK_TICKET", targetNodeId, targetNodeId, redirectCount,
-                        "STEP_TIMEOUT", "TIMEOUT_UNKNOWN");
+                        isTotalTimeout ? "TOTAL_TIMEOUT_EXCEEDED" : "STEP_TIMEOUT", "TIMEOUT_UNKNOWN");
                 return new BookTicketResponseDto(
                         requestId,
                         "UNKNOWN",
@@ -262,7 +267,7 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
                         null,
                         false,
                         null,
-                        "Hết thời gian chờ phản hồi từ Node " + targetNodeId + " (" + redirectPolicy.stepTimeoutMs() + "ms)"
+                        msg
                 );
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
