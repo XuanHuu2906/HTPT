@@ -1,0 +1,97 @@
+================================================================================
+NHẬT KÝ NGHIỆM THU TASK TV3-D12 — RAFT RPC SERVER HANDLERS & INBOUND PROTOCOL
+================================================================================
+Thời gian: 2026-11-12 19:15:23 (GMT+7)
+Người thực hiện: TV3 - Protocol & TCP Networking
+Môi trường kiểm thử:
+  - OS: Linux (7.3.0-4-cachyos, x86_64)
+  - JDK: OpenJDK 64-Bit Server VM (build 27.0.1.0.3)
+  - Maven: Apache Maven 3.10.0
+  - Branch: feat/tv3-d12
+  - Base Commit: feat/tv3-d11
+================================================================================
+
+1. CÁC THÀNH PHẦN TRIỂN KHAI MỚI
+--------------------------------------------------------------------------------
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/RaftRpcProcessor.java
+    - Seam interface chuẩn tách biệt networking transport và consensus state machine:
+      * handleRequestVote(RequestVoteRequestDto request, String senderId)
+      * handleAppendEntries(AppendEntriesRequestDto request, String senderId)
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/FakeRaftRequestHandler.java
+    - Cài đặt stub/mock độc lập của RaftRpcProcessor cho phép cấu hình:
+      * currentTerm
+      * voteGranted decision
+      * appendSuccess decision & matchIndex calculation
+      * simulated failure / exception injection
+      * ghi nhận toàn bộ invocations cho assertion kiểm thử
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/RequestVoteRpcHandler.java
+    - Inbound RPC handler tiếp nhận MessageType.REQUEST_VOTE trên PEER port.
+    - Strict validation: payload null check, DTO validation.
+    - Enforce sender rules: senderId non-blank, senderId == candidateId, senderId != localNodeId.
+    - Bắt lỗi an toàn: INVALID_REQUEST hoặc INTERNAL_ERROR mà không crash tiến trình.
+    - Response correlated: correlationId == request.messageId.
+
+[x] backend-node/src/main/java/vn/nhom6/railway/networking/AppendEntriesRpcHandler.java
+    - Inbound RPC handler tiếp nhận MessageType.APPEND_ENTRIES (heartbeat & log append) trên PEER port.
+    - Strict validation: payload null check, DTO validation.
+    - Enforce sender rules: senderId non-blank, senderId == leaderId.
+    - Bắt lỗi an toàn: INVALID_REQUEST hoặc INTERNAL_ERROR.
+    - Response correlated: correlationId == request.messageId.
+
+2. KẾT QUẢ KIỂM THỬ ĐƠN VỊ (UNIT TESTS)
+--------------------------------------------------------------------------------
+Module: backend-node
+  - vn.nhom6.railway.networking.RequestVoteRpcHandlerTest (7 tests)
+    * testHandleValidVoteGranted: PASS (voteGranted=true, term matches, correlationId accurate)
+    * testHandleValidVoteRejected: PASS (voteGranted=false, term matches)
+    * testRejectMismatchedSender: PASS (senderId != candidateId -> INVALID_REQUEST)
+    * testRejectSelfVote: PASS (senderId == localNodeId -> INVALID_REQUEST)
+    * testRejectInvalidPayload: PASS (malformed fields/negative term -> INVALID_REQUEST)
+    * testHandleProcessorFailure: PASS (processor exception -> INTERNAL_ERROR)
+    * testNullOrEmptyEnvelope: PASS (null request -> returns null safely)
+
+  - vn.nhom6.railway.networking.AppendEntriesRpcHandlerTest (7 tests)
+    * testHandleHeartbeatSuccess: PASS (empty entries, matchIndex matches prevLogIndex)
+    * testHandleAppendEntriesWithLogsSuccess: PASS (entries array, matchIndex advances correctly)
+    * testHandleLogMismatchRejection: PASS (log mismatch -> success=false, matchIndex=0)
+    * testRejectMismatchedSender: PASS (senderId != leaderId -> INVALID_REQUEST)
+    * testRejectInvalidPayload: PASS (malformed fields -> INVALID_REQUEST)
+    * testHandleProcessorFailure: PASS (processor exception -> INTERNAL_ERROR)
+    * testNullOrEmptyEnvelope: PASS (null request -> returns null safely)
+
+3. KẾT QUẢ KIỂM THỬ TÍCH HỢP TCP RAFT RPC (INTEGRATION TESTS)
+--------------------------------------------------------------------------------
+Module: backend-node
+  - vn.nhom6.railway.networking.RaftRpcServerHandlersTcpIntegrationTest (6 tests)
+    * testInboundRequestVoteOverTcp: PASS
+      - Client gửi REQUEST_VOTE qua TCP -> RequestVoteRpcHandler giải mã và trả REQUEST_VOTE_RESPONSE.
+    * testInboundAppendEntriesHeartbeatOverTcp: PASS
+      - Client gửi heartbeat qua TCP -> AppendEntriesRpcHandler phản hồi success=true.
+    * testInboundAppendEntriesWithLogArrayOverTcp: PASS
+      - Client gửi mảng 3 log entries qua TCP -> AppendEntriesRpcHandler tính matchIndex chính xác.
+    * testInboundSenderMismatchOverTcp: PASS
+      - Client cố tình sai senderId/candidateId -> server phản hồi ERROR_RESPONSE(INVALID_REQUEST).
+    * testConcurrentInboundRpcsOverTcp: PASS
+      - Gửi đồng thời 100 RPC (50 VOTE + 50 APPEND) qua TCP socket -> 100% phản hồi chính xác correlation.
+    * testInboundMalformedJsonHandledSafelyOverTcp: PASS
+      - Gửi frame JSON rác qua TCP -> server xử lý lỗi an toàn mà không làm sập server socket.
+
+4. KẾT QUẢ TOÀN BỘ REACTOR BUILD (MAVEN CLEAN TEST)
+--------------------------------------------------------------------------------
+Command: HEADLESS="true" JAVA_TOOL_OPTIONS="..." mvn -B -ntp clean test
+Reactor Summary:
+  - railway-distributed-system ......................... SUCCESS [  0.373 s]
+  - shared ............................................. SUCCESS [  3.619 s]
+  - backend-node ....................................... SUCCESS [ 10.594 s]
+  - desktop-client ..................................... SUCCESS [  5.982 s]
+  - desktop-monitor .................................... SUCCESS [  0.039 s]
+  - integration-tests .................................. SUCCESS [  0.811 s]
+  ------------------------------------------------------------------------
+  BUILD SUCCESS
+  Total time: 21.582 s
+  Failures: 0, Errors: 0, Skipped: 6
+================================================================================
+KẾT LUẬN: Task TV3-D12 ĐẠT TOÀN BỘ TIÊU CHÍ PASS VÀ AN TOÀN GIAO THỨC PHÂN TÁN.
+================================================================================
