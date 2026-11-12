@@ -351,11 +351,11 @@ class BookingRequestHandlerTest {
 
             MessageEnvelope<?> confirmed =
                     handler.handleBooking(bookRequest(REQUEST_1, "G01", "Linh"));
-            assertBookResponse(confirmed, "CONFIRMED", "ticket-db-1", null, 1L);
+            assertBookResponse(confirmed, "CONFIRMED", "ticket-test-1", null, 1L);
 
             MessageEnvelope<?> replay =
                     handler.handleBooking(bookRequest(REQUEST_1, "G01", "Linh"));
-            assertBookResponse(replay, "CONFIRMED", "ticket-db-1", null, 1L);
+            assertBookResponse(replay, "CONFIRMED", "ticket-test-1", null, 1L);
             assertEquals(1, database.queryInt("SELECT COUNT(*) FROM tickets"));
 
             assertError("REQUEST_ID_CONFLICT",
@@ -389,7 +389,7 @@ class BookingRequestHandlerTest {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> seats = (List<Map<String, Object>>) seatsPayload.get("seats");
             assertEquals(10, seats.size());
-            assertEquals("ticket-db-1", seats.get(0).get("ticketId"));
+            assertEquals("ticket-test-1", seats.get(0).get("ticketId"));
 
             database.printAndAssertSnapshot();
         }
