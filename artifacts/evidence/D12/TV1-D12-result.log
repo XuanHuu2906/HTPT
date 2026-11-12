@@ -1,0 +1,151 @@
+==============================================================================
+RAILWAY DISTRIBUTED SYSTEM - NHOM 6
+EVIDENCE LOG: TASK TV1-D12 — Chuyen huong Leader tu NOT_LEADER, giu nguyen requestId
+==============================================================================
+Thoi diem thuc hien: 2026-11-12T09:48:00+07:00
+Nguoi thuc hien    : Khoa (TV1 - Phu trach desktop-client)
+Moi truong         : Windows 11, Java 21 LTS (OpenJDK 21.0.12.1), Apache Maven 3.9+
+Nhanh Git          : feature/UI
+Commit base        : origin/feature/UI
+
+==============================================================================
+1. KET QUA PREFLIGHT (BUOC 0 - KIEM TRA TRUOC KHI CODE)
+==============================================================================
+[PREFLIGHT-1] Doc SPEC-03 Section 3, Section 4, Section 7:
+  - Error code 'NOT_LEADER' tra ve qua ERROR_RESPONSE.
+  - leaderHint mang gia tri nodeId (e.g. "node-2", "node-3"), khong phai host:port.
+  - leaderHint co the null neu Node chua biet Leader hoac chua hoi du Raft state.
+  - GET_SEATS duoc dinh tuyen qua Leader (read barrier per SPEC-03 Section 3.1 & 4.1).
+  - NO_QUORUM va REQUEST_ID_CONFLICT tra qua ERROR_RESPONSE, Client khong duoc redirect.
+  - Idempotency theo requestId: requestId duoc sinh mot lan tai Client va bat bien
+    suot cac lan retry/redirect. Moi lan gui qua TCP sinh messageId moi.
+  -> KET QUA: PASS.
+
+[PREFLIGHT-2] Kiem tra module 'shared':
+  - MessageType.ERROR_RESPONSE, ErrorResponseDto ton tai voi day du cac field:
+    errorCode, message, leaderHint, term, requestId.
+  - Chay: mvn -B -ntp -pl shared clean test "-Dmaven.compiler.release=21"
+  - Ket qua: BUILD SUCCESS (30/30 tests PASS, 0 failures, 0 errors).
+  -> KET QUA: PASS.
+
+[PREFLIGHT-3] Kiem tra cau hinh endpoint cac Node:
+  - File configs/dev/cluster.properties ton tai voi dinh dang:
+    cluster.nodes=node-1,node-2,node-3,node-4,node-5
+    node.<nodeId>.client.host=127.0.0.1
+    node.<nodeId>.client.port=9101..9105
+    client.connect-timeout-ms=2000
+    client.request-timeout-ms=5000
+    client.retry.max-attempts=3
+  -> KET QUA: PASS.
+
+[PREFLIGHT-4] Kiem tra thanh phan hien co cua desktop-client:
+  - SocketBookingClient, FakeNodeServer, ClusterConnectionViewModel ton tai.
+  - Chay: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+  - Ket qua: BUILD SUCCESS (115/115 tests PASS).
+  -> KET QUA: PASS.
+
+KET LUAN PREFLIGHT: TOAN BO DIEU KIEN DA SAN SANG, KHONG CO BLOCKER.
+
+==============================================================================
+2. KET QUA KIEM THU DA THUC SU CHAY (UNIT & INTEGRATION TESTS)
+==============================================================================
+Lenh kiem thu toan bo reactor:
+  mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+
+Ket qua Surefire:
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.709 s]
+[INFO] shared ............................................. SUCCESS [  8.521 s]
+[INFO] desktop-client ..................................... SUCCESS [ 12.275 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 21.700 s
+[WARNING] Tests run: 130, Failures: 0, Errors: 0, Skipped: 5
+
+Chi tiet test suite LeaderAwareBookingClientTest (15 testcases):
+  1. test1_RedirectFromFollowerToLeaderConfirmed                     : PASS
+  2. test2_RedirectNeverBecomesConfirmedByItself                     : PASS
+  3. test3_HintNotInConfigurationStops                               : PASS
+  4. test4_SelfReferencingHintStops                                  : PASS
+  5. test5_CycleDetectionStops                                       : PASS
+  6. test6_MaxRedirectsExceededStops                                 : PASS
+  7. test7_NullOrEmptyHintStops                                      : PASS
+  8. test8_HintedLeaderUnreachable                                   : PASS
+  9. test9_TimeoutAtLeaderReturnsUnknownNotRejected                  : PASS
+  10. test10_DuplicateSameRequestIdOnlyOneTicketOnLeader             : PASS
+  11. test11_NoQuorumAndRequestIdConflictNotRedirected               : PASS
+  12. test12_TotalTimeoutRespected                                   : PASS
+  13. test13_SubsequentCallGoesDirectlyToKnownLeader                 : PASS
+  14. test14_ClusterConnectionViewModelUpdatedWithRealSource         : PASS
+  15. testRealClusterIntegration (Cluster that TV5)                  : SKIPPED (dung quy tac khi chua co bien NODE_ENDPOINTS)
+
+==============================================================================
+3. TRICH LOG MAU MOT LUOT CHUYEN HUONG A -> B (TEST 1)
+==============================================================================
+Yeu cau dat ve gui toi Follower A (node-1:65310), nhan NOT_LEADER kem hint node-2,
+chuyen tiep sang Leader B (node-2:65311), nhan CONFIRMED:
+
+[TCP-CLIENT] requestId=96ec1c47-54b2-4431-8ffe-e38316868068, messageId=6b8e7eda-4407-485a-93d4-9ef1e78eceda, type=BOOK_TICKET, endpoint=127.0.0.1:65310, outcome=NOT_LEADER, elapsedMs=363ms
+[REDIRECT-CLIENT] requestId=96ec1c47-54b2-4431-8ffe-e38316868068, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[TCP-CLIENT] requestId=96ec1c47-54b2-4431-8ffe-e38316868068, messageId=1de062c5-11ef-4baf-9f19-6175453facbb, type=BOOK_TICKET, endpoint=127.0.0.1:65311, outcome=CONFIRMED, elapsedMs=14ms
+[REDIRECT-CLIENT] requestId=96ec1c47-54b2-4431-8ffe-e38316868068, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+
+Xac nhan bat bien:
+  - requestId bat bien: 96ec1c47-54b2-4431-8ffe-e38316868068 (khong phat sinh requestId moi).
+  - messageId sinh moi moi frame: frame A = 6b8e7eda-4407-485a-93d4-9ef1e78eceda, frame B = 1de062c5-11ef-4baf-9f19-6175453facbb.
+  - So ve ACTIVE tren Leader B: 1 ve duy nhat. So ve tren Follower A: 0 ve.
+
+==============================================================================
+4. KET QUA GREP & KIEM TRA KHONG VI PHAM RANG BUOC
+==============================================================================
+[GREP-1] Kiem tra HTTP client trong desktop-client/src/main/java/:
+  Lenh: findstr /s /i "HttpClient okhttp RestTemplate HttpURLConnection" desktop-client\src\main\java\*.java
+  Ket qua: KHONG CO KET QUA (0 HTTP client). PASS.
+
+[GREP-2] Kiem tra java.net / java.sql trong controller & viewmodel:
+  Lenh: findstr /s /i "java.net java.sql" desktop-client\src\main\java\...\controller\*.java ...\viewmodel\*.java
+  Ket qua: KHONG CO KET QUA (0 tham chieu mang/DB trong UI). PASS.
+
+[GREP-3] Kiem tra blocking calls (.get(), .join(), Thread.sleep) trong controller:
+  Lenh: findstr /s /i "\.get() \.join() Thread.sleep" desktop-client\src\main\java\...\controller\*.java
+  Ket qua: Chi co Optional.get() tren bien cuc bo, khong co Future blocking. PASS.
+
+[GREP-4] Kiem tra hardcode "node-1" trong logic LeaderAwareBookingClient.java:
+  Lenh: findstr /i "node-1" desktop-client\src\main\java\vn\nhom6\railway\client\network\LeaderAwareBookingClient.java
+  Ket qua: KHONG CO KET QUA. PASS.
+
+[GIT-DIFF] Kiem tra FXML va Controller co bi thay doi khong:
+  Lenh: git diff origin/feature/UI...HEAD --stat -- desktop-client/src/main/resources/fxml/ desktop-client/src/main/java/vn/nhom6/railway/client/controller/
+  Ket qua: 0 files changed. PASS.
+
+==============================================================================
+5. BANG TRANG THAI TIEU CHI (DEFINITION OF DONE)
+==============================================================================
+| Ma tieu chi | Noi dung tieu chi                                              | Trang thai | Ghi chu                                    |
+|-------------|----------------------------------------------------------------|------------|--------------------------------------------|
+| TC-D12-01   | Preflight check SPEC-03, shared DTO, config, test hien co      | PASS       | Ghi nhan day du, khong thieu DTO           |
+| TC-D12-02   | Chuyen dung Node theo leaderHint tu NOT_LEADER                 | PASS       | Tu dong sang endpoint cua leaderHint       |
+| TC-D12-03   | Retry nguyen command va nguyen requestId                       | PASS       | Bat bien requestId o moi frame             |
+| TC-D12-04   | Sinh messageId moi cho moi lan truyen TCP                      | PASS       | Envelope UUID doc lap                      |
+| TC-D12-05   | Redirect khong bao gio tu thanh CONFIRMED                      | PASS       | Chi CONFIRMED khi Leader tra ve            |
+| TC-D12-06   | Chan leaderHint ngoai danh ba cau hinh                         | PASS       | Dung voi NOT_LEADER_UNRESOLVED             |
+| TC-D12-07   | Chan leaderHint trung chinh node vua tu choi                   | PASS       | Dung voi NOT_LEADER_UNRESOLVED             |
+| TC-D12-08   | Phat hien va chan vong lap chuyen huong (A->B->A)              | PASS       | Dung ngay o chu ky dau                     |
+| TC-D12-09   | Dung khi vuot qua maxRedirects (mac dinh 3)                    | PASS       | Dung voi NOT_LEADER_UNRESOLVED             |
+| TC-D12-10   | leaderHint null/rong dung dung va bao loi                      | PASS       | Dung voi NOT_LEADER_UNRESOLVED             |
+| TC-D12-11   | Leader goi y bi tat -> CONNECTION_FAILED, giu requestId        | PASS       | Giu nguyen requestId cho user retry        |
+| TC-D12-12   | Timeout tai Leader -> UNKNOWN (khong phai REJECTED)            | PASS       | Dung voi TIMEOUT_UNKNOWN                   |
+| TC-D12-13   | NO_QUORUM va REQUEST_ID_CONFLICT khong bi redirect             | PASS       | Tra nguyen van loi tu server               |
+| TC-D12-14   | Ton trong tong thoi gian cho totalTimeoutMs                    | PASS       | Dung khong treo vo han                     |
+| TC-D12-15   | Ghi nho Leader gan nhat cho cac lenh tiep theo                | PASS       | Goi thang Leader, khong qua Follower       |
+| TC-D12-16   | Cap nhat ClusterConnectionViewModel voi nguon REAL             | PASS       | Update connectedNodeId va leaderHint       |
+| TC-D12-17   | Kiem thu voi cum/election that (TV5)                           | NOT_RUN    | Cum that chua chay tren localhost          |
+
+==============================================================================
+6. KET LUAN TRUNG THUC
+==============================================================================
+Redirect theo leaderHint, giu nguyen requestId, test voi FAKE SERVER: PASS.
+Cum/election that (TV5): NOT_RUN (chua co cum that de test).
+Khong ket luan Backend PASS.
+Toan bo logic phia desktop-client tuan thu 100% SPEC-03 va AGENTS.md.
