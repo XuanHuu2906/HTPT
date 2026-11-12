@@ -1,0 +1,70 @@
+﻿================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | 5-NODE COMPOSE VALIDATION (TV6-D10)
+================================================================================
+
+[1. THONG TIN MOI TRUONG THUC THI]
+  Thoi diem (Local)          : 2026-11-11 04:56:02 +07:00
+  Thoi diem (UTC)            : 2026-11-10T21:56:02.062Z
+  Ten may (Hostname)         : HOANGDAT
+  He dieu hanh               : Microsoft Windows 11 Pro
+  Thu muc du an              : D:\HTPT
+  Git Branch                 : dat
+  Git Commit SHA             : 3e4c33f067efdf8dee56457bdab180132ad17bdc
+
+[2. KIEM TRA TE P DAU RA COMPOSE (docker/dev.yml)]
+  [FOUND] docker/dev.yml : D:\HTPT\docker\dev.yml (395 dong)
+
+[3. KIEM TRA BAT BIEN KIEN TRUC (SAFETY INVARIANTS)]
+  - So node dung chung 1 image (railway-backend-node:dev) : 5 / 5
+  - 5 Backend Node services khai bao rieng biet          : 5 / 5
+  - 5 PostgreSQL instance doc lap                       : 5 / 5
+  - 5 Volumes luu tru ben vung doc lap (pgdata1..5)     : 5 / 5
+
+[4. BANG ANH XA DANH BA CUM (CLUSTER TOPOLOGY REGISTRY)]
++--------+------------------------+-------------------+----------------+--------------------+---------------------+
+| NODE   | CONTAINER NAME         | INTERNAL NETWORK  | CLIENT PORT    | RAFT PEER PORT     | TARGET POSTGRESQL   |
++--------+------------------------+-------------------+----------------+--------------------+---------------------+
+| node-1 | railway-backend-node-1 | backend-node-1    | Host 9101:9100 | Host 9201:9200     | postgres-1 (5433)   |
+| node-2 | railway-backend-node-2 | backend-node-2    | Host 9102:9100 | Host 9202:9200     | postgres-2 (5434)   |
+| node-3 | railway-backend-node-3 | backend-node-3    | Host 9103:9100 | Host 9203:9200     | postgres-3 (5435)   |
+| node-4 | railway-backend-node-4 | backend-node-4    | Host 9104:9100 | Host 9204:9200     | postgres-4 (5436)   |
+| node-5 | railway-backend-node-5 | backend-node-5    | Host 9105:9100 | Host 9205:9200     | postgres-5 (5437)   |
++--------+------------------------+-------------------+----------------+--------------------+---------------------+
+[5. THAM DO CONG MANG (PORT PROBE) TREN WINDOWS HOST]
+  - postgres-1 (Host Port 5433) : [OFFLINE]
+  - postgres-2 (Host Port 5434) : [OFFLINE]
+  - postgres-3 (Host Port 5435) : [OFFLINE]
+  - postgres-4 (Host Port 5436) : [OFFLINE]
+  - postgres-5 (Host Port 5437) : [OFFLINE]
+  - node-1 Client Port (9101) : [NOT_LISTENING]
+  - node-2 Client Port (9102) : [NOT_LISTENING]
+  - node-3 Client Port (9103) : [NOT_LISTENING]
+  - node-4 Client Port (9104) : [NOT_LISTENING]
+  - node-5 Client Port (9105) : [NOT_LISTENING]
+  - node-1 Peer Port (9201)   : [NOT_LISTENING]
+  - node-2 Peer Port (9202)   : [NOT_LISTENING]
+  - node-3 Peer Port (9203)   : [NOT_LISTENING]
+  - node-4 Peer Port (9204)   : [NOT_LISTENING]
+  - node-5 Peer Port (9205)   : [NOT_LISTENING]
+
+[6. HUONG DAN KHOI DONG TOAN BO CUM 5 NODES (DOCKER)]
+  Lenh khoi dong toan bo cum (5 DB + 5 Backend Nodes):
+    docker compose -f docker/dev.yml up -d --build
+  Lenh kiem tra trang thai cac container:
+    docker compose -f docker/dev.yml ps
+  Lenh xem log realtime cua Node 1:
+    docker compose -f docker/dev.yml logs -f backend-node-1
+  Lenh dung toan bo cum (giu nguyen volume):
+    docker compose -f docker/dev.yml down
+
+================================================================================
+ TONG KET DANH GIA NHIEM VU TV6-D10 (KHOI DONG 5 BACKEND NODES)
+================================================================================
+  1. Tep cau hinh Compose        : [PASS] docker/dev.yml da tao va xac thuc cu phap.
+  2. Dung chung 1 Backend Image  : [PASS] 5 services backend-node1..5 deu dung railway-backend-node:dev.
+  3. 5 Database & Volumes doc lap: [PASS] pg1..5 va pgdata1..5 hoan toan tach biet.
+  4. Bang anh xa Topology mang  : [PASS] Day du IP, Client Port (9101..9105), Peer Port (9201..9205).
+  5. Trang thai container tren host: [NOT_RUN / BLOCKED: Docker Desktop/Containers chua khoi dong tren host]
+================================================================================
+ File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D10\TV6-D10-result.log
+================================================================================

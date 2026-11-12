@@ -1,0 +1,17 @@
+{
+  "command": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "-pl",
+    "backend-node",
+    "-am",
+    "-Dtest=JdbcBookingRepositoryTest,JdbcRequestResultStoreTest,JdbcRaftStorageTest,JdbcCommittedCommandApplierTest",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "test"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:24:50.270922+00:00",
+  "finished_utc": "2026-11-11T08:25:00.959605+00:00",
+  "commit": "adc4607b916cedcdbe654f6fdb6a5cdda229fa83"
+}

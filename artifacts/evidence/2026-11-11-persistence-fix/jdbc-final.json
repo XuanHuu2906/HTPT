@@ -1,0 +1,48 @@
+{
+  "command": [
+    "mvn",
+    "-B",
+    "-ntp",
+    "-pl",
+    "backend-node",
+    "-am",
+    "-Dtest=JdbcBookingRepositoryTest,JdbcRequestResultStoreTest,JdbcRaftStorageTest,JdbcCommittedCommandApplierTest",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "test"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:56:27.637605+00:00",
+  "finished_utc": "2026-11-11T08:56:38.548066+00:00",
+  "commit": "adc4607b916cedcdbe654f6fdb6a5cdda229fa83",
+  "suites": [
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcRequestResultStoreTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcRaftStorageTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "vn.nhom6.railway.persistence.JdbcBookingRepositoryTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "patch_sha256": "b85f6b43f3bca6639ec2d501c37df2874a6b26ded8627961a786b077c27eae30"
+}

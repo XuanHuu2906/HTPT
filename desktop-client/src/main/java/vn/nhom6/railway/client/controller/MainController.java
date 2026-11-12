@@ -37,6 +37,9 @@ public class MainController {
     @FXML
     private Label mockBadgeLabel;
 
+    @FXML
+    private ClusterStatusBarController clusterStatusBarController;
+
     // === Vùng điều hướng bên trái (Navigation Region) ===
     @FXML
     private VBox navRegion;
@@ -178,13 +181,14 @@ public class MainController {
     }
 
     private void highlightNavButton(Button activeBtn) {
-        String defaultStyle = "-fx-background-color: #1e293b; -fx-text-fill: #cbd5e1; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;";
-        String activeStyle = "-fx-background-color: #3b82f6; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 10 12; -fx-background-radius: 6; -fx-cursor: hand;";
-
-        if (navTripBtn != null) navTripBtn.setStyle(navTripBtn == activeBtn ? activeStyle : defaultStyle);
-        if (navSeatBtn != null) navSeatBtn.setStyle(navSeatBtn == activeBtn ? activeStyle : defaultStyle);
-        if (navPaymentBtn != null) navPaymentBtn.setStyle(navPaymentBtn == activeBtn ? activeStyle : defaultStyle);
-        if (navMyTicketsBtn != null) navMyTicketsBtn.setStyle(navMyTicketsBtn == activeBtn ? activeStyle : defaultStyle);
+        Button[] navButtons = {navTripBtn, navSeatBtn, navPaymentBtn, navMyTicketsBtn};
+        for (Button btn : navButtons) {
+            if (btn != null) {
+                btn.setStyle(null);
+                btn.getStyleClass().removeAll("nav-btn-default", "nav-btn-active");
+                btn.getStyleClass().add(btn == activeBtn ? "nav-btn-active" : "nav-btn-default");
+            }
+        }
     }
 
     private void setupNavButton(Button btn, String navName) {
@@ -197,5 +201,9 @@ public class MainController {
         if (statusMessageLabel != null) {
             statusMessageLabel.setText(message);
         }
+    }
+
+    public ClusterStatusBarController getClusterStatusBarController() {
+        return clusterStatusBarController;
     }
 }

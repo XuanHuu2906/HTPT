@@ -82,7 +82,7 @@ public class SeatViewModel {
      * 4 trạng thái màn hình theo yêu cầu D04.
      */
     public enum ScreenState {
-        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D05).", "status-idle"),
+        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D08).", "status-idle"),
         LOADING("Đang tải dữ liệu từ hệ thống...", "status-loading"),
         ERROR("Đã xảy ra lỗi khi xử lý dữ liệu ghế.", "status-error"),
         DISCONNECTED("Mất kết nối với mạng / cụm máy chủ.", "status-disconnected");
@@ -109,7 +109,7 @@ public class SeatViewModel {
      * Dữ liệu ban đầu có nhãn MOCK, không rải số liệu giả ở nhiều nơi.
      */
     public static class MockSeatSource {
-        public static final String MOCK_LABEL = "MOCK DATA — D05";
+        public static final String MOCK_LABEL = "MOCK DATA — D08";
         public static final int TOTAL_SEATS = 10;
         public static final Set<String> INITIAL_BOOKED_SEATS = Set.of("G02", "G04", "G08");
 

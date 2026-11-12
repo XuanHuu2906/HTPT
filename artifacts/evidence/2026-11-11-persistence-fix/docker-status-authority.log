@@ -1,0 +1,11 @@
+NAME                     IMAGE                      COMMAND                  SERVICE          CREATED         STATUS                    PORTS
+railway-backend-node-1   railway-backend-node:dev   "/app/entrypoint-bac…"   backend-node-1   5 seconds ago   Up 2 seconds              0.0.0.0:9101->9100/tcp, [::]:9101->9100/tcp, 0.0.0.0:9201->9200/tcp, [::]:9201->9200/tcp
+railway-backend-node-2   railway-backend-node:dev   "/app/entrypoint-bac…"   backend-node-2   5 seconds ago   Up 2 seconds              0.0.0.0:9102->9100/tcp, [::]:9102->9100/tcp, 0.0.0.0:9202->9200/tcp, [::]:9202->9200/tcp
+railway-backend-node-3   railway-backend-node:dev   "/app/entrypoint-bac…"   backend-node-3   5 seconds ago   Up 2 seconds              0.0.0.0:9103->9100/tcp, [::]:9103->9100/tcp, 0.0.0.0:9203->9200/tcp, [::]:9203->9200/tcp
+railway-backend-node-4   railway-backend-node:dev   "/app/entrypoint-bac…"   backend-node-4   5 seconds ago   Up 2 seconds              0.0.0.0:9104->9100/tcp, [::]:9104->9100/tcp, 0.0.0.0:9204->9200/tcp, [::]:9204->9200/tcp
+railway-backend-node-5   railway-backend-node:dev   "/app/entrypoint-bac…"   backend-node-5   5 seconds ago   Up 2 seconds              0.0.0.0:9105->9100/tcp, [::]:9105->9100/tcp, 0.0.0.0:9205->9200/tcp, [::]:9205->9200/tcp
+railway-postgres-1       postgres:16-alpine         "docker-entrypoint.s…"   postgres-1       2 hours ago     Up 23 minutes (healthy)   0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+railway-postgres-2       postgres:16-alpine         "docker-entrypoint.s…"   postgres-2       2 hours ago     Up 2 hours (healthy)      0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp
+railway-postgres-3       postgres:16-alpine         "docker-entrypoint.s…"   postgres-3       2 hours ago     Up 2 hours (healthy)      0.0.0.0:5435->5432/tcp, [::]:5435->5432/tcp
+railway-postgres-4       postgres:16-alpine         "docker-entrypoint.s…"   postgres-4       2 hours ago     Up 2 hours (healthy)      0.0.0.0:5436->5432/tcp, [::]:5436->5432/tcp
+railway-postgres-5       postgres:16-alpine         "docker-entrypoint.s…"   postgres-5       2 hours ago     Up 2 hours (healthy)      0.0.0.0:5437->5432/tcp, [::]:5437->5432/tcp

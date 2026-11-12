@@ -1,0 +1,110 @@
+[
+  {
+    "table": "raft_meta",
+    "rows": [
+      {
+        "singleton": 1,
+        "current_term": 0,
+        "voted_for": null
+      }
+    ]
+  },
+  {
+    "table": "raft_log",
+    "rows": []
+  },
+  {
+    "table": "raft_apply_progress",
+    "rows": [
+      {
+        "singleton": 1,
+        "last_applied": 0
+      }
+    ]
+  },
+  {
+    "table": "trips",
+    "rows": [
+      {
+        "trip_id": "SE-001"
+      }
+    ]
+  },
+  {
+    "table": "seats",
+    "rows": [
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G01",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G02",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G03",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G04",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G05",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G06",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G07",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G08",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G09",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      },
+      {
+        "trip_id": "SE-001",
+        "seat_id": "G10",
+        "status": "AVAILABLE",
+        "current_ticket_id": null
+      }
+    ]
+  },
+  {
+    "table": "tickets",
+    "rows": []
+  },
+  {
+    "table": "request_results",
+    "rows": []
+  },
+  {
+    "table": "business_events",
+    "rows": []
+  }
+]

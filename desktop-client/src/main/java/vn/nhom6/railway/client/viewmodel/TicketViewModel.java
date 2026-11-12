@@ -169,7 +169,7 @@ public class TicketViewModel {
      * Quản lý danh sách vé dùng chung giữa các màn hình Đặt vé và Tra cứu/Vé của tôi.
      */
     public static class MockTicketSource {
-        public static final String MOCK_NOTICE = "DEMO / MOCK — D06";
+        public static final String MOCK_NOTICE = "DEMO / MOCK — D08";
 
         private static final ObservableList<TicketViewModel> SHARED_TICKETS = FXCollections.observableArrayList(
                 ticket -> new javafx.beans.Observable[]{ ticket.statusProperty(), ticket.reasonCodeProperty() }
@@ -214,6 +214,32 @@ public class TicketViewModel {
             }
             return SHARED_TICKETS.stream()
                     .filter(t -> seatId.equalsIgnoreCase(t.getSeatId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
+         * Tìm vé theo mã yêu cầu (Request ID).
+         */
+        public static TicketViewModel findByRequestId(String requestId) {
+            if (requestId == null || requestId.isBlank()) {
+                return null;
+            }
+            return SHARED_TICKETS.stream()
+                    .filter(t -> requestId.equalsIgnoreCase(t.getRequestId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        /**
+         * Tìm vé theo mã vé (Ticket ID).
+         */
+        public static TicketViewModel findByTicketId(String ticketId) {
+            if (ticketId == null || ticketId.isBlank()) {
+                return null;
+            }
+            return SHARED_TICKETS.stream()
+                    .filter(t -> ticketId.equalsIgnoreCase(t.getTicketId()))
                     .findFirst()
                     .orElse(null);
         }

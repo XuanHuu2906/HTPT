@@ -1,0 +1,105 @@
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : test
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 10, 2026 11:17:07 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/configs/lan/node-1.properties
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+[Subprocess Node] Nov 10, 2026 11:17:07 PM vn.nhom6.railway.networking.NodeConfig load
+[Subprocess Node] INFO: Loaded configuration from file: /tmp/node-subprocess-6054903355054813106.properties
+[Subprocess Node] ================================================================================
+[Subprocess Node]  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+[Subprocess Node] ================================================================================
+[Subprocess Node]   Node ID          : node-sub-1
+[Subprocess Node]   Cluster ID       : railway-demo-5
+[Subprocess Node]   Client Port      : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Raft Peer Port   : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Database Target  : None (In-Memory / Test Mode)
+[Subprocess Node] ================================================================================
+[Subprocess Node] Nov 10, 2026 11:17:07 PM vn.nhom6.railway.networking.NodeMain main
+[Subprocess Node] SEVERE: Fatal error during NodeMain startup: Cannot start node runtime
+[Subprocess Node] java.io.IOException: Cannot start node runtime
+[Subprocess Node] 	at vn.nhom6.railway.networking.NodeMain.start(NodeMain.java:137)
+[Subprocess Node] 	at vn.nhom6.railway.networking.NodeMain.main(NodeMain.java:260)
+[Subprocess Node] Caused by: java.net.SocketException: Operation not permitted
+[Subprocess Node] 	at java.base/sun.nio.ch.Net.socket0(Native Method)
+[Subprocess Node] 	at java.base/sun.nio.ch.Net.serverSocket(Net.java:501)
+[Subprocess Node] 	at java.base/sun.nio.ch.Net.serverSocket(Net.java:495)
+[Subprocess Node] 	at java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:471)
+[Subprocess Node] 	at java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+[Subprocess Node] 	at java.base/java.net.ServerSocket.setReuseAddress(ServerSocket.java:773)
+[Subprocess Node] 	at vn.nhom6.railway.networking.TcpServer.start(TcpServer.java:135)
+[Subprocess Node] 	at vn.nhom6.railway.networking.NodeMain.start(NodeMain.java:130)
+[Subprocess Node] 	... 1 more
+[Subprocess Node] 
+
+Test run finished after 310 ms
+[         9 containers found      ]
+[         0 containers skipped    ]
+[         9 containers started    ]
+[         0 containers aborted    ]
+[         9 containers successful ]
+[         0 containers failed     ]
+[        61 tests found           ]
+[         0 tests skipped         ]
+[        61 tests started         ]
+[         0 tests aborted         ]
+[        56 tests successful      ]
+[         5 tests failed          ]
+
+
+Failures (5):
+  JUnit Jupiter:RaftElectionComponentTest:restoresStateAndRequiresThreeDistinctVotes()
+    MethodSource [className = 'vn.nhom6.railway.raft.election.RaftElectionComponentTest', methodName = 'restoresStateAndRequiresThreeDistinctVotes', methodParameterTypes = '']
+    => java.lang.UnsupportedOperationException: role
+       vn.nhom6.railway.raft.election.RaftElectionComponentTest.lambda$component$1(RaftElectionComponentTest.java:42)
+  JUnit Jupiter:RaftElectionComponentTest:storageFailureStopsCampaigning()
+    MethodSource [className = 'vn.nhom6.railway.raft.election.RaftElectionComponentTest', methodName = 'storageFailureStopsCampaigning', methodParameterTypes = '']
+    => java.lang.UnsupportedOperationException: role
+       vn.nhom6.railway.raft.election.RaftElectionComponentTest.lambda$component$1(RaftElectionComponentTest.java:42)
+  JUnit Jupiter:RaftElectionComponentTest:nodeMainRegistersVoteOnPeerPortAndReportsRecoveredTerm()
+    MethodSource [className = 'vn.nhom6.railway.raft.election.RaftElectionComponentTest', methodName = 'nodeMainRegistersVoteOnPeerPortAndReportsRecoveredTerm', methodParameterTypes = '']
+    => java.io.IOException: Cannot start node runtime
+       vn.nhom6.railway.networking.NodeMain.start(NodeMain.java:137)
+       vn.nhom6.railway.raft.election.RaftElectionComponentTest.nodeMainRegistersVoteOnPeerPortAndReportsRecoveredTerm(RaftElectionComponentTest.java:77)
+     Caused by: java.net.SocketException: Operation not permitted
+       java.base/sun.nio.ch.Net.socket0(Native Method)
+       java.base/sun.nio.ch.Net.serverSocket(Net.java:501)
+       java.base/sun.nio.ch.Net.serverSocket(Net.java:495)
+       java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:471)
+       java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+       [...]
+  JUnit Jupiter:NodeMainTest:testNodeMainInProcessPingAndStatus()
+    MethodSource [className = 'vn.nhom6.railway.networking.NodeMainTest', methodName = 'testNodeMainInProcessPingAndStatus', methodParameterTypes = '']
+    => java.io.IOException: Cannot start node runtime
+       vn.nhom6.railway.networking.NodeMain.start(NodeMain.java:137)
+       vn.nhom6.railway.networking.NodeMainTest.testNodeMainInProcessPingAndStatus(NodeMainTest.java:85)
+     Caused by: java.net.SocketException: Operation not permitted
+       java.base/sun.nio.ch.Net.socket0(Native Method)
+       java.base/sun.nio.ch.Net.serverSocket(Net.java:501)
+       java.base/sun.nio.ch.Net.serverSocket(Net.java:495)
+       java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:471)
+       java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+       [...]
+  JUnit Jupiter:NodeMainTest:testNodeMainSubprocessPingAndStatus()
+    MethodSource [className = 'vn.nhom6.railway.networking.NodeMainTest', methodName = 'testNodeMainSubprocessPingAndStatus', methodParameterTypes = '']
+    => org.opentest4j.AssertionFailedError: Subprocess client port must be extracted from startup log ==> expected: <true> but was: <false>
+       org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+       org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+       org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:69)
+       org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:41)
+       org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:228)
+       vn.nhom6.railway.networking.NodeMainTest.testNodeMainSubprocessPingAndStatus(NodeMainTest.java:183)

@@ -1,0 +1,6 @@
+{
+  "head": "32656979e3b3cde7f313c0cbc05caedbf6c6815c",
+  "source_manifest_sha256": "53128b6d982b8a323c7fa3b584cabc8d11a196c08e22e6083d5c7ebd7fed9f0a",
+  "patch_sha256": "1f8c52633d95a848b0bcfa2a9d926103a54b60d074065173b159e6ac6cb465bb",
+  "note": "HEAD changed externally during session; agent did not commit."
+}

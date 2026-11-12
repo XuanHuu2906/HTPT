@@ -2,7 +2,6 @@ package vn.nhom6.railway.client.controller;
 
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -12,9 +11,6 @@ import javafx.util.Duration;
 import vn.nhom6.railway.client.BookingFormValidator;
 import vn.nhom6.railway.client.BookingOutcome;
 import vn.nhom6.railway.client.ClientFactory;
-import vn.nhom6.railway.client.MockBookingService;
-import vn.nhom6.railway.client.MockBookingServiceImpl;
-import vn.nhom6.railway.client.network.BookTicketResponseDto;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 
 import java.util.ArrayList;
@@ -26,11 +22,15 @@ import java.util.Optional;
  * <p>
  * Tính năng:
  * - Tiếp nhận danh sách ghế đã chọn từ sơ đồ ghế D02/D04.
- * - Lắng nghe thay đổi trên ô nhập họ tên, kiểm tra tính hợp lệ và cập nhật bộ đếm ký tự.
- * - Gọi {@link MockBookingService} chạy ngầm qua {@link Task} để không khóa UI thread.
+ * - Lắng nghe thay đổi trên ô nhập họ tên, kiểm tra tính hợp lệ và cập nhật bộ
+ * đếm ký tự.
+ * - Gọi {@link MockBookingService} chạy ngầm qua {@link Task} để không khóa UI
+ * thread.
  * - Chặn bấm xác nhận nhiều lần khi đang xử lý.
- * - Cung cấp {@link #getOutcome()} để D02/D04 lấy kết quả sau khi đóng hộp thoại.
- * - Định dạng giao diện hoàn toàn qua CSS classes (railway.css), không hardcode màu trong Java.
+ * - Cung cấp {@link #getOutcome()} để D02/D04 lấy kết quả sau khi đóng hộp
+ * thoại.
+ * - Định dạng giao diện hoàn toàn qua CSS classes (railway.css), không hardcode
+ * màu trong Java.
  */
 public class BookingDialogController {
 
@@ -56,7 +56,6 @@ public class BookingDialogController {
     private Label statusLabel;
 
     private BookingViewModel bookingViewModel = ClientFactory.getBookingViewModel();
-    private MockBookingService bookingService = new MockBookingServiceImpl();
     private List<String> selectedSeats = new ArrayList<>();
     private BookingOutcome outcome = null;
     private Stage dialogStage;
@@ -90,20 +89,12 @@ public class BookingDialogController {
     }
 
     /**
-     * Cung cấp BookingViewModel tùy biến (phục vụ unit test / mock dependency injection).
+     * Cung cấp BookingViewModel tùy biến (phục vụ unit test / mock dependency
+     * injection).
      */
     public void setBookingViewModel(BookingViewModel bookingViewModel) {
         if (bookingViewModel != null) {
             this.bookingViewModel = bookingViewModel;
-        }
-    }
-
-    /**
-     * Cung cấp MockBookingService tùy biến (phục vụ tương thích ngược D03).
-     */
-    public void setBookingService(MockBookingService bookingService) {
-        if (bookingService != null) {
-            this.bookingService = bookingService;
         }
     }
 
@@ -238,8 +229,8 @@ public class BookingDialogController {
 
         if (statusLabel != null) {
             statusLabel.getStyleClass().removeAll(
-                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected", "booking-status-unknown"
-            );
+                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected",
+                    "booking-status-unknown");
             statusLabel.getStyleClass().add("booking-status-submitting");
             statusLabel.setText("Đang gửi yêu cầu đặt vé...");
         }
@@ -272,8 +263,8 @@ public class BookingDialogController {
     private void showOutcomeAndAutoClose(BookingOutcome result) {
         if (statusLabel != null) {
             statusLabel.getStyleClass().removeAll(
-                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected", "booking-status-unknown"
-            );
+                    "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected",
+                    "booking-status-unknown");
 
             switch (result.getStatus()) {
                 case CONFIRMED -> {
@@ -316,14 +307,16 @@ public class BookingDialogController {
     /**
      * Cung cấp kết quả đặt vé cho D02/D04 sau khi hộp thoại đóng.
      *
-     * @return {@link Optional} chứa {@link BookingOutcome} nếu đã xác nhận, hoặc rỗng nếu người dùng hủy
+     * @return {@link Optional} chứa {@link BookingOutcome} nếu đã xác nhận, hoặc
+     *         rỗng nếu người dùng hủy
      */
     public Optional<BookingOutcome> getOutcome() {
         return Optional.ofNullable(outcome);
     }
 
     /**
-     * Lấy họ tên hành khách người dùng đã nhập trên form để đồng bộ sang lịch sử "Vé của tôi".
+     * Lấy họ tên hành khách người dùng đã nhập trên form để đồng bộ sang lịch sử
+     * "Vé của tôi".
      */
     public String getPassengerName() {
         return (passengerNameField != null && passengerNameField.getText() != null)

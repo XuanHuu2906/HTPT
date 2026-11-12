@@ -1,0 +1,18 @@
+{
+  "command": [
+    "docker",
+    "compose",
+    "--progress",
+    "plain",
+    "-f",
+    "docker/compose.dev.yml",
+    "--profile",
+    "nodes",
+    "build",
+    "backend-node-1"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T08:01:28.375754+00:00",
+  "finished_utc": "2026-11-11T08:02:05.476768+00:00",
+  "commit": "586410b290ec062ad498c8e1438a6948adab14e0"
+}

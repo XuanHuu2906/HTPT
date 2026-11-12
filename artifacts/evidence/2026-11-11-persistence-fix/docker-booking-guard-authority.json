@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "artifacts/evidence/2026-11-11-persistence-fix/check-running.py"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-11-11T09:41:16.296967+00:00",
+  "finished_utc": "2026-11-11T09:41:18.014032+00:00",
+  "commit": "32656979e3b3cde7f313c0cbc05caedbf6c6815c",
+  "patch_sha256": "1f8c52633d95a848b0bcfa2a9d926103a54b60d074065173b159e6ac6cb465bb"
+}

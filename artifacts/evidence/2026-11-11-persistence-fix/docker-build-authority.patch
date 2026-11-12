@@ -1,0 +1,26 @@
+diff --git a/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java b/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
+index 9d34ebd..d0928c0 100644
+--- a/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
++++ b/backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
+@@ -57,7 +57,7 @@ public class NodeMain implements AutoCloseable {
+     public NodeMain(NodeConfig config) {
+         this(config, new UnavailableBookingService(), null,
+                 config.dbConfig() == null ? null : persistentHandler(config,
+-                        command -> { throw new BookingRequestHandler.NoQuorumException(); },
++                        command -> { throw new BookingRequestHandler.NotLeaderException(null); },
+                         timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
+                                 "Raft read barrier is not wired"); }));
+     }
+diff --git a/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingTcpIntegrationTest.java b/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingTcpIntegrationTest.java
+index c3e5acf..232dd65 100644
+--- a/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingTcpIntegrationTest.java
++++ b/backend-node/src/test/java/vn/nhom6/railway/persistence/JdbcBookingTcpIntegrationTest.java
+@@ -82,7 +82,7 @@ class JdbcBookingTcpIntegrationTest {
+             node.start();
+             var response = book(node, UUID.randomUUID().toString(), "G02", "Demo");
+             assertEquals(MessageType.ERROR_RESPONSE, response.getType());
+-            assertEquals("NO_QUORUM", response.getPayload().get("errorCode").asText());
++            assertEquals("NOT_LEADER", response.getPayload().get("errorCode").asText());
+             assertEquals(0, db.count("tickets"));
+             assertEquals(0, db.repository.lastApplied());
+         }

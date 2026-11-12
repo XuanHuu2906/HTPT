@@ -1,0 +1,179 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 45 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 38 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+Nov 11, 2026 3:00:02 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=null, vendorCode=0
+Nov 11, 2026 3:00:02 PM vn.nhom6.railway.persistence.JdbcCommittedCommandApplier applyCommitted
+SEVERE: PostgreSQL committed-entry apply failed at index 1
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.006 s -- in vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+Nov 11, 2026 3:00:03 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=23505, vendorCode=0
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.911 s -- in vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRaftStorageTest
+Nov 11, 2026 3:00:04 PM vn.nhom6.railway.persistence.JdbcRaftStorage logAndWrap
+SEVERE: PostgreSQL saveTermAndVote failed: SQLState=null, errorCode=0, message=Injected test failure for UPDATE raft_meta
+Nov 11, 2026 3:00:05 PM vn.nhom6.railway.persistence.JdbcRaftStorage logAndWrap
+SEVERE: PostgreSQL replaceSuffix failed: SQLState=null, errorCode=0, message=Injected test failure for INSERT INTO raft_log
+Nov 11, 2026 3:00:08 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=2 <= lastApplied=2
+Nov 11, 2026 3:00:08 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=1 <= lastApplied=2
+Nov 11, 2026 3:00:08 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Log matching invariant violation: index 2 has same term 1 but different command!
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.666 s -- in vn.nhom6.railway.persistence.JdbcRaftStorageTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+Nov 11, 2026 3:00:10 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 11, 2026 3:00:10 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 11, 2026 3:00:10 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=null, vendorCode=0
+Nov 11, 2026 3:00:10 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+[ERROR] Tests run: 11, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 4.936 s <<< FAILURE! -- in vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+[ERROR] vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.replayReturnsOriginalResultAndIndexWhileCheckpointAdvances -- Time elapsed: 0.219 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Unexpected type, expected: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.BusinessResult> but was: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.RequestIdConflict>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertInstanceOf.assertInstanceOf(AssertInstanceOf.java:49)
+	at org.junit.jupiter.api.AssertInstanceOf.assertInstanceOf(AssertInstanceOf.java:31)
+	at org.junit.jupiter.api.Assertions.assertInstanceOf(Assertions.java:3614)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.replayReturnsOriginalResultAndIndexWhileCheckpointAdvances(JdbcBookingRepositoryTest.java:177)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+[ERROR] vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.cancelUpdatesTicketAndSeatAndRejectsMissingOrCancelledTickets -- Time elapsed: 0.707 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <3> but was: <4>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:145)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:531)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.cancelUpdatesTicketAndSeatAndRejectsMissingOrCancelledTickets(JdbcBookingRepositoryTest.java:249)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+[ERROR] vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.bookAvailableSeatPersistsOneAtomicBusinessResult -- Time elapsed: 0.229 s <<< ERROR!
+java.lang.IllegalStateException: Test query failed
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.queryInt(JdbcBookingRepositoryTest.java:488)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.bookAvailableSeatPersistsOneAtomicBusinessResult(JdbcBookingRepositoryTest.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+Caused by: org.postgresql.util.PSQLException: ERROR: function jsonb_object_length(jsonb) does not exist
+  Hint: No function matches the given name and argument types. You might need to add explicit type casts.
+  Position: 8
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2734)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2421)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:372)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:518)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:435)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:357)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:342)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:318)
+	at org.postgresql.jdbc.PgStatement.executeQuery(PgStatement.java:267)
+	at vn.nhom6.railway.persistence.JdbcBookingRepositoryTest.queryInt(JdbcBookingRepositoryTest.java:484)
+	... 4 more
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   JdbcBookingRepositoryTest.cancelUpdatesTicketAndSeatAndRejectsMissingOrCancelledTickets:249 expected: <3> but was: <4>
+[ERROR]   JdbcBookingRepositoryTest.replayReturnsOriginalResultAndIndexWhileCheckpointAdvances:177 Unexpected type, expected: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.BusinessResult> but was: <vn.nhom6.railway.booking.BookingStateMachine.ApplyOutcome.RequestIdConflict>
+[ERROR] Errors: 
+[ERROR]   JdbcBookingRepositoryTest.bookAvailableSeatPersistsOneAtomicBusinessResult:104->queryInt:488 IllegalState Test query failed
+[INFO] 
+[ERROR] Tests run: 39, Failures: 2, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  2.476 s]
+[INFO] backend-node ....................................... FAILURE [ 20.058 s]
+[INFO] integration-tests .................................. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  22.610 s
+[INFO] Finished at: 2026-11-11T15:00:13+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.2:test (default-test) on project backend-node: There are test failures.
+[ERROR] 
+[ERROR] See /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :backend-node
