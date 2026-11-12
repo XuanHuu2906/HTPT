@@ -12,6 +12,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
 import vn.nhom6.railway.client.network.CancelTicketRequestDto;
 import vn.nhom6.railway.client.network.GetSeatsResponseDto;
+import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.SeatInfoDto;
 import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
@@ -397,11 +398,13 @@ class SocketBookingClientTest {
         try {
             System.setProperty("booking.client", "socket");
             ClientFactory.resetToConfiguredClient();
-            assertTrue(ClientFactory.getBookingClient() instanceof SocketBookingClient);
+            assertTrue(ClientFactory.getBookingClient() instanceof SocketBookingClient
+                    || ClientFactory.getBookingClient() instanceof LeaderAwareBookingClient);
 
             System.setProperty("booking.client", "mock");
             ClientFactory.resetToConfiguredClient();
-            assertFalse(ClientFactory.getBookingClient() instanceof SocketBookingClient);
+            assertFalse(ClientFactory.getBookingClient() instanceof SocketBookingClient
+                    || ClientFactory.getBookingClient() instanceof LeaderAwareBookingClient);
         } finally {
             if (original != null) {
                 System.setProperty("booking.client", original);

@@ -86,6 +86,15 @@ public class FakeNodeServer implements AutoCloseable {
     private volatile String configuredLeaderId;
     private volatile boolean storageHealthy = true;
 
+    // Cấu hình phản hồi giả định cho kiểm thử phân tán (TASK TV1-D12)
+    private volatile boolean forceNotLeader = false;
+    private volatile String notLeaderHint = null;
+    private volatile Long notLeaderTerm = 1L;
+    private volatile String forcedErrorCode = null;
+    private volatile String forcedErrorMessage = null;
+    private volatile boolean simulateTimeoutOnBook = false;
+    private volatile long timeoutSleepMs = 10000;
+
     public static record SeatState(String seatId, String status, String ticketId) {}
 
     public static record StoredBooking(
@@ -223,6 +232,9 @@ public class FakeNodeServer implements AutoCloseable {
                 MessageEnvelope<?> responseEnv = processRequest(requestEnv);
                 if (responseEnv != null) {
                     FrameCodec.writeMessage(out, responseEnv);
+                } else {
+                    socket.close();
+                    break;
                 }
             }
         } catch (Exception ignored) {
@@ -257,6 +269,33 @@ public class FakeNodeServer implements AutoCloseable {
 
     public void setStorageHealthy(boolean storageHealthy) {
         this.storageHealthy = storageHealthy;
+    }
+
+    public void setNotLeader(String leaderHint, Long term) {
+        this.forceNotLeader = true;
+        this.notLeaderHint = leaderHint;
+        this.notLeaderTerm = (term != null) ? term : 1L;
+        this.configuredRole = "FOLLOWER";
+        this.configuredLeaderId = leaderHint;
+    }
+
+    public void setLeader() {
+        this.forceNotLeader = false;
+        this.notLeaderHint = null;
+        this.configuredRole = "LEADER";
+        this.configuredLeaderId = this.nodeId;
+        this.forcedErrorCode = null;
+        this.simulateTimeoutOnBook = false;
+    }
+
+    public void setForcedError(String errorCode, String message) {
+        this.forcedErrorCode = errorCode;
+        this.forcedErrorMessage = message;
+    }
+
+    public void setSimulateTimeoutOnBook(boolean simulate, long sleepMs) {
+        this.simulateTimeoutOnBook = simulate;
+        this.timeoutSleepMs = sleepMs;
     }
 
     private MessageEnvelope<?> handleNodeStatus(String correlationId) {
@@ -296,6 +335,12 @@ public class FakeNodeServer implements AutoCloseable {
     }
 
     private MessageEnvelope<?> handleGetSeats(String correlationId, JsonNode payload) {
+        if (forceNotLeader) {
+            ErrorResponseDto errorDto = new ErrorResponseDto("NOT_LEADER",
+                    "Node " + nodeId + " không phải là Leader", notLeaderHint, notLeaderTerm, null);
+            return MessageEnvelope.createResponse(correlationId, MessageType.ERROR_RESPONSE, nodeId, errorDto);
+        }
+
         String tripId = DEFAULT_TRIP_ID;
         if (payload != null && payload.hasNonNull("tripId")) {
             tripId = payload.get("tripId").asText();
@@ -334,6 +379,39 @@ public class FakeNodeServer implements AutoCloseable {
         }
 
         requestAttempts.merge(requestId, 1, Integer::sum);
+
+        // Mô phỏng timeout / rớt mạng sau khi đã nhận lệnh (Ca 9)
+        if (simulateTimeoutOnBook) {
+            String ticketId = "TCK-" + (seatId != null ? seatId : "G01") + "-" + (requestId.length() >= 8 ? requestId.substring(0, 8) : requestId);
+            long appliedIndex = logIndexSequence.incrementAndGet();
+            BookTicketResponseDto confirmedDto = BookTicketResponseDto.confirmed(
+                    requestId,
+                    tripId,
+                    seatId != null ? seatId : "G01",
+                    ticketId,
+                    appliedIndex
+            );
+            storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, confirmedDto, false));
+            try {
+                Thread.sleep(timeoutSleepMs);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            return null; // Quá timeout, ngắt kết nối
+        }
+
+        // Mô phỏng mã lỗi ép buộc (NO_QUORUM, INTERNAL_ERROR,...)
+        if (forcedErrorCode != null) {
+            return createErrorResponse(correlationId, forcedErrorCode,
+                    forcedErrorMessage != null ? forcedErrorMessage : "Lỗi giả lập: " + forcedErrorCode, requestId);
+        }
+
+        // Mô phỏng Follower từ chối kèm leaderHint
+        if (forceNotLeader) {
+            ErrorResponseDto errorDto = new ErrorResponseDto("NOT_LEADER",
+                    "Node " + nodeId + " không phải là Leader", notLeaderHint, notLeaderTerm, requestId);
+            return MessageEnvelope.createResponse(correlationId, MessageType.ERROR_RESPONSE, nodeId, errorDto);
+        }
 
         // 1. Kiểm tra tính Idempotent / Trùng lặp theo SPEC-03 §4.2, §4.4 và SPEC-05 §3.2
         if (storedBookings.containsKey(requestId)) {
