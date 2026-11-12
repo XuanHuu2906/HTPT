@@ -106,6 +106,19 @@ class JdbcBookingRepositoryTest {
                         + REQUEST_1 + "'"));
         assertEquals(7, queryInt(
                 "SELECT (SELECT count(*) FROM jsonb_object_keys(event_json)) FROM business_events WHERE log_index = 1"));
+        assertEquals("CONFIRMED", queryString(
+                "SELECT result_json ->> 'outcome' FROM request_results WHERE request_id = '"
+                        + REQUEST_1 + "'"));
+        assertEquals("ticket-1", queryString(
+                "SELECT result_json ->> 'ticketId' FROM request_results WHERE request_id = '"
+                        + REQUEST_1 + "'"));
+        assertEquals("1", queryString(
+                "SELECT result_json ->> 'appliedLogIndex' FROM request_results WHERE request_id = '"
+                        + REQUEST_1 + "'"));
+        assertEquals("ticket-1", queryString(
+                "SELECT event_json ->> 'ticketId' FROM business_events WHERE log_index = 1"));
+        assertEquals("G01", queryString(
+                "SELECT event_json ->> 'seatId' FROM business_events WHERE log_index = 1"));
         assertEquals("G01", queryString(
                 "SELECT result_json ->> 'seatId' FROM request_results WHERE request_id = '"
                         + REQUEST_1 + "'"));
@@ -171,7 +184,8 @@ class JdbcBookingRepositoryTest {
     @Test
     void replayReturnsOriginalResultAndIndexWhileCheckpointAdvances() {
         JdbcBookingRepository repository = repository(null);
-        BookingCommand.BookTicket original = book(REQUEST_1, "G01", "ticket-original", TIME_1);
+        BookingCommand.BookTicket original = new BookingCommand.BookTicket(
+                REQUEST_1, "SE-001", "G01", "Passenger Linh", "ticket-original", TIME_1);
         apply(repository, 1, original);
 
         var replay = assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class,
@@ -206,8 +220,8 @@ class JdbcBookingRepositoryTest {
     @Test
     void requestIdConflictPreservesOriginalAndNextEntryCanApply() {
         JdbcBookingRepository repository = repository(null);
-        ApplyResult original = ((BookingStateMachine.ApplyOutcome.BusinessResult)
-                apply(repository, 1, book(REQUEST_1, "G01", "ticket-1", TIME_1))).applyResult();
+        ApplyResult original = ((BookingStateMachine.ApplyOutcome.BusinessResult) apply(repository, 1,
+                book(REQUEST_1, "G01", "ticket-1", TIME_1))).applyResult();
 
         var conflict = assertInstanceOf(BookingStateMachine.ApplyOutcome.RequestIdConflict.class,
                 apply(repository, 2, book(REQUEST_1, "G02", "ticket-conflict", TIME_2)));
@@ -272,6 +286,15 @@ class JdbcBookingRepositoryTest {
         assertEquals(4, count("business_events"));
         assertEquals(5, queryInt(
                 "SELECT (SELECT count(*) FROM jsonb_object_keys(result_json)) FROM request_results WHERE request_id = '"
+                        + REQUEST_2 + "'"));
+        assertEquals("CONFIRMED", queryString(
+                "SELECT result_json ->> 'outcome' FROM request_results WHERE request_id = '"
+                        + REQUEST_2 + "'"));
+        assertEquals("ticket-1", queryString(
+                "SELECT result_json ->> 'ticketId' FROM request_results WHERE request_id = '"
+                        + REQUEST_2 + "'"));
+        assertEquals("2", queryString(
+                "SELECT result_json ->> 'appliedLogIndex' FROM request_results WHERE request_id = '"
                         + REQUEST_2 + "'"));
         assertEquals("CANCEL_REJECTED", queryString(
                 "SELECT event_type FROM business_events WHERE log_index = 4"));
@@ -410,13 +433,12 @@ class JdbcBookingRepositoryTest {
             Connection connection, AtomicReference<SqlFault> fault) {
         return (Connection) Proxy.newProxyInstance(
                 Connection.class.getClassLoader(),
-                new Class<?>[] {Connection.class},
+                new Class<?>[] { Connection.class },
                 (proxy, method, arguments) -> {
                     if ("prepareStatement".equals(method.getName())
                             && arguments != null && arguments.length > 0
                             && arguments[0] instanceof String sql) {
-                        PreparedStatement statement =
-                                (PreparedStatement) invoke(connection, method, arguments);
+                        PreparedStatement statement = (PreparedStatement) invoke(connection, method, arguments);
                         return wrapStatement(statement, sql, fault);
                     }
                     return invoke(connection, method, arguments);
@@ -427,7 +449,7 @@ class JdbcBookingRepositoryTest {
             PreparedStatement statement, String sql, AtomicReference<SqlFault> fault) {
         return (PreparedStatement) Proxy.newProxyInstance(
                 PreparedStatement.class.getClassLoader(),
-                new Class<?>[] {PreparedStatement.class},
+                new Class<?>[] { PreparedStatement.class },
                 (proxy, method, arguments) -> {
                     SqlFault activeFault = fault == null ? null : fault.get();
                     boolean execution = "executeUpdate".equals(method.getName())

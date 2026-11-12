@@ -310,6 +310,44 @@ class JdbcRaftStorageTest {
         assertThrows(RaftStorageException.class, storage::load);
     }
 
+    @Test
+    void test11_replaceSuffix_withEmptyList_truncatesUncommittedSuffixOnly() throws Exception {
+        JdbcRaftStorage storage = storage(null);
+        RaftLogEntry e1 = new RaftLogEntry(1, 1, "BOOK_TICKET", "{\"seatId\":\"G01\"}");
+        RaftLogEntry e2 = new RaftLogEntry(2, 1, "BOOK_TICKET", "{\"seatId\":\"G02\"}");
+        RaftLogEntry e3 = new RaftLogEntry(3, 1, "BOOK_TICKET", "{\"seatId\":\"G03\"}");
+        storage.replaceSuffix(1, List.of(e1, e2, e3));
+        assertEquals(3, count("raft_log"));
+
+        // Pure truncate from index 3 with empty replacement list
+        storage.replaceSuffix(3, List.of());
+        PersistentState state = storage.load();
+        assertEquals(2, state.log().size());
+        assertEquals(1L, state.log().get(0).index());
+        assertEquals(2L, state.log().get(1).index());
+
+        // Advance last_applied to 2
+        try (Connection conn = schemaConnection(); Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("UPDATE raft_apply_progress SET last_applied = 2 WHERE singleton = 1");
+        }
+
+        // Attempting to truncate committed entry <= last_applied with empty list must fail closed
+        assertThrows(RaftStorageException.class, () -> storage.replaceSuffix(2, List.of()));
+        assertEquals(2, storage.load().log().size());
+    }
+
+    @Test
+    void test12_loadLastApplied_readsCurrentCheckpointCorrectly() throws Exception {
+        JdbcRaftStorage storage = storage(null);
+        assertEquals(0L, storage.loadLastApplied());
+
+        try (Connection conn = schemaConnection(); Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("UPDATE raft_apply_progress SET last_applied = 3 WHERE singleton = 1");
+        }
+
+        assertEquals(3L, storage.loadLastApplied());
+    }
+
     // ---------------------------------------------------------------------------------------
     // Test helpers & fixtures
     // ---------------------------------------------------------------------------------------
