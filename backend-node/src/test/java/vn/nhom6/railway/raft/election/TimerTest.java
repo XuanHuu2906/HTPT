@@ -320,7 +320,7 @@ class TimerTest {
     }
 
     /** Single-thread virtual event loop; no sleeps, wall clock, network or durable storage. */
-    private static final class FakeScheduler extends AbstractExecutorService
+    static final class FakeScheduler extends AbstractExecutorService
             implements ScheduledExecutorService {
         private final PriorityQueue<FakeTask> tasks = new PriorityQueue<>();
         private long now;
@@ -363,7 +363,7 @@ class TimerTest {
         }
     }
 
-    private static final class FakeTask extends FutureTask<Void> implements ScheduledFuture<Void> {
+    static final class FakeTask extends FutureTask<Void> implements ScheduledFuture<Void> {
         private final Runnable command;
         private final long deadline;
         private final FakeScheduler clock;
