@@ -190,6 +190,9 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                 } else if (resType == MessageType.ERROR_RESPONSE) {
                     ErrorResponseDto err = MessageCodec.decodePayload(resEnvelope, ErrorResponseDto.class);
                     logCall("N/A", messageId, "GET_SEATS", err.getErrorCode(), elapsed);
+                    if ("NOT_LEADER".equalsIgnoreCase(err.getErrorCode())) {
+                        throw new NotLeaderException(err.getMessage(), err.getLeaderHint());
+                    }
                     throw new IOException("Lỗi máy chủ (" + err.getErrorCode() + "): " + err.getMessage());
                 } else {
                     logCall("N/A", messageId, "GET_SEATS", "UNKNOWN_TYPE_" + resType, elapsed);

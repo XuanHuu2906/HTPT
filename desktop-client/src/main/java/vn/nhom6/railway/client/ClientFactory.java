@@ -1,16 +1,19 @@
 package vn.nhom6.railway.client;
 
 import vn.nhom6.railway.client.network.BookingClient;
+import vn.nhom6.railway.client.network.ClusterEndpoints;
 import vn.nhom6.railway.client.network.ClusterStatusClient;
+import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
+import vn.nhom6.railway.client.network.RedirectPolicy;
 import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 
 /**
- * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07/D09/D11).
+ * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07/D09/D11/D12).
  * <p>
  * Cho phép đổi nguồn dữ liệu từ Mock sang TCP Socket thật (hoặc Fake Server kiểm thử)
  * mà không phải sửa FXML hay các Controller.
@@ -23,17 +26,17 @@ import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
  */
 public final class ClientFactory {
 
-    private static volatile BookingClient bookingClient = createDefaultBookingClient();
-    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(bookingClient);
-
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
     private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
+
+    private static volatile BookingClient bookingClient = createDefaultBookingClient();
+    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(bookingClient);
 
     private ClientFactory() {}
 
     /**
      * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
-     * -Dbooking.client=socket -> SocketBookingClient
+     * -Dbooking.client=socket -> LeaderAwareBookingClient bọc SocketBookingClient
      * Mặc định hoặc -Dbooking.client=mock -> MockBookingClient.getInstance()
      */
     public static BookingClient createDefaultClient() {
@@ -43,7 +46,9 @@ public final class ClientFactory {
     public static BookingClient createDefaultBookingClient() {
         String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
-            return new SocketBookingClient();
+            ClusterEndpoints endpoints = ClusterEndpoints.loadDefault();
+            RedirectPolicy policy = RedirectPolicy.defaultPolicy();
+            return new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
         }
         return MockBookingClient.getInstance();
     }

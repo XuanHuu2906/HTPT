@@ -222,6 +222,20 @@ public class ClusterConnectionViewModel implements AutoCloseable {
     }
 
     /**
+     * Cập nhật Node đang kết nối khi Client gửi lệnh hoặc chuyển hướng (TASK TV1-D12).
+     */
+    public void updateConnectedNode(String nodeId, String endpointStr) {
+        runOnFxThread(() -> {
+            if (nodeId != null && !nodeId.isBlank()) {
+                this.connectedNodeId.set(nodeId.trim());
+            }
+            if (endpointStr != null && !endpointStr.isBlank()) {
+                this.endpoint.set(endpointStr.trim());
+            }
+        });
+    }
+
+    /**
      * Đánh dấu mất kết nối khi gọi mạng lỗi hoặc timeout.
      * Vẫn bảo lưu timestamp {@code lastUpdated} lần cuối nếu có.
      */
