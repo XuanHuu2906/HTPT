@@ -31,10 +31,23 @@ public class BookTicketHandler implements HandlerRegistry.RequestHandler {
 
     private final BookingService bookingService;
     private final String nodeId;
+    private final LeaderRouter leaderRouter;
 
     public BookTicketHandler(BookingService bookingService, String nodeId) {
+        this(bookingService, nodeId, null);
+    }
+
+    public BookTicketHandler(BookingService bookingService, String nodeId, LeaderRouter leaderRouter) {
         this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
         this.nodeId = Objects.requireNonNull(nodeId, "nodeId must not be null");
+        this.leaderRouter = (leaderRouter != null) ? leaderRouter : new LeaderRouter(
+                nodeId,
+                LeaderRouter.RoleProvider.fromBookingService(bookingService)
+        );
+    }
+
+    public LeaderRouter getLeaderRouter() {
+        return leaderRouter;
     }
 
     @Override
@@ -46,19 +59,10 @@ public class BookTicketHandler implements HandlerRegistry.RequestHandler {
         String messageId = request.getMessageId();
         String requestId = extractRequestId(request);
 
-        // 1. Enforce Leader authority per SPEC-02 Section 4 and SPEC-03 Section 7
-        if (!bookingService.isLeader()) {
-            String leaderHint = bookingService.getLeaderHint();
-            LOGGER.info(() -> "[" + nodeId + "] Rejecting BOOK_TICKET as NOT_LEADER, leaderHint=" + leaderHint);
-            return MessageCodec.createErrorResponse(
-                    messageId,
-                    "NOT_LEADER",
-                    "This node is not the current Raft leader. Please redirect to leader.",
-                    leaderHint,
-                    null,
-                    requestId,
-                    nodeId
-            );
+        // 1. Enforce Leader authority and redirection via LeaderRouter per SPEC-02 §4 and SPEC-03 §7
+        LeaderRouter.RoutingOutcome outcome = leaderRouter.route(request);
+        if (outcome.isHandled()) {
+            return outcome.getResponse();
         }
 
         // 2. Decode and validate request payload

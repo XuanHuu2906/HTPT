@@ -30,10 +30,23 @@ public class GetSeatsHandler implements HandlerRegistry.RequestHandler {
 
     private final BookingService bookingService;
     private final String nodeId;
+    private final LeaderRouter leaderRouter;
 
     public GetSeatsHandler(BookingService bookingService, String nodeId) {
+        this(bookingService, nodeId, null);
+    }
+
+    public GetSeatsHandler(BookingService bookingService, String nodeId, LeaderRouter leaderRouter) {
         this.bookingService = Objects.requireNonNull(bookingService, "bookingService must not be null");
         this.nodeId = Objects.requireNonNull(nodeId, "nodeId must not be null");
+        this.leaderRouter = (leaderRouter != null) ? leaderRouter : new LeaderRouter(
+                nodeId,
+                LeaderRouter.RoleProvider.fromBookingService(bookingService)
+        );
+    }
+
+    public LeaderRouter getLeaderRouter() {
+        return leaderRouter;
     }
 
     @Override
@@ -44,19 +57,10 @@ public class GetSeatsHandler implements HandlerRegistry.RequestHandler {
 
         String messageId = request.getMessageId();
 
-        // 1. Enforce Leader authority per SPEC-03 Section 3.1
-        if (!bookingService.isLeader()) {
-            String leaderHint = bookingService.getLeaderHint();
-            LOGGER.info(() -> "[" + nodeId + "] Rejecting GET_SEATS as NOT_LEADER, leaderHint=" + leaderHint);
-            return MessageCodec.createErrorResponse(
-                    messageId,
-                    "NOT_LEADER",
-                    "This node is not the current Raft leader. Please redirect to leader.",
-                    leaderHint,
-                    null,
-                    null,
-                    nodeId
-            );
+        // 1. Enforce Leader authority and redirection via LeaderRouter per SPEC-03 §3.1
+        LeaderRouter.RoutingOutcome outcome = leaderRouter.route(request);
+        if (outcome.isHandled()) {
+            return outcome.getResponse();
         }
 
         // 2. Decode and validate request payload
