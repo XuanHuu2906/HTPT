@@ -9,7 +9,7 @@ Cập nhật 2026-11-13. Phối hợp TV3/TV4/TV5; kiểm thử Docker TV6. Chư
 | P0 | Khởi tạo RaftElectionComponent trong runtime | NodeMain.main dùng ElectionRuntime khi cấu hình NODE_PEERS đủ 5 voter và PostgreSQL |
 | P1 | Term cao hơn: Follower, dừng heartbeat cũ | Unit PASS cho vote request, append request, heartbeat response, lỗi persist; Docker PASS cho vote term cao hơn và SQL term/vote |
 | P1 | Docker election 5/5, 3/5, 2/5 | PASS: bầu một Leader với 5/5 và 3/5; 2/5 không bầu Leader mới; khôi phục Node và bầu lại |
-| P2 | CI PostgreSQL D13 không skip | Local full reactor PASS; D13 12 PostgreSQL tests, không skip. CI remote xem evidence, không suy diễn từ local |
+| P2 | CI PostgreSQL D13 không skip | GitHub Actions PASS ở commit cc00635: D13 12 PostgreSQL tests, 0 skip; Backend 767 test, 0 skip. Xem ci-remote.md trong evidence |
 
 Khởi chạy: cấu hình NODE_PEERS=`node-1@host1:9200,...,node-5@host5:9200`, DB_* riêng từng Node; timers lấy từ RAFT_HEARTBEAT_INTERVAL_MS và RAFT_ELECTION_TIMEOUT_MIN_MS/MAX_MS. Peer port tách client port. Runtime chặn khởi động khi thiếu DB/schema hoặc dữ liệu D13 sai. Khi chưa có NODE_PEERS, entry point vẫn là diagnostic mode không election.
 

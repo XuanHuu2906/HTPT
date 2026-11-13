@@ -21,10 +21,11 @@ Môi trường local: OpenJDK 25.0.4.1, Maven 3.9.11, Docker Desktop, PostgreSQL
 | `python3 scripts/test-election-docker.py` | 0; PASS trên 5 Backend/5 PostgreSQL riêng | `docker-test.log`, `docker/` |
 | `mvn -B -ntp -Drailway.requirePostgres=true clean test` với RAILWAY_TEST_* và HEADLESS/JAVA_TOOL_OPTIONS giống CI | 0; shared 30, backend 767 (không skip), desktop 151 (5 skip), integration 1 (1 skip) | `ci-postgresql-local.log` |
 | `python3 scripts/check-d13-reports.py` | 0; 12 PostgreSQL D13 tests, 0 skip | `d13-gate-local.log` |
+| GitHub Actions run 43408025529 / commit cc00635 | SUCCESS; D13 PostgreSQL 12 tests, 0 skip; backend 767 tests, 0 skip | `ci-remote.md`, `github-actions-postgresql.log` |
 
 Lượt compile test đầu lỗi vì payload kiểu Object; đã sửa test chuyển về JsonNode (`first-test-compile-failure.log`). Lượt full reactor đầu gặp test multiplex 100 RPC cấu hình giới hạn 64 in-flight; đã sửa riêng fixture test cho phép 100, giữ giới hạn production và test backpressure (`first-regression-backpressure-failure.log`). Sau sửa đã chạy lại full reactor thành công.
 
-Các skip ngoài D13 là kiểm thử desktop/Node1 DB phụ thuộc môi trường; không sửa chúng để gán PASS. D13 Group A=6, Group B=12, đều 0 skip. CI remote được ghi riêng trong `ci-remote.md` khi có run thực tế; log local không được gọi là log GitHub Actions.
+Các skip ngoài D13 là kiểm thử desktop/Node1 DB phụ thuộc môi trường; không sửa chúng để gán PASS. D13 Group A=6, Group B=12, đều 0 skip. CI remote SUCCESS được ghi riêng trong [ci-remote.md](ci-remote.md); log local không được gọi là log GitHub Actions.
 
 ## Docker assertions thực chạy
 
