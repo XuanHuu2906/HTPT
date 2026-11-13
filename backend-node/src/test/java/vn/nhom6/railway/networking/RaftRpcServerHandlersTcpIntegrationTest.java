@@ -52,7 +52,7 @@ class RaftRpcServerHandlersTcpIntegrationTest {
         Map<String, InetSocketAddress> peers = Map.of(
                 localNodeId, new InetSocketAddress("127.0.0.1", serverPort)
         );
-        client = new RaftRpcClient(remoteNodeId, peers, 64, 5000, Duration.ofSeconds(3));
+        client = new RaftRpcClient(remoteNodeId, peers, 128, 5000, Duration.ofSeconds(3));
     }
 
     @AfterEach
