@@ -1,0 +1,211 @@
+openjdk version "25.0.4.1" 2026-08-18
+OpenJDK Runtime Environment (Red_Hat-25.0.4.1.1-1) (build 25.0.4.1+1)
+OpenJDK 64-Bit Server VM (Red_Hat-25.0.4.1.1-1) (build 25.0.4.1+1, mixed mode, sharing)
+Apache Maven 3.9.11 (Red Hat 3.9.11-16)
+Maven home: /usr/share/maven
+Java version: 25.0.4.1, vendor: Red Hat, Inc., runtime: /usr/lib/jvm/java-25-openjdk
+Default locale: en, platform encoding: UTF-8
+OS name: "linux", version: "7.3.3-300.fc45.x86_64", arch: "amd64", family: "unix"
+TV5-D13 / TV6 execution: Raft Election + Recovery
+UTC: 2026-11-13T09:04:27.646879+00:00
+Commit: e38b3405464b4191a1542dea0faef953687dea42 (working tree includes ElectionChaosTest)
+Scope: FakeNetwork + TV2-D12 JdbcRaftStorage smoke; NOT G4, NOT real 5-node TCP/PG, NOT AC07/AC08 system acceptance. No TV4-D13 adapter dependency.
+RAILWAY_TEST_JDBC_URL: MISSING
+RAILWAY_TEST_DB_USER: MISSING
+RAILWAY_TEST_DB_PASSWORD: MISSING
+Command: mvn -B -ntp -pl backend-node -am -Dtest=ElectionChaosTest,SplitVoteTest,VotePersistenceTest -Dsurefire.failIfNoSpecifiedTests=false test
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 14 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 55 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 49 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.raft.election.ElectionChaosTest
+D13 five simultaneous candidates: term=1 split; term=2 leader=node-3 quorum=3/5; stale/duplicate replies safe
+D13 FakeNetwork seeds=0..99: same-term unique leader with >=3 distinct durable-memory votes
+D13 JDBC BLOCKED: missing RAILWAY_TEST_JDBC_URL/RAILWAY_TEST_DB_USER/RAILWAY_TEST_DB_PASSWORD; smoke SKIPPED, not PASS
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.052 s -- in vn.nhom6.railway.raft.election.ElectionChaosTest
+[INFO] Running vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Running vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 17, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  1.268 s]
+[INFO] backend-node ....................................... SUCCESS [  2.573 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.907 s
+[INFO] Finished at: 2026-11-13T16:04:32+07:00
+[INFO] ------------------------------------------------------------------------
+
+Exit code: 0
+
+FINAL RUN after sharing PersistentElectionState in the fake core/handler
+ElectionChaosTest.java SHA256: 9b189628affe5c1a0ddf23b78b5e83eca104409174dd27f2edfdf5c83c8ed81f
+Command: docker ps --format {{.Names}} {{.Status}} {{.Ports}}
+Exit code: 0
+Command: mvn -B -ntp -pl backend-node -am -Dtest=ElectionChaosTest,SplitVoteTest,VotePersistenceTest -Dsurefire.failIfNoSpecifiedTests=false test
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.raft.election.ElectionChaosTest
+D13 five simultaneous candidates: term=1 split; term=2 leader=node-3 quorum=3/5; stale/duplicate replies safe
+D13 FakeNetwork seeds=0..99: same-term unique leader with >=3 distinct memory-storage votes
+D13 JDBC BLOCKED: missing RAILWAY_TEST_JDBC_URL/RAILWAY_TEST_DB_USER/RAILWAY_TEST_DB_PASSWORD; smoke SKIPPED, not PASS
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.065 s -- in vn.nhom6.railway.raft.election.ElectionChaosTest
+[INFO] Running vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Running vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 17, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.359 s]
+[INFO] backend-node ....................................... SUCCESS [  0.627 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.065 s
+[INFO] Finished at: 2026-11-13T16:05:02+07:00
+[INFO] ------------------------------------------------------------------------
+Exit code: 0
+
+FINAL ASSESSMENT
+- Environment: Linux amd64; OpenJDK 25.0.4.1; Maven 3.9.11.
+- FakeNetwork: PASS, five simultaneous term-1 candidates split, term-2 retry elects node-3; stale requests/responses and duplicate votes cannot create quorum.
+- FakeNetwork: PASS, two simultaneous candidates across 100 deterministic seeds (0..99), exactly one leader with >=3 distinct votes after full delivery.
+- Regression: SplitVoteTest 4 PASS; VotePersistenceTest 10 PASS.
+- Total: 17 tests, 16 PASS, 0 failures/errors, 1 SKIPPED; Maven exit 0.
+- JDBC term/votedFor: BLOCKED/SKIPPED because all three test DB environment variables are missing. docker ps exit 0 with no rows: no running containers. PostgreSQL durability has NOT been verified in this run.
+- JDBC smoke implementation: isolated UUID schema using V1 migration, separate JdbcRaftStorage instances/connections, reload term=7/vote=node-2, deny node-3 same term through PersistentElectionState, reject term regression, persist term=8/vote=null, finally drop only test schema.
+- To run JDBC: provide RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER, RAILWAY_TEST_DB_PASSWORD for an available PostgreSQL test database with CREATE SCHEMA permission, then rerun the Maven command above. A configured but unavailable DB is a test error, not silently skipped.
+- SPEC: FR07; technical coverage TC-RAFT-01/08. No shared contracts or production code changed. No dependency on TV4-D13 adapter.
+- Limitations: virtual scheduling and in-memory FakeNetwork/storage; JDBC would prove only local reload across instances, not process crash/power loss. No TCP, replication, commit/apply, booking, real failover/catch-up or AC07/AC08 system acceptance. NOT G4.
