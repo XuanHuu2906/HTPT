@@ -46,6 +46,14 @@ public class RaftRpcClient implements AutoCloseable {
     private final int connectTimeoutMs;
     private final Duration defaultRpcTimeout;
 
+    private final java.util.concurrent.ExecutorService runtimeIo = new java.util.concurrent.ThreadPoolExecutor(
+            4, 4, 0L, java.util.concurrent.TimeUnit.MILLISECONDS,
+            new java.util.concurrent.ArrayBlockingQueue<>(64), task -> {
+                Thread thread = new Thread(task, "raft-tcp-send");
+                thread.setDaemon(true);
+                return thread;
+            });
+
     private volatile boolean closed = false;
 
     public RaftRpcClient(String localNodeId, Map<String, InetSocketAddress> peerEndpoints) {
@@ -178,6 +186,18 @@ public class RaftRpcClient implements AutoCloseable {
         return sendEnvelope(peerId, envelope, timeout, responsePayloadClass);
     }
 
+    /** Preserves adapter messageId/correlation and keeps connect/write off the Raft loop. */
+    public CompletableFuture<MessageEnvelope<com.fasterxml.jackson.databind.JsonNode>> exchange(
+            String peerId, MessageEnvelope<?> request) {
+        try {
+            return CompletableFuture.supplyAsync(() -> sendEnvelope(peerId, request,
+                    defaultRpcTimeout, com.fasterxml.jackson.databind.JsonNode.class), runtimeIo)
+                    .thenCompose(future -> future);
+        } catch (java.util.concurrent.RejectedExecutionException unavailable) {
+            return CompletableFuture.failedFuture(unavailable);
+        }
+    }
+
     private <T> CompletableFuture<MessageEnvelope<T>> sendEnvelope(
             String peerId,
             MessageEnvelope<?> envelope,
@@ -236,7 +256,14 @@ public class RaftRpcClient implements AutoCloseable {
             Socket socket = new Socket();
             socket.setTcpNoDelay(true);
             socket.setKeepAlive(true);
-            socket.connect(address, connectTimeoutMs);
+            try {
+                InetSocketAddress resolved = address.isUnresolved()
+                        ? new InetSocketAddress(address.getHostString(), address.getPort()) : address;
+                socket.connect(resolved, connectTimeoutMs);
+            } catch (IOException | RuntimeException connectFailure) {
+                try { socket.close(); } catch (IOException ignored) { }
+                throw connectFailure;
+            }
 
             conn = new PeerConnection(peerId, address, socket);
             connections.put(peerId, conn);
@@ -266,6 +293,7 @@ public class RaftRpcClient implements AutoCloseable {
 
     @Override
     public void close() {
+        runtimeIo.shutdownNow();
         closed = true;
         synchronized (connections) {
             connections.forEach((peerId, conn) -> {

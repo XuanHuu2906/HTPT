@@ -13,6 +13,8 @@ import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 import vn.nhom6.railway.protocol.dto.RequestVoteRequestDto;
 import vn.nhom6.railway.raft.core.RaftNode;
+import vn.nhom6.railway.raft.core.PersistentRaftNode;
+import vn.nhom6.railway.protocol.dto.AppendEntriesRequestDto;
 import vn.nhom6.railway.raft.core.RaftState;
 import vn.nhom6.railway.raft.core.RaftStorage;
 
@@ -23,14 +25,19 @@ public final class RaftElectionComponent implements AutoCloseable {
     private final CandidateElection election;
     private final ElectionTimer timer;
     private final RaftState state;
+    private final RaftNode core;
+    private LeaderHeartbeatScheduler heartbeat;
+    private boolean heartbeatActive;
+    private final ElectionConfig config;
     private final Consumer<Exception> onFailure;
     private boolean failed;
     private volatile boolean closed;
+    private volatile Thread raftThread;
 
     /** Factory must retain exactly the restored state passed here, without reloading storage. */
     @FunctionalInterface
     public interface CoreFactory {
-        RaftNode create(RaftState state, RaftStorage storage);
+        RaftNode create(RaftState state, RaftStorage storage) throws Exception;
     }
 
     public RaftElectionComponent(String localId, RaftStorage storage, CoreFactory coreFactory,
@@ -42,10 +49,13 @@ public final class RaftElectionComponent implements AutoCloseable {
         var persisted = storage.load();
         state = RaftState.restore(persisted.currentTerm(), persisted.votedFor(),
                 persisted.log(), persisted.lastApplied());
-        RaftNode core = Objects.requireNonNull(coreFactory.create(state, storage));
-        var persistence = new PersistentElectionState(state, storage);
+        core = Objects.requireNonNull(coreFactory.create(state, storage));
+        this.config = Objects.requireNonNull(config);
+        var persistence = core instanceof PersistentRaftNode durable
+                ? durable.persistence() : new PersistentElectionState(state, storage);
         loop = new ScheduledThreadPoolExecutor(1, task -> {
             Thread thread = new Thread(task, "raft-election-" + localId);
+            raftThread = thread;
             thread.setDaemon(true);
             return thread;
         });
@@ -58,13 +68,18 @@ public final class RaftElectionComponent implements AutoCloseable {
                         catch (Exception failure) { fail(failure); }
                     });
                 }), term -> {
-                    persistence.observeHigherTerm(term);
+                    stopHeartbeat();
+                    if (core instanceof PersistentRaftNode durable) durable.observeHigherTerm(term);
+                    else persistence.observeHigherTerm(term);
                     timerStart();
                 }, () -> {
                     timerStop();
+                    System.out.println("[RAFT] node=" + localId + " role=LEADER term=" + state.currentTerm());
+                    if (heartbeat != null) { heartbeatActive = true; heartbeat.start(); }
                     onLeader.run();
                 });
         timer = new ElectionTimer(election, loop, config, this::fail);
+        if (core instanceof PersistentRaftNode durable) durable.bindLifecycle(timer, this::stopHeartbeat);
     }
 
     private void timerStart() { timer.start(); }
@@ -73,6 +88,62 @@ public final class RaftElectionComponent implements AutoCloseable {
     /** Register only in NodeMain's peer registry, never its client registry. */
     public void register(HandlerRegistry peerRegistry) {
         peerRegistry.register(MessageType.REQUEST_VOTE, this::handleVote);
+        if (core instanceof PersistentRaftNode) {
+            peerRegistry.register(MessageType.APPEND_ENTRIES, this::handleAppend);
+        }
+    }
+
+    /** Runtime adapters enqueue callbacks onto this same serialized loop. */
+    public void execute(Runnable task) {
+        if (closed) return;
+        try {
+            loop.execute(() -> {
+                if (closed || failed) return;
+                try { task.run(); }
+                catch (RuntimeException failure) { fail(failure); }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException shutdown) {
+            if (!closed) throw shutdown;
+        }
+    }
+
+    public void configureHeartbeat(LeaderHeartbeatScheduler.HeartbeatTransport transport) throws Exception {
+        call(() -> {
+            if (heartbeat != null) throw new IllegalStateException("heartbeat already configured");
+            heartbeat = new LeaderHeartbeatScheduler(localId, state, loop, config, transport, term -> {
+                ((PersistentRaftNode) core).observeHigherTerm(term);
+                timer.start();
+            }, this::fail);
+            return null;
+        });
+    }
+
+    private void stopHeartbeat() {
+        if (heartbeat != null) heartbeat.stop();
+        if (heartbeatActive) {
+            heartbeatActive = false;
+            System.out.println("[RAFT] node=" + localId + " heartbeat=STOPPED term=" + state.currentTerm());
+        }
+    }
+
+    private MessageEnvelope<?> handleAppend(MessageEnvelope<JsonNode> request) throws Exception {
+        var dto = MessageCodec.decodePayload(request, AppendEntriesRequestDto.class);
+        dto.validate();
+        if (!election.isVoter(request.getSenderId()) || localId.equals(request.getSenderId())
+                || !request.getSenderId().equals(dto.getLeaderId())) {
+            throw new IllegalArgumentException("AppendEntries sender must be the remote leader voter");
+        }
+        return call(() -> {
+            requireHealthy();
+            try {
+                var response = ((PersistentRaftNode) core).handleAppendEntries(dto, request.getSenderId());
+                return MessageEnvelope.createResponse(request.getMessageId(),
+                        MessageType.APPEND_ENTRIES_RESPONSE, localId, response);
+            } catch (RaftStorage.RaftStorageException | IllegalStateException failure) {
+                fail(failure);
+                throw failure;
+            }
+        });
     }
 
     private MessageEnvelope<?> handleVote(MessageEnvelope<JsonNode> request) throws Exception {
@@ -91,6 +162,7 @@ public final class RaftElectionComponent implements AutoCloseable {
             requireHealthy();
             try {
                 var response = election.handleRequestVote(dto);
+                if (state.role() != vn.nhom6.railway.raft.core.Role.LEADER) stopHeartbeat();
                 timer.onVoteDecision(dto.getTerm(), response.voteGranted());
                 // A leader's stopped timer must be armed even when a higher-term vote is denied.
                 if (state.role() == vn.nhom6.railway.raft.core.Role.FOLLOWER) timer.start();
@@ -120,6 +192,7 @@ public final class RaftElectionComponent implements AutoCloseable {
         if (failed) return;
         failed = true;
         timer.close();
+        if (heartbeat != null) heartbeat.close();
         onFailure.accept(failure);
     }
 
@@ -139,10 +212,25 @@ public final class RaftElectionComponent implements AutoCloseable {
         }
     }
 
-    @Override public void close() {
+    @Override public synchronized void close() {
         if (closed) return;
         // Cancellation is safe from the event-loop failure callback as well as NodeMain.stop.
-        closed = true;
-        loop.shutdownNow();
+        try {
+            if (Thread.currentThread() == raftThread) {
+                timer.close();
+                if (heartbeat != null) heartbeat.close();
+            } else {
+                call(() -> {
+                    timer.close();
+                    if (heartbeat != null) heartbeat.close();
+                    return null;
+                });
+            }
+        } catch (Exception shutdown) {
+            onFailure.accept(shutdown);
+        } finally {
+            closed = true;
+            loop.shutdownNow();
+        }
     }
 }

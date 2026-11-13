@@ -54,6 +54,7 @@ public class NodeMain implements AutoCloseable {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread shutdownHook;
+    private ElectionRuntime ownedElectionRuntime;
     private volatile DbStateLoader.NodeStartupState startupState;
 
     public NodeMain(NodeConfig config) {
@@ -82,6 +83,32 @@ public class NodeMain implements AutoCloseable {
             BookingRequestHandler.ReadBarrier barrier, RaftElectionComponent election) {
         return new NodeMain(config, new UnavailableBookingService(), election,
                 persistentHandler(config, submitter, barrier));
+    }
+
+    /** Production election composition; supplied configuration must describe all five voters. */
+    public static NodeMain withElectionRuntime(NodeConfig config, Map<String, String> environment)
+            throws Exception {
+        var owner = new java.util.concurrent.atomic.AtomicReference<NodeMain>();
+        var runtime = new ElectionRuntime(config, environment, failure -> {
+            LOGGER.log(Level.SEVERE, "Raft runtime failed closed", failure);
+            new Thread(() -> {
+                NodeMain node = owner.get();
+                if (node != null) node.stop();
+            }, "raft-failure-shutdown").start();
+        });
+        try {
+            var node = new NodeMain(config, new UnavailableBookingService(), runtime.election(),
+                    persistentHandler(config,
+                            command -> { throw new BookingRequestHandler.NotLeaderException(null); },
+                            timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
+                                    "Leader majority commit/apply is not wired"); }));
+            node.ownedElectionRuntime = runtime;
+            owner.set(node);
+            return node;
+        } catch (RuntimeException failure) {
+            runtime.close();
+            throw failure;
+        }
     }
 
     private static BookingRequestHandler persistentHandler(NodeConfig config,
@@ -212,7 +239,7 @@ public class NodeMain implements AutoCloseable {
         } catch (Exception failure) {
             clientServer.stop();
             raftServer.stop();
-            if (election != null) election.close();
+            closeElection();
             throw new IOException("Cannot start node runtime", failure);
         }
 
@@ -252,13 +279,13 @@ public class NodeMain implements AutoCloseable {
      */
     public synchronized void stop() {
         if (!running.compareAndSet(true, false)) {
-            if (election != null) election.close();
+            closeElection();
             return;
         }
 
         LOGGER.info(() -> "Shutting down Backend Node [" + config.nodeId() + "]...");
 
-        if (election != null) election.close();
+        closeElection();
 
         // Stop network servers
         clientServer.stop();
@@ -272,6 +299,11 @@ public class NodeMain implements AutoCloseable {
         }
 
         LOGGER.info(() -> "Backend Node [" + config.nodeId() + "] shutdown cleanly completed.");
+    }
+
+    private void closeElection() {
+        if (ownedElectionRuntime != null) ownedElectionRuntime.close();
+        else if (election != null) election.close();
     }
 
     @Override
@@ -322,7 +354,8 @@ public class NodeMain implements AutoCloseable {
         String configPath = args.length > 0 ? args[0] : null;
         try {
             NodeConfig config = NodeConfig.load(configPath);
-            NodeMain node = new NodeMain(config);
+            NodeMain node = System.getenv("NODE_PEERS") == null
+                    ? new NodeMain(config) : withElectionRuntime(config, System.getenv());
             node.start();
 
             // Keep main process thread alive

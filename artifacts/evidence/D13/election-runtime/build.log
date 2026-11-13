@@ -1,0 +1,87 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ railway-distributed-system ---
+[INFO] Installing /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/pom.xml to /home/nguyenhuu/.m2/repository/vn/nhom6/railway/railway-distributed-system/1.0.0-SNAPSHOT/railway-distributed-system-1.0.0-SNAPSHOT.pom
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.5.0:jar (default-jar) @ shared ---
+[INFO] Building jar: /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/shared-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ shared ---
+[INFO] Installing /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/pom.xml to /home/nguyenhuu/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.pom
+[INFO] Installing /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target/shared-1.0.0-SNAPSHOT.jar to /home/nguyenhuu/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 58 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 50 source files with javac [debug release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.5.0:jar (default-jar) @ backend-node ---
+[INFO] Building jar: /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- install:3.1.2:install (default-install) @ backend-node ---
+[INFO] Installing /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/pom.xml to /home/nguyenhuu/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.pom
+[INFO] Installing /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar to /home/nguyenhuu/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  1.548 s]
+[INFO] shared ............................................. SUCCESS [  3.150 s]
+[INFO] backend-node ....................................... SUCCESS [  2.792 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.548 s
+[INFO] Finished at: 2026-11-13T17:10:09+07:00
+[INFO] ------------------------------------------------------------------------

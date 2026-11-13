@@ -1,0 +1,183 @@
+# Isolated disposable election fixture: five real Backend processes and five PostgreSQLs.
+# Run via scripts/test-election-docker.py; never shares dev volumes.
+services:
+  pg-1:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: railway_test
+      POSTGRES_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      POSTGRES_DB: railway_node1
+    volumes:
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railway_test -d railway_node1"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  node-1:
+    image: railway-backend-node:d13-election
+    environment:
+      NODE_ID: node-1
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_PEERS: node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+      DB_HOST: pg-1
+      DB_PORT: 5432
+      DB_NAME: railway_node1
+      DB_USER: railway_test
+      DB_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      RAFT_HEARTBEAT_INTERVAL_MS: 150
+      RAFT_ELECTION_TIMEOUT_MIN_MS: 700
+      RAFT_ELECTION_TIMEOUT_MAX_MS: 1400
+      TCP_CONNECT_TIMEOUT_MS: 250
+      TCP_RESPONSE_DEADLINE_MS: 500
+    ports:
+      - "127.0.0.1:19101:9100"
+      - "127.0.0.1:19201:9200"
+    depends_on:
+      pg-1:
+        condition: service_healthy
+  pg-2:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: railway_test
+      POSTGRES_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      POSTGRES_DB: railway_node2
+    volumes:
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railway_test -d railway_node2"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  node-2:
+    image: railway-backend-node:d13-election
+    environment:
+      NODE_ID: node-2
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_PEERS: node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+      DB_HOST: pg-2
+      DB_PORT: 5432
+      DB_NAME: railway_node2
+      DB_USER: railway_test
+      DB_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      RAFT_HEARTBEAT_INTERVAL_MS: 150
+      RAFT_ELECTION_TIMEOUT_MIN_MS: 700
+      RAFT_ELECTION_TIMEOUT_MAX_MS: 1400
+      TCP_CONNECT_TIMEOUT_MS: 250
+      TCP_RESPONSE_DEADLINE_MS: 500
+    ports:
+      - "127.0.0.1:19102:9100"
+      - "127.0.0.1:19202:9200"
+    depends_on:
+      pg-2:
+        condition: service_healthy
+  pg-3:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: railway_test
+      POSTGRES_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      POSTGRES_DB: railway_node3
+    volumes:
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railway_test -d railway_node3"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  node-3:
+    image: railway-backend-node:d13-election
+    environment:
+      NODE_ID: node-3
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_PEERS: node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+      DB_HOST: pg-3
+      DB_PORT: 5432
+      DB_NAME: railway_node3
+      DB_USER: railway_test
+      DB_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      RAFT_HEARTBEAT_INTERVAL_MS: 150
+      RAFT_ELECTION_TIMEOUT_MIN_MS: 700
+      RAFT_ELECTION_TIMEOUT_MAX_MS: 1400
+      TCP_CONNECT_TIMEOUT_MS: 250
+      TCP_RESPONSE_DEADLINE_MS: 500
+    ports:
+      - "127.0.0.1:19103:9100"
+      - "127.0.0.1:19203:9200"
+    depends_on:
+      pg-3:
+        condition: service_healthy
+  pg-4:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: railway_test
+      POSTGRES_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      POSTGRES_DB: railway_node4
+    volumes:
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railway_test -d railway_node4"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  node-4:
+    image: railway-backend-node:d13-election
+    environment:
+      NODE_ID: node-4
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_PEERS: node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+      DB_HOST: pg-4
+      DB_PORT: 5432
+      DB_NAME: railway_node4
+      DB_USER: railway_test
+      DB_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      RAFT_HEARTBEAT_INTERVAL_MS: 150
+      RAFT_ELECTION_TIMEOUT_MIN_MS: 700
+      RAFT_ELECTION_TIMEOUT_MAX_MS: 1400
+      TCP_CONNECT_TIMEOUT_MS: 250
+      TCP_RESPONSE_DEADLINE_MS: 500
+    ports:
+      - "127.0.0.1:19104:9100"
+      - "127.0.0.1:19204:9200"
+    depends_on:
+      pg-4:
+        condition: service_healthy
+  pg-5:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: railway_test
+      POSTGRES_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      POSTGRES_DB: railway_node5
+    volumes:
+      - ../database/migration:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railway_test -d railway_node5"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  node-5:
+    image: railway-backend-node:d13-election
+    environment:
+      NODE_ID: node-5
+      NODE_CLIENT_BIND: 0.0.0.0:9100
+      NODE_PEER_BIND: 0.0.0.0:9200
+      NODE_PEERS: node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+      DB_HOST: pg-5
+      DB_PORT: 5432
+      DB_NAME: railway_node5
+      DB_USER: railway_test
+      DB_PASSWORD: ${ELECTION_TEST_DB_PASSWORD:?Set an ephemeral test password}
+      RAFT_HEARTBEAT_INTERVAL_MS: 150
+      RAFT_ELECTION_TIMEOUT_MIN_MS: 700
+      RAFT_ELECTION_TIMEOUT_MAX_MS: 1400
+      TCP_CONNECT_TIMEOUT_MS: 250
+      TCP_RESPONSE_DEADLINE_MS: 500
+    ports:
+      - "127.0.0.1:19105:9100"
+      - "127.0.0.1:19205:9200"
+    depends_on:
+      pg-5:
+        condition: service_healthy

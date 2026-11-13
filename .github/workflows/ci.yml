@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Maven Clean Test (Baseline D07)
+    name: Maven tests with PostgreSQL (D13 required)
     runs-on: ubuntu-latest
 
     services:
@@ -54,13 +54,18 @@ jobs:
           mvn -version
 
       - name: Standardized Maven Clean Test
-        run: mvn -B -ntp -Drailway.requirePostgres=true clean test
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/evidence/D13
+          mvn -B -ntp -Drailway.requirePostgres=true clean test | tee artifacts/evidence/D13/ci-postgresql.log
         env:
           HEADLESS: "true"
           JAVA_TOOL_OPTIONS: "-Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless"
 
       - name: Require real PostgreSQL D13 results (no skips)
-        run: python3 scripts/check-d13-reports.py
+        run: |
+          set -o pipefail
+          python3 scripts/check-d13-reports.py | tee artifacts/evidence/D13/ci-postgresql-gate.log
 
       - name: Organize Evidence & Test Results
         if: always()
@@ -78,6 +83,7 @@ jobs:
           name: surefire-reports-and-evidence
           path: |
             artifacts/test-evidence/
+            artifacts/evidence/D13/ci-postgresql*.log
             **/target/surefire-reports/
           retention-days: 14
 

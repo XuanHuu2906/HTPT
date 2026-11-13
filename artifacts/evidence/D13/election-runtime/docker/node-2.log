@@ -1,0 +1,73 @@
+node-2-1  | ================================================================================
+node-2-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-2
+node-2-1  | ================================================================================
+node-2-1  |   Node ID          : node-2
+node-2-1  |   Cluster ID       : railway-demo-5
+node-2-1  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+node-2-1  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+node-2-1  |   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+node-2-1  |   Database Target  : railway_test@pg-2:5432/railway_node2
+node-2-1  |   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+node-2-1  | ================================================================================
+node-2-1  | [INFO] Kiem tra ket noi mang toi Database pg-2:5432...
+node-2-1  | Connection to pg-2 (172.19.0.5) 5432 port [tcp/postgresql] succeeded!
+node-2-1  |   [OK] Ket noi mang thanh cong toi Database pg-2:5432!
+node-2-1  | [INFO] Khoi dong Backend Node runtime...
+node-2-1  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+node-2-1  | Nov 13, 2026 10:13:21 AM vn.nhom6.railway.persistence.DbStateLoader load
+node-2-1  | INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+node-2-1  | ================================================================================
+node-2-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+node-2-1  | ================================================================================
+node-2-1  |   Node ID          : node-2
+node-2-1  |   Cluster ID       : railway-demo-5
+node-2-1  |   Client Port      : 9100 (Host: 0.0.0.0)
+node-2-1  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+node-2-1  |   Database Target  : railway_test@pg-2:5432/railway_node2
+node-2-1  | ================================================================================
+node-2-1  | Nov 13, 2026 10:13:21 AM vn.nhom6.railway.persistence.DbStateLoader load
+node-2-1  | INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+node-2-1  | Nov 13, 2026 10:13:21 AM vn.nhom6.railway.networking.TcpServer start
+node-2-1  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+node-2-1  | Nov 13, 2026 10:13:21 AM vn.nhom6.railway.networking.TcpServer start
+node-2-1  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+node-2-1  | [READY] node-2 client=9100 raft=9200
+node-2-1  | Nov 13, 2026 10:13:21 AM vn.nhom6.railway.networking.NodeMain start
+node-2-1  | INFO: Backend Node [node-2] initialized and ready for traffic.
+node-2-1  | [RAFT] node=node-2 role=LEADER term=1
+node-2-1  | ================================================================================
+node-2-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-2
+node-2-1  | ================================================================================
+node-2-1  |   Node ID          : node-2
+node-2-1  |   Cluster ID       : railway-demo-5
+node-2-1  |   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+node-2-1  |   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+node-2-1  |   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+node-2-1  |   Database Target  : railway_test@pg-2:5432/railway_node2
+node-2-1  |   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+node-2-1  | ================================================================================
+node-2-1  | [INFO] Kiem tra ket noi mang toi Database pg-2:5432...
+node-2-1  | Connection to pg-2 (172.19.0.5) 5432 port [tcp/postgresql] succeeded!
+node-2-1  |   [OK] Ket noi mang thanh cong toi Database pg-2:5432!
+node-2-1  | [INFO] Khoi dong Backend Node runtime...
+node-2-1  | [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+node-2-1  | Nov 13, 2026 10:13:45 AM vn.nhom6.railway.persistence.DbStateLoader load
+node-2-1  | INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-2, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+node-2-1  | ================================================================================
+node-2-1  |  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+node-2-1  | ================================================================================
+node-2-1  |   Node ID          : node-2
+node-2-1  |   Cluster ID       : railway-demo-5
+node-2-1  |   Client Port      : 9100 (Host: 0.0.0.0)
+node-2-1  |   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+node-2-1  |   Database Target  : railway_test@pg-2:5432/railway_node2
+node-2-1  | ================================================================================
+node-2-1  | Nov 13, 2026 10:13:45 AM vn.nhom6.railway.persistence.DbStateLoader load
+node-2-1  | INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-2, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+node-2-1  | Nov 13, 2026 10:13:45 AM vn.nhom6.railway.networking.TcpServer start
+node-2-1  | INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+node-2-1  | Nov 13, 2026 10:13:45 AM vn.nhom6.railway.networking.TcpServer start
+node-2-1  | INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+node-2-1  | [READY] node-2 client=9100 raft=9200
+node-2-1  | Nov 13, 2026 10:13:45 AM vn.nhom6.railway.networking.NodeMain start
+node-2-1  | INFO: Backend Node [node-2] initialized and ready for traffic.
