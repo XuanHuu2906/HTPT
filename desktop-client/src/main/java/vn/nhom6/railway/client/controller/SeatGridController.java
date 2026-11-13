@@ -705,9 +705,13 @@ public class SeatGridController {
                 screenStateModel.setState(ScreenState.IDLE, msg);
             }
             case REJECTED -> {
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(
+                        outcome.getReasonCode() != null ? outcome.getReasonCode() : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
+                        outcome.getMessage(),
+                        false);
                 for (String seatId : affectedSeats) {
                     SeatViewModel vm = getSeatViewModel(seatId);
-                    if (vm != null) {
+                    if (vm != null && p.needsSeatRefresh()) {
                         vm.setStatus(SeatStatus.BOOKED);
                     }
                     TicketViewModel rejectedTicket = new TicketViewModel(
@@ -719,15 +723,18 @@ public class SeatGridController {
                             nowTime,
                             "1.250.000 VNĐ",
                             TicketStatus.REJECTED,
-                            outcome.getReasonCode());
+                            p.rawCode());
                     MockTicketSource.addTicket(rejectedTicket);
                 }
-                String msg = "Ghế đã có người đặt trước (REJECTED: " + outcome.getReasonCode()
-                        + "), vui lòng chọn ghế khác.";
+                String msg = p.message();
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.ERROR, msg);
             }
             case UNKNOWN -> {
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(
+                        ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN,
+                        outcome.getMessage(),
+                        false);
                 for (String seatId : affectedSeats) {
                     SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null) {
@@ -742,10 +749,10 @@ public class SeatGridController {
                             nowTime,
                             "1.250.000 VNĐ",
                             TicketStatus.UNKNOWN,
-                            "TIMEOUT_AWAITING_LEADER");
+                            p.rawCode());
                     MockTicketSource.addTicket(unknownTicket);
                 }
-                String msg = "Chưa xác định kết quả (TIMEOUT/MẤT KẾT NỐI). Ghế đã chuyển sang trạng thái CHƯA RÕ (UNKNOWN)!";
+                String msg = p.message();
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.DISCONNECTED, msg);
             }

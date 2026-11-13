@@ -268,7 +268,12 @@ public class TicketStatusController {
             String reason;
             switch (ticket.getStatus()) {
                 case CANCELLED -> reason = "Vé này đã bị hủy trước đó. Không thể thực hiện hủy lại.";
-                case REJECTED -> reason = "Yêu cầu đặt vé này đã bị từ chối (" + ticket.getReasonCode() + "), không có vé hợp lệ để hủy.";
+                case REJECTED -> {
+                    ErrorPresentation p = ErrorPresentationMapper.mapCode(
+                            ticket.getReasonCode() != null ? ticket.getReasonCode() : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
+                            false);
+                    reason = "Yêu cầu đặt vé này đã bị từ chối (" + p.rawCode() + "): " + p.message() + " Không có vé hợp lệ để hủy.";
+                }
                 case UNKNOWN -> reason = "Vé đang ở trạng thái CHƯA RÕ (Timeout/Chờ xác nhận). Vui lòng tra cứu kết quả đặt trước khi hủy.";
                 default -> reason = "Vé không ở trạng thái hợp lệ để hủy.";
             }
