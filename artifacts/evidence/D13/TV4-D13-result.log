@@ -1,0 +1,30 @@
+TV4-D13 result
+==============
+
+Task: Add leader replication progress tracking and verify durable Raft log behavior
+Commit: 1517cf4e124816a0056ee4ef4a1de0ae3a44af23
+Previous TV4 commits: b9415ae (D12 implementation), 6e30221 (D12 evidence)
+
+Validation command (local DB password redacted):
+docker run --rm --network railway-dev-network -v D:/HOCTAP/HTPT:/workspace -w /workspace -e RAILWAY_TEST_JDBC_URL=jdbc:postgresql://postgres-1:5432/railway_node1 -e RAILWAY_TEST_DB_USER=railway -e RAILWAY_TEST_DB_PASSWORD=[REDACTED] maven:3.9-eclipse-temurin-25 mvn -B -ntp clean -pl backend-node -am "-Dtest=vn.nhom6.railway.raft.replication.*Test,vn.nhom6.railway.raft.core.*Test" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Environment: Windows host, Docker Linux container, Maven 3.9.16, OpenJDK 25.0.4.1.
+PostgreSQL: Compose service postgres-1 on railway-dev-network, database railway_node1.
+
+Result: PASS (exit code 0)
+Raft core and replication suites: 302 tests, 0 failures, 0 errors, 0 skipped.
+The D13-specific tests contributed 14 tracker tests and 7 PostgreSQL integration tests.
+The PostgreSQL tests used temporary schemas and dropped them after each test.
+The severe log lines in the run are expected: one injected storage failure and one
+attempt to truncate an applied log prefix, both asserted by their tests.
+
+Coverage includes peer progress initialization and monotonicity, stale nextIndex
+compare-and-set behavior, immutable snapshots, FakeRPC sender interaction without
+commitIndex advancement, JDBC term/vote reload, append/recovery, uncommitted suffix
+replacement, fail-closed applied-prefix truncation and recovery corruption checks,
+and follower AppendEntries persistence before success.
+
+Limitations: this suite does not establish real TCP replication, five-node cluster
+operation, quorum commitment, state-machine apply, or booking confirmation. D13
+does not calculate commitIndex; the tracker delegates progress storage to RaftState.
+No wire DTO or protocol contract was changed.
