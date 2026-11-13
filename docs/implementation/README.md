@@ -22,3 +22,7 @@ Không cần nộp 5 file `booking-implementation-checklist.md`, `contract-imple
 - Minh chứng ngắn phục vụ test: `artifacts/evidence/DXX/`, mỗi file kèm mã task, SHA commit và kết quả thực chạy; không commit bí mật, DB dump, video/binary lớn.
 - Đường dẫn cụ thể của từng task xem **cột Đầu ra** trong Google Sheets MASTER. Đường dẫn là nơi *dự kiến tạo*, không phải minh chứng file đã tồn tại.
 - 5 backend node dùng chung `backend-node/`; JavaFX luôn là Desktop qua TCP socket, không tạo REST/web service.
+
+## Cập nhật TV2 D11–D13
+
+[Tiến độ và phụ thuộc D11–D13](TV2-D11-D13-progress.md) ghi nhận kiểm thử PostgreSQL thật, startup recovery, kill/restart Backend và phần tích hợp Raft còn thiếu. [Minh chứng thực chạy](../../artifacts/evidence/D13/TV2-startup/README.md).

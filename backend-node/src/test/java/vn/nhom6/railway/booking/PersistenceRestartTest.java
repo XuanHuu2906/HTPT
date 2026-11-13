@@ -182,6 +182,10 @@ class PersistenceRestartTest {
             dbUser = System.getenv("RAILWAY_TEST_DB_USER");
             dbPassword = System.getenv("RAILWAY_TEST_DB_PASSWORD");
 
+            if (Boolean.getBoolean("railway.requirePostgres")) {
+                assertTrue(hasText(rawJdbcUrl) && hasText(dbUser) && hasText(dbPassword),
+                        "PostgreSQL is mandatory for this run; configure RAILWAY_TEST_* variables");
+            }
             Assumptions.assumeTrue(
                     hasText(rawJdbcUrl) && hasText(dbUser) && hasText(dbPassword),
                     "RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER, and RAILWAY_TEST_DB_PASSWORD required");
@@ -522,6 +526,113 @@ class PersistenceRestartTest {
             assertEquals(3L, state.lastLogTerm());
             assertTrue(state.currentTerm() >= 3L);
             assertTrue(state.currentTerm() >= state.lastLogTerm());
+        }
+
+        @Test
+        void nodeStartupLoadsD13BeforeOpeningSockets() throws Exception {
+            runMigrations(true);
+            var config = nodeConfig();
+            try (var node = new vn.nhom6.railway.networking.NodeMain(config)) {
+                node.start();
+                assertTrue(node.isRunning());
+                assertEquals(BootstrapType.GENESIS, node.getStartupState().bootstrapType());
+                assertEquals(0L, node.getStartupState().initialCommitIndex());
+            }
+        }
+
+        @Test
+        void missingSchemaPreventsNodeStartupAndSocketBinding() throws Exception {
+            var config = nodeConfig();
+            try (var node = new vn.nhom6.railway.networking.NodeMain(config)) {
+                assertThrows(IOException.class, node::start);
+                org.junit.jupiter.api.Assertions.assertFalse(node.isRunning());
+                assertEquals(-1, node.getClientPort());
+                assertEquals(-1, node.getRaftPort());
+            }
+        }
+
+        @Test
+        void killAndRestartBackendPreservesAppliedDataAndUncommittedSuffix() throws Exception {
+            // Durable fixture only: this does not claim a five-voter Raft commit.
+            test02_statefulRestart_returnsRestartStartupState();
+            DatabaseSnapshot before = captureSnapshot();
+            String durableRows = durableRows();
+            Process first = startBackendProcess();
+            try {
+                first.destroyForcibly(); // SIGKILL: bypass Java shutdown hooks
+                assertTrue(first.waitFor(10, java.util.concurrent.TimeUnit.SECONDS));
+                assertEquals(before, captureSnapshot());
+                Process restarted = startBackendProcess();
+                try {
+                    assertEquals(before, captureSnapshot());
+                    assertEquals(durableRows, durableRows());
+                    var state = new DbStateLoader(new JdbcRaftStorage(connectionFactory()),
+                            new JdbcBookingRepository(connectionFactory()), connectionFactory()).load();
+                    assertEquals(2L, state.initialCommitIndex());
+                    assertEquals(3L, state.lastLogIndex());
+                    assertEquals(1, countTable("tickets WHERE ticket_id = 't-1' AND status = 'ACTIVE'"));
+                    assertEquals(1, countTable("request_results WHERE request_id = '11111111-1111-1111-1111-111111111111'"));
+                } finally {
+                    restarted.destroyForcibly();
+                    assertTrue(restarted.waitFor(10, java.util.concurrent.TimeUnit.SECONDS));
+                }
+            } finally {
+                first.destroyForcibly();
+                first.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        }
+
+        private String durableRows() throws SQLException {
+            StringBuilder rows = new StringBuilder();
+            try (Connection conn = schemaConnection(); Statement stmt = conn.createStatement()) {
+                for (String table : List.of("raft_meta", "raft_log", "raft_apply_progress", "seats",
+                        "tickets", "request_results", "business_events")) {
+                    try (ResultSet rs = stmt.executeQuery("SELECT COALESCE(jsonb_agg(to_jsonb(t) "
+                            + "ORDER BY to_jsonb(t)::text), '[]'::jsonb)::text FROM " + table + " t")) {
+                        rs.next();
+                        rows.append(table).append(':').append(rs.getString(1)).append('\n');
+                    }
+                }
+            }
+            return rows.toString();
+        }
+
+        private vn.nhom6.railway.networking.NodeConfig nodeConfig() {
+            return new vn.nhom6.railway.networking.NodeConfig("node-1", "railway-demo-5",
+                    "127.0.0.1", 0, "127.0.0.1", 0,
+                    new DbConfig(host, port, dbName + "?currentSchema=" + schema, dbUser, dbPassword),
+                    4, 1000);
+        }
+
+        private Process startBackendProcess() throws Exception {
+            Path output = Files.createTempFile("railway-d13-backend-", ".log");
+            output.toFile().deleteOnExit();
+            var builder = new ProcessBuilder(
+                    Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                    "-cp", System.getProperty("java.class.path"),
+                    "vn.nhom6.railway.node.NodeMain");
+            var env = builder.environment();
+            env.remove("NODE_CLIENT_BIND");
+            env.remove("NODE_PEER_BIND");
+            env.put("NODE_ID", "node-1");
+            env.put("CLIENT_HOST", "127.0.0.1");
+            env.put("RAFT_HOST", "127.0.0.1");
+            env.put("CLIENT_PORT", "0");
+            env.put("RAFT_PORT", "0");
+            env.put("DB_HOST", host);
+            env.put("DB_PORT", Integer.toString(port));
+            env.put("DB_NAME", dbName + "?currentSchema=" + schema);
+            env.put("DB_USER", dbUser);
+            env.put("DB_PASSWORD", dbPassword);
+            Process process = builder.redirectErrorStream(true).redirectOutput(output.toFile()).start();
+            long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+            while (process.isAlive() && System.nanoTime() < deadline) {
+                if (Files.readString(output).contains("[READY] node-1")) return process;
+                Thread.sleep(25);
+            }
+            process.destroyForcibly();
+            process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+            throw new AssertionError("Backend did not become ready: " + Files.readString(output));
         }
 
         // -----------------------------------------------------------------------------------

@@ -3,6 +3,8 @@ package vn.nhom6.railway.networking;
 import vn.nhom6.railway.booking.ConnectionFactory;
 import vn.nhom6.railway.booking.BookingRequestHandler;
 import vn.nhom6.railway.persistence.JdbcBookingRepository;
+import vn.nhom6.railway.persistence.JdbcRaftStorage;
+import vn.nhom6.railway.persistence.DbStateLoader;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.UUID;
@@ -12,7 +14,6 @@ import vn.nhom6.railway.protocol.dto.MessageType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -53,6 +54,7 @@ public class NodeMain implements AutoCloseable {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread shutdownHook;
+    private volatile DbStateLoader.NodeStartupState startupState;
 
     public NodeMain(NodeConfig config) {
         this(config, new UnavailableBookingService(), null,
@@ -133,6 +135,13 @@ public class NodeMain implements AutoCloseable {
             statusPayload.put("commitIndex", 0L);
             statusPayload.put("lastApplied", 0L);
             statusPayload.put("storageHealthy", false);
+            var restored = startupState;
+            if (restored != null) {
+                statusPayload.put("currentTerm", restored.currentTerm());
+                statusPayload.put("commitIndex", restored.initialCommitIndex());
+                statusPayload.put("lastApplied", restored.lastApplied());
+                statusPayload.put("storageHealthy", true);
+            }
             if (election != null) {
                 var snapshot = election.status();
                 statusPayload.put("role", snapshot.role());
@@ -181,6 +190,22 @@ public class NodeMain implements AutoCloseable {
 
         // 1. Start Client TCP Server
         try {
+            // D13 must finish before either socket accepts traffic or election timers run.
+            startupState = null;
+            if (config.dbConfig() != null) {
+                var factory = new ConnectionFactory(config.dbConfig());
+                startupState = new DbStateLoader(new JdbcRaftStorage(factory),
+                        new JdbcBookingRepository(factory), factory).load();
+                if (election != null) {
+                    var restored = election.status();
+                    if (restored.currentTerm() != startupState.currentTerm()
+                            || restored.commitIndex() != startupState.initialCommitIndex()
+                            || restored.lastApplied() != startupState.lastApplied()
+                            || !"FOLLOWER".equals(restored.role()) || !restored.storageHealthy()) {
+                        throw new IllegalStateException("Election state differs from D13 durable startup state");
+                    }
+                }
+            }
             clientServer.start();
             raftServer.start();
             if (election != null) election.start();
@@ -194,13 +219,6 @@ public class NodeMain implements AutoCloseable {
         System.out.println("[READY] " + config.nodeId() + " client=" + clientServer.getPort() + " raft=" + raftServer.getPort());
         System.out.flush();
 
-        // 3. Test Database Connectivity (optional / non-blocking)
-        if (config.dbConfig() != null) {
-            checkDatabaseConnection();
-        } else {
-            LOGGER.info(() -> "[" + config.nodeId() + "] PostgreSQL is not configured; booking is unavailable.");
-        }
-
         // 4. Register Shutdown Hook
         shutdownHook = new Thread(this::stop, "node-shutdown-hook-" + config.nodeId());
         Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -209,15 +227,8 @@ public class NodeMain implements AutoCloseable {
         LOGGER.info(() -> "Backend Node [" + config.nodeId() + "] initialized and ready for traffic.");
     }
 
-    private void checkDatabaseConnection() {
-        try {
-            ConnectionFactory connectionFactory = new ConnectionFactory(config.dbConfig(), 2, 2);
-            try (Connection conn = connectionFactory.getConnection()) {
-                LOGGER.info(() -> "[" + config.nodeId() + "] Database connection verified: " + config.dbConfig().jdbcUrl());
-            }
-        } catch (Exception e) {
-            LOGGER.warning(() -> "[" + config.nodeId() + "] Database check failed for " + config.dbConfig().jdbcUrl() + ": " + e.getMessage() + ". Continuing node startup.");
-        }
+    public DbStateLoader.NodeStartupState getStartupState() {
+        return startupState;
     }
 
     private void printBanner() {

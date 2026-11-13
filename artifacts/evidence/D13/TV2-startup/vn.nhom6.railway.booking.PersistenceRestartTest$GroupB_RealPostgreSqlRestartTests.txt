@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+-------------------------------------------------------------------------------
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.867 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests

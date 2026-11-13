@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests

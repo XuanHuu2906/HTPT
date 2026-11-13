@@ -1,0 +1,228 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.booking.BookingRequestHandlerTest
+=== FAKE/LOCAL PostgreSQL snapshot (1 Node; no Raft cluster proof) ===
+-- seats: SELECT trip_id, seat_id, status, current_ticket_id FROM seats ORDER BY trip_id, seat_id
+trip_id | seat_id | status | current_ticket_id
+SE-001 | G01 | BOOKED | ticket-db-1
+SE-001 | G02 | AVAILABLE | null
+SE-001 | G03 | AVAILABLE | null
+SE-001 | G04 | AVAILABLE | null
+SE-001 | G05 | AVAILABLE | null
+SE-001 | G06 | AVAILABLE | null
+SE-001 | G07 | AVAILABLE | null
+SE-001 | G08 | AVAILABLE | null
+SE-001 | G09 | AVAILABLE | null
+SE-001 | G10 | AVAILABLE | null
+-- tickets: SELECT ticket_id, trip_id, seat_id, passenger_name, status, issued_at FROM tickets ORDER BY ticket_id
+ticket_id | trip_id | seat_id | passenger_name | status | issued_at
+ticket-db-1 | SE-001 | G01 | Linh | ACTIVE | 2026-11-11 07:00:00.123
+-- request_results: SELECT request_id, command_type, state, reason_code, ticket_id, applied_log_index, result_json FROM request_results ORDER BY request_id
+request_id | command_type | state | reason_code | ticket_id | applied_log_index | result_json
+11111111-1111-1111-1111-111111111111 | BOOK_TICKET | APPLIED_SUCCESS | null | ticket-db-1 | 1 | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+22222222-2222-2222-2222-222222222222 | BOOK_TICKET | APPLIED_REJECTED | SEAT_ALREADY_BOOKED | null | 4 | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- business_events: SELECT log_index, request_id, event_type, event_json FROM business_events ORDER BY log_index
+log_index | request_id | event_type | event_json
+1 | 11111111-1111-1111-1111-111111111111 | BOOK_CONFIRMED | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+4 | 22222222-2222-2222-2222-222222222222 | BOOK_REJECTED | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- raft_apply_progress: SELECT singleton, last_applied FROM raft_apply_progress ORDER BY singleton
+singleton | last_applied
+1 | 5
+SPEC-07 §5 checks: seats=10 (expected 10), duplicate ACTIVE seats=0 (expected 0), duplicate requestIds=0 (expected 0), last_applied=5
+=== END FAKE/LOCAL PostgreSQL snapshot ===
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.867 s -- in vn.nhom6.railway.booking.BookingRequestHandlerTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+Nov 13, 2026 4:45:40 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-2, lastLogIndex=3, lastLogTerm=2, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+Nov 13, 2026 4:45:40 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Inconsistent checkpoint: last_applied (5) exceeds lastLogIndex (1)
+Nov 13, 2026 4:45:40 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Raft log has a gap: expected index 2 but found 3
+Nov 13, 2026 4:45:40 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=3, votedFor=node-2, lastLogIndex=3, lastLogTerm=3, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_e6b99efb808a4c3fbca24b708d628181
+================================================================================
+Nov 13, 2026 4:45:41 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45795 (maxThreads=4, soTimeout=1000ms)
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34967 (maxThreads=4, soTimeout=1000ms)
+[READY] node-1 client=45795 raft=34967
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45795 stopped.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34967 stopped.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_732fc11b916144a1b99d7c3eac638018
+================================================================================
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 4:45:42 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.476 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.504 s -- in vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.networking.NodeMainTest
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/../configs/lan/node-1.properties
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34373 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32893 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=34373 raft=32893
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34373 stopped.
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32893 stopped.
+Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[Subprocess Node] Nov 13, 2026 4:45:43 PM vn.nhom6.railway.networking.NodeConfig load
+[Subprocess Node] INFO: Loaded configuration from file: /tmp/node-subprocess-11369676927721719938.properties
+[Subprocess Node] ================================================================================
+[Subprocess Node]  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+[Subprocess Node] ================================================================================
+[Subprocess Node]   Node ID          : node-sub-1
+[Subprocess Node]   Cluster ID       : railway-demo-5
+[Subprocess Node]   Client Port      : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Raft Peer Port   : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Database Target  : None (In-Memory / Test Mode)
+[Subprocess Node] ================================================================================
+[Subprocess Node] Nov 13, 2026 4:45:44 PM vn.nhom6.railway.networking.NodeMain start
+[Subprocess Node] WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+[Subprocess Node] Nov 13, 2026 4:45:44 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 33839 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] Nov 13, 2026 4:45:44 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 46175 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] [READY] node-sub-1 client=33839 raft=46175
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.290 s -- in vn.nhom6.railway.networking.NodeMainTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.337 s]
+[INFO] backend-node ....................................... SUCCESS [  5.066 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.470 s
+[INFO] Finished at: 2026-11-13T16:45:44+07:00
+[INFO] ------------------------------------------------------------------------
