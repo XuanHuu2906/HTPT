@@ -1,0 +1,65 @@
+================================================================================
+TEST EXECUTION EVIDENCE: TV3-D13 (Leader Redirection & Forwarding)
+Date: 2026-11-13
+Module: backend-node (Networking & Transport)
+Task: tv3-d13 - Định nghĩa chuyển hướng Leader
+Target Deliverables:
+  - backend-node/src/main/java/vn/nhom6/railway/networking/ErrorReplyFactory.java
+  - backend-node/src/main/java/vn/nhom6/railway/networking/LeaderRouter.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/ErrorReplyFactoryTest.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/LeaderRouterTest.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/LeaderRedirectionTcpIntegrationTest.java
+================================================================================
+
+[MAVEN TEST EXECUTION COMMAND]
+mvn -B -ntp test -Dtest=ErrorReplyFactoryTest,LeaderRouterTest,LeaderRedirectionTcpIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false
+
+[TEST RESULTS SUMMARY]
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running vn.nhom6.railway.networking.ErrorReplyFactoryTest
+- testCreateNotLeader: PASS
+- testCreateNotLeaderNulls: PASS
+- testCreateInvalidRequest: PASS
+- testCreateNoQuorum: PASS
+- testCreateReadUnavailable: PASS
+- testCreateInternalError: PASS
+- testExtractRequestIdFromJsonNode: PASS
+- testExtractRequestIdFromDto: PASS
+- testExtractRequestIdInvalid: PASS
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.297 s -- in vn.nhom6.railway.networking.ErrorReplyFactoryTest
+
+Running vn.nhom6.railway.networking.LeaderRouterTest
+- testLeaderExecutesLocally: PASS
+- testFollowerRedirectWithKnownLeader: PASS
+- testFollowerFallbackWhenLeaderUnknown: PASS
+- testSelfRedirectLoopPrevention: PASS
+- testForwardingModeSuccess: PASS
+- testForwardingLoopPreventionFromPeer: PASS
+- testForwardingLoopPreventionDuplicateRequestId: PASS
+- testForwardingFailureFallsBackToNotLeader: PASS
+- testRoleProviderFromBookingService: PASS
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in vn.nhom6.railway.networking.LeaderRouterTest
+
+Running vn.nhom6.railway.networking.LeaderRedirectionTcpIntegrationTest
+- testSendBookToFollowerReceivesNotLeaderHint: PASS (Pass Criteria 1: NOT_LEADER hint with preserved requestId)
+- testEndToEndClientRedirectToLeader: PASS (Follower hint -> Client redirect to Leader -> CONFIRMED)
+- testFollowerTransparentForwardingToLeader: PASS (Pass Criteria 2: Transparent proxy forwarded exactly 1 time)
+- testForwardingLoopHaltedWhenRequestFromPeer: PASS (Peer-forward loop prevention)
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.150 s -- in vn.nhom6.railway.networking.LeaderRedirectionTcpIntegrationTest
+
+Results:
+Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+
+================================================================================
+FULL REACTOR VERIFICATION:
+HEADLESS="true" JAVA_TOOL_OPTIONS="-Djava.awt.headless=true -Dtestfx.robot=glass -Dtestfx.headless=true -Dprism.order=sw" mvn -B -ntp test
+- railway-distributed-system: SUCCESS
+- shared: SUCCESS (30 tests)
+- backend-node: SUCCESS (400+ tests)
+- desktop-client: SUCCESS (151 tests)
+- desktop-monitor: SUCCESS
+- integration-tests: SUCCESS
+Result: BUILD SUCCESS (0 failures, 0 errors across entire workspace)
+================================================================================
