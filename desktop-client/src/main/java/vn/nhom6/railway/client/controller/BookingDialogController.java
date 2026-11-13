@@ -241,18 +241,21 @@ public class BookingDialogController {
         // Gửi yêu cầu qua BookingViewModel (TASK D07 - Bất đồng bộ, không treo UI)
         bookingViewModel.book("SE-001", seatToBook, normalizedName)
                 .whenComplete((result, throwable) -> Platform.runLater(() -> {
+                    ErrorPresentation presentation;
                     if (throwable != null) {
-                        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-                        this.outcome = BookingOutcome.unknown("Lỗi kết nối / timeout: " + cause.getMessage());
-                    } else if (result.isConfirmed()) {
-                        this.outcome = BookingOutcome.confirmed(result.getTicketId(), result.getMessage());
-                    } else if (result.isRejected()) {
-                        this.outcome = BookingOutcome.rejected(result.getReasonCode(), result.getMessage());
+                        presentation = ErrorPresentationMapper.mapThrowable(throwable, false);
+                        this.outcome = BookingOutcome.unknown(presentation.message());
                     } else {
-                        String msg = result.getMessage() != null ? result.getMessage() : result.getReasonCode();
-                        this.outcome = BookingOutcome.unknown(msg);
+                        presentation = ErrorPresentationMapper.mapBookingResponse(result);
+                        if (presentation.isConfirmed()) {
+                            this.outcome = BookingOutcome.confirmed(result.getTicketId(), presentation.message());
+                        } else if (presentation.isRejected()) {
+                            this.outcome = BookingOutcome.rejected(presentation.rawCode(), presentation.message());
+                        } else {
+                            this.outcome = BookingOutcome.unknown(presentation.message());
+                        }
                     }
-                    showOutcomeAndAutoClose(this.outcome);
+                    showOutcomeAndAutoClose(presentation, this.outcome);
                 }));
     }
 
@@ -260,26 +263,25 @@ public class BookingDialogController {
      * Hiển thị trạng thái kết quả trong dialog và tự động đóng sau một khoảng ngắn
      * để D02/D04 nhận kết quả.
      */
-    private void showOutcomeAndAutoClose(BookingOutcome result) {
+    public void showOutcomeAndAutoClose(BookingOutcome result) {
+        ErrorPresentation p;
+        if (result.isConfirmed()) {
+            p = ErrorPresentationMapper.mapCode("CONFIRMED", result.getMessage(), false);
+        } else if (result.isRejected()) {
+            p = ErrorPresentationMapper.mapCode(result.getReasonCode() != null ? result.getReasonCode() : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED, result.getMessage(), false);
+        } else {
+            p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, result.getMessage(), false);
+        }
+        showOutcomeAndAutoClose(p, result);
+    }
+
+    private void showOutcomeAndAutoClose(ErrorPresentation presentation, BookingOutcome result) {
         if (statusLabel != null) {
             statusLabel.getStyleClass().removeAll(
                     "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected",
-                    "booking-status-unknown");
-
-            switch (result.getStatus()) {
-                case CONFIRMED -> {
-                    statusLabel.getStyleClass().add("booking-status-confirmed");
-                    statusLabel.setText("✓ Đặt vé thành công! Mã: " + result.getReferenceCode());
-                }
-                case REJECTED -> {
-                    statusLabel.getStyleClass().add("booking-status-rejected");
-                    statusLabel.setText("✗ Ghế đã có người đặt, vui lòng chọn ghế khác");
-                }
-                case UNKNOWN -> {
-                    statusLabel.getStyleClass().add("booking-status-unknown");
-                    statusLabel.setText("⚠ Chưa xác định được kết quả, vui lòng kiểm tra lại");
-                }
-            }
+                    "booking-status-unknown", "status-error", "status-disconnected");
+            statusLabel.getStyleClass().add(presentation.getBookingStatusClass());
+            statusLabel.setText(presentation.message());
         }
 
         // Tự động đóng dialog sau 650ms để người dùng kịp đọc phản hồi

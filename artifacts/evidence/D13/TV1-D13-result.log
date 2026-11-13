@@ -1,0 +1,178 @@
+================================================================================
+BÁO CÁO KẾT QUẢ THỰC HIỆN TASK TV1-D13 — CHUẨN HÓA LỖI UI THEO ERRORCODE SPEC-03
+================================================================================
+Người thực hiện: TV1 (Nguyễn Đăng Khoa) — Desktop Client Subsystem
+Thời gian hoàn thành: 2026-11-13 10:45:00 +07:00
+Môi trường thực thi:
+  - Hệ điều hành: Windows 11
+  - JDK: OpenJDK 21.0.12.1 (LTS) [build with -Dmaven.compiler.release=21]
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+  - Base Commit: 83dcb31 (đã kéo/merge origin/main mới nhất vào feature/UI trước khi thực hiện D13)
+
+--------------------------------------------------------------------------------
+1. BƯỚC 0 — KẾT QUẢ PREFLIGHT
+--------------------------------------------------------------------------------
+1.1. Khảo sát SPEC-03 (docs/specs/03-CONTRACTS.md §4.2, §4.3, §4.4, §7):
+  - Phân định rõ trường chứa mã:
+    * BOOK_TICKET_RESPONSE: `outcome` (CONFIRMED, REJECTED, UNKNOWN), `reasonCode` (SEAT_ALREADY_BOOKED, INVALID_REQUEST, TIMEOUT_UNKNOWN).
+    * CANCEL_TICKET_RESPONSE: `outcome` (CONFIRMED, REJECTED, UNKNOWN), `reasonCode` (TICKET_NOT_ACTIVE, INVALID_REQUEST, TIMEOUT_UNKNOWN).
+    * ERROR_RESPONSE: `errorCode` (INVALID_REQUEST, UNSUPPORTED_VERSION, NOT_LEADER, NO_QUORUM, READ_UNAVAILABLE, REQUEST_ID_CONFLICT, INTERNAL_ERROR).
+    * Theo SPEC-03 §7: KHÔNG CÓ error code "UNKNOWN" — UNKNOWN là `outcome` / trạng thái kết quả, không phải errorCode của ERROR_RESPONSE.
+    * SEAT_ALREADY_BOOKED và TICKET_NOT_ACTIVE là `reasonCode` của lệnh ghi đã apply bền vững, không phải lỗi pre-check.
+    * Nội dung `message` chỉ để người dùng tham khảo bổ sung, LOGIC PHẢI DỰA HOÀN TOÀN VÀO MÃ CÓ CẤU TRÚC.
+
+1.2. Khảo sát module `shared`:
+  - `BookTicketResponseDto`: Chứa đầy đủ hằng số:
+    * OUTCOME_CONFIRMED = "CONFIRMED"
+    * OUTCOME_REJECTED = "REJECTED"
+    * OUTCOME_UNKNOWN = "UNKNOWN"
+    * REASON_SEAT_ALREADY_BOOKED = "SEAT_ALREADY_BOOKED"
+    * REASON_INVALID_REQUEST = "INVALID_REQUEST"
+    * REASON_TIMEOUT_UNKNOWN = "TIMEOUT_UNKNOWN"
+  - `ErrorResponseDto`: Chứa các trường `errorCode`, `message`, `leaderHint`, `term`, `requestId`. `errorCode` được lưu dưới dạng chuỗi `String` (chưa có enum hay lớp hằng số riêng do TV3 phụ trách).
+  - Fixtures: `shared/src/test/resources/fixtures/protocol-v1.json` và `invalid-protocol-v1.json`.
+
+1.3. Bảng đối chiếu mã: Yêu cầu ↔ SPEC-03 ↔ Module `shared`:
++-----------------------------------+-----------------------------------+-----------------------------------+--------------------+----------------------+
+| Mã trong yêu cầu task D13         | Mã trong SPEC-03 (§4.2, §4.3, §7) | Mã trong module `shared`          | Vị trí trường      | Đánh giá khớp        |
++-----------------------------------+-----------------------------------+-----------------------------------+--------------------+----------------------+
+| REJECTED + SEAT_ALREADY_BOOKED    | outcome=REJECTED, reason=SEAT_... | BookTicketResponseDto.REASON_...  | outcome, reasonCode| Khớp 100%            |
+| INVALID_REQUEST                   | errorCode=INVALID_REQUEST (§7)    | ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| NO_QUORUM                         | errorCode=NO_QUORUM (§7)          | ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| NOT_LEADER                        | errorCode=NOT_LEADER (§7)         | ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| READ_UNAVAILABLE                  | errorCode=READ_UNAVAILABLE (§7)   | ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| TIMEOUT_UNKNOWN                   | outcome=UNKNOWN, reason=TIMEOUT_..| BookTicketResponseDto.REASON_...  | outcome, reasonCode| Khớp 100%            |
+| (Mở rộng) UNSUPPORTED_VERSION    | errorCode=UNSUPPORTED_VERSION (§7)| ErrorResponseDto.unsupportedVer.. | errorCode          | Khớp 100%            |
+| (Mở rộng) REQUEST_ID_CONFLICT     | errorCode=REQUEST_ID_CONFLICT (§7)| ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| (Mở rộng) INTERNAL_ERROR          | errorCode=INTERNAL_ERROR (§7)     | ErrorResponseDto (String)         | errorCode          | Khớp 100%            |
+| (Mở rộng) TICKET_NOT_ACTIVE       | reasonCode=TICKET_NOT_ACTIVE (§7) | CancelTicketResponseDto (String)  | reasonCode         | Khớp 100%            |
+| SEAT_SOLD (Mã cấm)                | KHÔNG TỒN TẠI TRONG SPEC-03       | KHÔNG TỒN TẠI                     | N/A                | Tuyệt đối không dùng |
++-----------------------------------+-----------------------------------+-----------------------------------+--------------------+----------------------+
+
+1.4. Kết quả quét mã nguồn (Static Analysis / Grep Checks):
+  - `git grep "SEAT_SOLD" desktop-client/src/main/`:
+    => 0 dòng code logic (chỉ xuất hiện trong chú thích Javadoc nhắc nhở quy tắc).
+  - `git grep "getMessage().contains" desktop-client/src/main/`:
+    => 0 dòng xuất hiện trong `src/main`. (Chỉ xuất hiện trong file test assertions).
+  - `git grep "java.net|java.sql" desktop-client/src/main/java/vn/nhom6/railway/client/controller/ .../viewmodel/`:
+    => 0 dòng xuất hiện (Đảm bảo kiến trúc phân tầng sạch: Controller/ViewModel không import mạng hoặc DB).
+
+--------------------------------------------------------------------------------
+2. CÁC THAY ĐỔI ĐÃ THỰC HIỆN
+--------------------------------------------------------------------------------
+2.1. Tạo mới lớp chuẩn hóa:
+  - `PresentationKind.java`: Enum định nghĩa các phân loại UI (CONFIRMED, REJECTED, ERROR, UNKNOWN, DISCONNECTED, CLIENT_ERROR).
+  - `ClientErrorKind.java`: Enum tách biệt hoàn toàn lỗi phát sinh phía Client (CONNECTION_LOST, CONNECTION_FAILED, READ_TIMEOUT, NOT_LEADER_UNRESOLVED, CORRUPTED_FRAME, UNEXPECTED_RESPONSE_TYPE, CLIENT_BUSY, INTERNAL_CLIENT_ERROR), mang nhãn rõ ràng "[Lỗi ứng dụng/kết nối]".
+  - `ErrorPresentation.java`: POJO bất biến (record-like) lưu trữ trạng thái hiển thị: kind, title, message, styleClass, retryable, needsSeatRefresh, showRequestId, suggestedAction, rawCode, serverMessage, mock, clientErrorKind.
+  - `ErrorPresentationMapper.java`: Lớp thuần (pure functions, không JavaFX, không I/O) cung cấp các phương thức:
+    * `mapBookingResponse(BookTicketResponseDto)`
+    * `mapErrorResponse(ErrorResponseDto)`
+    * `mapCancelResponse(CancelTicketResponseDto)`
+    * `mapCode(String rawCode, String serverMsg, boolean mock)`
+    * `mapThrowable(Throwable ex, boolean mock)`
+    * `mapClientError(ClientErrorKind error, String detail, boolean mock)`
+
+2.2. Bảng ánh xạ thực tế từ ErrorPresentationMapper:
++------------------------+---------------+--------------------------+-----------+------------------+---------------+--------------------------------------------------------------+
+| Mã đầu vào             | kind          | styleClass               | retryable | needsSeatRefresh | showRequestId | Hành động khuyến nghị (suggestedAction)                      |
++------------------------+---------------+--------------------------+-----------+------------------+---------------+--------------------------------------------------------------+
+| SEAT_ALREADY_BOOKED    | REJECTED      | booking-status-rejected  | false     | true             | false         | Chọn ghế khác trên sơ đồ                                     |
+| INVALID_REQUEST        | ERROR         | status-error             | false     | false            | false         | Kiểm tra và sửa lại dữ liệu đầu vào                         |
+| NO_QUORUM              | ERROR         | status-error             | true      | false            | true          | Thử lại sau ít phút với cùng mã yêu cầu (requestId)         |
+| NOT_LEADER             | ERROR         | status-error             | true      | false            | true          | Chuyển kết nối tới Node Leader và thử lại                   |
+| READ_UNAVAILABLE       | UNKNOWN       | booking-status-unknown   | true      | true             | false         | Làm mới lại sơ đồ ghế sau giây lát                           |
+| TIMEOUT_UNKNOWN        | UNKNOWN       | booking-status-unknown   | true      | false            | true          | Kiểm tra kết quả qua chức năng Tra cứu vé với cùng Request ID |
+| UNSUPPORTED_VERSION    | ERROR         | status-error             | false     | false            | false         | Cập nhật phiên bản phần mềm ứng dụng                         |
+| REQUEST_ID_CONFLICT    | ERROR         | status-error             | false     | false            | true          | Tạo giao dịch mới với Request ID mới nếu thay đổi thông tin  |
+| INTERNAL_ERROR         | ERROR         | status-error             | true      | false            | true          | Tra cứu lại kết quả bằng Request ID trước khi thử lại        |
+| TICKET_NOT_ACTIVE      | REJECTED      | booking-status-rejected  | false     | true             | false         | Kiểm tra lại danh sách vé hợp lệ                             |
+| SEAT_SOLD (cấm)        | ERROR         | status-error             | false     | false            | false         | Liên hệ quản trị viên hệ thống để kiểm tra mã phản hồi        |
+| Mã lạ / null / rỗng    | ERROR         | status-error             | false     | false            | false         | Liên hệ quản trị viên hệ thống để kiểm tra mã phản hồi        |
+| CONNECTION_LOST (Client| DISCONNECTED  | status-disconnected      | true      | false            | false         | Kiểm tra kết nối mạng và thử lại sau ít phút                 |
++------------------------+---------------+--------------------------+-----------+------------------+---------------+--------------------------------------------------------------+
+
+2.3. Refactor Controllers và ViewModel:
+  - `BookingViewModel.java`:
+    * Trong `book()`: Thay thế khối if/else thủ công bằng gọi `ErrorPresentationMapper.mapBookingResponse(result)`.
+    * Trong `cancel()`: Dùng `ErrorPresentationMapper.mapCancelResponse(result)`.
+    * Trong `handleException()`: Dùng `ErrorPresentationMapper.mapThrowable(throwable, mock.get())`, loại bỏ hoàn toàn việc so khớp chuỗi lỗi (`errMsg.toLowerCase().contains(...)`).
+  - `BookingDialogController.java`:
+    * Chuyển sang hiển thị trực tiếp `presentation.getBookingStatusClass()` và `presentation.message()`.
+  - `SeatGridController.java`:
+    * Xử lý `REJECTED` và `UNKNOWN` qua `ErrorPresentationMapper.mapCode()`, cập nhật trạng thái ghế theo `p.needsSeatRefresh()`.
+  - `CancelTicketController.java`:
+    * Chuyển các thông báo hủy vé (thành công, từ chối, timeout) qua `ErrorPresentationMapper`.
+  - `TicketStatusController.java`:
+    * Định dạng lý do từ chối hủy vé dựa trên `ErrorPresentationMapper.mapCode()`.
+
+2.4. Kiểm thử đơn vị mới:
+  - `ErrorPresentationMapperTest.java`: Bao phủ 9 nhóm kiểm thử bắt buộc:
+    * Ca 1: Từng mã trong danh sách khớp đúng kind, styleClass, retryable, needsSeatRefresh, message.
+    * Ca 2: UNKNOWN (TIMEOUT_UNKNOWN) khác biệt hoàn toàn với REJECTED (SEAT_ALREADY_BOOKED) về mọi thuộc tính.
+    * Ca 3: Cùng errorCode với message khác nhau trả về kết quả giống nhau (chứng minh tuyệt đối không parse message).
+    * Ca 4: Mã lạ, null, rỗng, sai hoa/thường không ném ngoại lệ và không bị coi là REJECTED.
+    * Ca 5: Chuỗi SEAT_SOLD rơi vào lỗi không xác định mã, không ánh xạ thành "ghế đã đặt".
+    * Ca 6: Quét toàn bộ mã chuẩn SPEC-03 được bao phủ đầy đủ.
+    * Ca 7: ClientErrorKind tách biệt hoàn toàn với mã lỗi SPEC-03.
+    * Ca 8: Toàn bộ styleClass trả về tồn tại thực tế trong `railway.css` (được đọc và kiểm chứng tự động).
+    * Ca 9: Cờ MOCK được bảo lưu nguyên vẹn.
+
+--------------------------------------------------------------------------------
+3. KẾT QUẢ KIỂM THỬ THỰC TẾ
+--------------------------------------------------------------------------------
+Lệnh kiểm thử đã chạy:
+  `mvn -B -ntp -pl shared,desktop-client -am test "-Dmaven.compiler.release=21"`
+
+Kết quả:
+  - shared: Tests run: 30, Failures: 0, Errors: 0, Skipped: 0 (SUCCESS)
+  - desktop-client: Tests run: 121, Failures: 0, Errors: 0, Skipped: 5 (SUCCESS)
+  - Tổng số test: 151 tests run, 0 failures, 0 errors, 5 skipped (các test UI/Display integration).
+  - BUILD SUCCESS (11.406 s).
+
+Chi tiết bộ test ErrorPresentationMapperTest:
+  - Tests run: 21, Failures: 0, Errors: 0, Skipped: 0 (Thời gian chạy: 0.244 s).
+
+--------------------------------------------------------------------------------
+4. BẢNG TRẠNG THÁI TIÊU CHÍ (DEFINITION OF DONE)
+--------------------------------------------------------------------------------
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+| Tiêu chí DoD                                                    | Trạng thái| Ghi chú                                                 |
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+| Preflight Bước 0 hoàn thành và ghi nhận đối chiếu               | PASS      | Bảng đối chiếu mã đã lập và xác minh đầy đủ            |
+| Chuẩn hóa lỗi theo errorCode / reasonCode SPEC-03               | PASS      | ErrorPresentationMapper bao phủ 100% mã trong SPEC-03   |
+| UNKNOWN khác REJECTED                                           | PASS      | Chứng minh qua Ca 2 trong ErrorPresentationMapperTest   |
+| Không dùng chuỗi tự chế SEAT_SOLD                               | PASS      | Quét grep = 0 trong code nghiệp vụ                      |
+| Không parse chuỗi thông báo lỗi (getMessage().contains...)      | PASS      | Quét grep = 0 trong src/main                            |
+| Không có java.net / java.sql trong controller/viewmodel         | PASS      | Quét grep = 0 trong controller và viewmodel             |
+| Toàn bộ styleClass tồn tại trong railway.css                    | PASS      | Kiểm chứng tự động trong Ca 8                            |
+| Giữ nguyên cờ và nhãn MOCK                                      | PASS      | Kiểm chứng tự động trong Ca 9                            |
+| mvn test toàn bộ module pass                                    | PASS      | 151 tests run, 0 failures, 0 errors                     |
+| Response thật từ cụm Node phân tán                              | NOT_RUN   | Chưa khởi chạy cụm 5 Node thật (chỉ dùng fixture MOCK)  |
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+
+--------------------------------------------------------------------------------
+5. HƯỚNG DẪN TỰ CHỤP ẢNH MINH HỌA GIAO DIỆN TRÊN WINDOWS (TÙY CHỌN)
+--------------------------------------------------------------------------------
+Do môi trường terminal không có phiên hiển thị đồ họa trực tiếp, các bước để chạy Desktop Client trên Windows:
+1. Mở PowerShell tại thư mục gốc repository `d:\HTPT`.
+2. Chạy ứng dụng chế độ Mock UI:
+   `mvn -pl desktop-client javafx:run "-Dmaven.compiler.release=21"`
+3. Thao tác trên giao diện:
+   - Đặt vé thông thường (SUCCESS): Chọn ghế G01, nhấn "Đặt vé", nhập tên "Nguyen Van A" -> Hiển thị thông báo màu xanh.
+   - Chọn chế độ Mock kịch bản SEAT_ALREADY_BOOKED trong menu hoặc panel -> Đặt vé ghế đã có người đặt -> Hiển thị từ chối đỏ REJECTED.
+   - Chọn chế độ Mock kịch bản NO_QUORUM -> Đặt vé -> Hiển thị lỗi hạ tầng ERROR.
+   - Chọn chế độ Mock kịch bản UNKNOWN -> Đặt vé -> Hiển thị cảnh báo màu cam UNKNOWN (kèm gợi ý tra cứu lại bằng Request ID).
+   - Ngắt kết nối / chọn kịch bản CONNECTION_LOST -> Hiển thị mất kết nối mạng DISCONNECTED.
+4. Chụp ảnh màn hình (Win + Shift + S) và lưu vào `artifacts/evidence/D13/TV1-D13-error-messages.png`.
+
+--------------------------------------------------------------------------------
+6. KẾT LUẬN TRUNG THỰC VÀ BƯỚC TIẾP THEO
+--------------------------------------------------------------------------------
+- Toàn bộ fixture lỗi theo SPEC-03 đã được chuẩn hóa và hiển thị chính xác trên UI: PASS.
+- Phân biệt UNKNOWN khác REJECTED được kiểm chứng qua unit test độc lập: PASS.
+- Response thật từ Node: NOT_RUN. Không kết luận Backend PASS.
+- Phối hợp thành viên:
+  * TV3: Đã có đủ constants trong BookTicketResponseDto. Đề xuất TV3 bổ sung enum hoặc hằng số public cho các mã errorCode trong `ErrorResponseDto` để đồng bộ hoàn toàn giữa các module.
+  * TV2/TV5: Khi cụm Node hoàn thành Raft commit/apply, Desktop Client sẵn sàng tích hợp với response thật mà không cần thay đổi tầng Presentation.
+

@@ -18,6 +18,9 @@ import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.client.network.GetSeatsResponseDto;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
+import vn.nhom6.railway.client.controller.ErrorPresentation;
+import vn.nhom6.railway.client.controller.ErrorPresentationMapper;
+import vn.nhom6.railway.client.controller.PresentationKind;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -143,41 +146,42 @@ public class BookingViewModel {
             }
 
             mock.set(result.isMock());
-            if (result.isConfirmed()) {
-                uiState.set(UiState.SUCCESS);
-                errorCode.set("");
-                leaderHint.set(result.getLeaderHint() != null ? result.getLeaderHint() : "");
-                message.set("✓ Đặt vé thành công! Mã vé: " + result.getTicketId() + " (Ghế " + result.getSeatId() + ") [MOCK]");
-            } else if (result.isRejected()) {
-                uiState.set(UiState.REJECTED);
-                errorCode.set(result.getReasonCode() != null ? result.getReasonCode() : "SEAT_ALREADY_BOOKED");
-                message.set("✗ Ghế " + result.getSeatId() + " đã có người đặt (" + errorCode.get() + ") [MOCK]");
-            } else {
-                // Trạng thái UNKNOWN (bao gồm TIMEOUT_UNKNOWN, NOT_LEADER, NO_QUORUM)
-                String reason = result.getReasonCode() != null ? result.getReasonCode() : "TIMEOUT_UNKNOWN";
-                errorCode.set(reason);
-                if ("NOT_LEADER".equalsIgnoreCase(reason)) {
-                    uiState.set(UiState.ERROR);
-                    String hint = (result.getLeaderHint() != null && !result.getLeaderHint().isBlank()) ? result.getLeaderHint().trim() : "";
-                    leaderHint.set(hint);
-                    message.set("⚡ Lỗi định tuyến: Node không phải Leader!"
-                            + (hint.isEmpty() ? "" : " Gợi ý kết nối: " + hint)
-                            + (result.isMock() ? " [MOCK]" : ""));
-                    try {
-                        ClusterConnectionViewModel clusterVm = vn.nhom6.railway.client.ClientFactory.getClusterConnectionViewModel();
-                        if (clusterVm != null && !hint.isEmpty()) {
-                            clusterVm.applyLeaderHint(hint, result.isMock()
-                                    ? vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.MOCK
-                                    : vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.REAL);
-                        }
-                    } catch (Exception ignored) {
-                    }
-                } else if ("NO_QUORUM".equalsIgnoreCase(reason)) {
-                    uiState.set(UiState.ERROR);
-                    message.set("⚡ Lỗi cụm: Không đủ đa số (Quorum 3/5) để cam kết an toàn! [MOCK]");
-                } else {
+            ErrorPresentation presentation = ErrorPresentationMapper.mapBookingResponse(result);
+            message.set(presentation.message());
+            errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
+
+            switch (presentation.kind()) {
+                case CONFIRMED -> {
+                    uiState.set(UiState.SUCCESS);
+                    leaderHint.set(result.getLeaderHint() != null ? result.getLeaderHint() : "");
+                }
+                case REJECTED -> {
+                    uiState.set(UiState.REJECTED);
+                }
+                case UNKNOWN -> {
                     uiState.set(UiState.UNKNOWN);
-                    message.set("⚠ Chưa xác định kết quả đặt vé (" + reason + ")! Vui lòng tra cứu lại với requestId. [MOCK]");
+                }
+                case ERROR -> {
+                    uiState.set(UiState.ERROR);
+                    if (ErrorPresentationMapper.CODE_NOT_LEADER.equals(presentation.rawCode())) {
+                        String hint = (result.getLeaderHint() != null && !result.getLeaderHint().isBlank()) ? result.getLeaderHint().trim() : "";
+                        leaderHint.set(hint);
+                        try {
+                            ClusterConnectionViewModel clusterVm = vn.nhom6.railway.client.ClientFactory.getClusterConnectionViewModel();
+                            if (clusterVm != null && !hint.isEmpty()) {
+                                clusterVm.applyLeaderHint(hint, result.isMock()
+                                        ? vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.MOCK
+                                        : vn.nhom6.railway.client.network.ClusterStatusClient.DataSource.REAL);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                case DISCONNECTED -> {
+                    uiState.set(UiState.DISCONNECTED);
+                }
+                case CLIENT_ERROR -> {
+                    uiState.set(UiState.ERROR);
                 }
             }
             completionFuture.complete(result);
@@ -219,17 +223,17 @@ public class BookingViewModel {
             }
 
             mock.set(result.isMock());
-            if (result.isConfirmed()) {
-                uiState.set(UiState.SUCCESS);
-                message.set("✓ Hủy vé " + result.getTicketId() + " thành công! Ghế đã được giải phóng. [MOCK]");
-            } else if (result.isRejected()) {
-                uiState.set(UiState.REJECTED);
-                errorCode.set(result.getReasonCode() != null ? result.getReasonCode() : "TICKET_NOT_ACTIVE");
-                message.set("✗ Từ chối hủy vé (" + errorCode.get() + ") [MOCK]");
-            } else {
-                uiState.set(UiState.UNKNOWN);
-                errorCode.set(result.getReasonCode() != null ? result.getReasonCode() : "TIMEOUT_UNKNOWN");
-                message.set("⚠ Chưa rõ kết quả hủy vé (" + errorCode.get() + ") [MOCK]");
+            ErrorPresentation presentation = ErrorPresentationMapper.mapCancelResponse(result);
+            message.set(presentation.message());
+            errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
+
+            switch (presentation.kind()) {
+                case CONFIRMED -> uiState.set(UiState.SUCCESS);
+                case REJECTED -> uiState.set(UiState.REJECTED);
+                case UNKNOWN -> uiState.set(UiState.UNKNOWN);
+                case ERROR -> uiState.set(UiState.ERROR);
+                case DISCONNECTED -> uiState.set(UiState.DISCONNECTED);
+                case CLIENT_ERROR -> uiState.set(UiState.ERROR);
             }
             completionFuture.complete(result);
         }));
@@ -278,18 +282,13 @@ public class BookingViewModel {
     }
 
     private void handleException(Throwable throwable) {
-        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-        String errMsg = cause.getMessage() != null ? cause.getMessage() : cause.toString();
-
-        if (cause instanceof java.io.IOException || errMsg.toLowerCase().contains("mất kết nối") || errMsg.toLowerCase().contains("timeout")
-                || errMsg.toLowerCase().contains("socket") || errMsg.toLowerCase().contains("connection")) {
+        ErrorPresentation presentation = ErrorPresentationMapper.mapThrowable(throwable, mock.get());
+        message.set(presentation.message());
+        errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
+        if (presentation.kind() == PresentationKind.DISCONNECTED) {
             uiState.set(UiState.DISCONNECTED);
-            errorCode.set("CONNECTION_LOST");
-            message.set("❌ Mất kết nối tới cụm máy chủ: " + errMsg + " [MOCK]");
         } else {
             uiState.set(UiState.ERROR);
-            errorCode.set("INTERNAL_ERROR");
-            message.set("❌ Đã xảy ra lỗi: " + errMsg + " [MOCK]");
         }
     }
 

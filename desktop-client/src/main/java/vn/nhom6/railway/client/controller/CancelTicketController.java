@@ -207,25 +207,27 @@ public class CancelTicketController {
             }
             case REJECTED_NOT_CANCELLABLE -> {
                 // Từ chối hủy: vé giữ nguyên CONFIRMED
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE, true);
                 setBoxStyle(resultBox, "cancel-box-rejected");
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("⛔ TỪ CHỐI HỦY VÉ (REJECTED: NOT_CANCELLABLE)!");
+                    resultTitleLabel.setText("⛔ TỪ CHỐI HỦY VÉ (REJECTED: " + p.rawCode() + ")!");
                     setLabelStyle(resultTitleLabel, "cancel-title-rejected");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText("Lý do: Vé quá thời hạn quy định hoàn vé trước giờ tàu chạy (SPEC-06). Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.");
+                    resultDetailLabel.setText("Lý do: " + p.message() + " Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.");
                     setLabelStyle(resultDetailLabel, "cancel-detail-rejected");
                 }
             }
             case UNKNOWN_TIMEOUT -> {
                 // SPEC-06: UNKNOWN/timeout không được hiển thị như đã hủy thành công và không được tự đổi trạng thái vé thành CANCELLED
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, true);
                 setBoxStyle(resultBox, "cancel-box-unknown");
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("⚠ CHƯA XÁC ĐỊNH KẾT QUẢ (TIMEOUT / MẤT KẾT NỐI)!");
+                    resultTitleLabel.setText("⚠ " + p.title().toUpperCase() + "!");
                     setLabelStyle(resultTitleLabel, "cancel-title-unknown");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText("Không nhận được phản hồi từ cụm máy chủ. Vé KHÔNG bị đổi thành Đã hủy. Vui lòng tra cứu lại theo mã Request ID!");
+                    resultDetailLabel.setText(p.message() + " Vui lòng tra cứu lại theo mã Request ID!");
                     setLabelStyle(resultDetailLabel, "cancel-detail-unknown");
                 }
             }
