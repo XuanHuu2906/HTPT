@@ -1,0 +1,180 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 56 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 50 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+Nov 13, 2026 4:45:12 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Inconsistent checkpoint: last_applied (5) exceeds lastLogIndex (1)
+Nov 13, 2026 4:45:12 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Raft log has a gap: expected index 2 but found 3
+Nov 13, 2026 4:45:13 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 4:45:13 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:13 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:13 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 4:45:13 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=3, votedFor=node-2, lastLogIndex=3, lastLogTerm=3, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_8199d321c28d40359ea18bb2b33180db
+================================================================================
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42471 (maxThreads=4, soTimeout=1000ms)
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32895 (maxThreads=4, soTimeout=1000ms)
+[READY] node-1 client=42471 raft=32895
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42471 stopped.
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32895 stopped.
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_7426b7d772ab4b498bbf6a3231e42524
+================================================================================
+Nov 13, 2026 4:45:14 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 4:45:15 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+Nov 13, 2026 4:45:16 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+[ERROR] Tests run: 12, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 4.400 s <<< FAILURE! -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+[ERROR] vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests.missingSchemaPreventsNodeStartupAndSocketBinding -- Time elapsed: 0.033 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <0> but was: <-1>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:145)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:531)
+	at vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests.missingSchemaPreventsNodeStartupAndSocketBinding(PersistenceRestartTest.java:549)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+Nov 13, 2026 4:45:16 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-2, lastLogIndex=3, lastLogTerm=2, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.431 s -- in vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests.missingSchemaPreventsNodeStartupAndSocketBinding:549 expected: <0> but was: <-1>
+[INFO] 
+[ERROR] Tests run: 18, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.415 s]
+[INFO] backend-node ....................................... FAILURE [  7.606 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.096 s
+[INFO] Finished at: 2026-11-13T16:45:16+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.2:test (default-test) on project backend-node: There are test failures.
+[ERROR] 
+[ERROR] See /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :backend-node

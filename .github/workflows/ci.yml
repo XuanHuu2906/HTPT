@@ -16,6 +16,25 @@ jobs:
     name: Maven Clean Test (Baseline D07)
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: railway_test
+          POSTGRES_PASSWORD: ci_ephemeral_test
+          POSTGRES_DB: railway_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U railway_test -d railway_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      RAILWAY_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/railway_test
+      RAILWAY_TEST_DB_USER: railway_test
+      RAILWAY_TEST_DB_PASSWORD: ci_ephemeral_test
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,10 +54,13 @@ jobs:
           mvn -version
 
       - name: Standardized Maven Clean Test
-        run: mvn -B -ntp clean test
+        run: mvn -B -ntp -Drailway.requirePostgres=true clean test
         env:
           HEADLESS: "true"
           JAVA_TOOL_OPTIONS: "-Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless"
+
+      - name: Require real PostgreSQL D13 results (no skips)
+        run: python3 scripts/check-d13-reports.py
 
       - name: Organize Evidence & Test Results
         if: always()
