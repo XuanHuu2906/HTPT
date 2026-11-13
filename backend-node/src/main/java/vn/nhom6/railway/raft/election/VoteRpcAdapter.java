@@ -49,12 +49,16 @@ public final class VoteRpcAdapter implements CandidateElection.VoteTransport {
         var envelope = MessageEnvelope.createRequest(MessageType.REQUEST_VOTE, localId,
                 new RequestVoteRequestDto(request.getTerm(), localId,
                         request.getLastLogIndex(), request.getLastLogTerm()));
+        final long requestTerm = request.getTerm();
         CompletableFuture<MessageEnvelope<JsonNode>> pending;
         try { pending = Objects.requireNonNull(client.exchange(peerId, envelope)); }
         catch (RuntimeException unavailable) { return; }
-        // A private deadline future prevents late replies from producing a vote, without
-        // mutating the client's shared future. Transport failures mean no vote.
-        pending.copy().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS).whenComplete((response, failure) -> {
+        // Timeout invalidates the grant, but a late correlated higher term must still step down.
+        var completed = new java.util.concurrent.atomic.AtomicBoolean();
+        CompletableFuture.delayedExecutor(timeoutMillis, TimeUnit.MILLISECONDS)
+                .execute(() -> completed.compareAndSet(false, true));
+        pending.whenComplete((response, failure) -> {
+            boolean onTime = completed.compareAndSet(false, true);
             if (failure != null) return;
             RequestVoteResponse vote;
             try {
@@ -70,6 +74,7 @@ public final class VoteRpcAdapter implements CandidateElection.VoteTransport {
                 vote = new RequestVoteResponse(payload.get("term").longValue(),
                         payload.get("voteGranted").booleanValue());
             } catch (RuntimeException invalid) { return; }
+            if (!onTime && vote.term() <= requestTerm) return;
             // Keep lifecycle/storage errors separate from transport errors.
             try {
                 raftLoop.execute(() -> {

@@ -1,0 +1,12 @@
+5c5becd29b04540e0c42fb44fb0bd97995812f533545943367eed148fce354ce  backend-node/src/main/java/vn/nhom6/railway/raft/core/PersistentRaftNode.java
+b3369d5e1e4fae752b9d8e5a15a271f720c51d1d64e227f4c6f99175a3fbeb2f  backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java
+1369e3abbbf2ea619ecaefe23147e009f1d59e9791b53d35c8d80a0978ce8bc6  backend-node/src/main/java/vn/nhom6/railway/networking/RaftRpcClient.java
+1dcca1060e5b0e4747e914a7a369e99d9482fa64cafc2c914741c7f00308720c  backend-node/src/main/java/vn/nhom6/railway/networking/ElectionRuntime.java
+1efb5ce158c1eb020f76d6c3218eecc0637b9276ad83aae8d87c13cd83664f57  backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionComponent.java
+058b470a42da28737fbb4536706058cd227dc5f27f983adb70712c429e76a0e0  backend-node/src/main/java/vn/nhom6/railway/raft/election/VoteRpcAdapter.java
+c2926df67c1eadf4c790a274a98ef499e4987670c33797e40f4032458c18a931  backend-node/src/test/java/vn/nhom6/railway/raft/election/PersistentElectionRuntimeTest.java
+f7637f7c5e6b925836aa4c426b91b1186071b7f03c596aa68f195d831a649713  backend-node/src/test/java/vn/nhom6/railway/raft/election/VoteRpcAdapterTest.java
+0c03541dc7bd87301e41f743fd9ce14bc29a9580896424d4f254485d72a69a73  backend-node/src/test/java/vn/nhom6/railway/networking/RaftRpcServerHandlersTcpIntegrationTest.java
+d6122518a0bd4b1001a559ba25abc8731f395f97474d11504a9262f15da34dc0  docker/compose.election-test.yml
+799883aff5e54bccbbbb1d6381d44f7f7ec781cf933b990096c59da57880e2b8  scripts/test-election-docker.py
+5d3bf525983f97a4cd0d2c6a60e670c3134fcd7c77890e90519ecfa14cd15ae6  .github/workflows/ci.yml

@@ -161,6 +161,12 @@ class RaftRpcServerHandlersTcpIntegrationTest {
     @DisplayName("Should handle 100 concurrent interleaved RPCs (50 VOTE + 50 APPEND) over reused TCP connection")
     void testConcurrentInboundRpcsOverTcp() throws Exception {
         int totalRequests = 100;
+        // This test measures server multiplexing; permit the full submitted burst.
+        // Backpressure at a lower bound is verified separately in RpcCorrelationRegistryTest.
+        client.close();
+        client = new RaftRpcClient(remoteNodeId,
+                Map.of(localNodeId, new InetSocketAddress("127.0.0.1", serverPort)),
+                totalRequests, 5000, Duration.ofSeconds(3));
         List<CompletableFuture<?>> futures = new ArrayList<>(totalRequests);
 
         for (int i = 0; i < totalRequests; i++) {

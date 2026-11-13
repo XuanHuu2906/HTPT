@@ -26,3 +26,5 @@ Không cần nộp 5 file `booking-implementation-checklist.md`, `contract-imple
 ## Cập nhật TV2 D11–D13
 
 [Tiến độ và phụ thuộc D11–D13](TV2-D11-D13-progress.md) ghi nhận kiểm thử PostgreSQL thật, startup recovery, kill/restart Backend và phần tích hợp Raft còn thiếu. [Minh chứng thực chạy](../../artifacts/evidence/D13/TV2-startup/README.md).
+
+[D13 — election runtime 5 Node](D13-election-runtime.md) cập nhật core dùng chung state/persistence, TCP vote/heartbeat, step-down và minh chứng Docker 3/5–2/5.

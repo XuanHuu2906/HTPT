@@ -57,9 +57,19 @@ class VoteRpcAdapterTest {
         rpc.responses.get(1).completeExceptionally(new java.io.IOException("disconnected"));
         // Let the adapter's actual deadline expire before completing the transport future.
         Thread.sleep(150);
-        rpc.respond(0, "node-2", rpc.requests.get(0).getMessageId(), Map.of("term", 9, "voteGranted", true));
+        rpc.respond(0, "node-2", rpc.requests.get(0).getMessageId(), Map.of("term", 1, "voteGranted", true));
         drain();
         assertTrue(loop.isEmpty());
+        assertTrue(failures.isEmpty());
+    }
+
+    @Test void lateHigherTermStillReachesLifecycleWithoutCountingOldGrant() throws Exception {
+        var replies = new ArrayList<RaftNode.RequestVoteResponse>();
+        adapter(20).requestVote("node-2", request(), replies::add);
+        Thread.sleep(150);
+        rpc.respond(0, "node-2", rpc.requests.get(0).getMessageId(), Map.of("term", 9, "voteGranted", false));
+        drain();
+        assertEquals(List.of(new RaftNode.RequestVoteResponse(9, false)), replies);
         assertTrue(failures.isEmpty());
     }
 

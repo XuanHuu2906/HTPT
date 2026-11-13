@@ -1,6 +1,8 @@
 # TV2 — Tiến độ D11–D13 và các sửa chữa ưu tiên
 
-Cập nhật 2026-11-13. Bảng này ghi nhận kết quả trong repository, không thay bảng kế hoạch 180 nhiệm vụ/Google Sheets MASTER (chưa cập nhật bảng ngoài repository). Không gán xác nhận review của TV3/TV4/TV5/TV6 khi chưa có.
+Cập nhật 2026-11-13. **Bổ sung sau báo cáo này:** [D13 election runtime](D13-election-runtime.md) đã nối core/election/TCP; phần còn thiếu là Leader majority commit/apply/read barrier. Các mô tả thiếu implementation bên dưới là trạng thái ở lượt TV2 trước.
+
+Bảng này ghi nhận kết quả trong repository, không thay bảng kế hoạch 180 nhiệm vụ/Google Sheets MASTER (chưa cập nhật bảng ngoài repository). Không gán xác nhận review của TV3/TV4/TV5/TV6 khi chưa có.
 
 | Ưu tiên | Công việc | Owner / phối hợp | Trạng thái thực tế | Căn cứ / phần còn lại |
 |---|---|---|---|---|

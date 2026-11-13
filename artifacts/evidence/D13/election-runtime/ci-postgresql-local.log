@@ -1,0 +1,2036 @@
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/share/maven/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] desktop-client                                                     [jar]
+[INFO] desktop-monitor                                                    [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/6]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ railway-distributed-system ---
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/6]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ shared ---
+[INFO] Deleting /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 14 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+[INFO] Running vn.nhom6.railway.protocol.MessageCodecNegativeTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.178 s -- in vn.nhom6.railway.protocol.MessageCodecNegativeTest
+[INFO] Running vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in vn.nhom6.railway.protocol.MessageEnvelopeTest
+[INFO] Running vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.protocol.PayloadDtoTest
+[INFO] Running vn.nhom6.railway.protocol.ProtocolContractTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in vn.nhom6.railway.protocol.ProtocolContractTest
+[INFO] Running vn.nhom6.railway.protocol.RaftResponseDtoTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in vn.nhom6.railway.protocol.RaftResponseDtoTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/6]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ backend-node ---
+[INFO] Deleting /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 58 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 51 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in vn.nhom6.railway.booking.BookingCommandTest$NameBoundaryWithUnicode
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultInvalidCombinations
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.booking.BookingCommandTest$RejectedVsUnknown
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultCancelFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.booking.BookingCommandTest$ApplyResultBookFactory
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in vn.nhom6.railway.booking.BookingCommandTest$NoOpTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.booking.BookingCommandTest$CancelTicketTests
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketInvalid
+[INFO] Running vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.booking.BookingCommandTest$BookTicketValid
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.113 s -- in vn.nhom6.railway.booking.BookingCommandTest
+[INFO] Running vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.booking.BookingRaftContractTest
+[INFO] Running vn.nhom6.railway.booking.BookingRequestHandlerTest
+=== FAKE/LOCAL PostgreSQL snapshot (1 Node; no Raft cluster proof) ===
+-- seats: SELECT trip_id, seat_id, status, current_ticket_id FROM seats ORDER BY trip_id, seat_id
+trip_id | seat_id | status | current_ticket_id
+SE-001 | G01 | BOOKED | ticket-db-1
+SE-001 | G02 | AVAILABLE | null
+SE-001 | G03 | AVAILABLE | null
+SE-001 | G04 | AVAILABLE | null
+SE-001 | G05 | AVAILABLE | null
+SE-001 | G06 | AVAILABLE | null
+SE-001 | G07 | AVAILABLE | null
+SE-001 | G08 | AVAILABLE | null
+SE-001 | G09 | AVAILABLE | null
+SE-001 | G10 | AVAILABLE | null
+-- tickets: SELECT ticket_id, trip_id, seat_id, passenger_name, status, issued_at FROM tickets ORDER BY ticket_id
+ticket_id | trip_id | seat_id | passenger_name | status | issued_at
+ticket-db-1 | SE-001 | G01 | Linh | ACTIVE | 2026-11-11 07:00:00.123
+-- request_results: SELECT request_id, command_type, state, reason_code, ticket_id, applied_log_index, result_json FROM request_results ORDER BY request_id
+request_id | command_type | state | reason_code | ticket_id | applied_log_index | result_json
+11111111-1111-1111-1111-111111111111 | BOOK_TICKET | APPLIED_SUCCESS | null | ticket-db-1 | 1 | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+22222222-2222-2222-2222-222222222222 | BOOK_TICKET | APPLIED_REJECTED | SEAT_ALREADY_BOOKED | null | 4 | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- business_events: SELECT log_index, request_id, event_type, event_json FROM business_events ORDER BY log_index
+log_index | request_id | event_type | event_json
+1 | 11111111-1111-1111-1111-111111111111 | BOOK_CONFIRMED | {"seatId": "G01", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "ticket-db-1", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}
+4 | 22222222-2222-2222-2222-222222222222 | BOOK_REJECTED | {"seatId": "G01", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "22222222-2222-2222-2222-222222222222", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}
+-- raft_apply_progress: SELECT singleton, last_applied FROM raft_apply_progress ORDER BY singleton
+singleton | last_applied
+1 | 5
+SPEC-07 §5 checks: seats=10 (expected 10), duplicate ACTIVE seats=0 (expected 0), duplicate requestIds=0 (expected 0), last_applied=5
+=== END FAKE/LOCAL PostgreSQL snapshot ===
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.921 s -- in vn.nhom6.railway.booking.BookingRequestHandlerTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$CancelBasic
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Determinism
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$OrderingViolation
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$NoOpTest
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdDifferentIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$ReplayRequestIdSameIntent
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookDuplicate
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$BookAvailable
+[INFO] Running vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in vn.nhom6.railway.booking.BookingStateMachineTest$Init
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in vn.nhom6.railway.booking.BookingStateMachineTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+Nov 13, 2026 5:15:16 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Inconsistent checkpoint: last_applied (5) exceeds lastLogIndex (1)
+Nov 13, 2026 5:15:16 PM vn.nhom6.railway.persistence.DbStateLoader logAndWrap
+SEVERE: DbStateLoader error during load durable Raft state: Raft log has a gap: expected index 2 but found 3
+Nov 13, 2026 5:15:16 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=3, votedFor=node-2, lastLogIndex=3, lastLogTerm=3, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=1, lastLogTerm=1, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_8fc4a859ee9c45d789227189fdc2e059
+================================================================================
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37415 (maxThreads=4, soTimeout=1000ms)
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39349 (maxThreads=4, soTimeout=1000ms)
+[READY] node-1 client=37415 raft=39349
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37415 stopped.
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39349 stopped.
+Nov 13, 2026 5:15:17 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 13, 2026 5:15:18 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_a3f63f55adee41938ffb2bc97600b3e0
+================================================================================
+Nov 13, 2026 5:15:18 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:18 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-3, lastLogIndex=3, lastLogTerm=2, lastApplied=2, initialCommitIndex=2, bootstrapType=RESTART
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.413 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=2, votedFor=node-2, lastLogIndex=3, lastLogTerm=2, lastApplied=1, initialCommitIndex=1, bootstrapType=RESTART
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.421 s -- in vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.networking.AppendEntriesRpcHandlerTest
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.AppendEntriesRpcHandler handle
+WARNING: [node-1] Malformed AppendEntries payload: term must be >= 0, got: -1
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.AppendEntriesRpcHandler handle
+SEVERE: Internal error processing AppendEntries from node-2
+java.io.IOException: Raft log persistence error
+	at vn.nhom6.railway.networking.FakeRaftRequestHandler.handleAppendEntries(FakeRaftRequestHandler.java:60)
+	at vn.nhom6.railway.networking.AppendEntriesRpcHandler.handle(AppendEntriesRpcHandler.java:97)
+	at vn.nhom6.railway.networking.AppendEntriesRpcHandlerTest.testHandleProcessorFailure(AppendEntriesRpcHandlerTest.java:166)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.networking.AppendEntriesRpcHandlerTest
+[INFO] Running vn.nhom6.railway.networking.BookTicketHandlerTest
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: seatId must be within G01-G10, got: G11
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: tripId must be SE-001, got: SE-999
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: passengerName must not be blank
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.BookTicketHandler handle
+INFO: [node-1] Rejecting BOOK_TICKET as NOT_LEADER, leaderHint=node-2
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.networking.BookTicketHandlerTest
+[INFO] Running vn.nhom6.railway.networking.BookingTcpIntegrationTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43759 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43259 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=43759 raft=43259
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.BookTicketHandler handle
+WARNING: BOOK_TICKET validation failure: seatId must be within G01-G10, got: G99
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43759 stopped.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43259 stopped.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in vn.nhom6.railway.networking.BookingTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.FramingTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.networking.FramingTest
+[INFO] Running vn.nhom6.railway.networking.GetSeatsHandlerTest
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.GetSeatsHandler handle
+WARNING: GET_SEATS validation failure: tripId must be SE-001 in v1, got: SE-999
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.GetSeatsHandler handle
+INFO: [node-1] Rejecting GET_SEATS as NOT_LEADER, leaderHint=node-3
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.networking.GetSeatsHandlerTest
+[INFO] Running vn.nhom6.railway.networking.MessageDispatcherTest
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-monitor message rejected on MONITOR channel: GET_SEATS from sender=client-1
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Handler validation failed for type GET_SEATS: Response phải có correlationId là UUID hợp lệ
+java.lang.IllegalArgumentException: Response phải có correlationId là UUID hợp lệ
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:146)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.lambda$testHandlerResponseMissingCorrelationIdGetsAttached$0(MessageDispatcherTest.java:305)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.testHandlerResponseMissingCorrelationIdGetsAttached(MessageDispatcherTest.java:312)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+SEVERE: Handler threw unhandled exception for type BOOK_TICKET: Simulated unexpected database failure
+java.lang.RuntimeException: Simulated unexpected database failure
+	at vn.nhom6.railway.networking.MessageDispatcherTest.lambda$testHandlerExceptionReturnsInternalError$0(MessageDispatcherTest.java:224)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.MessageDispatcherTest.testHandlerExceptionReturnsInternalError(MessageDispatcherTest.java:232)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Unexpected response message type arriving on request dispatcher: BOOK_TICKET_RESPONSE, messageId=6f716a79-cb0d-4439-a8bc-9e6df6b1e8c4
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39657 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-hack
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39657 stopped.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: No handler registered for message type: GET_SEATS
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Received null request envelope in MessageDispatcher
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: No handler registered for message type: CANCEL_TICKET
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: BOOK_TICKET from sender=client-1
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.networking.MessageDispatcherTest
+[INFO] Running vn.nhom6.railway.networking.NodeMainTest
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/backend-node/../configs/lan/node-1.properties
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34625 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36643 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=34625 raft=36643
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34625 stopped.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36643 stopped.
+Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[Subprocess Node] Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+[Subprocess Node] Nov 13, 2026 5:15:19 PM vn.nhom6.railway.networking.NodeConfig load
+[Subprocess Node] INFO: Loaded configuration from file: /tmp/node-subprocess-14723412000776810131.properties
+[Subprocess Node] ================================================================================
+[Subprocess Node]  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+[Subprocess Node] ================================================================================
+[Subprocess Node]   Node ID          : node-sub-1
+[Subprocess Node]   Cluster ID       : railway-demo-5
+[Subprocess Node]   Client Port      : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Raft Peer Port   : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Database Target  : None (In-Memory / Test Mode)
+[Subprocess Node] ================================================================================
+[Subprocess Node] Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.NodeMain start
+[Subprocess Node] WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+[Subprocess Node] Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 41977 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 46621 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] [READY] node-sub-1 client=41977 raft=46621
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.245 s -- in vn.nhom6.railway.networking.NodeMainTest
+[INFO] Running vn.nhom6.railway.networking.RaftRpcServerHandlersTcpIntegrationTest
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40205 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40205 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33185 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33185 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41895 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41895 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35729 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Unexpected character ('}' (code 125)): was expecting a colon to separate field name and value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 104]
+com.fasterxml.jackson.core.JsonParseException: Unexpected character ('}' (code 125)): was expecting a colon to separate field name and value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 104]
+	at com.fasterxml.jackson.core.JsonParser._constructReadException(JsonParser.java:2672)
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportUnexpectedChar(ParserMinimalBase.java:742)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._skipColon2(UTF8StreamJsonParser.java:3215)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._skipColon(UTF8StreamJsonParser.java:3144)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser.nextToken(UTF8StreamJsonParser.java:761)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:425)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35729 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40467 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40467 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33229 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33229 stopped.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in vn.nhom6.railway.networking.RaftRpcServerHandlersTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34523 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38417 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42085 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38417 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42085 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34773 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42181 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34773 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42181 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34477 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40811 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34477 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40811 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46145 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37905 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46145 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+SEVERE: Handler threw unhandled exception for type REQUEST_VOTE: sleep interrupted
+java.lang.InterruptedException: sleep interrupted
+	at java.base/java.lang.Thread.sleepNanos0(Native Method)
+	at java.base/java.lang.Thread.sleepNanos(Thread.java:509)
+	at java.base/java.lang.Thread.sleep(Thread.java:540)
+	at vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest.lambda$testTimeoutOnUnresponsivePeer$0(RaftRpcTcpIntegrationTest.java:236)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:230)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Socket closed
+java.net.SocketException: Socket closed
+	at java.base/sun.nio.ch.NioSocketImpl.ensureOpenAndConnected(NioSocketImpl.java:162)
+	at java.base/sun.nio.ch.NioSocketImpl.beginWrite(NioSocketImpl.java:370)
+	at java.base/sun.nio.ch.NioSocketImpl.implWrite(NioSocketImpl.java:415)
+	at java.base/sun.nio.ch.NioSocketImpl.write(NioSocketImpl.java:448)
+	at java.base/sun.nio.ch.NioSocketImpl$2.write(NioSocketImpl.java:821)
+	at java.base/java.net.Socket$SocketOutputStream.implWrite(Socket.java:1086)
+	at java.base/java.net.Socket$SocketOutputStream.write(Socket.java:1076)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(BufferedOutputStream.java:123)
+	at java.base/java.io.BufferedOutputStream.flush(BufferedOutputStream.java:203)
+	at vn.nhom6.railway.protocol.dto.FrameCodec.writeFrame(FrameCodec.java:58)
+	at vn.nhom6.railway.protocol.dto.FrameCodec.writeMessage(FrameCodec.java:93)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:233)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37905 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44591 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33915 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44591 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33915 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40835 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36821 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40835 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36821 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36019 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45703 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45703 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35233 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36019 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35233 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42523 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37377 (maxThreads=32, soTimeout=15000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42523 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37377 stopped.
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.416 s -- in vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.RequestVoteRpcHandlerTest
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.RequestVoteRpcHandler handle
+WARNING: [node-1] Malformed RequestVote payload: term must be >= 0, got: -1
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.RequestVoteRpcHandler handle
+SEVERE: Internal error processing RequestVote from node-2
+java.io.IOException: Database disk failure
+	at vn.nhom6.railway.networking.FakeRaftRequestHandler.handleRequestVote(FakeRaftRequestHandler.java:44)
+	at vn.nhom6.railway.networking.RequestVoteRpcHandler.handle(RequestVoteRpcHandler.java:108)
+	at vn.nhom6.railway.networking.RequestVoteRpcHandlerTest.testHandleProcessorFailure(RequestVoteRpcHandlerTest.java:150)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.networking.RequestVoteRpcHandlerTest
+[INFO] Running vn.nhom6.railway.networking.RpcCorrelationRegistryTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in vn.nhom6.railway.networking.RpcCorrelationRegistryTest
+[INFO] Running vn.nhom6.railway.networking.TcpServerClientTest
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44987 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44987 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40601 (maxThreads=8, soTimeout=10000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33249 (maxThreads=8, soTimeout=10000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40601 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33249 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40965 (maxThreads=4, soTimeout=1000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40965 stopped.
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44607 (maxThreads=4, soTimeout=5000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44607 stopped.
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40623 (maxThreads=16, soTimeout=10000ms)
+Nov 13, 2026 5:15:20 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39909 (maxThreads=8, soTimeout=10000ms)
+[ChildProcess] ProcessEchoNode: Server started on port 40623
+[ChildProcess] ProcessEchoNode: Connected to target port 39909, sending 100 messages...
+[ChildProcess] ProcessEchoNode: Successfully sent 100 messages and verified responses.
+[ChildProcess] ProcessEchoNode: All 100 messages from peer successfully processed.
+[ChildProcess] ProcessEchoNode: Exiting with success (code 0).
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39909 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37723 (maxThreads=4, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37723 stopped.
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.715 s -- in vn.nhom6.railway.networking.TcpServerClientTest
+[INFO] Running vn.nhom6.railway.networking.TcpSingleNodeProtocolTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35259 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43075 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=35259 raft=43075
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35259 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43075 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41843 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42767 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=41843 raft=42767
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41843 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42767 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46189 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36815 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=46189 raft=36815
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46189 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36815 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40265 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35475 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=40265 raft=35475
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40265 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35475 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36379 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45345 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=36379 raft=45345
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36379 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45345 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39999 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40739 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=39999 raft=40739
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39999 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40739 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43535 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43991 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=43535 raft=43991
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43535 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43991 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44171 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43207 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=44171 raft=43207
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Unexpected character ('b' (code 98)): was expecting double-quote to start field name
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+com.fasterxml.jackson.core.JsonParseException: Unexpected character ('b' (code 98)): was expecting double-quote to start field name
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]
+	at com.fasterxml.jackson.core.JsonParser._constructReadException(JsonParser.java:2672)
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportUnexpectedChar(ParserMinimalBase.java:742)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._handleOddName(UTF8StreamJsonParser.java:2103)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._parseName(UTF8StreamJsonParser.java:1753)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser.nextToken(UTF8StreamJsonParser.java:757)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:173)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44171 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43207 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36395 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44421 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=36395 raft=44421
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Cannot construct instance of `vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Invalid messageId: must be a valid lowercase UUID, got: not-a-valid-uuid
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 176]
+com.fasterxml.jackson.databind.exc.ValueInstantiationException: Cannot construct instance of `vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Invalid messageId: must be a valid lowercase UUID, got: not-a-valid-uuid
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 176]
+	at com.fasterxml.jackson.databind.exc.ValueInstantiationException.from(ValueInstantiationException.java:46)
+	at com.fasterxml.jackson.databind.DeserializationContext.instantiationException(DeserializationContext.java:2042)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.wrapAsJsonMappingException(StdValueInstantiator.java:622)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.rewrapCtorProblem(StdValueInstantiator.java:645)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:293)
+	at com.fasterxml.jackson.databind.deser.ValueInstantiator.createFromObjectWith(ValueInstantiator.java:301)
+	at com.fasterxml.jackson.databind.deser.impl.PropertyBasedCreator.build(PropertyBasedCreator.java:267)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:446)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.lang.IllegalArgumentException: Invalid messageId: must be a valid lowercase UUID, got: not-a-valid-uuid
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:139)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at com.fasterxml.jackson.databind.introspect.AnnotatedConstructor.call(AnnotatedConstructor.java:126)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:291)
+	... 17 more
+
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36395 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44421 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37097 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42273 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=37097 raft=42273
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37097 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42273 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33425 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36753 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=33425 raft=36753
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33425 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36753 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38743 (maxThreads=8, soTimeout=5000ms)
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40959 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=38743 raft=40959
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Cannot construct instance of `vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Request phải có correlationId = null
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 230]
+com.fasterxml.jackson.databind.exc.ValueInstantiationException: Cannot construct instance of `vn.nhom6.railway.protocol.dto.MessageEnvelope`, problem: Request phải có correlationId = null
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 230]
+	at com.fasterxml.jackson.databind.exc.ValueInstantiationException.from(ValueInstantiationException.java:46)
+	at com.fasterxml.jackson.databind.DeserializationContext.instantiationException(DeserializationContext.java:2042)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.wrapAsJsonMappingException(StdValueInstantiator.java:622)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.rewrapCtorProblem(StdValueInstantiator.java:645)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:293)
+	at com.fasterxml.jackson.databind.deser.ValueInstantiator.createFromObjectWith(ValueInstantiator.java:301)
+	at com.fasterxml.jackson.databind.deser.impl.PropertyBasedCreator.build(PropertyBasedCreator.java:267)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:446)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.lang.IllegalArgumentException: Request phải có correlationId = null
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:151)
+	at vn.nhom6.railway.protocol.dto.MessageEnvelope.<init>(MessageEnvelope.java:94)
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:483)
+	at com.fasterxml.jackson.databind.introspect.AnnotatedConstructor.call(AnnotatedConstructor.java:126)
+	at com.fasterxml.jackson.databind.deser.std.StdValueInstantiator.createFromObjectWith(StdValueInstantiator.java:291)
+	... 17 more
+
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38743 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40959 stopped.
+Nov 13, 2026 5:15:21 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.159 s -- in vn.nhom6.railway.networking.TcpSingleNodeProtocolTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+Nov 13, 2026 5:15:22 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 13, 2026 5:15:22 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+Nov 13, 2026 5:15:22 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=null, vendorCode=0
+Nov 13, 2026 5:15:22 PM vn.nhom6.railway.persistence.JdbcBookingRepository storageFailure
+SEVERE: PostgreSQL apply committed command at index 1 failed; SQLState=null, vendorCode=0
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.172 s -- in vn.nhom6.railway.persistence.JdbcBookingRepositoryTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_e6543c12ac53462ba752ffb36a68001c
+================================================================================
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37851 (maxThreads=8, soTimeout=10000ms)
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34019 (maxThreads=8, soTimeout=10000ms)
+[READY] node-1 client=37851 raft=34019
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37851 stopped.
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34019 stopped.
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : railway_test@localhost:55439/railway_test?currentSchema=railway_test_b0e57f62cdfa4256add7d32e57a29630
+================================================================================
+Nov 13, 2026 5:15:24 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.persistence.DbStateLoader load
+INFO: DbStateLoader successfully loaded startup state: currentTerm=1, votedFor=node-1, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=RESTART
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42013 (maxThreads=8, soTimeout=10000ms)
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41205 (maxThreads=8, soTimeout=10000ms)
+[READY] node-1 client=42013 raft=41205
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+SQL EVIDENCE (isolated schema; controlled commit harness, NOT real Raft): {"seats" : [{"trip_id":"SE-001","seat_id":"G01","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G02","status":"BOOKED","current_ticket_id":"1516d3ea-8a19-4e06-b155-2d5d0101462b"}, 
+ {"trip_id":"SE-001","seat_id":"G03","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G04","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G05","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G06","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G07","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G08","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G09","status":"AVAILABLE","current_ticket_id":null}, 
+ {"trip_id":"SE-001","seat_id":"G10","status":"AVAILABLE","current_ticket_id":null}], "tickets" : [{"ticket_id":"1516d3ea-8a19-4e06-b155-2d5d0101462b","trip_id":"SE-001","seat_id":"G02","passenger_name":"Demo Passenger","status":"ACTIVE","issued_at":"2026-11-13T17:15:25.02+07:00","cancelled_at":null}], "results" : [{"request_id":"11111111-1111-1111-1111-111111111111","command_type":"BOOK_TICKET","intent_fingerprint":"55ee68051e697547141dc644f7d2fcb0da953da74eb1a0906f5c897fccd0d4cd","state":"APPLIED_SUCCESS","reason_code":null,"ticket_id":"1516d3ea-8a19-4e06-b155-2d5d0101462b","applied_log_index":1,"result_json":{"seatId": "G02", "tripId": "SE-001", "outcome": "CONFIRMED", "ticketId": "1516d3ea-8a19-4e06-b155-2d5d0101462b", "requestId": "11111111-1111-1111-1111-111111111111", "reasonCode": null, "appliedLogIndex": 1}}, 
+ {"request_id":"23db52a3-7461-4429-886c-8d2bad40fe21","command_type":"BOOK_TICKET","intent_fingerprint":"e0de6c44a1a2a4418e1f85644dd7848d1aeca7bb38069be48a912bf24148883b","state":"APPLIED_REJECTED","reason_code":"SEAT_ALREADY_BOOKED","ticket_id":null,"applied_log_index":4,"result_json":{"seatId": "G02", "tripId": "SE-001", "outcome": "REJECTED", "ticketId": null, "requestId": "23db52a3-7461-4429-886c-8d2bad40fe21", "reasonCode": "SEAT_ALREADY_BOOKED", "appliedLogIndex": 4}}], "lastApplied" : 5}
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42013 stopped.
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41205 stopped.
+Nov 13, 2026 5:15:25 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.515 s -- in vn.nhom6.railway.persistence.JdbcBookingTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+Nov 13, 2026 5:15:27 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=null, vendorCode=0
+Nov 13, 2026 5:15:27 PM vn.nhom6.railway.persistence.JdbcCommittedCommandApplier applyCommitted
+SEVERE: PostgreSQL committed-entry apply failed at index 1
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.338 s -- in vn.nhom6.railway.persistence.JdbcCommittedCommandApplierTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRaftStorageTest
+Nov 13, 2026 5:15:27 PM vn.nhom6.railway.persistence.JdbcRaftStorage logAndWrap
+SEVERE: PostgreSQL saveTermAndVote failed: SQLState=null, errorCode=0, message=Injected test failure for UPDATE raft_meta
+Nov 13, 2026 5:15:28 PM vn.nhom6.railway.persistence.JdbcRaftStorage logAndWrap
+SEVERE: PostgreSQL replaceSuffix failed: SQLState=null, errorCode=0, message=Injected test failure for INSERT INTO raft_log
+Nov 13, 2026 5:15:28 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=2 <= lastApplied=2
+Nov 13, 2026 5:15:28 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=1 <= lastApplied=2
+Nov 13, 2026 5:15:28 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=2 <= lastApplied=2
+Nov 13, 2026 5:15:28 PM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Log matching invariant violation: index 2 has same term 1 but different command!
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.473 s -- in vn.nhom6.railway.persistence.JdbcRaftStorageTest
+[INFO] Running vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+Nov 13, 2026 5:15:29 PM vn.nhom6.railway.persistence.JdbcRequestResultStore storageFailure
+SEVERE: PostgreSQL insert request result failed; SQLState=23505, vendorCode=0
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.485 s -- in vn.nhom6.railway.persistence.JdbcRequestResultStoreTest
+[INFO] Running vn.nhom6.railway.persistence.SchemaMigrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in vn.nhom6.railway.persistence.SchemaMigrationTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreContractTest
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.raft.core.RaftCoreContractTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTest
+[INFO] Running vn.nhom6.railway.raft.core.RaftTransportAdapterTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in vn.nhom6.railway.raft.core.RaftTransportAdapterTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionChaosTest
+D13 five simultaneous candidates: term=1 split; term=2 leader=node-3 quorum=3/5; stale/duplicate replies safe
+D13 FakeNetwork seeds=0..99: same-term unique leader with >=3 distinct memory-storage votes
+D13 JDBC PASS: fresh connection/instance reload term=7 vote=node-2; second candidate denied; lower term rejected; term=8 vote=null
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.141 s -- in vn.nhom6.railway.raft.election.ElectionChaosTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in vn.nhom6.railway.raft.election.ElectionCoreContractTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionSimulationTest
+D09 rotation=0 leader=node-1 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+D09 rotation=1 leader=node-3 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+D09 rotation=2 leader=node-2 term=1 grants=3/5 minorityTerms=10,10 minorityLeaders=0 dropped=62
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in vn.nhom6.railway.raft.election.ElectionSimulationTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in vn.nhom6.railway.raft.election.ElectionTimeoutPolicyTest
+[INFO] Running vn.nhom6.railway.raft.election.LeaderHeartbeatSchedulerTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.raft.election.LeaderHeartbeatSchedulerTest
+[INFO] Running vn.nhom6.railway.raft.election.TimerTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.raft.election.TimerTest
+[INFO] Running vn.nhom6.railway.raft.election.PersistentElectionRuntimeTest
+[RAFT] node=node-1 role=LEADER term=2
+[RAFT] node=node-1 heartbeat=STOPPED term=2
+[RAFT] node=node-1 role=LEADER term=2
+[RAFT] node=node-1 heartbeat=STOPPED term=22
+[RAFT] node=node-1 role=LEADER term=2
+[RAFT] node=node-1 heartbeat=STOPPED term=23
+Nov 13, 2026 5:15:31 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+SEVERE: Handler threw unhandled exception for type REQUEST_VOTE: injected unavailable storage
+vn.nhom6.railway.raft.core.RaftStorage$RaftStorageException: injected unavailable storage
+	at vn.nhom6.railway.raft.election.PersistentElectionRuntimeTest$Storage.saveTermAndVote(PersistentElectionRuntimeTest.java:27)
+	at vn.nhom6.railway.raft.election.PersistentElectionState.persist(PersistentElectionState.java:87)
+	at vn.nhom6.railway.raft.election.PersistentElectionState.grantVote(PersistentElectionState.java:74)
+	at vn.nhom6.railway.raft.core.PersistentRaftNode.handleRequestVote(PersistentRaftNode.java:93)
+	at vn.nhom6.railway.raft.election.CandidateElection.handleRequestVote(CandidateElection.java:124)
+	at vn.nhom6.railway.raft.election.RaftElectionComponent.lambda$handleVote$0(RaftElectionComponent.java:164)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+
+[RAFT] node=node-1 role=LEADER term=2
+[RAFT] node=node-1 heartbeat=STOPPED term=20
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.480 s -- in vn.nhom6.railway.raft.election.PersistentElectionRuntimeTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionComponentTest
+Nov 13, 2026 5:15:31 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Handler validation failed for type REQUEST_VOTE: RequestVote sender must be the remote candidate voter
+java.lang.IllegalArgumentException: RequestVote sender must be the remote candidate voter
+	at vn.nhom6.railway.raft.election.RaftElectionComponent.handleVote(RaftElectionComponent.java:159)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.raft.election.RaftElectionComponentTest.nodeMainRegistersVoteOnlyOnPeerDispatcher(RaftElectionComponentTest.java:90)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.306 s -- in vn.nhom6.railway.raft.election.RaftElectionComponentTest
+[INFO] Running vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in vn.nhom6.railway.raft.election.SplitVoteTest
+[INFO] Running vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in vn.nhom6.railway.raft.election.VotePersistenceTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteRpcAdapterTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.307 s -- in vn.nhom6.railway.raft.election.VoteRpcAdapterTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in vn.nhom6.railway.raft.election.VoteRulesTest
+[INFO] Running vn.nhom6.railway.raft.election.VoteSafetyTest
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.raft.election.VoteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.ConflictTests
+[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.raft.replication.ConflictTests
+[INFO] Running vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO] Running vn.nhom6.railway.raft.replication.PersistenceAckTest
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.raft.replication.PersistenceAckTest
+[INFO] Running vn.nhom6.railway.raft.replication.RaftLogTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in vn.nhom6.railway.raft.replication.RaftLogTest
+[INFO] Running vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in vn.nhom6.railway.raft.replication.RaftStorageAdapterTest
+[INFO] Running vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 767, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-client >-------------------
+[INFO] Building desktop-client 1.0.0-SNAPSHOT                             [4/6]
+[INFO]   from desktop-client/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ desktop-client ---
+[INFO] Deleting /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/desktop-client/target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-client ---
+[INFO] Copying 11 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-client ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 39 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-client ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/desktop-client/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-client ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 16 source files with javac [debug release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-client ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+[INFO] Running vn.nhom6.railway.client.BookingFormValidatorTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in vn.nhom6.railway.client.BookingFormValidatorTest
+[INFO] Running vn.nhom6.railway.client.ClusterConnectionViewModelTest
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketClusterStatusClient logCall
+INFO: [STATUS-CLIENT] messageId=8ca18b4c-b306-4613-80fd-82d5ac4980a8, type=NODE_STATUS_RESPONSE, endpoint=127.0.0.1:42565, outcome=SUCCESS, elapsedMs=132ms, node=node-3, role=LEADER
+[STATUS-CLIENT] messageId=8ca18b4c-b306-4613-80fd-82d5ac4980a8, type=NODE_STATUS_RESPONSE, endpoint=127.0.0.1:42565, outcome=SUCCESS, elapsedMs=132ms, node=node-3, role=LEADER
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketClusterStatusClient logCall
+INFO: [STATUS-CLIENT] messageId=1c1578b7-7643-4722-b0c6-63da7d40001b, type=NODE_STATUS_RESPONSE, endpoint=127.0.0.1:42565, outcome=SUCCESS, elapsedMs=2ms, node=node-3, role=FOLLOWER
+[STATUS-CLIENT] messageId=1c1578b7-7643-4722-b0c6-63da7d40001b, type=NODE_STATUS_RESPONSE, endpoint=127.0.0.1:42565, outcome=SUCCESS, elapsedMs=2ms, node=node-3, role=FOLLOWER
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketClusterStatusClient logCall
+INFO: [STATUS-CLIENT] messageId=ac53e0f6-c565-4918-9f0a-4a0c3e9b79ae, type=EXCEPTION, endpoint=127.0.0.1:42565, outcome=ConnectException: Connection refused (connect failed), elapsedMs=1ms, node=-, role=-
+[STATUS-CLIENT] messageId=ac53e0f6-c565-4918-9f0a-4a0c3e9b79ae, type=EXCEPTION, endpoint=127.0.0.1:42565, outcome=ConnectException: Connection refused (connect failed), elapsedMs=1ms, node=-, role=-
+[WARNING] Tests run: 9, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.183 s -- in vn.nhom6.railway.client.ClusterConnectionViewModelTest
+[INFO] Running vn.nhom6.railway.client.ClusterStatusUiEvidenceTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.006 s -- in vn.nhom6.railway.client.ClusterStatusUiEvidenceTest
+[INFO] Running vn.nhom6.railway.client.ErrorPresentationMapperTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.client.ErrorPresentationMapperTest
+[INFO] Running vn.nhom6.railway.client.LeaderAwareBookingClientTest
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=bf56cd8d-4657-4c56-96a1-4de630798ceb, type=BOOK_TICKET, endpoint=127.0.0.1:38099, outcome=NOT_LEADER, elapsedMs=7ms
+[TCP-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=bf56cd8d-4657-4c56-96a1-4de630798ceb, type=BOOK_TICKET, endpoint=127.0.0.1:38099, outcome=NOT_LEADER, elapsedMs=7ms
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=3bf3382f-395f-4cbd-ba4c-2bd8b6ab86a4, type=BOOK_TICKET, endpoint=127.0.0.1:43279, outcome=REJECTED, elapsedMs=5ms
+[TCP-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=3bf3382f-395f-4cbd-ba4c-2bd8b6ab86a4, type=BOOK_TICKET, endpoint=127.0.0.1:43279, outcome=REJECTED, elapsedMs=5ms
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=TERMINAL_STATUS: SEAT_ALREADY_BOOKED, outcome=REJECTED
+[REDIRECT-CLIENT] requestId=607db587-a886-4683-92e1-8b036b902618, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=TERMINAL_STATUS: SEAT_ALREADY_BOOKED, outcome=REJECTED
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=8926d013-6a77-4bac-9b39-7597c4dd450c, messageId=ae798ec4-23f3-46a3-8460-7d6d06730613, type=BOOK_TICKET, endpoint=127.0.0.1:42503, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=8926d013-6a77-4bac-9b39-7597c4dd450c, messageId=ae798ec4-23f3-46a3-8460-7d6d06730613, type=BOOK_TICKET, endpoint=127.0.0.1:42503, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=8926d013-6a77-4bac-9b39-7597c4dd450c, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-999, redirectCount=0, reason=UNTRUSTED_LEADER_HINT: node-999, outcome=NOT_LEADER_UNRESOLVED
+[REDIRECT-CLIENT] requestId=8926d013-6a77-4bac-9b39-7597c4dd450c, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-999, redirectCount=0, reason=UNTRUSTED_LEADER_HINT: node-999, outcome=NOT_LEADER_UNRESOLVED
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=c942b4c0-df0b-4f76-b791-64c159a5f135, type=BOOK_TICKET, endpoint=127.0.0.1:44933, outcome=NOT_LEADER, elapsedMs=603ms
+[TCP-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=c942b4c0-df0b-4f76-b791-64c159a5f135, type=BOOK_TICKET, endpoint=127.0.0.1:44933, outcome=NOT_LEADER, elapsedMs=603ms
+Nov 13, 2026 5:15:33 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:34 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=TOTAL_TIMEOUT_EXCEEDED, outcome=TIMEOUT_UNKNOWN
+[REDIRECT-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=TOTAL_TIMEOUT_EXCEEDED, outcome=TIMEOUT_UNKNOWN
+Nov 13, 2026 5:15:34 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=a6db89ed-1917-4c2e-ba8f-e698dbbfd437, type=BOOK_TICKET, endpoint=127.0.0.1:46599, outcome=CONFIRMED, elapsedMs=603ms
+[TCP-CLIENT] requestId=b1a05355-54b4-4adc-970c-c047768f2846, messageId=a6db89ed-1917-4c2e-ba8f-e698dbbfd437, type=BOOK_TICKET, endpoint=127.0.0.1:46599, outcome=CONFIRMED, elapsedMs=603ms
+Nov 13, 2026 5:15:34 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=91fd2f9b-2e7e-4707-9316-b34f890f98ff, type=BOOK_TICKET, endpoint=127.0.0.1:46591, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=91fd2f9b-2e7e-4707-9316-b34f890f98ff, type=BOOK_TICKET, endpoint=127.0.0.1:46591, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:34 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=f44d3cf0-76d9-4cb0-b94e-1fc0f1926c9d, type=BOOK_TICKET, endpoint=127.0.0.1:40799, outcome=TIMEOUT_UNKNOWN, elapsedMs=1002ms
+[TCP-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=f44d3cf0-76d9-4cb0-b94e-1fc0f1926c9d, type=BOOK_TICKET, endpoint=127.0.0.1:40799, outcome=TIMEOUT_UNKNOWN, elapsedMs=1002ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=STEP_TIMEOUT, outcome=TIMEOUT_UNKNOWN
+[REDIRECT-CLIENT] requestId=ba09cb6a-360f-4589-ae3c-676fa1bc9797, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=STEP_TIMEOUT, outcome=TIMEOUT_UNKNOWN
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=e8f34874-7f87-4178-823e-8052cb3b5836, type=BOOK_TICKET, endpoint=127.0.0.1:32999, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=e8f34874-7f87-4178-823e-8052cb3b5836, type=BOOK_TICKET, endpoint=127.0.0.1:32999, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=b12da3f4-7fe6-43af-aa03-943f49e384d2, type=BOOK_TICKET, endpoint=127.0.0.1:43797, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=b12da3f4-7fe6-43af-aa03-943f49e384d2, type=BOOK_TICKET, endpoint=127.0.0.1:43797, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=2356a37f-bdf0-4bd6-afcb-f267dbc8a51d, type=BOOK_TICKET, endpoint=127.0.0.1:43797, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=2356a37f-bdf0-4bd6-afcb-f267dbc8a51d, type=BOOK_TICKET, endpoint=127.0.0.1:43797, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=0, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=67b45def-5e16-467e-9b40-2a69bc147401, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=0, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=5f982752-2715-469c-9153-b23064499bb1, messageId=888704c5-54d4-4a67-88b1-9d2e08cc8b77, type=BOOK_TICKET, endpoint=127.0.0.1:34707, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=5f982752-2715-469c-9153-b23064499bb1, messageId=888704c5-54d4-4a67-88b1-9d2e08cc8b77, type=BOOK_TICKET, endpoint=127.0.0.1:34707, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=5f982752-2715-469c-9153-b23064499bb1, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=SELF_REFERENCING_HINT, outcome=NOT_LEADER_UNRESOLVED
+[REDIRECT-CLIENT] requestId=5f982752-2715-469c-9153-b23064499bb1, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=SELF_REFERENCING_HINT, outcome=NOT_LEADER_UNRESOLVED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=9f904f53-7e27-4891-a04c-862c8c097229, messageId=493f21be-a071-4aac-9830-191b4abadb6e, type=BOOK_TICKET, endpoint=127.0.0.1:32859, outcome=NO_QUORUM, elapsedMs=2ms
+[TCP-CLIENT] requestId=9f904f53-7e27-4891-a04c-862c8c097229, messageId=493f21be-a071-4aac-9830-191b4abadb6e, type=BOOK_TICKET, endpoint=127.0.0.1:32859, outcome=NO_QUORUM, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=9f904f53-7e27-4891-a04c-862c8c097229, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=TERMINAL_STATUS: NO_QUORUM, outcome=UNKNOWN
+[REDIRECT-CLIENT] requestId=9f904f53-7e27-4891-a04c-862c8c097229, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=TERMINAL_STATUS: NO_QUORUM, outcome=UNKNOWN
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=5e5f51af-8a9b-4d42-a51c-e4bab5e1503e, messageId=5152777c-ccea-493b-aebe-37d7990693ac, type=BOOK_TICKET, endpoint=127.0.0.1:32859, outcome=REQUEST_ID_CONFLICT, elapsedMs=1ms
+[TCP-CLIENT] requestId=5e5f51af-8a9b-4d42-a51c-e4bab5e1503e, messageId=5152777c-ccea-493b-aebe-37d7990693ac, type=BOOK_TICKET, endpoint=127.0.0.1:32859, outcome=REQUEST_ID_CONFLICT, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=5e5f51af-8a9b-4d42-a51c-e4bab5e1503e, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=TERMINAL_STATUS: REQUEST_ID_CONFLICT, outcome=REJECTED
+[REDIRECT-CLIENT] requestId=5e5f51af-8a9b-4d42-a51c-e4bab5e1503e, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-1, redirectCount=0, reason=TERMINAL_STATUS: REQUEST_ID_CONFLICT, outcome=REJECTED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=2dbd4fa6-8d5a-4d84-9e22-01a0aa1ba337, type=BOOK_TICKET, endpoint=127.0.0.1:46005, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=2dbd4fa6-8d5a-4d84-9e22-01a0aa1ba337, type=BOOK_TICKET, endpoint=127.0.0.1:46005, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=f8319556-bebb-482d-b670-e5de39e9a679, type=BOOK_TICKET, endpoint=127.0.0.1:45359, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=f8319556-bebb-482d-b670-e5de39e9a679, type=BOOK_TICKET, endpoint=127.0.0.1:45359, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=dec33c36-3527-461e-8235-f23677160aba, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=671a19b7-6485-4fe5-a56c-d55502535e72, type=BOOK_TICKET, endpoint=127.0.0.1:41005, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=671a19b7-6485-4fe5-a56c-d55502535e72, type=BOOK_TICKET, endpoint=127.0.0.1:41005, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=25e506e8-0ad6-440f-a801-ce563f8ab46a, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=25e506e8-0ad6-440f-a801-ce563f8ab46a, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=62e055bb-2925-4e20-a6fa-d8c14f1c9764, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=324222b0-b484-4f73-a65d-c2bbede2f743, messageId=f3454683-8a27-46d7-a878-21e8fbe6bfc1, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=324222b0-b484-4f73-a65d-c2bbede2f743, messageId=f3454683-8a27-46d7-a878-21e8fbe6bfc1, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=324222b0-b484-4f73-a65d-c2bbede2f743, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=0, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=324222b0-b484-4f73-a65d-c2bbede2f743, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=0, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=a7e6e97c-34de-4cdc-ac84-dd3c6586eb74, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=a7e6e97c-34de-4cdc-ac84-dd3c6586eb74, type=BOOK_TICKET, endpoint=127.0.0.1:43671, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-3, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-3, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=9d7a6a4c-cccc-4e75-b765-212b567173cf, type=BOOK_TICKET, endpoint=127.0.0.1:46139, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=9d7a6a4c-cccc-4e75-b765-212b567173cf, type=BOOK_TICKET, endpoint=127.0.0.1:46139, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=N/A, type=BOOK_TICKET, from=node-3 -> to=node-3, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=b1ea02a5-4a29-4688-b5f4-c2a635e41d5f, messageId=N/A, type=BOOK_TICKET, from=node-3 -> to=node-3, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=b79b67b7-0830-41f2-95d8-732d8547ad63, type=BOOK_TICKET, endpoint=127.0.0.1:32827, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=b79b67b7-0830-41f2-95d8-732d8547ad63, type=BOOK_TICKET, endpoint=127.0.0.1:32827, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=87516270-245a-4383-997d-3fe336933d8b, type=BOOK_TICKET, endpoint=127.0.0.1:39657, outcome=CONNECTION_LOST, elapsedMs=0ms
+[TCP-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=87516270-245a-4383-997d-3fe336933d8b, type=BOOK_TICKET, endpoint=127.0.0.1:39657, outcome=CONNECTION_LOST, elapsedMs=0ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONNECTION_ERROR: Connection refused (connect failed), outcome=CONNECTION_FAILED
+[REDIRECT-CLIENT] requestId=8d1a902d-9890-4146-840b-69867cb34da7, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONNECTION_ERROR: Connection refused (connect failed), outcome=CONNECTION_FAILED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=836f8b58-8ccd-40a1-a194-fbbf5abd0f1c, type=BOOK_TICKET, endpoint=127.0.0.1:36625, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=836f8b58-8ccd-40a1-a194-fbbf5abd0f1c, type=BOOK_TICKET, endpoint=127.0.0.1:36625, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=07a82320-47b9-4014-afef-a09eb6272855, type=BOOK_TICKET, endpoint=127.0.0.1:37231, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=07a82320-47b9-4014-afef-a09eb6272855, type=BOOK_TICKET, endpoint=127.0.0.1:37231, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-1, redirectCount=1, reason=LOOP_DETECTED_ON_HINT, outcome=NOT_LEADER_UNRESOLVED
+[REDIRECT-CLIENT] requestId=d145c764-36aa-4daa-92b2-9cd8eb39140d, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-1, redirectCount=1, reason=LOOP_DETECTED_ON_HINT, outcome=NOT_LEADER_UNRESOLVED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=6208ef76-6688-45fa-86b1-038a19eb0758, messageId=bf44a5eb-0e1c-4881-bc29-768ac33a20e5, type=BOOK_TICKET, endpoint=127.0.0.1:43529, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=6208ef76-6688-45fa-86b1-038a19eb0758, messageId=bf44a5eb-0e1c-4881-bc29-768ac33a20e5, type=BOOK_TICKET, endpoint=127.0.0.1:43529, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=6208ef76-6688-45fa-86b1-038a19eb0758, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=NONE, redirectCount=0, reason=NOT_LEADER_HINT_NULL, outcome=NOT_LEADER_UNRESOLVED
+[REDIRECT-CLIENT] requestId=6208ef76-6688-45fa-86b1-038a19eb0758, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=NONE, redirectCount=0, reason=NOT_LEADER_HINT_NULL, outcome=NOT_LEADER_UNRESOLVED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=2a94e4bd-945f-4ad6-9230-b3a209450090, type=BOOK_TICKET, endpoint=127.0.0.1:44241, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=2a94e4bd-945f-4ad6-9230-b3a209450090, type=BOOK_TICKET, endpoint=127.0.0.1:44241, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=00fa9095-a0df-465d-a360-8a2c4f58f855, type=BOOK_TICKET, endpoint=127.0.0.1:40939, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=00fa9095-a0df-465d-a360-8a2c4f58f855, type=BOOK_TICKET, endpoint=127.0.0.1:40939, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+[REDIRECT-CLIENT] requestId=f0fe2282-df86-48ac-9001-94106dd9d5fb, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-2, redirectCount=1, reason=CONFIRMED_BY_LEADER, outcome=CONFIRMED
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=2bcab752-458e-4132-a842-7d675dfee08e, type=BOOK_TICKET, endpoint=127.0.0.1:33235, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=2bcab752-458e-4132-a842-7d675dfee08e, type=BOOK_TICKET, endpoint=127.0.0.1:33235, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-1 -> to=node-2, redirectCount=1, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=09594a57-b4f3-4238-b6a2-925045128e6f, type=BOOK_TICKET, endpoint=127.0.0.1:41577, outcome=NOT_LEADER, elapsedMs=2ms
+[TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=09594a57-b4f3-4238-b6a2-925045128e6f, type=BOOK_TICKET, endpoint=127.0.0.1:41577, outcome=NOT_LEADER, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-3, redirectCount=2, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+[REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-2 -> to=node-3, redirectCount=2, reason=REDIRECTING_TO_HINT, outcome=REDIRECT
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=0074324e-45a6-4dc3-a999-e67eee098ec8, type=BOOK_TICKET, endpoint=127.0.0.1:34437, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=0074324e-45a6-4dc3-a999-e67eee098ec8, type=BOOK_TICKET, endpoint=127.0.0.1:34437, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.LeaderAwareBookingClient logStep
+INFO: [REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-3 -> to=node-4, redirectCount=2, reason=MAX_REDIRECTS_EXCEEDED (2), outcome=NOT_LEADER_UNRESOLVED
+[REDIRECT-CLIENT] requestId=ced7d038-f53b-45b8-8e9e-5cd0fa644e9e, messageId=N/A, type=BOOK_TICKET, from=node-3 -> to=node-4, redirectCount=2, reason=MAX_REDIRECTS_EXCEEDED (2), outcome=NOT_LEADER_UNRESOLVED
+[WARNING] Tests run: 15, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 2.319 s -- in vn.nhom6.railway.client.LeaderAwareBookingClientTest
+[INFO] Running vn.nhom6.railway.client.smoke.SingleNodeSmokeTest
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:43791
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testSameRequestIdDifferentPayloadReturnsConflict$0
+INFO: [SMOKE-STEP-5] Bắt đầu kiểm tra Conflict với requestId=dd98e011-651f-4c1d-aac8-fd12c2c1990a
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=dd98e011-651f-4c1d-aac8-fd12c2c1990a, messageId=3db65e69-5ab7-4e84-8123-1ddb4ddeda23, type=BOOK_TICKET, endpoint=127.0.0.1:43791, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=dd98e011-651f-4c1d-aac8-fd12c2c1990a, messageId=3db65e69-5ab7-4e84-8123-1ddb4ddeda23, type=BOOK_TICKET, endpoint=127.0.0.1:43791, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=dd98e011-651f-4c1d-aac8-fd12c2c1990a, messageId=9a397e20-0500-46a9-8f5a-7628a091135a, type=BOOK_TICKET, endpoint=127.0.0.1:43791, outcome=REQUEST_ID_CONFLICT, elapsedMs=1ms
+[TCP-CLIENT] requestId=dd98e011-651f-4c1d-aac8-fd12c2c1990a, messageId=9a397e20-0500-46a9-8f5a-7628a091135a, type=BOOK_TICKET, endpoint=127.0.0.1:43791, outcome=REQUEST_ID_CONFLICT, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testSameRequestIdDifferentPayloadReturnsConflict$0
+INFO: [SMOKE-STEP-5-PASS] Xung đột REQUEST_ID_CONFLICT được phát hiện và từ chối chính xác!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:44057
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testBookG02SuccessAndVerifySeatState$0
+INFO: [SMOKE-STEP-3] BOOK G02 với requestId=522ae656-c21f-4f66-a52c-df39031c83f6
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=522ae656-c21f-4f66-a52c-df39031c83f6, messageId=1545feaf-519a-49d7-ba3d-6159df2ea085, type=BOOK_TICKET, endpoint=127.0.0.1:44057, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=522ae656-c21f-4f66-a52c-df39031c83f6, messageId=1545feaf-519a-49d7-ba3d-6159df2ea085, type=BOOK_TICKET, endpoint=127.0.0.1:44057, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testBookG02SuccessAndVerifySeatState$0
+INFO: [SMOKE-STEP-3] Đặt vé G02 thành công với ticketId=TCK-G02-522ae656, logIndex=101
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=N/A, messageId=e45e90b4-af5c-4643-9ffc-855bc3308e00, type=GET_SEATS, endpoint=127.0.0.1:44057, outcome=SUCCESS, elapsedMs=11ms
+[TCP-CLIENT] requestId=N/A, messageId=e45e90b4-af5c-4643-9ffc-855bc3308e00, type=GET_SEATS, endpoint=127.0.0.1:44057, outcome=SUCCESS, elapsedMs=11ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testBookG02SuccessAndVerifySeatState$0
+INFO: [SMOKE-STEP-3-PASS] BOOK G02 và kiểm tra trạng thái ghế thành công!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:41153
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testGetSeatsTenSeatsAndG02Available$0
+INFO: [SMOKE-STEP-2] GET_SEATS requestId=37b12c4e-b7e7-4a6e-b3fe-9974a6f2251b
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=N/A, messageId=6f61ef5d-2219-4ee3-8ade-36039e800f02, type=GET_SEATS, endpoint=127.0.0.1:41153, outcome=SUCCESS, elapsedMs=2ms
+[TCP-CLIENT] requestId=N/A, messageId=6f61ef5d-2219-4ee3-8ade-36039e800f02, type=GET_SEATS, endpoint=127.0.0.1:41153, outcome=SUCCESS, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testGetSeatsTenSeatsAndG02Available$0
+INFO: [SMOKE-STEP-2-PASS] GET_SEATS thành công với đủ 10 ghế, G02 AVAILABLE
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:33081
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testDuplicateRequestMaintainsIdempotencyAndSingleActiveTicket$0
+INFO: [SMOKE-STEP-4] Bắt đầu kiểm tra Duplicate với requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=c76b770c-ac1f-43e3-a988-c213a1301972, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=c76b770c-ac1f-43e3-a988-c213a1301972, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testDuplicateRequestMaintainsIdempotencyAndSingleActiveTicket$0
+INFO: [SMOKE-STEP-4] Lần 1: Thành công, ticketId=TCK-G02-72e0307e, appliedIndex=101
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=1419925f-b7d5-410f-a193-999067810ad4, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=1419925f-b7d5-410f-a193-999067810ad4, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testDuplicateRequestMaintainsIdempotencyAndSingleActiveTicket$0
+INFO: [SMOKE-STEP-4] Lần 2 (duplicate): Trả về đúng kết quả cũ!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=3215321f-e58a-45d6-a5ef-2f70710fa794, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=3215321f-e58a-45d6-a5ef-2f70710fa794, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=9ca865d9-cb9e-4c99-99c6-61e38f718958, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=9ca865d9-cb9e-4c99-99c6-61e38f718958, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=e44a12ed-5932-487c-958b-dba5dd7d75cf, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=e44a12ed-5932-487c-958b-dba5dd7d75cf, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=2d62d8af-2be2-4235-bf10-7d8366326137, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=2d62d8af-2be2-4235-bf10-7d8366326137, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=57aec64e-5e42-4d38-b249-d96b9099eafc, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=57aec64e-5e42-4d38-b249-d96b9099eafc, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=70570314-aed8-4645-a26d-2098fac65ea1, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=70570314-aed8-4645-a26d-2098fac65ea1, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=8fe5b63d-7f43-4f30-a8cd-1cea88aa2120, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=8fe5b63d-7f43-4f30-a8cd-1cea88aa2120, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=4604622c-10f4-4463-9028-9c1c6eb54660, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=4604622c-10f4-4463-9028-9c1c6eb54660, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=eb0adb05-23b5-433d-b391-b77d5244f412, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=0ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=eb0adb05-23b5-433d-b391-b77d5244f412, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=0ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=6f472abd-4efa-43fa-927c-0395aa5169e9, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=0ms
+[TCP-CLIENT] requestId=72e0307e-964f-424f-a63f-1ff4bcd3bf8c, messageId=6f472abd-4efa-43fa-927c-0395aa5169e9, type=BOOK_TICKET, endpoint=127.0.0.1:33081, outcome=CONFIRMED, elapsedMs=0ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testDuplicateRequestMaintainsIdempotencyAndSingleActiveTicket$0
+INFO: [SMOKE-STEP-4] Đã gửi lại 10 lần duplicate liên tiếp, tất cả đều trả về kết quả nhất quán!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testDuplicateRequestMaintainsIdempotencyAndSingleActiveTicket$0
+INFO: [SMOKE-STEP-4-PASS] Duplicate idempotent kiểm tra thành công: 1 + 10 lần gửi = duy nhất 1 vé!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:44255
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testPreflightSmoke$0
+INFO: [SMOKE-STEP-1] Preflight check với requestId=1f6a476f-16d1-44d5-9dc7-ace3681a2f13
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=N/A, messageId=e1a7434a-11cd-4f07-b2e9-6e3224ea81e5, type=GET_SEATS, endpoint=127.0.0.1:44255, outcome=SUCCESS, elapsedMs=2ms
+[TCP-CLIENT] requestId=N/A, messageId=e1a7434a-11cd-4f07-b2e9-6e3224ea81e5, type=GET_SEATS, endpoint=127.0.0.1:44255, outcome=SUCCESS, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testPreflightSmoke$0
+INFO: [SMOKE-STEP-1-PASS] Preflight smoke thành công!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:34925
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testResultsDoNotCarryMockFlag$0
+INFO: [SMOKE-STEP-6] Kiểm tra cờ MOCK với requestId=7b90ac2d-a47c-449d-ab72-e59b1074b319
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=7b90ac2d-a47c-449d-ab72-e59b1074b319, messageId=e997b58f-1cfe-4e51-a7db-128d49188857, type=BOOK_TICKET, endpoint=127.0.0.1:34925, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=7b90ac2d-a47c-449d-ab72-e59b1074b319, messageId=e997b58f-1cfe-4e51-a7db-128d49188857, type=BOOK_TICKET, endpoint=127.0.0.1:34925, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=28bd7c5a-a827-43ea-8d87-ce5cd20479c7, messageId=f30cc7fe-bccb-4703-955a-57691b6e0f1f, type=BOOK_TICKET, endpoint=127.0.0.1:34925, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=28bd7c5a-a827-43ea-8d87-ce5cd20479c7, messageId=f30cc7fe-bccb-4703-955a-57691b6e0f1f, type=BOOK_TICKET, endpoint=127.0.0.1:34925, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testResultsDoNotCarryMockFlag$0
+INFO: [SMOKE-STEP-6-PASS] Cờ isMock() == false được xác nhận trên cả DTO và ViewModel!
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest setUp
+INFO: [SMOKE-SETUP] Khởi động FAKE SERVER tại 127.0.0.1:34701
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testGetRequestResultStatus$0
+INFO: [SMOKE-STEP-7] Kiểm tra getRequestResult với requestId=1b5d5b37-f55f-44b8-ada6-a2b04e056701
+Nov 13, 2026 5:15:35 PM vn.nhom6.railway.client.smoke.SingleNodeSmokeTest lambda$testGetRequestResultStatus$0
+INFO: [SMOKE-STEP-7-PASS] getRequestResult phản ánh đúng trạng thái BLOCKED theo SPEC-03/D09!
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.062 s -- in vn.nhom6.railway.client.smoke.SingleNodeSmokeTest
+[INFO] Running vn.nhom6.railway.client.smoke.UiSmokeTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.001 s -- in vn.nhom6.railway.client.smoke.UiSmokeTest
+[INFO] Running vn.nhom6.railway.client.MockBookingServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in vn.nhom6.railway.client.MockBookingServiceTest
+[INFO] Running vn.nhom6.railway.client.MockUiFlowTest
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/home/nguyenhuu/.m2/repository/org/openjfx/javafx-graphics/21.0.2/javafx-graphics-21.0.2-linux.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.293 s -- in vn.nhom6.railway.client.MockUiFlowTest
+[INFO] Running vn.nhom6.railway.client.SocketBookingClientTest
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=68460f4a-3b67-4720-a5c3-1d79b09ce3f2, messageId=5e02762a-83c5-48ba-9929-cd9f8ea6c13a, type=BOOK_TICKET, endpoint=127.0.0.1:37199, outcome=NO_QUORUM, elapsedMs=2ms
+[TCP-CLIENT] requestId=68460f4a-3b67-4720-a5c3-1d79b09ce3f2, messageId=5e02762a-83c5-48ba-9929-cd9f8ea6c13a, type=BOOK_TICKET, endpoint=127.0.0.1:37199, outcome=NO_QUORUM, elapsedMs=2ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=ab5224cb-8922-4f8f-bd1c-2e3672fdb1f6, messageId=4c0f9f63-4df2-4888-90ca-202006e0e4ab, type=BOOK_TICKET, endpoint=127.0.0.1:37393, outcome=NOT_LEADER, elapsedMs=1ms
+[TCP-CLIENT] requestId=ab5224cb-8922-4f8f-bd1c-2e3672fdb1f6, messageId=4c0f9f63-4df2-4888-90ca-202006e0e4ab, type=BOOK_TICKET, endpoint=127.0.0.1:37393, outcome=NOT_LEADER, elapsedMs=1ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=4910d214-8175-4c62-9978-2c0657191958, messageId=56285b05-16cf-4f9d-a547-4e35534279bd, type=BOOK_TICKET, endpoint=127.0.0.1:43711, outcome=TIMEOUT_UNKNOWN, elapsedMs=401ms
+[TCP-CLIENT] requestId=4910d214-8175-4c62-9978-2c0657191958, messageId=56285b05-16cf-4f9d-a547-4e35534279bd, type=BOOK_TICKET, endpoint=127.0.0.1:43711, outcome=TIMEOUT_UNKNOWN, elapsedMs=401ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=d8afd618-e265-4841-ac80-bab5d8d2c895, messageId=590847f9-fe18-49a8-9104-15dfc91d3067, type=BOOK_TICKET, endpoint=127.0.0.1:45663, outcome=CONNECTION_LOST, elapsedMs=1ms
+[TCP-CLIENT] requestId=d8afd618-e265-4841-ac80-bab5d8d2c895, messageId=590847f9-fe18-49a8-9104-15dfc91d3067, type=BOOK_TICKET, endpoint=127.0.0.1:45663, outcome=CONNECTION_LOST, elapsedMs=1ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=N/A, messageId=e2fc2f10-8784-494e-bf9b-5262f4e7cdf0, type=GET_SEATS, endpoint=127.0.0.1:38349, outcome=SUCCESS, elapsedMs=2ms
+[TCP-CLIENT] requestId=N/A, messageId=e2fc2f10-8784-494e-bf9b-5262f4e7cdf0, type=GET_SEATS, endpoint=127.0.0.1:38349, outcome=SUCCESS, elapsedMs=2ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=dcfbc183-cd4f-4b1f-89ee-0c96a22dcbf1, messageId=91c7928f-149d-426d-9314-190559b1b923, type=BOOK_TICKET, endpoint=127.0.0.1:35139, outcome=REQUEST_ID_CONFLICT, elapsedMs=2ms
+[TCP-CLIENT] requestId=dcfbc183-cd4f-4b1f-89ee-0c96a22dcbf1, messageId=91c7928f-149d-426d-9314-190559b1b923, type=BOOK_TICKET, endpoint=127.0.0.1:35139, outcome=REQUEST_ID_CONFLICT, elapsedMs=2ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=02eb68c6-41f8-4f93-aadf-f58dc4fbb9fc, messageId=ce51d7af-b21e-4bdc-9eed-fc187054fcd8, type=BOOK_TICKET, endpoint=127.0.0.1:65530, outcome=CONNECTION_LOST, elapsedMs=0ms
+[TCP-CLIENT] requestId=02eb68c6-41f8-4f93-aadf-f58dc4fbb9fc, messageId=ce51d7af-b21e-4bdc-9eed-fc187054fcd8, type=BOOK_TICKET, endpoint=127.0.0.1:65530, outcome=CONNECTION_LOST, elapsedMs=0ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b0f0562f-837c-4d4b-95e9-3dba7227d0ba, messageId=3a6e349d-a354-4334-9a06-506372e46aa8, type=BOOK_TICKET, endpoint=127.0.0.1:39285, outcome=CONFIRMED, elapsedMs=2ms
+[TCP-CLIENT] requestId=b0f0562f-837c-4d4b-95e9-3dba7227d0ba, messageId=3a6e349d-a354-4334-9a06-506372e46aa8, type=BOOK_TICKET, endpoint=127.0.0.1:39285, outcome=CONFIRMED, elapsedMs=2ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=b0f0562f-837c-4d4b-95e9-3dba7227d0ba, messageId=be202dd4-2492-4e70-aa15-5b62e88e74d2, type=BOOK_TICKET, endpoint=127.0.0.1:39285, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=b0f0562f-837c-4d4b-95e9-3dba7227d0ba, messageId=be202dd4-2492-4e70-aa15-5b62e88e74d2, type=BOOK_TICKET, endpoint=127.0.0.1:39285, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=2eaa1a3c-b28a-43b9-9306-7d1519f24917, messageId=59401abd-77d7-4e62-9def-08581b88713e, type=BOOK_TICKET, endpoint=127.0.0.1:37687, outcome=CONFIRMED, elapsedMs=32ms
+[TCP-CLIENT] requestId=2eaa1a3c-b28a-43b9-9306-7d1519f24917, messageId=59401abd-77d7-4e62-9def-08581b88713e, type=BOOK_TICKET, endpoint=127.0.0.1:37687, outcome=CONFIRMED, elapsedMs=32ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=71b8df5d-8ab0-49de-b263-41e79aaf5aa6, messageId=28aab2c7-09b4-4653-97d9-98a10fd6944e, type=BOOK_TICKET, endpoint=127.0.0.1:36945, outcome=CONFIRMED, elapsedMs=1ms
+[TCP-CLIENT] requestId=71b8df5d-8ab0-49de-b263-41e79aaf5aa6, messageId=28aab2c7-09b4-4653-97d9-98a10fd6944e, type=BOOK_TICKET, endpoint=127.0.0.1:36945, outcome=CONFIRMED, elapsedMs=1ms
+Nov 13, 2026 5:15:36 PM vn.nhom6.railway.client.network.SocketBookingClient logCall
+INFO: [TCP-CLIENT] requestId=2fb01955-bf5e-4a8b-9048-a3d12e85c400, messageId=1b4e1dee-1033-4920-9318-cae74845f8c0, type=BOOK_TICKET, endpoint=127.0.0.1:34769, outcome=REJECTED, elapsedMs=1ms
+[TCP-CLIENT] requestId=2fb01955-bf5e-4a8b-9048-a3d12e85c400, messageId=1b4e1dee-1033-4920-9318-cae74845f8c0, type=BOOK_TICKET, endpoint=127.0.0.1:34769, outcome=REJECTED, elapsedMs=1ms
+[WARNING] Tests run: 16, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.465 s -- in vn.nhom6.railway.client.SocketBookingClientTest
+[INFO] Running vn.nhom6.railway.client.network.MockBookingClientTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in vn.nhom6.railway.client.network.MockBookingClientTest
+[INFO] Running vn.nhom6.railway.client.viewmodel.BookingViewModelTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in vn.nhom6.railway.client.viewmodel.BookingViewModelTest
+[INFO] Running vn.nhom6.railway.client.viewmodel.SeatViewModelTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in vn.nhom6.railway.client.viewmodel.SeatViewModelTest
+[INFO] Running vn.nhom6.railway.client.viewmodel.TicketViewModelTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in vn.nhom6.railway.client.viewmodel.TicketViewModelTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 151, Failures: 0, Errors: 0, Skipped: 5
+[INFO] 
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-monitor >------------------
+[INFO] Building desktop-monitor 1.0.0-SNAPSHOT                            [5/6]
+[INFO]   from desktop-monitor/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ desktop-monitor ---
+[INFO] Deleting /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/desktop-monitor/target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-monitor ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-monitor ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-monitor ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/desktop-monitor/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-monitor ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-monitor ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [6/6]
+[INFO]   from integration-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ integration-tests ---
+[INFO] Deleting /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/integration-tests/target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory /home/nguyenhuu/Hoc Tap/HTPT/railway-distributed-system/integration-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+Picked up JAVA_TOOL_OPTIONS: -Djava.awt.headless=true -Dtestfx.robot=glass -Dglass.platform=Monocle -Dmonocle.platform=Headless
+[INFO] Running vn.nhom6.railway.tests.Node1DatabaseIntegrationTest
+Nov 13, 2026 5:15:37 PM vn.nhom6.railway.booking.ConnectionFactory storageFailure
+SEVERE: PostgreSQL connection failed for 127.0.0.1:5433/railway_node1; SQLState=08001, vendorCode=0, driverMessage=Connection to 127.0.0.1:5433 refused. Check that the hostname and port are correct and that the postmaster is accepting TCP/IP connections.
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.080 s -- in vn.nhom6.railway.tests.Node1DatabaseIntegrationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.074 s]
+[INFO] shared ............................................. SUCCESS [  1.680 s]
+[INFO] backend-node ....................................... SUCCESS [ 19.058 s]
+[INFO] desktop-client ..................................... SUCCESS [  4.498 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.017 s]
+[INFO] integration-tests .................................. SUCCESS [  0.371 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.758 s
+[INFO] Finished at: 2026-11-13T17:15:37+07:00
+[INFO] ------------------------------------------------------------------------
