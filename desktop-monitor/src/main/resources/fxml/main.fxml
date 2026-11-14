@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="vn.nhom6.railway.monitor.MonitorController"
+      prefWidth="980" prefHeight="440" spacing="14">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Desktop Monitor v1 — MOCK (D13)" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <Label text="Dữ liệu mock cố định • 5 Node • Chỉ quan sát • Chưa kết nối backend"
+           wrapText="true"/>
+    <TableView fx:id="nodeTable" editable="false" fixedCellSize="48" prefHeight="300"
+               VBox.vgrow="ALWAYS" accessibleText="Bảng mock giám sát năm Node">
+        <columns>
+            <TableColumn fx:id="nodeColumn" text="Node" prefWidth="130"/>
+            <TableColumn fx:id="roleColumn" text="role" prefWidth="150"/>
+            <TableColumn fx:id="termColumn" text="term" prefWidth="90"/>
+            <TableColumn fx:id="statusColumn" text="status" prefWidth="190"/>
+            <TableColumn fx:id="commitIndexColumn" text="commitIndex" prefWidth="145"/>
+            <TableColumn fx:id="lastAppliedColumn" text="lastApplied" prefWidth="145"/>
+        </columns>
+    </TableView>
+    <Label text="— = chưa biết. Trạng thái mock không chứng minh quorum hoặc commit của cụm thật."
+           wrapText="true"/>
+</VBox>
