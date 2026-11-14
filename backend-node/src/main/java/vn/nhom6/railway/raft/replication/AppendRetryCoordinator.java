@@ -21,6 +21,9 @@ import vn.nhom6.railway.raft.core.Role;
  *
  * <p>All callbacks and state access are serialized on the injected Raft event loop. Scheduler
  * callbacks only enqueue work onto that loop.
+ *
+ * <p>After {@code onGiveUp}, a peer is not retried automatically until an ACK arrives or the caller
+ * explicitly invokes {@code replicate(peerId)}.
  */
 public final class AppendRetryCoordinator {
 

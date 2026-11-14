@@ -29,6 +29,11 @@ import vn.nhom6.railway.raft.core.Role;
  * <p>An attached {@link AppendRetryCoordinator} handles same-term log-mismatch rejections and
  * schedules further bounded batches after successful acknowledgements.
  *
+ * <p>Same-term rejections are retried only when an {@link AppendRetryCoordinator} is attached;
+ * both components are intended to be used together. An empty request (heartbeat) when
+ * {@code nextIndex > lastLogIndex} may overlap TV5's {@code LeaderHeartbeatScheduler}; safety
+ * relies on the one-in-flight-RPC-per-peer limit.
+ *
  * <p>It deliberately does not compute majority/commit, does not apply state-machine entries and does
  * not touch JDBC or the durable log. The actual commit rule remains the responsibility of the later
  * replication/commit task described in SPEC-04 section 5.
@@ -266,7 +271,6 @@ public final class RaftReplicationService {
         if (nextIndex > lastLogIndex) {
             return Collections.emptyList();
         }
-        List<RaftLogEntry> allEntries = state.entries();
         long endIndex = Math.min(lastLogIndex, nextIndex + batchMax - 1L);
         List<RaftLogEntry> result = new ArrayList<>();
         for (long index = nextIndex; index <= endIndex; index++) {
