@@ -26,6 +26,9 @@ import vn.nhom6.railway.raft.core.Role;
  * updates the leader's {@link RaftState#matchIndex()} only when the RPC proves the peer reached the
  * exact expected match index.
  *
+ * <p>An attached {@link AppendRetryCoordinator} handles same-term log-mismatch rejections and
+ * schedules further bounded batches after successful acknowledgements.
+ *
  * <p>It deliberately does not compute majority/commit, does not apply state-machine entries and does
  * not touch JDBC or the durable log. The actual commit rule remains the responsibility of the later
  * replication/commit task described in SPEC-04 section 5.
@@ -90,6 +93,7 @@ public final class RaftReplicationService {
     private final Map<String, Scheduler.Cancellable> scheduledRetries = new HashMap<>();
     private final Map<String, Boolean> inFlight = new HashMap<>();
     private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private AppendRetryCoordinator retryCoordinator;
 
     public RaftReplicationService(String localId, RaftState state, RaftTransportAdapter transport,
             Collection<String> peers, Executor raftLoop, Scheduler scheduler, int batchMax,
@@ -140,6 +144,9 @@ public final class RaftReplicationService {
 
     public void stop() {
         stopped.set(true);
+        if (retryCoordinator != null) {
+            retryCoordinator.stop();
+        }
         for (Scheduler.Cancellable handle : scheduledRetries.values()) {
             if (handle != null) {
                 handle.cancel();
@@ -147,6 +154,14 @@ public final class RaftReplicationService {
         }
         scheduledRetries.clear();
         inFlight.clear();
+    }
+
+    void attachRetryCoordinator(AppendRetryCoordinator coordinator) {
+        Objects.requireNonNull(coordinator, "coordinator");
+        if (retryCoordinator != null && retryCoordinator != coordinator) {
+            throw new IllegalStateException("an AppendRetryCoordinator is already attached");
+        }
+        retryCoordinator = coordinator;
     }
 
     void handleAppendResult(String peerId, RaftNode.AppendEntriesRequest request,
@@ -184,6 +199,9 @@ public final class RaftReplicationService {
         }
         if (!replied.response().success()) {
             hooks.onRejected(peerId, request);
+            if (retryCoordinator != null) {
+                retryCoordinator.onRejected(peerId, request, replied.response());
+            }
             consecutiveFailures.put(peerId, consecutiveFailures.getOrDefault(peerId, 0) + 1);
             return;
         }
@@ -201,6 +219,9 @@ public final class RaftReplicationService {
         state.advanceMatchIndex(peerId, expected);
         consecutiveFailures.remove(peerId);
         resetRetry(peerId);
+        if (retryCoordinator != null) {
+            retryCoordinator.onAckSuccess(peerId);
+        }
     }
 
     private void handleFailed(String peerId, RaftNode.AppendEntriesRequest request,
