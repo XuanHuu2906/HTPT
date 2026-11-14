@@ -1,0 +1,155 @@
+TV4-D14 validation evidence
+==========================
+
+Task: TV4-D14 AppendEntries backtracking and bounded retry.
+Code commit: 71f0d7fd8cd2807f5040d4c6645ce8628d7336e9
+Base commit: a24406afa1d84759eabf9628873ec15bfed42d8a (origin/main, already merged).
+
+Environment:
+- Host: Windows; Docker Engine 29.8.0.
+- Test container: maven:3.9-eclipse-temurin-25; OpenJDK 25.0.4.1; Maven 3.9.16.
+- PostgreSQL: railway-postgres-1 on railway-dev-network; health was healthy.
+- Credential values were passed through environment variables and are not recorded here.
+
+Command (database password redacted):
+docker run --rm --network railway-dev-network -v D:/HOCTAP/HTPT:/workspace -w /workspace -e RAILWAY_TEST_JDBC_URL=jdbc:postgresql://postgres-1:5432/railway_node1 -e RAILWAY_TEST_DB_USER=railway -e RAILWAY_TEST_DB_PASSWORD=[REDACTED] maven:3.9-eclipse-temurin-25 mvn -B -ntp clean -pl backend-node -am "-Dtest=vn.nhom6.railway.raft.replication.*Test,vn.nhom6.railway.raft.core.*Test" "-Dsurefire.failIfNoSpecifiedTests=false" tes
+
+Result: PASS; Maven exit code 0.
+Raft core and replication suites: 319 tests, 0 failures, 0 errors, 0 skipped.
+The 17 D14 test methods cover 18 plan scenarios. Follower catch-up uses
+AppendEntriesHandler and FakeRaftStorage through a fake RPC client; it is not TCP
+or a five-node system test. D13 PostgreSQL integration tests also ran against the
+local PostgreSQL container (7 tests, 0 skipped).
+
+Expected diagnostic logs during passing tests:
+- Injected JDBC connection failure verifies fail-closed persistence behavior.
+- Refusal to truncate an applied prefix verifies committed-log protection.
+
+An initial clean attempt could not delete a target directory; the same clean tes
+command was rerun and completed successfully. The recorded output below is from
+the successful run.
+
+Full Maven output:
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- clean:3.2.0:clean (default-clean) @ railway-distributed-system ---
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- clean:3.2.0:clean (default-clean) @ shared ---
+[INFO] Deleting /workspace/shared/targe
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /workspace/shared/src/main/resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 14 source files with javac [debug release 25] to target/classes
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug release 25] to target/test-classes
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- clean:3.2.0:clean (default-clean) @ backend-node ---
+[INFO] Deleting /workspace/backend-node/targe
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 63 source files with javac [debug release 25] to target/classes
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /workspace/backend-node/src/test/resources
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 58 source files with javac [debug release 25] to target/test-classes
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreContractTes
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.193 s -- in vn.nhom6.railway.raft.core.RaftCoreContractTes
+[INFO] Running vn.nhom6.railway.raft.core.RaftCoreModelTes
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.078 s -- in vn.nhom6.railway.raft.core.RaftCoreModelTes
+[INFO] Running vn.nhom6.railway.raft.core.RaftTransportAdapterTes
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.718 s -- in vn.nhom6.railway.raft.core.RaftTransportAdapterTes
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTes
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.259 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.328 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTes
+[INFO] Running vn.nhom6.railway.raft.replication.AppendRetryCoordinatorTes
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.125 s -- in vn.nhom6.railway.raft.replication.AppendRetryCoordinatorTes
+[INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTes
+docker : Nov 14, 2026 2:30:45 AM vn.nhom6.railway.persistence.JdbcRaftStorage logAndWrap
+At line:2 char:44
++ ... ocal_only'; docker run --rm --network railway-dev-network -v D:/HOCTA ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Nov 14, 2026 2:...rage logAndWrap:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+SEVERE: PostgreSQL getConnection for replaceSuffix failed: SQLState=null, errorCode=0, message=Injected connection
+failure
+Nov 14, 2026 2:30:46 AM vn.nhom6.railway.persistence.JdbcRaftStorage replaceSuffix
+SEVERE: Attempted to truncate or overwrite committed log index: fromIndex=1 <= lastApplied=1
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.959 s -- in vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTes
+[INFO] Running vn.nhom6.railway.raft.replication.LogConflictResolverTes
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in vn.nhom6.railway.raft.replication.LogConflictResolverTes
+[INFO] Running vn.nhom6.railway.raft.replication.PersistenceAckTes
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.raft.replication.PersistenceAckTes
+[INFO] Running vn.nhom6.railway.raft.replication.RaftLogTes
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.raft.replication.RaftLogTes
+[INFO] Running vn.nhom6.railway.raft.replication.RaftReplicationServiceTes
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in vn.nhom6.railway.raft.replication.RaftReplicationServiceTes
+[INFO] Running vn.nhom6.railway.raft.replication.RaftStorageAdapterTes
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in vn.nhom6.railway.raft.replication.RaftStorageAdapterTes
+[INFO] Running vn.nhom6.railway.raft.replication.ReplicationTrackerTes
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s -- in vn.nhom6.railway.raft.replication.ReplicationTrackerTes
+[INFO] Running vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTes
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in vn.nhom6.railway.raft.replication.TransportToFollowerRoundTripTes
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 319, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  1.565 s]
+[INFO] shared ............................................. SUCCESS [ 15.503 s]
+[INFO] backend-node ....................................... SUCCESS [ 34.213 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  51.446 s
+[INFO] Finished at: 2026-11-14T02:30:47Z
+[INFO] ------------------------------------------------------------------------
