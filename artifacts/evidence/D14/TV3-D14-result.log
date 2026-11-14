@@ -1,0 +1,62 @@
+================================================================================
+TEST EXECUTION EVIDENCE: TV3-D14 (Safe ConnectionManager & Timeout Reconnect)
+Date: 2026-11-14
+Module: backend-node (Networking & Transport)
+Task: tv3-d14 - Timeout và reconnect an toàn
+Target Deliverables:
+  - backend-node/src/main/java/vn/nhom6/railway/networking/RetryPolicy.java
+  - backend-node/src/main/java/vn/nhom6/railway/networking/ResultLookup.java
+  - backend-node/src/main/java/vn/nhom6/railway/networking/FakeResultLookup.java
+  - backend-node/src/main/java/vn/nhom6/railway/networking/ConnectionManager.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/RetryPolicyTest.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/ConnectionManagerTest.java
+  - backend-node/src/test/java/vn/nhom6/railway/networking/ConnectionManagerTcpIntegrationTest.java
+================================================================================
+
+[MAVEN TEST EXECUTION COMMAND]
+mvn -B -ntp test -Dtest=RetryPolicyTest,ConnectionManagerTest,ConnectionManagerTcpIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false
+
+[TEST RESULTS SUMMARY]
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running vn.nhom6.railway.networking.RetryPolicyTest
+- testDefaultPolicy: PASS
+- testNoRetryPolicy: PASS
+- testParameterValidations: PASS
+- testComputeBackoff: PASS
+- testCanRetry: PASS
+- testTransientConnectionErrors: PASS
+- testTimeoutClassification: PASS
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in vn.nhom6.railway.networking.RetryPolicyTest
+
+Running vn.nhom6.railway.networking.ConnectionManagerTest
+- testConnectAndClose: PASS
+- testReconnect: PASS
+- testReadTimeoutReturnsUnknownNeverRejected: PASS (BẤT BIẾN: timeout -> UNKNOWN, never REJECTED, preserves requestId)
+- testUntypedSendAndReceiveTimeout: PASS
+- testReadTimeoutWithLookupSuccess: PASS (Timeout -> Lookup APPLIED_SUCCESS -> CONFIRMED)
+- testReadTimeoutWithLookupRejected: PASS (Timeout -> Lookup APPLIED_REJECTED -> REJECTED)
+- testReadTimeoutWithLookupException: PASS (Lookup exception -> fallback UNKNOWN)
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.536 s -- in vn.nhom6.railway.networking.ConnectionManagerTest
+
+Running vn.nhom6.railway.networking.ConnectionManagerTcpIntegrationTest
+- testNormalBookingWorkflow: PASS
+- testTimeoutAndSubsequentReconnect: PASS (Timeout closes socket, next call reconnects fresh socket)
+- testConnectionRefusedRetries: PASS (Connection refused backoff retry)
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.120 s -- in vn.nhom6.railway.networking.ConnectionManagerTcpIntegrationTest
+
+Results:
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+
+================================================================================
+FULL REACTOR VERIFICATION:
+HEADLESS="true" JAVA_TOOL_OPTIONS="-Djava.awt.headless=true -Dtestfx.robot=glass -Dtestfx.headless=true -Dprism.order=sw" mvn -B -ntp test
+- railway-distributed-system: SUCCESS
+- shared: SUCCESS (30 tests)
+- backend-node: SUCCESS (400+ tests)
+- desktop-client: SUCCESS (151 tests)
+- desktop-monitor: SUCCESS
+- integration-tests: SUCCESS
+Result: BUILD SUCCESS (0 failures, 0 errors across entire workspace)
+================================================================================
