@@ -168,6 +168,9 @@
                         </HBox>
                     </children>
                 </VBox>
+
+                <!-- Card 3: Danh sách yêu cầu chờ xử lý (Journal Pending — TASK D14) -->
+                <fx:include fx:id="pendingRequestsPanel" source="pending-requests.fxml" />
             </children>
         </VBox>
     </center>

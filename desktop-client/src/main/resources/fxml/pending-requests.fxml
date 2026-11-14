@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="vn.nhom6.railway.client.controller.PendingRequestsController"
+      spacing="10.0"
+      style="-fx-background-color: #ffffff; -fx-padding: 16; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+
+    <!-- Tiêu đề Panel -->
+    <HBox alignment="CENTER_LEFT" spacing="10.0">
+        <children>
+            <Label text="📋 YÊU CẦU CHỜ XỬ LÝ (PENDING JOURNAL — D14)"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+            <Label fx:id="pendingCountBadge" text="0 yêu cầu"
+                   style="-fx-background-color: #fef3c7; -fx-text-fill: #92400e; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 2 8; -fx-background-radius: 10;" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="refreshBtn" text="🔄 Làm mới" onAction="#handleRefresh"
+                    style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-font-size: 12px; -fx-cursor: hand;" />
+        </children>
+    </HBox>
+
+    <Label text="Các yêu cầu đã ghi bền vững xuống đĩa trước khi gửi. Sau sự cố tắt ứng dụng, các yêu cầu chưa có xác nhận cuối sẽ được khôi phục tại đây với trạng thái CHƯA XÁC NHẬN."
+           style="-fx-font-size: 12px; -fx-text-fill: #64748b;" wrapText="true" />
+
+    <!-- Bảng danh sách Pending -->
+    <TableView fx:id="pendingTableView" prefHeight="180.0" minHeight="120.0" VBox.vgrow="ALWAYS"
+               style="-fx-border-color: #cbd5e1; -fx-border-radius: 4;">
+        <columns>
+            <TableColumn fx:id="requestIdCol" text="Mã yêu cầu (Request ID)" prefWidth="170.0" />
+            <TableColumn fx:id="summaryCol" text="Nội dung" prefWidth="140.0" />
+            <TableColumn fx:id="statusCol" text="Trạng thái" prefWidth="130.0" />
+            <TableColumn fx:id="attemptsCol" text="Số lần thử" prefWidth="75.0" />
+            <TableColumn fx:id="lastAttemptCol" text="Thời gian thử cuối" prefWidth="140.0" />
+            <TableColumn fx:id="sourceCol" text="Nguồn" prefWidth="70.0" />
+            <TableColumn fx:id="actionsCol" text="Thao tác" prefWidth="180.0" sortable="false" />
+        </columns>
+        <placeholder>
+            <Label text="Không có yêu cầu nào đang chờ xử lý." style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;" />
+        </placeholder>
+    </TableView>
+
+    <!-- Thanh trạng thái dưới bảng -->
+    <HBox alignment="CENTER_LEFT" spacing="8.0" style="-fx-padding: 4 0 0 0;">
+        <children>
+            <Label text="Ghi chú:" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;" />
+            <Label fx:id="statusLabel" text="Sẵn sàng." style="-fx-font-size: 11px; -fx-text-fill: #334155;" wrapText="true" />
+            <Region HBox.hgrow="ALWAYS" />
+            <ProgressIndicator fx:id="busyIndicator" prefWidth="16.0" prefHeight="16.0" visible="false" />
+        </children>
+    </HBox>
+</VBox>

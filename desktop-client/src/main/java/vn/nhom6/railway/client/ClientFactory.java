@@ -13,6 +13,7 @@ import vn.nhom6.railway.client.network.SocketClusterStatusClient;
 import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
+import vn.nhom6.railway.client.viewmodel.PendingRequestsViewModel;
 
 /**
  * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07/D09/D11/D12).
@@ -34,6 +35,7 @@ public final class ClientFactory {
 
     private static volatile BookingClient bookingClient = createDefaultBookingClient();
     private static volatile BookingViewModel bookingViewModel = new BookingViewModel(bookingClient);
+    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
 
     private ClientFactory() {}
 
@@ -142,6 +144,17 @@ public final class ClientFactory {
             bookingClient = raw;
         }
         bookingViewModel = new BookingViewModel(bookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
+    }
+
+    /**
+     * Lấy PendingRequestsViewModel dùng chung cho ứng dụng (TASK D14).
+     */
+    public static synchronized PendingRequestsViewModel getPendingRequestsViewModel() {
+        if (pendingRequestsViewModel == null) {
+            pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
+        }
+        return pendingRequestsViewModel;
     }
 
     /**
