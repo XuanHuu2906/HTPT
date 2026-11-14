@@ -26,6 +26,7 @@ public final class RaftElectionComponent implements AutoCloseable {
     private final ElectionTimer timer;
     private final RaftState state;
     private final RaftNode core;
+    private final HigherTermHandler higherTermHandler;
     private LeaderHeartbeatScheduler heartbeat;
     private boolean heartbeatActive;
     private final ElectionConfig config;
@@ -60,6 +61,10 @@ public final class RaftElectionComponent implements AutoCloseable {
             return thread;
         });
         loop.setRemoveOnCancelPolicy(true);
+        higherTermHandler = new HigherTermHandler(state, term -> {
+            if (core instanceof PersistentRaftNode durable) durable.observeHigherTerm(term);
+            else persistence.observeHigherTerm(term);
+        }, this::stopHeartbeat, this::timerStart);
         election = new CandidateElection(localId, core, state, (peer, request, reply) ->
                 transport.requestVote(peer, request, response -> {
                     if (!closed) loop.execute(() -> {
@@ -67,12 +72,7 @@ public final class RaftElectionComponent implements AutoCloseable {
                         try { reply.receive(response); }
                         catch (Exception failure) { fail(failure); }
                     });
-                }), term -> {
-                    stopHeartbeat();
-                    if (core instanceof PersistentRaftNode durable) durable.observeHigherTerm(term);
-                    else persistence.observeHigherTerm(term);
-                    timerStart();
-                }, () -> {
+                }), higherTermHandler, () -> {
                     timerStop();
                     System.out.println("[RAFT] node=" + localId + " role=LEADER term=" + state.currentTerm());
                     if (heartbeat != null) { heartbeatActive = true; heartbeat.start(); }
@@ -110,10 +110,8 @@ public final class RaftElectionComponent implements AutoCloseable {
     public void configureHeartbeat(LeaderHeartbeatScheduler.HeartbeatTransport transport) throws Exception {
         call(() -> {
             if (heartbeat != null) throw new IllegalStateException("heartbeat already configured");
-            heartbeat = new LeaderHeartbeatScheduler(localId, state, loop, config, transport, term -> {
-                ((PersistentRaftNode) core).observeHigherTerm(term);
-                timer.start();
-            }, this::fail);
+            heartbeat = new LeaderHeartbeatScheduler(localId, state, loop, config, transport,
+                    higherTermHandler, this::fail);
             return null;
         });
     }

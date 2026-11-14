@@ -1,0 +1,13 @@
+Command: ['docker', 'ps', '--format', '{{.Names}} {{.Status}}']
+Exit: 1
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+
+Command: ['bash', '-c', 'command -v postgres; command -v psql']
+Exit: 1
+
+Command: ['bash', '-c', 'for name in RAILWAY_TEST_JDBC_URL RAILWAY_TEST_DB_USER RAILWAY_TEST_DB_PASSWORD; do if [[ -v "$name" ]]; then printf "%s=set\\n" "$name"; else printf "%s=unset\\n" "$name"; fi; done']
+Exit: 0
+RAILWAY_TEST_JDBC_URL=unset
+RAILWAY_TEST_DB_USER=unset
+RAILWAY_TEST_DB_PASSWORD=unset
+
