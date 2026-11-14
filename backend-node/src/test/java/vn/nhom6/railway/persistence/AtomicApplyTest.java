@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import vn.nhom6.railway.booking.ApplyResult;
 import vn.nhom6.railway.booking.BookingCommand;
+import vn.nhom6.railway.booking.BookingRepository;
 import vn.nhom6.railway.booking.BookingStateMachine;
 import vn.nhom6.railway.booking.CommittedCommandApplier;
 import vn.nhom6.railway.booking.ConnectionFactory;
@@ -125,11 +126,9 @@ class AtomicApplyTest {
         BookingStateMachine.ApplyOutcome.BusinessResult replayResult = assertInstanceOf(
                 BookingStateMachine.ApplyOutcome.BusinessResult.class, replayOutcome);
 
-        // Kết quả trả về phải khớp với kết quả gốc và được đánh dấu isReplay
-        assertTrue(replayResult.isReplay());
-        assertEquals(
-                assertInstanceOf(BookingStateMachine.ApplyOutcome.BusinessResult.class, initialOutcome).applyResult(),
-                replayResult.applyResult());
+        // Kết quả trả về phải khớp với kết quả gốc; isReplay là false vì đây là redelivery đúng logIndex gốc
+        assertEquals(initialOutcome, replayOutcome);
+        assertFalse(replayResult.isReplay());
         assertEquals(ApplyResult.bookConfirmed(REQUEST_1, "ticket-1", 1), replayResult.applyResult());
 
         // Không phát sinh thêm bản ghi vé, kết quả, hay sự kiện nghiệp vụ
@@ -238,7 +237,9 @@ class AtomicApplyTest {
 
         // 3. Thực hiện hủy vé ticket-1 ở index 2
         BookingCommand.CancelTicket cancelCmd = new BookingCommand.CancelTicket(REQUEST_CANCEL, "ticket-1", TIME_2);
-        assertThrows(IllegalStateException.class, () -> source.commit(2, cancelCmd));
+        BookingRepository.StorageException integrityException = assertThrows(
+                BookingRepository.StorageException.class, () -> source.commit(2, cancelCmd));
+        assertTrue(integrityException.getMessage().contains("not linked to its BOOKED seat"));
 
         // 4. Kiểm tra invariant: Fail closed & rollback hoàn toàn
         assertEquals(1L, applier.lastApplied(), "lastApplied không được tăng khi apply thất bại");
