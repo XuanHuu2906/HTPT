@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Duration;
@@ -97,7 +98,13 @@ public final class PersistentPendingJournal implements Closeable {
      */
     private void acquireLock() throws IOException {
         this.lockChannel = FileChannel.open(lockFilePath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        this.fileLock = this.lockChannel.tryLock();
+        try {
+            this.fileLock = this.lockChannel.tryLock();
+        } catch (OverlappingFileLockException e) {
+            this.lockChannel.close();
+            throw new IllegalStateException("Không thể chiếm khóa journal.lock tại " + lockFilePath +
+                    ". Đã có tiến trình khác đang chạy ứng dụng hoặc mở journal!", e);
+        }
         if (this.fileLock == null) {
             this.lockChannel.close();
             throw new IllegalStateException("Không thể chiếm khóa journal.lock tại " + lockFilePath +

@@ -33,9 +33,10 @@ public final class ClientFactory {
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
     private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
 
-    private static volatile BookingClient bookingClient = createDefaultBookingClient();
-    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(bookingClient);
-    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
+    private static volatile BookingClient rawBookingClient = createDefaultBookingClient();
+    private static volatile JournalingBookingClient journalingBookingClient = wrapWithJournal(rawBookingClient);
+    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(journalingBookingClient);
+    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
 
     private ClientFactory() {}
 
@@ -59,7 +60,9 @@ public final class ClientFactory {
             } catch (Exception ignored) {}
         }
         journal = customJournal;
-        setBookingClient(bookingClient);
+        journalingBookingClient = wrapWithJournal(rawBookingClient);
+        bookingViewModel = new BookingViewModel(journalingBookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
     }
 
     private static PersistentPendingJournal createDefaultJournal() {
@@ -70,11 +73,22 @@ public final class ClientFactory {
         }
     }
 
+    private static JournalingBookingClient wrapWithJournal(BookingClient client) {
+        if (client instanceof JournalingBookingClient jbc) {
+            return jbc;
+        }
+        PersistentPendingJournal j = getJournal();
+        if (j != null) {
+            return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), j);
+        }
+        return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(),
+                PersistentPendingJournal.createDefault());
+    }
+
     /**
      * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
      * -Dbooking.client=socket -> LeaderAwareBookingClient bọc SocketBookingClient
      * Mặc định hoặc -Dbooking.client=mock -> MockBookingClient.getInstance()
-     * Tự động được bọc bằng JournalingBookingClient (TASK D14).
      */
     public static BookingClient createDefaultClient() {
         return createDefaultBookingClient();
@@ -82,20 +96,12 @@ public final class ClientFactory {
 
     public static BookingClient createDefaultBookingClient() {
         String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
-        BookingClient rawClient;
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
             ClusterEndpoints endpoints = ClusterEndpoints.loadDefault();
             RedirectPolicy policy = RedirectPolicy.defaultPolicy();
-            rawClient = new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
-        } else {
-            rawClient = MockBookingClient.getInstance();
+            return new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
         }
-
-        PersistentPendingJournal currentJournal = getJournal();
-        if (currentJournal != null) {
-            return new JournalingBookingClient(rawClient, currentJournal);
-        }
-        return rawClient;
+        return MockBookingClient.getInstance();
     }
 
     public static ClusterStatusClient createDefaultClusterStatusClient() {
@@ -111,50 +117,31 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingClient hiện tại đang hoạt động.
+     * Lấy BookingClient hiện tại đang hoạt động (raw client: LeaderAware hoặc Mock).
      */
     public static BookingClient getBookingClient() {
-        return bookingClient;
+        return rawBookingClient;
     }
 
     /**
-     * Lấy JournalingBookingClient nếu đang sử dụng decorator.
+     * Lấy JournalingBookingClient (decorator bọc journal bền vững - TASK D14).
      */
     public static JournalingBookingClient getJournalingBookingClient() {
-        if (bookingClient instanceof JournalingBookingClient jbc) {
-            return jbc;
+        if (journalingBookingClient == null) {
+            journalingBookingClient = wrapWithJournal(rawBookingClient);
         }
-        PersistentPendingJournal j = getJournal();
-        if (j != null) {
-            return new JournalingBookingClient(bookingClient, j);
-        }
-        return null;
+        return journalingBookingClient;
     }
 
     /**
      * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test runner).
-     * Tự động bọc bằng JournalingBookingClient nếu chưa có.
+     * Tự động bọc vào JournalingBookingClient để tiêm vào BookingViewModel và PendingRequestsViewModel.
      */
     public static synchronized void setBookingClient(BookingClient client) {
-        BookingClient raw = (client != null) ? client : MockBookingClient.getInstance();
-        PersistentPendingJournal currentJournal = getJournal();
-        if (currentJournal != null && !(raw instanceof JournalingBookingClient)) {
-            bookingClient = new JournalingBookingClient(raw, currentJournal);
-        } else {
-            bookingClient = raw;
-        }
-        bookingViewModel = new BookingViewModel(bookingClient);
-        pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
-    }
-
-    /**
-     * Lấy PendingRequestsViewModel dùng chung cho ứng dụng (TASK D14).
-     */
-    public static synchronized PendingRequestsViewModel getPendingRequestsViewModel() {
-        if (pendingRequestsViewModel == null) {
-            pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
-        }
-        return pendingRequestsViewModel;
+        rawBookingClient = (client != null) ? client : MockBookingClient.getInstance();
+        journalingBookingClient = wrapWithJournal(rawBookingClient);
+        bookingViewModel = new BookingViewModel(journalingBookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
     }
 
     /**
@@ -191,9 +178,19 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành.
+     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành (được bảo vệ bởi journal).
      */
     public static BookingViewModel getBookingViewModel() {
         return bookingViewModel;
+    }
+
+    /**
+     * Lấy PendingRequestsViewModel dùng chung cho ứng dụng (TASK D14).
+     */
+    public static synchronized PendingRequestsViewModel getPendingRequestsViewModel() {
+        if (pendingRequestsViewModel == null) {
+            pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
+        }
+        return pendingRequestsViewModel;
     }
 }

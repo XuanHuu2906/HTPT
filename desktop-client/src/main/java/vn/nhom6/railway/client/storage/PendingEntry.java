@@ -251,18 +251,22 @@ public final class PendingEntry {
         return state;
     }
 
+    @JsonIgnore
     public Instant getCreatedAt() {
         return createdAt != null ? Instant.parse(createdAt) : null;
     }
 
+    @JsonProperty("createdAt")
     public String getCreatedAtString() {
         return createdAt;
     }
 
+    @JsonIgnore
     public Instant getLastAttemptAt() {
         return lastAttemptAt != null ? Instant.parse(lastAttemptAt) : null;
     }
 
+    @JsonProperty("lastAttemptAt")
     public String getLastAttemptAtString() {
         return lastAttemptAt;
     }
