@@ -3,12 +3,14 @@ package vn.nhom6.railway.client;
 import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
 import vn.nhom6.railway.client.network.ClusterStatusClient;
+import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.RedirectPolicy;
 import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
+import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 
@@ -26,6 +28,7 @@ import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
  */
 public final class ClientFactory {
 
+    private static volatile PersistentPendingJournal journal = createDefaultJournal();
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
     private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
 
@@ -35,9 +38,41 @@ public final class ClientFactory {
     private ClientFactory() {}
 
     /**
+     * Lấy PersistentPendingJournal dùng chung cho ứng dụng.
+     */
+    public static synchronized PersistentPendingJournal getJournal() {
+        if (journal == null || journal.isClosed()) {
+            journal = createDefaultJournal();
+        }
+        return journal;
+    }
+
+    /**
+     * Đặt Journal tùy biến (ví dụ trong unit test dùng thư mục tạm).
+     */
+    public static synchronized void setJournal(PersistentPendingJournal customJournal) {
+        if (journal != null && !journal.isClosed()) {
+            try {
+                journal.close();
+            } catch (Exception ignored) {}
+        }
+        journal = customJournal;
+        setBookingClient(bookingClient);
+    }
+
+    private static PersistentPendingJournal createDefaultJournal() {
+        try {
+            return PersistentPendingJournal.createDefault();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
      * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
      * -Dbooking.client=socket -> LeaderAwareBookingClient bọc SocketBookingClient
      * Mặc định hoặc -Dbooking.client=mock -> MockBookingClient.getInstance()
+     * Tự động được bọc bằng JournalingBookingClient (TASK D14).
      */
     public static BookingClient createDefaultClient() {
         return createDefaultBookingClient();
@@ -45,12 +80,20 @@ public final class ClientFactory {
 
     public static BookingClient createDefaultBookingClient() {
         String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
+        BookingClient rawClient;
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
             ClusterEndpoints endpoints = ClusterEndpoints.loadDefault();
             RedirectPolicy policy = RedirectPolicy.defaultPolicy();
-            return new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
+            rawClient = new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
+        } else {
+            rawClient = MockBookingClient.getInstance();
         }
-        return MockBookingClient.getInstance();
+
+        PersistentPendingJournal currentJournal = getJournal();
+        if (currentJournal != null) {
+            return new JournalingBookingClient(rawClient, currentJournal);
+        }
+        return rawClient;
     }
 
     public static ClusterStatusClient createDefaultClusterStatusClient() {
@@ -73,10 +116,31 @@ public final class ClientFactory {
     }
 
     /**
+     * Lấy JournalingBookingClient nếu đang sử dụng decorator.
+     */
+    public static JournalingBookingClient getJournalingBookingClient() {
+        if (bookingClient instanceof JournalingBookingClient jbc) {
+            return jbc;
+        }
+        PersistentPendingJournal j = getJournal();
+        if (j != null) {
+            return new JournalingBookingClient(bookingClient, j);
+        }
+        return null;
+    }
+
+    /**
      * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test runner).
+     * Tự động bọc bằng JournalingBookingClient nếu chưa có.
      */
     public static synchronized void setBookingClient(BookingClient client) {
-        bookingClient = (client != null) ? client : MockBookingClient.getInstance();
+        BookingClient raw = (client != null) ? client : MockBookingClient.getInstance();
+        PersistentPendingJournal currentJournal = getJournal();
+        if (currentJournal != null && !(raw instanceof JournalingBookingClient)) {
+            bookingClient = new JournalingBookingClient(raw, currentJournal);
+        } else {
+            bookingClient = raw;
+        }
         bookingViewModel = new BookingViewModel(bookingClient);
     }
 
