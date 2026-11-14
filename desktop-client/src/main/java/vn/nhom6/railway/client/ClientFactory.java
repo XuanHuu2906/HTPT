@@ -3,14 +3,17 @@ package vn.nhom6.railway.client;
 import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
 import vn.nhom6.railway.client.network.ClusterStatusClient;
+import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.RedirectPolicy;
 import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
+import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
+import vn.nhom6.railway.client.viewmodel.PendingRequestsViewModel;
 
 /**
  * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07/D09/D11/D12).
@@ -26,13 +29,61 @@ import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
  */
 public final class ClientFactory {
 
+    private static volatile PersistentPendingJournal journal = createDefaultJournal();
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
     private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
 
-    private static volatile BookingClient bookingClient = createDefaultBookingClient();
-    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(bookingClient);
+    private static volatile BookingClient rawBookingClient = createDefaultBookingClient();
+    private static volatile JournalingBookingClient journalingBookingClient = wrapWithJournal(rawBookingClient);
+    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(journalingBookingClient);
+    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
 
     private ClientFactory() {}
+
+    /**
+     * Lấy PersistentPendingJournal dùng chung cho ứng dụng.
+     */
+    public static synchronized PersistentPendingJournal getJournal() {
+        if (journal == null || journal.isClosed()) {
+            journal = createDefaultJournal();
+        }
+        return journal;
+    }
+
+    /**
+     * Đặt Journal tùy biến (ví dụ trong unit test dùng thư mục tạm).
+     */
+    public static synchronized void setJournal(PersistentPendingJournal customJournal) {
+        if (journal != null && !journal.isClosed()) {
+            try {
+                journal.close();
+            } catch (Exception ignored) {}
+        }
+        journal = customJournal;
+        journalingBookingClient = wrapWithJournal(rawBookingClient);
+        bookingViewModel = new BookingViewModel(journalingBookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+    }
+
+    private static PersistentPendingJournal createDefaultJournal() {
+        try {
+            return PersistentPendingJournal.createDefault();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static JournalingBookingClient wrapWithJournal(BookingClient client) {
+        if (client instanceof JournalingBookingClient jbc) {
+            return jbc;
+        }
+        PersistentPendingJournal j = getJournal();
+        if (j != null) {
+            return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), j);
+        }
+        return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(),
+                PersistentPendingJournal.createDefault());
+    }
 
     /**
      * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
@@ -66,18 +117,31 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingClient hiện tại đang hoạt động.
+     * Lấy BookingClient hiện tại đang hoạt động (raw client: LeaderAware hoặc Mock).
      */
     public static BookingClient getBookingClient() {
-        return bookingClient;
+        return rawBookingClient;
+    }
+
+    /**
+     * Lấy JournalingBookingClient (decorator bọc journal bền vững - TASK D14).
+     */
+    public static JournalingBookingClient getJournalingBookingClient() {
+        if (journalingBookingClient == null) {
+            journalingBookingClient = wrapWithJournal(rawBookingClient);
+        }
+        return journalingBookingClient;
     }
 
     /**
      * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test runner).
+     * Tự động bọc vào JournalingBookingClient để tiêm vào BookingViewModel và PendingRequestsViewModel.
      */
     public static synchronized void setBookingClient(BookingClient client) {
-        bookingClient = (client != null) ? client : MockBookingClient.getInstance();
-        bookingViewModel = new BookingViewModel(bookingClient);
+        rawBookingClient = (client != null) ? client : MockBookingClient.getInstance();
+        journalingBookingClient = wrapWithJournal(rawBookingClient);
+        bookingViewModel = new BookingViewModel(journalingBookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
     }
 
     /**
@@ -114,9 +178,19 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành.
+     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành (được bảo vệ bởi journal).
      */
     public static BookingViewModel getBookingViewModel() {
         return bookingViewModel;
+    }
+
+    /**
+     * Lấy PendingRequestsViewModel dùng chung cho ứng dụng (TASK D14).
+     */
+    public static synchronized PendingRequestsViewModel getPendingRequestsViewModel() {
+        if (pendingRequestsViewModel == null) {
+            pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
+        }
+        return pendingRequestsViewModel;
     }
 }

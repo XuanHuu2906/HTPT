@@ -40,6 +40,9 @@ public class MainController {
     @FXML
     private ClusterStatusBarController clusterStatusBarController;
 
+    @FXML
+    private PendingRequestsController pendingRequestsPanelController;
+
     // === Vùng điều hướng bên trái (Navigation Region) ===
     @FXML
     private VBox navRegion;

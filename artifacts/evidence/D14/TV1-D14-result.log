@@ -1,0 +1,172 @@
+================================================================================
+BÁO CÁO KẾT QUẢ THỰC HIỆN TASK TV1-D14 — LƯU PENDING REQUEST BỀN VỮNG VÀ KHÔI PHỤC SAU RESTART
+================================================================================
+Người thực hiện: TV1 (Nguyễn Đăng Khoa) — Desktop Client Subsystem
+Thời gian hoàn thành: 2026-11-14 14:15:00 +07:00
+Môi trường thực thi:
+  - Hệ điều hành: Windows 11 (build 10.0, amd64)
+  - JDK: OpenJDK 21.0.12.1 (LTS) [Target: -Dmaven.compiler.release=21]
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+  - Base Commit: 1145135 (Merge pull request #82 from XuanHuu2906/feature/d13-election-runtime)
+
+--------------------------------------------------------------------------------
+1. BƯỚC 0 — KẾT QUẢ PREFLIGHT
+--------------------------------------------------------------------------------
+1.1. Khảo sát SPEC-03 (docs/specs/03-CONTRACTS.md §1, §4.2, §4.4, §7):
+  - Quy tắc pending/retry:
+    * requestId sinh tại Client một lần duy nhất bằng UUID v4 (8-4-4-4-12 hex chữ thường) và KHÔNG đổi qua các lần retry.
+    * Khi gửi lại (retry), BẮT BUỘC giữ nguyên CÙNG requestId và CÙNG payload nguyên văn từng byte. Mỗi lần gửi có thể mang messageId mới ở tầng transport.
+    * Nếu gửi cùng requestId nhưng payload bị sửa -> Node/Journal báo lỗi REQUEST_ID_CONFLICT.
+  - Payload BOOK_TICKET:
+    * {"requestId":"<uuid>","tripId":"SE-001","seatId":"G05","passengerName":"..."}.
+  - GET_REQUEST_RESULT (SPEC-03 §4.4):
+    * Request: {"requestId":"<uuid>"}.
+    * Response: {"requestId":"...","state":"APPLIED_SUCCESS|APPLIED_REJECTED|PENDING|UNKNOWN","commandType":"BOOK_TICKET","ticketId":...,"reasonCode":...,"appliedLogIndex":...}.
+    * APPLIED_SUCCESS -> tương ứng CONFIRMED.
+    * APPLIED_REJECTED -> tương ứng REJECTED.
+    * PENDING hoặc UNKNOWN (khi Leader chưa thấy request hoặc chưa commit) -> Client tiếp tục giữ trạng thái pending, KHÔNG được tự ý suy ra thất bại hay xóa trạng thái.
+
+1.2. Khảo sát module `shared` và `desktop-client`:
+  - `shared`: Enum `MessageType.java` đã có định nghĩa `GET_REQUEST_RESULT` và `GET_REQUEST_RESULT_RESPONSE`.
+    Tuy nhiên, chưa có lớp POJO DTO cụ thể `GetRequestResultRequestDto` / `GetRequestResultResponseDto` trong `shared/src/main/java/vn/nhom6/railway/protocol/dto/`.
+  - `desktop-client`: Đã có sẵn DTO `GetRequestResultResponseDto.java` trong package `vn.nhom6.railway.client.network` (từ giai đoạn D09/D10).
+    Phương thức `SocketBookingClient.getRequestResult` hiện đánh dấu UnsupportedOperationException ("BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3").
+    `MockBookingClient` đã cài đặt đầy đủ phương thức `getRequestResult` phục vụ test offline và smoke test.
+  - Quy tắc Bước 0: Do thiếu wire DTO từ TV3, phần lookup với Node qua mạng thật được ghi nhận là BLOCKED/NOT_RUN (chờ TV3 bàn giao DTO và chờ D19); phần journal, restore và retry cùng requestId/payload vẫn hoàn thành 100% và kiểm thử tự động với FakeNodeServer / Mock.
+
+1.3. Khảo sát nơi gọi `book` trên UI:
+  - `BookingViewModel.book()` gọi `bookingClient.book(request)`.
+  - Bằng cách áp dụng mẫu Decorator qua `JournalingBookingClient`, ta bọc trực tiếp `bookingClient` tại `ClientFactory`. Mọi lệnh đặt vé từ UI đều được ghi bền vững xuống journal đĩa TRƯỚC khi chạm tới mạng, fail-closed an toàn nếu đĩa lỗi.
+
+--------------------------------------------------------------------------------
+2. CÁC THAY ĐỔI ĐÃ THỰC HIỆN
+--------------------------------------------------------------------------------
+2.1. Cấu trúc lưu trữ bền vững (Local Durable Storage):
+  - `PendingState.java`: Enum trạng thái (`PREPARED`, `SENT_UNRESOLVED`, `RESOLVED`, `FAILED_NOT_SENT`, `CORRUPT`).
+  - `PendingEntry.java`: Bản ghi bất biến lưu trữ requestId, commandType, payload (JSON nguyên văn), payloadHash (SHA-256 hex), state, createdAt, lastAttemptAt, attemptCount, lastKnownNodeId, finalOutcome, schemaVersion.
+    * Cung cấp hàm `isPayloadValid()` so sánh hash SHA-256.
+    * Cung cấp hàm `getSummary()` trích xuất ghế và chuyến mà không làm lộ tên hành khách nhạy cảm.
+  - `PersistentPendingJournal.java`:
+    * Cơ chế lưu file: Append-only JSON Lines (`journal.jsonl`) kèm mã kiểm tra toàn vẹn CRC32 trên từng dòng (`<json>#<crc32_hex>\n`).
+    * Flush & Force: Gọi `FileChannel.force(true)` ngay sau mỗi lần ghi, đảm bảo dữ liệu ghi xuống đĩa vật lý trước khi gửi mạng.
+    * Chống crash: Dòng cuối bị cắt dở do mất điện đột ngột được bỏ qua an toàn kèm log cảnh báo, không làm hỏng dữ liệu trước đó.
+    * Khóa độc quyền: Sử dụng `FileLock` trên file `journal.lock`, chặn hoàn toàn instance thứ hai mở cùng thư mục.
+    * Vị trí lưu trữ: Lấy từ system property `-Drailway.journal.dir=...`, mặc định tại `~/.railway/journal/`.
+    * Compaction: Hàm `compact(Duration retentionDuration)` dọn sạch các bản ghi đã `RESOLVED` quá hạn lưu trữ bằng file tạm + `ATOMIC_MOVE`, bảo lưu toàn bộ bản ghi pending.
+    * Quyền riêng tư: TUYỆT ĐỐI KHÔNG ghi nội dung payload ra log.
+
+2.2. Tầng mạng & Decorator (Network & Retry):
+  - `JournalingBookingClient.java`:
+    * Decorator bọc `BookingClient`.
+    * Phương thức `book()`: Ghi `PREPARED` -> Ghi `SENT_UNRESOLVED` -> Gửi delegate. Nếu ghi journal lỗi, ném ngoại lệ ngay lập tức và KHÔNG gửi mạng (Fail-closed).
+    * Phương thức `retry(requestId)`: Tải lại payload nguyên văn từ journal, kiểm tra tính toàn vẹn SHA-256, gửi lại với CÙNG requestId và CÙNG payload qua `delegate.book()`.
+    * Phương thức `getRequestResult(requestId)`: Tra cứu kết quả, chỉ chuyển sang `RESOLVED` khi nhận phản hồi kết quả cuối (APPLIED_SUCCESS hoặc APPLIED_REJECTED).
+  - `ClientFactory.java`:
+    * Tiêm `JournalingBookingClient` làm client bảo vệ cho `BookingViewModel` và `PendingRequestsViewModel`.
+    * Bảo lưu tính tương thích cho `SocketBookingClientTest` và các test cũ.
+
+2.3. Tầng giao diện người dùng (UI & ViewModel):
+  - `PendingRequestsViewModel.java`: Quản lý danh sách `pendingItems` (`ObservableList<PendingItem>`), hỗ trợ nạp lại từ journal, thực hiện tra cứu bất đồng bộ và gửi lại an toàn.
+  - `pending-requests.fxml`: Panel giao diện chứa bảng danh sách yêu cầu pending, hiển thị tóm tắt, trạng thái "CHƯA XÁC NHẬN" (màu cam `booking-status-unknown`), số lần thử, nhãn nguồn (`REAL`/`MOCK`/`FAKE-TEST`), nút "Tra cứu" và "Gửi lại" (khóa khi corrupt hoặc đang bận).
+  - `PendingRequestsController.java`: Điều khiển liên kết giao diện và xử lý sự kiện bấm nút.
+  - `main.fxml`: Gắn panel pending vào màn hình chính thông qua thẻ `<fx:include fx:id="pendingRequestsPanel" source="pending-requests.fxml" />`.
+  - Không sửa đổi bất kỳ controller hay FXML đặt vé hiện có nào (`git diff --stat` chứng minh rõ).
+
+--------------------------------------------------------------------------------
+3. KẾT QUẢ KIỂM THỬ THỰC TẾ
+--------------------------------------------------------------------------------
+3.1. Kiểm thử đơn vị mới: `PersistentPendingJournalTest.java` (13 test cases):
+  - Ca 1: `recordPrepared` rồi restart giả lập -> phục hồi nguyên văn payload và hash SHA-256: PASS
+  - Ca 2: Ghi journal trước khi gửi; lỗi ghi journal -> hủy gửi lệnh mạng (Fail-closed): PASS
+  - Ca 3: Restart khi đang SENT_UNRESOLVED -> khôi phục CHƯA XÁC NHẬN, không tự nhận thành công: PASS
+  - Ca 4: Retry sau restart với FakeNodeServer: cùng requestId/payload -> CONFIRMED, đúng 1 vé duy nhất: PASS
+  - Ca 5: `checkResult` sau restart với fake result (CONFIRMED, REJECTED, UNKNOWN, timeout): PASS
+  - Ca 6: Crash giữa chừng, dòng cuối bị cắt dở -> bỏ qua an toàn, đọc trọn vẹn bản ghi trước: PASS
+  - Ca 7: Payload bị sửa / lệch SHA-256 hash -> đánh dấu CORRUPT, từ chối retry: PASS
+  - Ca 8: Idempotency & Conflict: cùng payload thì idempotent, khác payload thì báo REQUEST_ID_CONFLICT: PASS
+  - Ca 9: Single-process lock: Chặn instance thứ hai mở cùng thư mục journal: PASS
+  - Ca 10: Compaction dọn dẹp bản ghi RESOLVED cũ, bảo lưu toàn bộ bản ghi pending: PASS
+  - Ca 11: Chuyển trạng thái sang RESOLVED mà không có outcome hợp lệ bị từ chối: PASS
+  - Ca 12: Quyền riêng tư: Bắt log kiểm chứng TUYỆT ĐỐI KHÔNG xuất hiện nội dung payload: PASS
+  - Ca 13: Tra cứu với Node thật (chờ D19): SKIPPED (khi chưa cấu hình NODE_HOST)
+
+3.2. Chạy toàn bộ test suite dự án:
+  - Lệnh: `mvn -B -ntp -pl shared,desktop-client -am test "-Dmaven.compiler.release=21"`
+  - Kết quả:
+    * shared: Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+    * desktop-client: Tests run: 164, Failures: 0, Errors: 0, Skipped: 6
+    * BUILD SUCCESS (Tổng thời gian: 15.156 s)
+
+3.3. Kiểm tra tĩnh (Static Code Analysis / Grep Checks):
+  - `git grep -E "java\.net|java\.sql" desktop-client/.../controller/ .../viewmodel/`:
+    => 0 dòng code (chỉ xuất hiện trong chú thích Javadoc nhắc nhở quy tắc phân tầng).
+  - `git grep -i -E "HttpClient|HttpURLConnection|okhttp|restTemplate" desktop-client/src/main/`:
+    => 0 dòng xuất hiện (Hoàn toàn không có web/HTTP client).
+  - `git grep -E "\.get\(|\.join\(|Thread\.sleep" desktop-client/.../controller/ .../viewmodel/`:
+    => 0 lời gọi blocking trên CompletableFuture hoặc sleep trên JavaFX thread.
+  - Kiểm tra rò rỉ payload trong log:
+    => Đã kiểm chứng tự động bằng Ca 12 trong PersistentPendingJournalTest (PASS).
+
+3.4. Trích đoạn log mẫu (chứng minh chỉ ghi metadata, KHÔNG in payload):
+```text
+[JOURNAL] Persisted entry requestId=67686994-3ca6-4c0c-876e-663950a17072, cmd=BOOK_TICKET, state=PREPARED, attempts=0, payloadBytes=52
+[JOURNAL] Persisted entry requestId=67686994-3ca6-4c0c-876e-663950a17072, cmd=BOOK_TICKET, state=SENT_UNRESOLVED, attempts=1, payloadBytes=52
+[JOURNAL] Persisted entry requestId=67686994-3ca6-4c0c-876e-663950a17072, cmd=BOOK_TICKET, state=RESOLVED, attempts=1, payloadBytes=52
+[JOURNAL] Compaction hoàn tất, còn lại 1 bản ghi sống sót
+[JOURNAL-CLIENT] Bắt đầu retry requestId=e0982e5d-e534-41b4-b223-0f4c87dbd927, lần thử thứ 2
+[TCP-CLIENT] requestId=e0982e5d-e534-41b4-b223-0f4c87dbd927, messageId=f155555e-9942-415c-8ffc-41d5148196a4, type=BOOK_TICKET, endpoint=127.0.0.1:56918, outcome=CONFIRMED, elapsedMs=155ms
+[JOURNAL-CLIENT] Retry thành công có kết quả cuối requestId=e0982e5d-e534-41b4-b223-0f4c87dbd927, outcome=CONFIRMED
+[JOURNAL] Đã giải phóng fileLock và đóng journal thành công.
+```
+
+--------------------------------------------------------------------------------
+4. BẢNG ĐỐI CHIẾU TIÊU CHÍ (DEFINITION OF DONE)
+--------------------------------------------------------------------------------
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+| Tiêu chí DoD                                                    | Trạng thái| Ghi chú                                                 |
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+| Preflight Bước 0 hoàn thành và ghi nhận đối chiếu               | PASS      | Khảo sát đầy đủ SPEC-03, requestId, DTO và nơi gọi book |
+| Lưu journal bền vững TRƯỚC khi gửi (flush + force)              | PASS      | Fail-closed: lỗi ghi journal thì không gửi lệnh mạng    |
+| Khôi phục yêu cầu pending sau khi khởi động lại                 | PASS      | Phục hồi đúng trạng thái PREPARED / SENT_UNRESOLVED     |
+| UI hiển thị CHƯA XÁC NHẬN, không tự động nhận thành công        | PASS      | Chỉ có outcome CONFIRMED/REJECTED mới chuyển RESOLVED   |
+| Gửi lại (retry) dùng CÙNG requestId và CÙNG payload nguyên văn  | PASS      | Đã kiểm chứng với FakeNodeServer (1 vé duy nhất)        |
+| Tra cứu kết quả (GET_REQUEST_RESULT) với kết quả FAKE           | PASS      | Xử lý đúng APPLIED_SUCCESS, APPLIED_REJECTED, UNKNOWN   |
+| Chống crash: Dòng journal bị cắt dở được bỏ qua an toàn         | PASS      | Kiểm chứng tự động trong Ca 6                           |
+| Chống hư hỏng: Payload bị sửa đổi lệch SHA-256 báo CORRUPT     | PASS      | Kiểm chứng tự động trong Ca 7, khóa nút retry           |
+| Khóa tiến trình duy nhất (Single-process file lock)             | PASS      | Kiểm chứng tự động trong Ca 9                           |
+| Thu dọn (Compaction) dọn bản ghi RESOLVED cũ                    | PASS      | Kiểm chứng tự động trong Ca 10                          |
+| Quyền riêng tư: Không log nội dung payload                      | PASS      | Kiểm chứng tự động trong Ca 12                          |
+| Không có java.net / java.sql trong controller/viewmodel         | PASS      | Quét grep = 0 dòng trong controller và viewmodel        |
+| Không có HTTP client hay thư viện web ngoài                     | PASS      | Quét grep = 0 dòng                                      |
+| Không gọi blocking (.get() / .join() / sleep) trên JavaFX thread| PASS      | Quét grep = 0 dòng trong code xử lý UI                  |
+| FXML và controller đặt vé hiện có KHÔNG bị thay đổi             | PASS      | `git diff --stat` chứng minh chỉ thêm panel pending     |
+| Tra cứu thực tế với cụm Node thật qua mạng LAN (sau D19)        | NOT_RUN   | Chưa khởi chạy cụm 5 Node thật (chờ D19)                |
++-----------------------------------------------------------------+-----------+---------------------------------------------------------+
+
+--------------------------------------------------------------------------------
+5. HƯỚNG DẪN TỰ CHỤP ẢNH MINH HỌA TRÊN WINDOWS (TÙY CHỌN)
+--------------------------------------------------------------------------------
+Để chụp ảnh màn hình panel Pending Requests sau khi restart:
+1. Mở PowerShell tại thư mục gốc `d:\HTPT`.
+2. Khởi chạy ứng dụng Desktop:
+   `mvn -pl desktop-client javafx:run "-Dmaven.compiler.release=21"`
+3. Thao tác tạo yêu cầu pending:
+   - Vào Sơ đồ chọn ghế, chọn kịch bản MOCK là `UNKNOWN_TIMEOUT` hoặc `DISCONNECTED`.
+   - Bấm "Đặt vé" cho một ghế (ví dụ G03).
+   - Đóng ứng dụng (tắt cửa sổ).
+4. Khởi động lại ứng dụng:
+   `mvn -pl desktop-client javafx:run "-Dmaven.compiler.release=21"`
+5. Tại màn hình chính, quan sát khu vực "YÊU CẦU CHỜ XỬ LÝ (PENDING JOURNAL)":
+   - Thấy dòng yêu cầu G03 được khôi phục nguyên vẹn với trạng thái "CHƯA XÁC NHẬN" màu cam.
+   - Bấm nút "🔍 Tra cứu" hoặc "🔁 Gửi lại" để kiểm tra hoạt động.
+6. Nhấn tổ hợp phím `Win + Shift + S` trên Windows để chụp panel và lưu vào file:
+   `artifacts/evidence/D14/TV1-D14-pending-restored.png`.
+
+--------------------------------------------------------------------------------
+6. KẾT LUẬN TRUNG THỰC VÀ BƯỚC TIẾP THEO
+--------------------------------------------------------------------------------
+- Journal restore và retry cùng requestId/payload với FAKE result: PASS local.
+- Tra cứu và gửi lại thực tế với cụm Node thật / Raft phân tán: NOT_RUN (chờ TV4/TV5 hoàn thiện Raft commit và TV3 cung cấp wire DTO sau D19).
+- Không kết luận Backend PASS; mọi kiểm thử chỉ chứng minh tính đúng đắn của logic lưu trữ bền vững và khôi phục phía Client.
+- Phối hợp với TV3: Đề xuất TV3 bổ sung `GetRequestResultRequestDto` và `GetRequestResultResponseDto` vào module `shared` trước mốc D19 để thay thế DTO nội bộ của client.
