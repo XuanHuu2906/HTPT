@@ -13,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.util.Set;
+import vn.nhom6.railway.client.network.VerificationLevel;
 
 /**
  * ViewModel đại diện cho trạng thái của một ghế ngồi và trạng thái màn hình (TASK D04 & D05).
@@ -227,6 +228,7 @@ public class SeatViewModel {
     private final ReadOnlyBooleanWrapper available = new ReadOnlyBooleanWrapper();
     private final ReadOnlyBooleanWrapper unknown = new ReadOnlyBooleanWrapper();
     private final ReadOnlyStringWrapper styleClass = new ReadOnlyStringWrapper();
+    private final ObjectProperty<VerificationLevel> verification = new SimpleObjectProperty<>(VerificationLevel.UNVERIFIED);
 
     public SeatViewModel(String seatId) {
         this(seatId, SeatStatus.AVAILABLE);
@@ -313,6 +315,22 @@ public class SeatViewModel {
 
     public ReadOnlyStringProperty styleClassProperty() {
         return styleClass.getReadOnlyProperty();
+    }
+
+    public VerificationLevel getVerification() {
+        return verification.get();
+    }
+
+    public void setVerification(VerificationLevel level) {
+        this.verification.set(level != null ? level : VerificationLevel.UNVERIFIED);
+    }
+
+    public ObjectProperty<VerificationLevel> verificationProperty() {
+        return verification;
+    }
+
+    public boolean isVerified() {
+        return verification.get() == VerificationLevel.VERIFIED;
     }
 
     /**
