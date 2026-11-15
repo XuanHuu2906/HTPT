@@ -10,7 +10,6 @@ import vn.nhom6.railway.client.controller.ErrorPresentation;
 import vn.nhom6.railway.client.controller.ErrorPresentationMapper;
 import vn.nhom6.railway.client.controller.PresentationKind;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
-import vn.nhom6.railway.client.network.CancelTicketResponseDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 
 import java.io.BufferedReader;
@@ -31,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Bộ kiểm thử toàn diện cho {@link ErrorPresentationMapper} (TASK TV1-D13).
  * <p>
- * Kiểm thử thuần đơn vị: không phụ thuộc JavaFX Application Thread, không I/O mạng, không HTTP.
+ * Kiểm thử thuần đơn vị: không phụ thuộc JavaFX Application Thread, không I/O
+ * mạng, không HTTP.
  */
 class ErrorPresentationMapperTest {
 
@@ -56,7 +56,8 @@ class ErrorPresentationMapperTest {
     }
 
     // =========================================================================
-    // CA 1: Từng mã trong danh sách -> đúng kind, styleClass, retryable, needsSeatRefresh, thông báo
+    // CA 1: Từng mã trong danh sách -> đúng kind, styleClass, retryable,
+    // needsSeatRefresh, thông báo
     // =========================================================================
 
     @Test
@@ -128,7 +129,8 @@ class ErrorPresentationMapperTest {
         ErrorResponseDto dto = new ErrorResponseDto("READ_UNAVAILABLE", "Read barrier failed", null, 1L, null);
         ErrorPresentation p = ErrorPresentationMapper.mapErrorResponse(dto);
 
-        assertEquals(PresentationKind.UNKNOWN, p.kind(), "READ_UNAVAILABLE phải hiển thị trạng thái UNKNOWN theo SPEC-03 §4.4");
+        assertEquals(PresentationKind.UNKNOWN, p.kind(),
+                "READ_UNAVAILABLE phải hiển thị trạng thái UNKNOWN theo SPEC-03 §4.4");
         assertEquals(ErrorPresentationMapper.STYLE_UNKNOWN, p.styleClass());
         assertTrue(p.retryable());
         assertTrue(p.needsSeatRefresh(), "READ_UNAVAILABLE cần làm mới lại sơ đồ ghế");
@@ -182,14 +184,17 @@ class ErrorPresentationMapperTest {
     }
 
     // =========================================================================
-    // CA 2: UNKNOWN (TIMEOUT_UNKNOWN) KHÁC BIỆT HOÀN TOÀN VỚI REJECTED (SEAT_ALREADY_BOOKED)
+    // CA 2: UNKNOWN (TIMEOUT_UNKNOWN) KHÁC BIỆT HOÀN TOÀN VỚI REJECTED
+    // (SEAT_ALREADY_BOOKED)
     // =========================================================================
 
     @Test
     @DisplayName("Ca 2: Phân biệt rõ rệt giữa UNKNOWN (TIMEOUT_UNKNOWN) và REJECTED (SEAT_ALREADY_BOOKED)")
     void testUnknownDiffersFromRejected() {
-        ErrorPresentation unknownP = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, false);
-        ErrorPresentation rejectedP = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED, false);
+        ErrorPresentation unknownP = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN,
+                false);
+        ErrorPresentation rejectedP = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
+                false);
 
         assertNotEquals(unknownP.kind(), rejectedP.kind(), "kind phải khác nhau (UNKNOWN vs REJECTED)");
         assertEquals(PresentationKind.UNKNOWN, unknownP.kind());
@@ -214,7 +219,8 @@ class ErrorPresentationMapperTest {
     }
 
     // =========================================================================
-    // CA 3: Cùng errorCode với message khác nhau -> Presentation giống hệt (Không parse chuỗi)
+    // CA 3: Cùng errorCode với message khác nhau -> Presentation giống hệt (Không
+    // parse chuỗi)
     // =========================================================================
 
     @Test
@@ -222,7 +228,8 @@ class ErrorPresentationMapperTest {
     void testSameErrorCodeWithDifferentMessagesYieldsSameLogic() {
         ErrorPresentation p1 = ErrorPresentationMapper.mapCode("NO_QUORUM", "", false);
         ErrorPresentation p2 = ErrorPresentationMapper.mapCode("NO_QUORUM", "Thong bao bat ky tu server", false);
-        ErrorPresentation p3 = ErrorPresentationMapper.mapCode("NO_QUORUM", "SEAT_ALREADY_BOOKED - chuỗi gây nhiễu", false);
+        ErrorPresentation p3 = ErrorPresentationMapper.mapCode("NO_QUORUM", "SEAT_ALREADY_BOOKED - chuỗi gây nhiễu",
+                false);
 
         // Logic không bị thay đổi bởi nội dung message
         assertEquals(p1.kind(), p2.kind());
@@ -236,19 +243,23 @@ class ErrorPresentationMapperTest {
         assertEquals(p1.retryable(), p2.retryable());
         assertEquals(p1.needsSeatRefresh(), p2.needsSeatRefresh());
 
-        // Ngoại lệ chứa chữ "SEAT_ALREADY_BOOKED" nhưng errorCode là INVALID_REQUEST -> vẫn là INVALID_REQUEST
-        ErrorPresentation pInvalid = ErrorPresentationMapper.mapCode("INVALID_REQUEST", "Lỗi SEAT_ALREADY_BOOKED trong text", false);
+        // Ngoại lệ chứa chữ "SEAT_ALREADY_BOOKED" nhưng errorCode là INVALID_REQUEST ->
+        // vẫn là INVALID_REQUEST
+        ErrorPresentation pInvalid = ErrorPresentationMapper.mapCode("INVALID_REQUEST",
+                "Lỗi SEAT_ALREADY_BOOKED trong text", false);
         assertEquals(PresentationKind.ERROR, pInvalid.kind());
         assertNotEquals(PresentationKind.REJECTED, pInvalid.kind());
         assertEquals("INVALID_REQUEST", pInvalid.rawCode());
     }
 
     // =========================================================================
-    // CA 4: Mã không nhận diện được / null / rỗng / sai hoa thường -> lỗi không xác định mã, không REJECTED
+    // CA 4: Mã không nhận diện được / null / rỗng / sai hoa thường -> lỗi không xác
+    // định mã, không REJECTED
     // =========================================================================
 
     @ParameterizedTest
-    @ValueSource(strings = {"UNKNOWN_RANDOM_CODE", "HACK_OR_ATTEMPT", "seat_already_booked", "no_quorum", "Invalid_Request", " "})
+    @ValueSource(strings = { "UNKNOWN_RANDOM_CODE", "HACK_OR_ATTEMPT", "seat_already_booked", "no_quorum",
+            "Invalid_Request", " " })
     @DisplayName("Ca 4.1: Các mã lạ hoặc sai quy tắc hoa/thường rơi vào lỗi không xác định mã")
     void testUnrecognizedCodes(String badCode) {
         ErrorPresentation p = ErrorPresentationMapper.mapCode(badCode, false);
@@ -312,18 +323,19 @@ class ErrorPresentationMapperTest {
                 ErrorPresentationMapper.CODE_UNSUPPORTED_VERSION,
                 ErrorPresentationMapper.CODE_REQUEST_ID_CONFLICT,
                 ErrorPresentationMapper.CODE_INTERNAL_ERROR,
-                ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE
-        );
+                ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE);
 
         for (String code : knownCodes) {
             ErrorPresentation p = ErrorPresentationMapper.mapCode(code, false);
-            assertNotEquals("Lỗi không xác định mã", p.title(), "Mã chuẩn " + code + " không được rơi vào fallback không xác định");
+            assertNotEquals("Lỗi không xác định mã", p.title(),
+                    "Mã chuẩn " + code + " không được rơi vào fallback không xác định");
             assertEquals(code, p.rawCode());
         }
     }
 
     // =========================================================================
-    // CA 7: Lỗi Client (ClientErrorKind) tách biệt, không đóng giả errorCode SPEC-03
+    // CA 7: Lỗi Client (ClientErrorKind) tách biệt, không đóng giả errorCode
+    // SPEC-03
     // =========================================================================
 
     @Test
@@ -346,11 +358,13 @@ class ErrorPresentationMapperTest {
         }
 
         // Kiểm tra qua mapThrowable
-        ErrorPresentation pTimeout = ErrorPresentationMapper.mapThrowable(new SocketTimeoutException("Read timed out"), false);
+        ErrorPresentation pTimeout = ErrorPresentationMapper.mapThrowable(new SocketTimeoutException("Read timed out"),
+                false);
         assertEquals(ClientErrorKind.READ_TIMEOUT, pTimeout.clientErrorKind());
         assertEquals(PresentationKind.UNKNOWN, pTimeout.kind());
 
-        ErrorPresentation pConnect = ErrorPresentationMapper.mapThrowable(new ConnectException("Connection refused"), false);
+        ErrorPresentation pConnect = ErrorPresentationMapper.mapThrowable(new ConnectException("Connection refused"),
+                false);
         assertEquals(ClientErrorKind.CONNECTION_FAILED, pConnect.clientErrorKind());
         assertEquals(PresentationKind.DISCONNECTED, pConnect.kind());
 
@@ -377,8 +391,7 @@ class ErrorPresentationMapperTest {
                 ErrorPresentationMapper.CODE_REQUEST_ID_CONFLICT,
                 ErrorPresentationMapper.CODE_INTERNAL_ERROR,
                 ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE,
-                "UNKNOWN_ARBITRARY_CODE"
-        );
+                "UNKNOWN_ARBITRARY_CODE");
 
         for (String code : codesToTest) {
             ErrorPresentation p = ErrorPresentationMapper.mapCode(code, false);
@@ -393,7 +406,8 @@ class ErrorPresentationMapperTest {
             assertTrue(cssClassesInRailwayCss.contains(p.styleClass()),
                     "Lớp CSS " + p.styleClass() + " của client error " + clientError + " phải có trong railway.css");
             assertTrue(cssClassesInRailwayCss.contains(p.getBookingStatusClass()),
-                    "Lớp CSS booking " + p.getBookingStatusClass() + " của client error " + clientError + " phải có trong railway.css");
+                    "Lớp CSS booking " + p.getBookingStatusClass() + " của client error " + clientError
+                            + " phải có trong railway.css");
         }
     }
 
@@ -428,4 +442,3 @@ class ErrorPresentationMapperTest {
         assertFalse(pDtoReal.message().contains("[MOCK]"));
     }
 }
-

@@ -30,7 +30,6 @@ import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.SeatsRefreshService;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockScenario;
-import vn.nhom6.railway.client.network.VerificationLevel;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.MockSeatSource;
@@ -226,7 +225,8 @@ public class SeatGridController {
             mockStatusComboBox.setValue(SeatStatus.BOOKED);
         }
 
-        // TASK D07: Thêm hàng điều khiển MockScenario và Delay bất đồng bộ vào mock-panel (không sửa FXML)
+        // TASK D07: Thêm hàng điều khiển MockScenario và Delay bất đồng bộ vào
+        // mock-panel (không sửa FXML)
         if (mockStatusComboBox != null && mockStatusComboBox.getParent() != null
                 && mockStatusComboBox.getParent().getParent() instanceof javafx.scene.layout.VBox mockPanel) {
             HBox d07Row = new HBox(8);
@@ -259,7 +259,8 @@ public class SeatGridController {
                     try {
                         long ms = Long.parseLong(newVal.trim());
                         MockBookingClient.getInstance().setDelayMs(ms);
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
             });
 
@@ -273,11 +274,13 @@ public class SeatGridController {
         // Đồng bộ trạng thái màn hình với BookingViewModel
         BookingViewModel bookingVm = ClientFactory.getBookingViewModel();
         bookingVm.uiStateProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal == null) return;
+            if (newVal == null)
+                return;
             switch (newVal) {
                 case LOADING -> screenStateModel.setState(ScreenState.LOADING, bookingVm.getMessage());
                 case ERROR, REJECTED -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
-                case DISCONNECTED, UNKNOWN -> screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
+                case DISCONNECTED, UNKNOWN ->
+                    screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
                 case SUCCESS, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
             }
         });
@@ -311,9 +314,7 @@ public class SeatGridController {
             verificationBadgeLabel.textProperty().bind(
                     Bindings.createStringBinding(
                             () -> "[" + seatsRefreshService.getVerification().getDisplayName() + "]",
-                            seatsRefreshService.verificationProperty()
-                    )
-            );
+                            seatsRefreshService.verificationProperty()));
             seatsRefreshService.verificationProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     verificationBadgeLabel.getStyleClass().removeAll("badge-unverified", "badge-verified");
@@ -785,7 +786,8 @@ public class SeatGridController {
             }
             case REJECTED -> {
                 ErrorPresentation p = ErrorPresentationMapper.mapCode(
-                        outcome.getReasonCode() != null ? outcome.getReasonCode() : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
+                        outcome.getReasonCode() != null ? outcome.getReasonCode()
+                                : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
                         outcome.getMessage(),
                         false);
                 for (String seatId : affectedSeats) {
@@ -894,7 +896,8 @@ public class SeatGridController {
                 MockTicketSource.syncSeatStatusChange(seatId, targetStatus);
                 updateLegendCounts();
                 updateSelectedSeatsUI();
-                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus + " trong model và đồng bộ vé.");
+                updateStatus("MOCK: Đã đổi trạng thái ghế " + seatId + " sang " + targetStatus
+                        + " trong model và đồng bộ vé.");
             }
         }
     }

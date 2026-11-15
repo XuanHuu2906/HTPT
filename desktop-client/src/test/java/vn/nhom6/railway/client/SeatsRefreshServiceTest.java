@@ -21,7 +21,6 @@ import vn.nhom6.railway.client.viewmodel.SeatViewModel.SeatStatus;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +32,8 @@ import java.util.function.BooleanSupplier;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Kiểm thử toàn diện dịch vụ làm mới sơ đồ ghế {@link SeatsRefreshService} với {@link FakeReadAdapter} (TASK TV1-D15).
+ * Kiểm thử toàn diện dịch vụ làm mới sơ đồ ghế {@link SeatsRefreshService} với
+ * {@link FakeReadAdapter} (TASK TV1-D15).
  * <p>
  * Tiêu chí PASS:
  * - Read-safe UI: Mọi snapshot từ FakeReadAdapter luôn mang mức UNVERIFIED.
@@ -72,7 +72,8 @@ class SeatsRefreshServiceTest {
         if (journal != null) {
             try {
                 journal.close();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -133,7 +134,8 @@ class SeatsRefreshServiceTest {
         // Kiểm tra cả 10 ghế chuyển sang UNKNOWN
         await(() -> {
             for (SeatViewModel s : seatsList) {
-                if (s.getStatus() != SeatStatus.UNKNOWN) return false;
+                if (s.getStatus() != SeatStatus.UNKNOWN)
+                    return false;
             }
             return true;
         }, 1000);
@@ -189,7 +191,8 @@ class SeatsRefreshServiceTest {
         }
 
         // Số lần adapter thực sự bị gọi chỉ đúng 1 lần
-        assertEquals(1, fakeAdapter.getReadInvocationCount(), "Adapter chỉ được gọi đúng 1 lần cho cụm request đồng thời");
+        assertEquals(1, fakeAdapter.getReadInvocationCount(),
+                "Adapter chỉ được gọi đúng 1 lần cho cụm request đồng thời");
     }
 
     @Test
@@ -200,31 +203,8 @@ class SeatsRefreshServiceTest {
         // Gọi lần 1: Sẽ bị hoãn lại trong adapter (150ms)
         CompletableFuture<SeatsSnapshot> future1 = service.refreshNow();
 
-        // Chờ 30ms rồi gọi lần 2: Lần 2 hoàn thành sau 20ms (tổng 50ms < 150ms)
+        // Chờ 30ms rồi đợi future1 hoàn thành
         Thread.sleep(30);
-
-        // Lưu ý: Single-flight sẽ khóa future1 nếu future1 chưa xong!
-        // Để kiểm tra out-of-order ở tầng service khi hai phản hồi về lệch thế hệ,
-        // ta tạo 2 snapshot với generation khác nhau và kiểm tra trực tiếp cơ chế chống stale của service.
-        SeatsSnapshot oldSnapshot = SeatsSnapshot.unverified(
-                "SE-001",
-                java.util.Map.of("G01", SeatStatus.AVAILABLE),
-                DataSource.FAKE,
-                40L,
-                "node-1"
-        );
-        SeatsSnapshot newSnapshot = SeatsSnapshot.unverified(
-                "SE-001",
-                java.util.Map.of("G01", SeatStatus.BOOKED),
-                DataSource.FAKE,
-                43L,
-                "node-1"
-        );
-
-        // Giả lập thế hệ 2 về trước (áp dụng thành công)
-        long gen2 = 2L;
-        // Chúng ta có thể dùng service refresh tuần tự hoặc kiểm tra dropped count
-        // Đợi future1 hoàn thành trước
         future1.get(2, TimeUnit.SECONDS);
 
         // Gọi refresh lần 2 (thế hệ mới hơn)
@@ -294,7 +274,8 @@ class SeatsRefreshServiceTest {
     @DisplayName("AC-D15-08: Ghế có lệnh BOOK_TICKET pending trong Journal không bị hiển thị AVAILABLE sạch")
     void testPendingSeatInJournalProtectedFromCleanAvailable() throws Exception {
         String reqId = UUID.randomUUID().toString();
-        String payload = "{\"requestId\":\"" + reqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G07\",\"passengerName\":\"Khach Pending\"}";
+        String payload = "{\"requestId\":\"" + reqId
+                + "\",\"tripId\":\"SE-001\",\"seatId\":\"G07\",\"passengerName\":\"Khach Pending\"}";
         PendingEntry pendingEntry = PendingEntry.createPrepared(reqId, "BOOK_TICKET", payload);
         journal.recordPrepared(pendingEntry);
 
@@ -307,7 +288,8 @@ class SeatsRefreshServiceTest {
         SeatViewModel g07 = seatsList.get(6);
         assertEquals("G07", g07.getSeatId());
 
-        // Vì G07 đang có lệnh pending trong journal, service không được phép hiển thị AVAILABLE sạch!
+        // Vì G07 đang có lệnh pending trong journal, service không được phép hiển thị
+        // AVAILABLE sạch!
         await(() -> g07.getStatus() == SeatStatus.UNKNOWN, 1000);
         assertNotEquals(SeatStatus.AVAILABLE, g07.getStatus());
     }
@@ -316,7 +298,8 @@ class SeatsRefreshServiceTest {
     @DisplayName("AC-D15-09: FakeReadAdapter TUYỆT ĐỐI không bao giờ trả về VerificationLevel.VERIFIED")
     void testFakeReadAdapterNeverReturnsVerified() throws Exception {
         for (Scenario sc : Scenario.values()) {
-            if (sc == Scenario.TIMEOUT || sc == Scenario.DISCONNECTED) continue;
+            if (sc == Scenario.TIMEOUT || sc == Scenario.DISCONNECTED)
+                continue;
             fakeAdapter.setScenario(sc);
             SeatsSnapshot snap = fakeAdapter.readSeats().get(2, TimeUnit.SECONDS);
             assertEquals(VerificationLevel.UNVERIFIED, snap.getVerification(),

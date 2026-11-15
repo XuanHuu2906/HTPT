@@ -7,17 +7,21 @@ import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.CompletionException;
 
 /**
  * Bộ ánh xạ trạng thái và mã lỗi chuẩn hóa theo hợp đồng SPEC-03 (TASK D13).
  * <p>
  * Nguyên tắc bất biến:
- * 1. Logic ánh xạ dựa HOÀN TOÀN vào mã có cấu trúc (outcome, errorCode, reasonCode).
- * 2. TUYỆT ĐỐI KHÔNG parse, so sánh chuỗi hoặc dùng regex trên nội dung {@code message} từ server.
- * 3. UNKNOWN luôn khác biệt hoàn toàn với REJECTED (về kind, styleClass, gợi ý xử lý và làm mới sơ đồ).
- * 4. Không dùng chuỗi tự chế SEAT_SOLD. Mã không nhận diện được rơi vào nhánh lỗi chưa xác định mã.
- * 5. Lỗi client được phân loại qua {@link ClientErrorKind}, không đóng giả làm mã SPEC-03.
+ * 1. Logic ánh xạ dựa HOÀN TOÀN vào mã có cấu trúc (outcome, errorCode,
+ * reasonCode).
+ * 2. TUYỆT ĐỐI KHÔNG parse, so sánh chuỗi hoặc dùng regex trên nội dung
+ * {@code message} từ server.
+ * 3. UNKNOWN luôn khác biệt hoàn toàn với REJECTED (về kind, styleClass, gợi ý
+ * xử lý và làm mới sơ đồ).
+ * 4. Không dùng chuỗi tự chế SEAT_SOLD. Mã không nhận diện được rơi vào nhánh
+ * lỗi chưa xác định mã.
+ * 5. Lỗi client được phân loại qua {@link ClientErrorKind}, không đóng giả làm
+ * mã SPEC-03.
  */
 public final class ErrorPresentationMapper {
 
@@ -57,8 +61,11 @@ public final class ErrorPresentationMapper {
         String outcome = dto.getOutcome();
 
         if ("CONFIRMED".equalsIgnoreCase(outcome)) {
-            String seatInfo = (dto.getSeatId() != null && !dto.getSeatId().isBlank()) ? " (Ghế " + dto.getSeatId() + ")" : "";
-            String ticketInfo = (dto.getTicketId() != null && !dto.getTicketId().isBlank()) ? " Mã vé: " + dto.getTicketId() : "";
+            String seatInfo = (dto.getSeatId() != null && !dto.getSeatId().isBlank()) ? " (Ghế " + dto.getSeatId() + ")"
+                    : "";
+            String ticketInfo = (dto.getTicketId() != null && !dto.getTicketId().isBlank())
+                    ? " Mã vé: " + dto.getTicketId()
+                    : "";
             String msg = "✓ Đặt vé thành công!" + ticketInfo + seatInfo + (mock ? " [MOCK]" : "");
             return new ErrorPresentation(
                     PresentationKind.CONFIRMED,
@@ -72,29 +79,28 @@ public final class ErrorPresentationMapper {
                     "CONFIRMED",
                     serverMsg,
                     mock,
-                    null
-            );
+                    null);
         }
 
         if ("REJECTED".equalsIgnoreCase(outcome)) {
             String reason = dto.getReasonCode();
             if (Objects.equals(CODE_SEAT_ALREADY_BOOKED, reason)) {
                 String seatInfo = (dto.getSeatId() != null && !dto.getSeatId().isBlank()) ? " " + dto.getSeatId() : "";
-                String msg = "✗ Ghế" + seatInfo + " đã có người đặt (" + CODE_SEAT_ALREADY_BOOKED + ")" + (mock ? " [MOCK]" : "");
+                String msg = "✗ Ghế" + seatInfo + " đã có người đặt (" + CODE_SEAT_ALREADY_BOOKED + ")"
+                        + (mock ? " [MOCK]" : "");
                 return new ErrorPresentation(
                         PresentationKind.REJECTED,
                         "Từ chối đặt vé",
                         msg,
                         STYLE_REJECTED,
                         false, // Ghế đã có chủ: không retry cùng ghế
-                        true,  // Cần làm mới sơ đồ để chuyển ghế sang BOOKED
+                        true, // Cần làm mới sơ đồ để chuyển ghế sang BOOKED
                         false,
                         "Chọn ghế khác trên sơ đồ",
                         CODE_SEAT_ALREADY_BOOKED,
                         serverMsg,
                         mock,
-                        null
-                );
+                        null);
             } else if (Objects.equals(CODE_INVALID_REQUEST, reason)) {
                 return mapKnownErrorCode(CODE_INVALID_REQUEST, serverMsg, mock);
             } else {
@@ -144,7 +150,8 @@ public final class ErrorPresentationMapper {
         String outcome = dto.getOutcome();
 
         if ("CONFIRMED".equalsIgnoreCase(outcome)) {
-            String ticketInfo = (dto.getTicketId() != null && !dto.getTicketId().isBlank()) ? " " + dto.getTicketId() : "";
+            String ticketInfo = (dto.getTicketId() != null && !dto.getTicketId().isBlank()) ? " " + dto.getTicketId()
+                    : "";
             String msg = "✓ Hủy vé" + ticketInfo + " thành công! Ghế đã được giải phóng." + (mock ? " [MOCK]" : "");
             return new ErrorPresentation(
                     PresentationKind.CONFIRMED,
@@ -158,8 +165,7 @@ public final class ErrorPresentationMapper {
                     "CONFIRMED",
                     serverMsg,
                     mock,
-                    null
-            );
+                    null);
         }
 
         if ("REJECTED".equalsIgnoreCase(outcome)) {
@@ -190,7 +196,8 @@ public final class ErrorPresentationMapper {
     /**
      * Ánh xạ mã lỗi / mã lý do thuần túy kèm thông điệp phụ trợ từ máy chủ.
      * <p>
-     * Phép so khớp TUYỆT ĐỐI chính xác theo dạng chuỗi hằng số, không so sánh lỏng lẻo hay bỏ qua hoa thường.
+     * Phép so khớp TUYỆT ĐỐI chính xác theo dạng chuỗi hằng số, không so sánh lỏng
+     * lẻo hay bỏ qua hoa thường.
      */
     public static ErrorPresentation mapCode(String rawCode, String serverMessage, boolean mock) {
         if (rawCode == null || rawCode.isBlank()) {
@@ -251,9 +258,11 @@ public final class ErrorPresentationMapper {
             clientError = ClientErrorKind.INTERNAL_CLIENT_ERROR;
         }
 
-        PresentationKind kind = (clientError == ClientErrorKind.CONNECTION_LOST || clientError == ClientErrorKind.CONNECTION_FAILED)
-                ? PresentationKind.DISCONNECTED
-                : (clientError == ClientErrorKind.READ_TIMEOUT ? PresentationKind.UNKNOWN : PresentationKind.CLIENT_ERROR);
+        PresentationKind kind = (clientError == ClientErrorKind.CONNECTION_LOST
+                || clientError == ClientErrorKind.CONNECTION_FAILED)
+                        ? PresentationKind.DISCONNECTED
+                        : (clientError == ClientErrorKind.READ_TIMEOUT ? PresentationKind.UNKNOWN
+                                : PresentationKind.CLIENT_ERROR);
 
         String desc = clientError.getDescription();
         String msg = (kind == PresentationKind.DISCONNECTED)
@@ -273,8 +282,7 @@ public final class ErrorPresentationMapper {
                 clientError.name(),
                 detailMessage,
                 mock,
-                clientError
-        );
+                clientError);
     }
 
     // === Các hàm phụ trợ ánh xạ mã cụ thể theo SPEC-03 ===
@@ -284,21 +292,22 @@ public final class ErrorPresentationMapper {
             case CODE_SEAT_ALREADY_BOOKED -> new ErrorPresentation(
                     PresentationKind.REJECTED,
                     "Ghế đã được đặt",
-                    "Ghế đã có người đặt trước (" + CODE_SEAT_ALREADY_BOOKED + "), vui lòng chọn ghế khác." + (mock ? " [MOCK]" : ""),
+                    "Ghế đã có người đặt trước (" + CODE_SEAT_ALREADY_BOOKED + "), vui lòng chọn ghế khác."
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_REJECTED,
                     false, // không retry cùng ghế
-                    true,  // cần làm mới sơ đồ
+                    true, // cần làm mới sơ đồ
                     false,
                     "Chọn ghế khác trên sơ đồ",
                     CODE_SEAT_ALREADY_BOOKED,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_INVALID_REQUEST -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Yêu cầu không hợp lệ",
-                    "Dữ liệu yêu cầu không hợp lệ (" + CODE_INVALID_REQUEST + "), vui lòng kiểm tra lại thông tin." + (mock ? " [MOCK]" : ""),
+                    "Dữ liệu yêu cầu không hợp lệ (" + CODE_INVALID_REQUEST + "), vui lòng kiểm tra lại thông tin."
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     false, // không retry nguyên trạng vô hạn
                     false,
@@ -307,12 +316,12 @@ public final class ErrorPresentationMapper {
                     CODE_INVALID_REQUEST,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_NO_QUORUM -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Cụm máy chủ thiếu đa số (NO_QUORUM)",
-                    "⚡ Lỗi cụm: Không đủ đa số (Quorum 3/5) để cam kết an toàn! (" + CODE_NO_QUORUM + ")" + (mock ? " [MOCK]" : ""),
+                    "⚡ Lỗi cụm: Không đủ đa số (Quorum 3/5) để cam kết an toàn! (" + CODE_NO_QUORUM + ")"
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     true, // có thể thử lại sau cùng requestId
                     false,
@@ -321,12 +330,12 @@ public final class ErrorPresentationMapper {
                     CODE_NO_QUORUM,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_NOT_LEADER -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Node không phải Leader (NOT_LEADER)",
-                    "⚡ Lỗi định tuyến: Node không phải Leader! Chưa có giao dịch nào được xác nhận." + (mock ? " [MOCK]" : ""),
+                    "⚡ Lỗi định tuyến: Node không phải Leader! Chưa có giao dịch nào được xác nhận."
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     true, // dùng leaderHint để kết nối lại
                     false,
@@ -335,12 +344,12 @@ public final class ErrorPresentationMapper {
                     CODE_NOT_LEADER,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_READ_UNAVAILABLE -> new ErrorPresentation(
                     PresentationKind.UNKNOWN,
                     "Không đọc được sơ đồ ghế (READ_UNAVAILABLE)",
-                    "Không thể chứng minh trạng thái ghế hiện hành từ máy chủ Leader (" + CODE_READ_UNAVAILABLE + "). Sơ đồ ghế tạm thời chuyển sang trạng thái chưa rõ." + (mock ? " [MOCK]" : ""),
+                    "Không thể chứng minh trạng thái ghế hiện hành từ máy chủ Leader (" + CODE_READ_UNAVAILABLE
+                            + "). Sơ đồ ghế tạm thời chuyển sang trạng thái chưa rõ." + (mock ? " [MOCK]" : ""),
                     STYLE_UNKNOWN,
                     true,
                     true, // làm mới sơ đồ ghế khi Leader sẵn sàng
@@ -349,26 +358,27 @@ public final class ErrorPresentationMapper {
                     CODE_READ_UNAVAILABLE,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_TIMEOUT_UNKNOWN -> new ErrorPresentation(
                     PresentationKind.UNKNOWN,
                     "Chưa xác định kết quả (TIMEOUT_UNKNOWN)",
-                    "⚠ Chưa xác định kết quả giao dịch (" + CODE_TIMEOUT_UNKNOWN + ")! Vui lòng tra cứu lại với requestId. Tuyệt đối không tự ý đặt lại bằng yêu cầu mới." + (mock ? " [MOCK]" : ""),
+                    "⚠ Chưa xác định kết quả giao dịch (" + CODE_TIMEOUT_UNKNOWN
+                            + ")! Vui lòng tra cứu lại với requestId. Tuyệt đối không tự ý đặt lại bằng yêu cầu mới."
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_UNKNOWN,
                     true, // tra cứu hoặc retry cùng requestId
                     false, // tuyệt đối không tự đổi trạng thái ghế sang BOOKED/AVAILABLE
-                    true,  // hiển thị requestId để người dùng tra cứu
+                    true, // hiển thị requestId để người dùng tra cứu
                     "Kiểm tra kết quả qua chức năng Tra cứu vé với cùng Request ID",
                     CODE_TIMEOUT_UNKNOWN,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_UNSUPPORTED_VERSION -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Phiên bản không hỗ trợ (UNSUPPORTED_VERSION)",
-                    "Phiên bản giao thức không được hỗ trợ bởi máy chủ (" + CODE_UNSUPPORTED_VERSION + ")." + (mock ? " [MOCK]" : ""),
+                    "Phiên bản giao thức không được hỗ trợ bởi máy chủ (" + CODE_UNSUPPORTED_VERSION + ")."
+                            + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     false,
                     false,
@@ -377,12 +387,12 @@ public final class ErrorPresentationMapper {
                     CODE_UNSUPPORTED_VERSION,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_REQUEST_ID_CONFLICT -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Xung đột Request ID (REQUEST_ID_CONFLICT)",
-                    "Xung đột mã yêu cầu: payload khác nhau đã được gửi cho cùng Request ID (" + CODE_REQUEST_ID_CONFLICT + ")." + (mock ? " [MOCK]" : ""),
+                    "Xung đột mã yêu cầu: payload khác nhau đã được gửi cho cùng Request ID ("
+                            + CODE_REQUEST_ID_CONFLICT + ")." + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     false, // không tự thay ID và gửi lại cùng ý định
                     false,
@@ -391,12 +401,12 @@ public final class ErrorPresentationMapper {
                     CODE_REQUEST_ID_CONFLICT,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_INTERNAL_ERROR -> new ErrorPresentation(
                     PresentationKind.ERROR,
                     "Lỗi nội bộ hệ thống (INTERNAL_ERROR)",
-                    "Hệ thống gặp lỗi xử lý nội bộ chưa phân loại (" + CODE_INTERNAL_ERROR + "). Không tự coi là giao dịch thất bại." + (mock ? " [MOCK]" : ""),
+                    "Hệ thống gặp lỗi xử lý nội bộ chưa phân loại (" + CODE_INTERNAL_ERROR
+                            + "). Không tự coi là giao dịch thất bại." + (mock ? " [MOCK]" : ""),
                     STYLE_ERROR,
                     true,
                     false,
@@ -405,12 +415,12 @@ public final class ErrorPresentationMapper {
                     CODE_INTERNAL_ERROR,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             case CODE_TICKET_NOT_ACTIVE -> new ErrorPresentation(
                     PresentationKind.REJECTED,
                     "Vé không còn hiệu lực (TICKET_NOT_ACTIVE)",
-                    "Vé không tồn tại hoặc đã bị hủy trước đó (" + CODE_TICKET_NOT_ACTIVE + "), không thể tiếp tục thao tác." + (mock ? " [MOCK]" : ""),
+                    "Vé không tồn tại hoặc đã bị hủy trước đó (" + CODE_TICKET_NOT_ACTIVE
+                            + "), không thể tiếp tục thao tác." + (mock ? " [MOCK]" : ""),
                     STYLE_REJECTED,
                     false,
                     true,
@@ -419,8 +429,7 @@ public final class ErrorPresentationMapper {
                     CODE_TICKET_NOT_ACTIVE,
                     serverMessage,
                     mock,
-                    null
-            );
+                    null);
             default -> mapUnrecognizedCode(code, serverMessage, mock);
         };
     }
@@ -439,7 +448,6 @@ public final class ErrorPresentationMapper {
                 rawCode,
                 serverMessage,
                 mock,
-                null
-        );
+                null);
     }
 }

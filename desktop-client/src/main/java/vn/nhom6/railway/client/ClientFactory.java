@@ -11,7 +11,6 @@ import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.ReadAdapter;
 import vn.nhom6.railway.client.network.RedirectPolicy;
-import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
 import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
@@ -21,31 +20,37 @@ import vn.nhom6.railway.client.viewmodel.SeatViewModel;
 import javafx.collections.ObservableList;
 
 /**
- * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07/D09/D11/D12).
+ * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop
+ * Client (TASK D07/D09/D11/D12).
  * <p>
- * Cho phép đổi nguồn dữ liệu từ Mock sang TCP Socket thật (hoặc Fake Server kiểm thử)
+ * Cho phép đổi nguồn dữ liệu từ Mock sang TCP Socket thật (hoặc Fake Server
+ * kiểm thử)
  * mà không phải sửa FXML hay các Controller.
  * <p>
  * Hỗ trợ chọn implementation theo tham số khởi chạy:
  * <ul>
- *   <li>{@code -Dbooking.client=socket|mock} (mặc định là {@code mock}).</li>
- *   <li>{@code -Dcluster.client=socket|mock} (nếu không đặt, kế thừa từ {@code booking.client}).</li>
+ * <li>{@code -Dbooking.client=socket|mock} (mặc định là {@code mock}).</li>
+ * <li>{@code -Dcluster.client=socket|mock} (nếu không đặt, kế thừa từ
+ * {@code booking.client}).</li>
  * </ul>
  */
 public final class ClientFactory {
 
     private static volatile PersistentPendingJournal journal = createDefaultJournal();
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
-    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
+    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(
+            clusterStatusClient);
 
     private static volatile BookingClient rawBookingClient = createDefaultBookingClient();
     private static volatile JournalingBookingClient journalingBookingClient = wrapWithJournal(rawBookingClient);
     private static volatile BookingViewModel bookingViewModel = new BookingViewModel(journalingBookingClient);
-    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(
+            journalingBookingClient);
     private static volatile ReadAdapter readAdapter = createDefaultReadAdapter();
     private static volatile SeatsRefreshService seatsRefreshService = null;
 
-    private ClientFactory() {}
+    private ClientFactory() {
+    }
 
     /**
      * Lấy PersistentPendingJournal dùng chung cho ứng dụng.
@@ -64,7 +69,8 @@ public final class ClientFactory {
         if (journal != null && !journal.isClosed()) {
             try {
                 journal.close();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         journal = customJournal;
         journalingBookingClient = wrapWithJournal(rawBookingClient);
@@ -76,7 +82,14 @@ public final class ClientFactory {
         try {
             return PersistentPendingJournal.createDefault();
         } catch (Exception e) {
-            return null;
+            System.err.println("[ClientFactory] Không thể lấy khóa journal mặc định: " + e.getMessage());
+            try {
+                java.nio.file.Path fallbackDir = java.nio.file.Files.createTempDirectory("railway-journal-fallback-");
+                System.err.println("[ClientFactory] Sử dụng thư mục journal tạm thời: " + fallbackDir.toAbsolutePath());
+                return new PersistentPendingJournal(fallbackDir);
+            } catch (Exception ex) {
+                return null;
+            }
         }
     }
 
@@ -88,8 +101,8 @@ public final class ClientFactory {
         if (j != null) {
             return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), j);
         }
-        return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(),
-                PersistentPendingJournal.createDefault());
+        PersistentPendingJournal fallback = createDefaultJournal();
+        return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), fallback);
     }
 
     /**
@@ -124,7 +137,8 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingClient hiện tại đang hoạt động (raw client: LeaderAware hoặc Mock).
+     * Lấy BookingClient hiện tại đang hoạt động (raw client: LeaderAware hoặc
+     * Mock).
      */
     public static BookingClient getBookingClient() {
         return rawBookingClient;
@@ -141,8 +155,10 @@ public final class ClientFactory {
     }
 
     /**
-     * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test runner).
-     * Tự động bọc vào JournalingBookingClient để tiêm vào BookingViewModel và PendingRequestsViewModel.
+     * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test
+     * runner).
+     * Tự động bọc vào JournalingBookingClient để tiêm vào BookingViewModel và
+     * PendingRequestsViewModel.
      */
     public static synchronized void setBookingClient(BookingClient client) {
         rawBookingClient = (client != null) ? client : MockBookingClient.getInstance();
@@ -159,7 +175,8 @@ public final class ClientFactory {
     }
 
     /**
-     * Đổi implementation của ClusterStatusClient (dùng trong test hoặc cấu hình lại).
+     * Đổi implementation của ClusterStatusClient (dùng trong test hoặc cấu hình
+     * lại).
      */
     public static synchronized void setClusterStatusClient(ClusterStatusClient client) {
         if (clusterConnectionViewModel != null) {
@@ -185,7 +202,8 @@ public final class ClientFactory {
     }
 
     /**
-     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành (được bảo vệ bởi journal).
+     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành (được bảo
+     * vệ bởi journal).
      */
     public static BookingViewModel getBookingViewModel() {
         return bookingViewModel;
@@ -237,7 +255,8 @@ public final class ClientFactory {
         if (readAdapter != null && readAdapter != adapter) {
             try {
                 readAdapter.close();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         readAdapter = (adapter != null) ? adapter : createDefaultReadAdapter();
         if (seatsRefreshService != null) {

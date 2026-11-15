@@ -83,7 +83,7 @@ public class FakeReadAdapter implements ReadAdapter {
 
     @Override
     public CompletableFuture<SeatsSnapshot> readSeats(String tripId) {
-        int count = readInvocationCount.incrementAndGet();
+        readInvocationCount.incrementAndGet();
         final String effectiveTripId = (tripId != null && !tripId.isBlank()) ? tripId : SeatsSnapshot.DEFAULT_TRIP_ID;
 
         switch (scenario) {

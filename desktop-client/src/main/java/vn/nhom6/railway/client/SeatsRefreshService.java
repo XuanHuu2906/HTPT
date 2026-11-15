@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,18 +40,29 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>
  * <b>Các cam kết và invariant quan trọng:</b>
  * <ul>
- *   <li><b>Read-safe UI:</b> Mọi dữ liệu đọc từ Node trước khi TV4-D19 (Raft Read Barrier)
- *   được nghiệm thu đều mang mức {@link VerificationLevel#UNVERIFIED}. UI luôn hiển thị nhãn "Chưa xác minh".</li>
- *   <li><b>Single-flight execution:</b> Nếu đang có một yêu cầu đọc in-flight, yêu cầu gọi tiếp theo
- *   sẽ tái sử dụng CompletableFuture hiện tại, tuyệt đối không gửi hai truy vấn đọc chồng chéo lên nhau.</li>
- *   <li><b>Monotonic Generation (Chống Stale/Out-of-Order):</b> Mỗi lần bắt đầu đọc sẽ tăng generation.
- *   Nếu phản hồi mạng đến muộn có generation nhỏ hơn generation mới nhất đã áp dụng, snapshot đó sẽ bị BỎ QUA (drop).</li>
- *   <li><b>Xử lý xung đột lựa chọn (Selection Conflict):</b> Ghế người dùng đang chọn (SELECTED)
- *   nếu server thông báo đã BOOKED sẽ bị hủy chọn và cảnh báo; nếu server báo UNKNOWN sẽ giữ nguyên kèm cảnh báo.</li>
- *   <li><b>Bảo vệ Pending Request:</b> Ghế đang có lệnh BOOK_TICKET chưa ngã ngũ trong Journal sẽ không bao giờ
- *   bị hiển thị thành AVAILABLE sạch.</li>
- *   <li><b>An toàn UI Thread:</b> Mọi cập nhật lên JavaFX ObservableList và Properties đều thông qua
- *   {@link Platform#runLater(Runnable)} hoặc chạy trực tiếp nếu Toolkit chưa khởi tạo (môi trường kiểm thử).</li>
+ * <li><b>Read-safe UI:</b> Mọi dữ liệu đọc từ Node trước khi TV4-D19 (Raft Read
+ * Barrier)
+ * được nghiệm thu đều mang mức {@link VerificationLevel#UNVERIFIED}. UI luôn
+ * hiển thị nhãn "Chưa xác minh".</li>
+ * <li><b>Single-flight execution:</b> Nếu đang có một yêu cầu đọc in-flight,
+ * yêu cầu gọi tiếp theo
+ * sẽ tái sử dụng CompletableFuture hiện tại, tuyệt đối không gửi hai truy vấn
+ * đọc chồng chéo lên nhau.</li>
+ * <li><b>Monotonic Generation (Chống Stale/Out-of-Order):</b> Mỗi lần bắt đầu
+ * đọc sẽ tăng generation.
+ * Nếu phản hồi mạng đến muộn có generation nhỏ hơn generation mới nhất đã áp
+ * dụng, snapshot đó sẽ bị BỎ QUA (drop).</li>
+ * <li><b>Xử lý xung đột lựa chọn (Selection Conflict):</b> Ghế người dùng đang
+ * chọn (SELECTED)
+ * nếu server thông báo đã BOOKED sẽ bị hủy chọn và cảnh báo; nếu server báo
+ * UNKNOWN sẽ giữ nguyên kèm cảnh báo.</li>
+ * <li><b>Bảo vệ Pending Request:</b> Ghế đang có lệnh BOOK_TICKET chưa ngã ngũ
+ * trong Journal sẽ không bao giờ
+ * bị hiển thị thành AVAILABLE sạch.</li>
+ * <li><b>An toàn UI Thread:</b> Mọi cập nhật lên JavaFX ObservableList và
+ * Properties đều thông qua
+ * {@link Platform#runLater(Runnable)} hoặc chạy trực tiếp nếu Toolkit chưa khởi
+ * tạo (môi trường kiểm thử).</li>
  * </ul>
  */
 public class SeatsRefreshService implements AutoCloseable {
@@ -78,7 +88,8 @@ public class SeatsRefreshService implements AutoCloseable {
     private final AtomicInteger droppedStaleCount = new AtomicInteger(0);
 
     // JavaFX Observable Properties cho UI data-binding
-    private final ObjectProperty<VerificationLevel> verificationProperty = new SimpleObjectProperty<>(VerificationLevel.UNVERIFIED);
+    private final ObjectProperty<VerificationLevel> verificationProperty = new SimpleObjectProperty<>(
+            VerificationLevel.UNVERIFIED);
     private final ObjectProperty<DataSource> dataSourceProperty = new SimpleObjectProperty<>(DataSource.NONE);
     private final ObjectProperty<SeatsSnapshot> latestSnapshotProperty = new SimpleObjectProperty<>(null);
     private final BooleanProperty refreshingProperty = new SimpleBooleanProperty(false);
@@ -92,7 +103,8 @@ public class SeatsRefreshService implements AutoCloseable {
         this(readAdapter, seatsList, null, SeatsSnapshot.DEFAULT_TRIP_ID, null);
     }
 
-    public SeatsRefreshService(ReadAdapter readAdapter, ObservableList<SeatViewModel> seatsList, PersistentPendingJournal journal) {
+    public SeatsRefreshService(ReadAdapter readAdapter, ObservableList<SeatViewModel> seatsList,
+            PersistentPendingJournal journal) {
         this(readAdapter, seatsList, journal, SeatsSnapshot.DEFAULT_TRIP_ID, null);
     }
 
@@ -152,8 +164,7 @@ public class SeatsRefreshService implements AutoCloseable {
                         flightFuture.complete(snapshot);
                     } else {
                         SeatsSnapshot emptySnapshot = SeatsSnapshot.readUnavailable(
-                                tripId, readAdapter.getDataSource(), null, "Snapshot rỗng từ adapter"
-                        );
+                                tripId, readAdapter.getDataSource(), null, "Snapshot rỗng từ adapter");
                         handleRefreshSuccess(thisGeneration, emptySnapshot);
                         flightFuture.complete(emptySnapshot);
                     }
@@ -174,11 +185,11 @@ public class SeatsRefreshService implements AutoCloseable {
     private void handleRefreshSuccess(long generation, SeatsSnapshot snapshot) {
         long lastGen = latestAppliedGeneration.get();
         if (generation < lastGen) {
-            // OUT-OF-ORDER DETECTED: Snapshot này đến sau nhưng thuộc thế hệ cũ hơn -> DROP!
+            // OUT-OF-ORDER DETECTED: Snapshot này đến sau nhưng thuộc thế hệ cũ hơn ->
+            // DROP!
             droppedStaleCount.incrementAndGet();
             runOnFxThread(() -> statusMessageProperty.set(
-                    "Bỏ qua dữ liệu cũ (Gen #" + generation + " < hiện tại #" + lastGen + ")"
-            ));
+                    "Bỏ qua dữ liệu cũ (Gen #" + generation + " < hiện tại #" + lastGen + ")"));
             return;
         }
 
@@ -219,7 +230,8 @@ public class SeatsRefreshService implements AutoCloseable {
     }
 
     /**
-     * Áp dụng dữ liệu snapshot an toàn vào danh sách ghế và các thuộc tính quan sát được.
+     * Áp dụng dữ liệu snapshot an toàn vào danh sách ghế và các thuộc tính quan sát
+     * được.
      */
     private void applySnapshotSafe(SeatsSnapshot snapshot, long generation) {
         final Set<String> pendingSeatIds = extractPendingSeatIds();
@@ -259,7 +271,8 @@ public class SeatsRefreshService implements AutoCloseable {
                 } else {
                     // Ghế không được người dùng click chọn
                     if (pendingSeatIds.contains(seatId)) {
-                        // Ghế đang có yêu cầu đặt chưa ngã ngũ trong Journal -> Bảo vệ, không hiển thị AVAILABLE
+                        // Ghế đang có yêu cầu đặt chưa ngã ngũ trong Journal -> Bảo vệ, không hiển thị
+                        // AVAILABLE
                         if (serverStatus == SeatStatus.BOOKED) {
                             seat.setStatus(SeatStatus.BOOKED);
                         } else {
@@ -276,17 +289,14 @@ public class SeatsRefreshService implements AutoCloseable {
 
             if (snapshot.isUnavailable()) {
                 statusMessageProperty.set(
-                        "⚠ READ_UNAVAILABLE: Không chứng minh được trạng thái hiện hành. Sơ đồ ghế chuyển Chưa rõ (UNKNOWN)."
-                );
+                        "⚠ READ_UNAVAILABLE: Không chứng minh được trạng thái hiện hành. Sơ đồ ghế chuyển Chưa rõ (UNKNOWN).");
             } else if (!snapshot.isSuccess()) {
                 statusMessageProperty.set(
-                        "⚡ Lỗi đọc ghế: " + snapshot.getErrorCode() + " - " + snapshot.getErrorMessage()
-                );
+                        "⚡ Lỗi đọc ghế: " + snapshot.getErrorCode() + " - " + snapshot.getErrorMessage());
             } else {
                 statusMessageProperty.set(
                         "✓ Cập nhật sơ đồ 10 ghế thành công [" + snapshot.getVerification().getDisplayName() +
-                                " | " + snapshot.getSource().getLabel() + "]"
-                );
+                                " | " + snapshot.getSource().getLabel() + "]");
             }
         });
     }
@@ -303,7 +313,8 @@ public class SeatsRefreshService implements AutoCloseable {
             Set<String> set = new HashSet<>();
             for (PendingEntry entry : pendingEntries) {
                 if ("BOOK_TICKET".equals(entry.getCommandType()) &&
-                        (entry.getState() == PendingState.PREPARED || entry.getState() == PendingState.SENT_UNRESOLVED)) {
+                        (entry.getState() == PendingState.PREPARED
+                                || entry.getState() == PendingState.SENT_UNRESOLVED)) {
                     String payload = entry.getPayload();
                     if (payload != null && !payload.isBlank()) {
                         try {
@@ -334,8 +345,7 @@ public class SeatsRefreshService implements AutoCloseable {
                 this::refreshNow,
                 interval,
                 interval,
-                TimeUnit.MILLISECONDS
-        );
+                TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -349,7 +359,8 @@ public class SeatsRefreshService implements AutoCloseable {
     }
 
     /**
-     * Thực thi an toàn trên JavaFX UI thread (hỗ trợ môi trường không có UI Toolkit).
+     * Thực thi an toàn trên JavaFX UI thread (hỗ trợ môi trường không có UI
+     * Toolkit).
      */
     private void runOnFxThread(Runnable action) {
         if (Platform.isFxApplicationThread()) {
@@ -358,7 +369,8 @@ public class SeatsRefreshService implements AutoCloseable {
             try {
                 Platform.runLater(action);
             } catch (IllegalStateException e) {
-                // JavaFX Toolkit chưa khởi tạo (ví dụ chạy headless Unit Test) -> chạy trực tiếp
+                // JavaFX Toolkit chưa khởi tạo (ví dụ chạy headless Unit Test) -> chạy trực
+                // tiếp
                 action.run();
             }
         }
