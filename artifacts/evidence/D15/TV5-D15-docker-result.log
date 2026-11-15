@@ -1,0 +1,33 @@
+TV5-D15 Docker election evidence
+Date: 2026-11-15
+Environment: Docker 29.9.3, Compose v5.6.1, disposable project railway-election-783c5d77
+Image: railway-backend-node:d13-election (built from docker/Dockerfile.backend)
+Scope: real TCP election and PostgreSQL term/vote persistence; not distributed booking/G4 commit acceptance.
+
+Command:
+  python3 scripts/test-election-docker.py artifacts/evidence/D15/docker
+
+Observed:
+  5/5 election PASS
+  3/5 reelection after old Leader stops PASS
+  2/5 repeated campaigns, no newly elected Leader PASS
+  3/5 restored PASS
+  5/5 restored PASS
+  higher-term RequestVote durable term/vote and FOLLOWER status PASS
+  5/5 reelection after higher-term injection PASS
+  Final script result: PASS: real TCP election + PostgreSQL. No distributed booking/commit acceptance claim.
+
+PostgreSQL evidence:
+  higher-term-postgresql.txt: 127|node-1
+  pg-1.txt ... pg-5.txt: current_term=128, voted_for=node-2, tickets=0, last_applied=0
+
+Artifacts:
+  docker/RESULT.txt
+  docker/status-samples.json
+  docker/containers.txt
+  docker/node-1.log ... docker/node-5.log
+  docker/higher-term-postgresql.txt
+
+Cleanup:
+  The test completed `docker compose down -v --remove-orphans`; disposable containers,
+  network and volumes were removed.
