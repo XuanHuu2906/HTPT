@@ -39,6 +39,9 @@
 
             <!-- Nhãn MOCK DATA -->
             <Label fx:id="mockBadgeLabel" text="MOCK DATA — D04" styleClass="badge-mock" />
+
+            <!-- Nhãn Mức độ xác minh (TASK D15) -->
+            <Label fx:id="verificationBadgeLabel" text="[Chưa xác minh]" styleClass="badge-unverified" />
         </children>
     </HBox>
 

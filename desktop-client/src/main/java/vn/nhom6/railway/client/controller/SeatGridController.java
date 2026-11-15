@@ -27,8 +27,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.TextField;
 import vn.nhom6.railway.client.BookingOutcome;
 import vn.nhom6.railway.client.ClientFactory;
+import vn.nhom6.railway.client.SeatsRefreshService;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockScenario;
+import vn.nhom6.railway.client.network.VerificationLevel;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel.MockSeatSource;
@@ -73,6 +75,9 @@ public class SeatGridController {
 
     @FXML
     private Label mockBadgeLabel;
+
+    @FXML
+    private Label verificationBadgeLabel;
 
     @FXML
     private Button backBtn;
@@ -173,6 +178,9 @@ public class SeatGridController {
             "Ghế đang chọn: (Chưa chọn ghế nào)");
     private final BooleanProperty hasSelectedSeatsProperty = new SimpleBooleanProperty(false);
 
+    // Dịch vụ làm mới ghế an toàn (TASK D15)
+    private SeatsRefreshService seatsRefreshService;
+
     // Callback điều hướng
     private Runnable onBackAction;
     private Consumer<List<String>> onContinueAction;
@@ -198,6 +206,9 @@ public class SeatGridController {
 
         // 5. Khởi tạo danh sách lựa chọn cho vùng điều khiển MOCK
         initMockControls();
+
+        // 6. Khởi tạo và liên kết SeatsRefreshService (TASK D15)
+        initSeatsRefreshService();
     }
 
     /**
@@ -269,6 +280,74 @@ public class SeatGridController {
                 case DISCONNECTED, UNKNOWN -> screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
                 case SUCCESS, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
             }
+        });
+    }
+
+    private void initSeatsRefreshService() {
+        if (seatsRefreshService == null) {
+            seatsRefreshService = ClientFactory.getSeatsRefreshService(seats);
+        }
+        bindRefreshService();
+    }
+
+    public SeatsRefreshService getSeatsRefreshService() {
+        if (seatsRefreshService == null) {
+            seatsRefreshService = ClientFactory.getSeatsRefreshService(seats);
+        }
+        return seatsRefreshService;
+    }
+
+    public void setSeatsRefreshService(SeatsRefreshService service) {
+        this.seatsRefreshService = service;
+        bindRefreshService();
+    }
+
+    private void bindRefreshService() {
+        if (seatsRefreshService == null) {
+            return;
+        }
+
+        if (verificationBadgeLabel != null) {
+            verificationBadgeLabel.textProperty().bind(
+                    Bindings.createStringBinding(
+                            () -> "[" + seatsRefreshService.getVerification().getDisplayName() + "]",
+                            seatsRefreshService.verificationProperty()
+                    )
+            );
+            seatsRefreshService.verificationProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    verificationBadgeLabel.getStyleClass().removeAll("badge-unverified", "badge-verified");
+                    verificationBadgeLabel.getStyleClass().add(newVal.getStyleClass());
+                }
+            });
+            verificationBadgeLabel.getStyleClass().removeAll("badge-unverified", "badge-verified");
+            verificationBadgeLabel.getStyleClass().add(seatsRefreshService.getVerification().getStyleClass());
+        }
+
+        seatsRefreshService.hasConflictProperty().addListener((obs, oldVal, hasConflict) -> {
+            if (Boolean.TRUE.equals(hasConflict)) {
+                String warn = seatsRefreshService.getConflictWarning();
+                screenStateModel.setState(ScreenState.ERROR, "⚠ XUNG ĐỘT: " + warn);
+                updateSelectedSeatsUI();
+                updateLegendCounts();
+            }
+        });
+
+        seatsRefreshService.refreshingProperty().addListener((obs, oldVal, refreshing) -> {
+            if (Boolean.TRUE.equals(refreshing)) {
+                screenStateModel.setState(ScreenState.LOADING, seatsRefreshService.getStatusMessage());
+            } else {
+                var snap = seatsRefreshService.getLatestSnapshot();
+                if (snap != null && snap.isUnavailable()) {
+                    screenStateModel.setState(ScreenState.DISCONNECTED, seatsRefreshService.getStatusMessage());
+                } else if (snap != null && !snap.isSuccess()) {
+                    screenStateModel.setState(ScreenState.ERROR, seatsRefreshService.getStatusMessage());
+                } else {
+                    screenStateModel.setState(ScreenState.IDLE, seatsRefreshService.getStatusMessage());
+                }
+            }
+            updateLegendCounts();
+            updateSelectedSeatsUI();
         });
     }
 
@@ -835,15 +914,30 @@ public class SeatGridController {
 
     @FXML
     public void onMockRefreshSnapshotClicked() {
-        clearSelection();
-        java.util.Map<String, SeatStatus> snapshot = MockSeatSource.createRefreshedMockSnapshot();
-        SeatViewModel.applySnapshot(seats, snapshot);
-        MockTicketSource.syncSnapshot(snapshot);
-        screenStateModel.setState(ScreenState.IDLE,
-                "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
-        updateLegendCounts();
-        updateSelectedSeatsUI();
-        updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK và đồng bộ vé thành công.");
+        SeatsRefreshService svc = getSeatsRefreshService();
+        if (svc != null) {
+            svc.refreshNow().whenComplete((snapshot, ex) -> {
+                try {
+                    javafx.application.Platform.runLater(() -> {
+                        updateLegendCounts();
+                        updateSelectedSeatsUI();
+                    });
+                } catch (IllegalStateException e) {
+                    updateLegendCounts();
+                    updateSelectedSeatsUI();
+                }
+            });
+        } else {
+            clearSelection();
+            java.util.Map<String, SeatStatus> snapshot = MockSeatSource.createRefreshedMockSnapshot();
+            SeatViewModel.applySnapshot(seats, snapshot);
+            MockTicketSource.syncSnapshot(snapshot);
+            screenStateModel.setState(ScreenState.IDLE,
+                    "MOCK: Đã refresh dữ liệu từ MockSeatSource (G01/G05 BOOKED, G04 AVAILABLE, G09 UNKNOWN).");
+            updateLegendCounts();
+            updateSelectedSeatsUI();
+            updateStatus("MOCK: Đã gọi applySnapshot() refresh dữ liệu MOCK và đồng bộ vé thành công.");
+        }
     }
 
     @FXML
