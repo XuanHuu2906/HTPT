@@ -1,0 +1,5222 @@
+[
+  {
+    "at": "2026-11-15T07:02:11.750189+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 0,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:11.712Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 0,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:11.722Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 0,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:11.694Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 0,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:11.614Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 0,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:11.614Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:12.057579+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.053Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.054Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.054Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.055Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "LEADER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.055Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:12.364572+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.361Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.361Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.361Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.362Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "LEADER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.362Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:12.670164+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.667Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.667Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.667Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.667Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "LEADER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.667Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:12.975087+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.972Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:12.972Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.972Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.972Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "LEADER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:12.972Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:13.402470+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:13.399Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:13.399Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:13.399Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:13.706650+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:13.704Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:13.705Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:13.705Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:14.011456+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:14.009Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.009Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.009Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:14.315137+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:14.313Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.313Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.313Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:14.620913+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:14.618Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.618Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.618Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:14.924623+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:14.922Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.922Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:14.922Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:15.228643+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:15.226Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 2,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.226Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.227Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:15.532671+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:15.531Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.531Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.530Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:15.838146+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:15.836Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.835Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:15.835Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:16.142282+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:16.140Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.140Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.140Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:16.446207+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:16.444Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 3,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.444Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.444Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:16.750609+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:16.748Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.748Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:16.748Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:17.055108+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:17.053Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.053Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.053Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:17.359444+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:17.357Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 4,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.357Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.357Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:17.663660+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:17.661Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.661Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.661Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:17.969238+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:17.966Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.966Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:17.966Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:18.273463+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:18.271Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 5,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.271Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.271Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:18.578398+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:18.576Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.576Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.575Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:18.883306+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:18.881Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.881Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:18.880Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:19.188404+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:19.186Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.186Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.186Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:19.492213+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:19.490Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.490Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.490Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:19.796292+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:19.794Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 6,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.794Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:19.794Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:20.102057+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:20.099Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.099Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.099Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:20.406083+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:20.404Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.404Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.404Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:20.711417+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:20.709Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 7,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.708Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:20.708Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:21.015276+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:21.013Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.013Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.013Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:21.320002+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:21.318Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.318Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.317Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:21.623109+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:21.621Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.621Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.621Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:21.926835+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:21.924Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 8,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.924Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:21.924Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:22.230853+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:22.228Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.228Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.229Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:22.534969+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:22.532Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.532Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.532Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:22.840252+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:22.837Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.837Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 9,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:22.838Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:23.143753+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 11,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:23.141Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.141Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.141Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:23.447598+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 11,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:23.445Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.445Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.445Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:23.764189+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 12,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:23.762Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.750Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:23.750Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:24.069003+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 12,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:24.066Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "CANDIDATE",
+        "currentTerm": 10,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.065Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 12,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.066Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:24.372209+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:24.370Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "LEADER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.370Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.370Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:24.675585+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:24.673Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "LEADER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.673Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.673Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:24.979301+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:24.977Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "LEADER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.977Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:24.977Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:25.283459+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:25.281Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "LEADER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-3": false,
+          "node-4": false,
+          "node-5": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:25.281Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 13,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:25.281Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:29.281794+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 16,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:29.280Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 16,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:29.280Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:29.283923+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 16,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:29.282Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 16,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:29.282Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:29.539300+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:29.536Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:29.536Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:29.792269+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:29.790Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:29.790Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:30.045466+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:30.043Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:30.043Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:30.298783+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:30.297Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:30.297Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:30.552818+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:30.551Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:30.551Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:30.806417+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:30.804Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:30.804Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:31.059836+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:31.058Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:31.058Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:31.312691+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:31.311Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 18,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:31.311Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:31.565972+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:31.564Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:31.564Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:31.820047+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:31.818Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:31.818Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:32.072850+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:32.071Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:32.071Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:32.339889+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:32.338Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:32.324Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:32.593420+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:32.591Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 19,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:32.591Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:32.846686+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:32.844Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:32.844Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:33.099504+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:33.097Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:33.098Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:33.353911+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:33.351Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:33.351Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:33.607013+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:33.605Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:33.605Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:33.861083+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:33.859Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:33.859Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:34.113545+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:34.112Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:34.112Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:34.367496+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:34.365Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:34.365Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:35.811083+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 23,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:35.730Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 22,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:35.731Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:35.793Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:36.115159+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 23,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:36.112Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:36.112Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:36.113Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:36.420271+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 23,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:36.417Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:36.417Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:36.418Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:36.724407+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 23,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:36.722Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:36.722Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:36.722Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:37.028901+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:37.026Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:37.026Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 17,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:37.027Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:37.332364+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:37.330Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:37.330Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 20,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:37.330Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:37.636724+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:37.634Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:37.634Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 21,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:37.635Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:37.940357+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:37.938Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:37.938Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 22,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:37.938Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:38.244544+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:38.242Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:38.242Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 23,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:38.242Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:38.548676+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:38.547Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 25,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:38.546Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 24,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:38.547Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:38.853335+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:38.851Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:38.851Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:38.851Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:39.159971+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:39.156Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:39.156Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:39.157Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:39.465974+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:39.464Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "CANDIDATE",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:39.464Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 26,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:39.464Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:39.770099+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:39.768Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:39.767Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:39.768Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:40.073925+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:40.071Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:40.072Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:40.072Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:40.378008+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:40.375Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:40.375Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:40.376Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:40.682000+00:00",
+    "nodes": {
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:40.679Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:40.679Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:40.680Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:42.660498+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:42.650Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:42.651Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:42.651Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:42.650Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:42.651Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:42.965348+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:42.963Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:42.962Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:42.963Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:42.962Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:42.963Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:43.270280+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 1,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.267Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.267Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.267Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.267Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:43.267Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:43.575253+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.572Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.572Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.573Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.572Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:43.573Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:43.880081+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.877Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.877Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:43.877Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:43.877Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:43.878Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:44.186195+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.183Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.182Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.183Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.183Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:44.183Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:44.493198+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.490Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.488Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.490Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.489Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:44.489Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:44.498731+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.495Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.495Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.496Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.496Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:44.496Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:44.614110+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.612Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 127,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.611Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.611Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.611Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:44.612Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:44.920170+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.918Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 127,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.916Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:44.917Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:44.916Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:44.917Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:45.229273+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.223Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "FOLLOWER",
+        "currentTerm": 127,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.225Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.224Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.224Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 27,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:45.225Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:45.534745+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.532Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.531Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.532Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.531Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:45.532Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:45.839622+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.838Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.837Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:45.837Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:45.837Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:45.837Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:46.145135+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:46.142Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:46.141Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:46.142Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:46.141Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:46.142Z"
+      }
+    }
+  },
+  {
+    "at": "2026-11-15T07:02:46.449800+00:00",
+    "nodes": {
+      "1": {
+        "nodeId": "node-1",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:46.447Z"
+      },
+      "2": {
+        "nodeId": "node-2",
+        "role": "LEADER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:46.447Z"
+      },
+      "3": {
+        "nodeId": "node-3",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-4": false,
+          "node-5": false,
+          "node-2": false,
+          "node-3": false
+        },
+        "observedAt": "2026-11-15T07:02:46.447Z"
+      },
+      "4": {
+        "nodeId": "node-4",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-4": false,
+          "node-3": false,
+          "node-2": false
+        },
+        "observedAt": "2026-11-15T07:02:46.447Z"
+      },
+      "5": {
+        "nodeId": "node-5",
+        "role": "FOLLOWER",
+        "currentTerm": 128,
+        "commitIndex": 0,
+        "lastApplied": 0,
+        "storageHealthy": true,
+        "peerConnectivity": {
+          "node-5": false,
+          "node-2": false,
+          "node-3": false,
+          "node-4": false
+        },
+        "observedAt": "2026-11-15T07:02:46.447Z"
+      }
+    }
+  }
+]

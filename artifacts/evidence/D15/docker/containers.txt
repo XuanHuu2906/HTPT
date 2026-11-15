@@ -1,0 +1,11 @@
+NAME                                 IMAGE                               COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+railway-election-783c5d77-node-1-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-1    41 seconds ago   Up 5 seconds              127.0.0.1:19101->9100/tcp, 127.0.0.1:19201->9200/tcp
+railway-election-783c5d77-node-2-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-2    41 seconds ago   Up 37 seconds             127.0.0.1:19102->9100/tcp, 127.0.0.1:19202->9200/tcp
+railway-election-783c5d77-node-3-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-3    41 seconds ago   Up 5 seconds              127.0.0.1:19103->9100/tcp, 127.0.0.1:19203->9200/tcp
+railway-election-783c5d77-node-4-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-4    41 seconds ago   Up 37 seconds             127.0.0.1:19104->9100/tcp, 127.0.0.1:19204->9200/tcp
+railway-election-783c5d77-node-5-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-5    41 seconds ago   Up 12 seconds             127.0.0.1:19105->9100/tcp, 127.0.0.1:19205->9200/tcp
+railway-election-783c5d77-pg-1-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-1      41 seconds ago   Up 39 seconds (healthy)   5432/tcp
+railway-election-783c5d77-pg-2-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-2      41 seconds ago   Up 40 seconds (healthy)   5432/tcp
+railway-election-783c5d77-pg-3-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-3      41 seconds ago   Up 39 seconds (healthy)   5432/tcp
+railway-election-783c5d77-pg-4-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-4      41 seconds ago   Up 40 seconds (healthy)   5432/tcp
+railway-election-783c5d77-pg-5-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-5      41 seconds ago   Up 40 seconds (healthy)   5432/tcp
