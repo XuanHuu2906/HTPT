@@ -15,7 +15,6 @@ import vn.nhom6.railway.client.viewmodel.PendingRequestsViewModel;
 import vn.nhom6.railway.client.viewmodel.PendingRequestsViewModel.PendingItem;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -36,11 +34,13 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Bộ kiểm thử toàn diện cho PersistentPendingJournal và JournalingBookingClient (TASK TV1-D14).
+ * Bộ kiểm thử toàn diện cho PersistentPendingJournal và JournalingBookingClient
+ * (TASK TV1-D14).
  * <p>
  * Bất biến & Yêu cầu:
  * 1. Chạy hoàn toàn ở môi trường local, không gọi mạng ngoài, sử dụng @TempDir.
- * 2. Mọi kết quả từ server giả lập đều gắn rõ nhãn "FAKE, không phải Node thật".
+ * 2. Mọi kết quả từ server giả lập đều gắn rõ nhãn "FAKE, không phải Node
+ * thật".
  * 3. Không coi kết quả từ fake là kết quả Raft thật.
  */
 class PersistentPendingJournalTest {
@@ -69,7 +69,8 @@ class PersistentPendingJournalTest {
     @DisplayName("Ca 1: recordPrepared rồi restart -> dữ liệu khôi phục nguyên văn và hash đúng")
     void testRecordPreparedAndRestartRecovery() throws IOException {
         String reqId = UUID.randomUUID().toString();
-        String payload = "{\"requestId\":\"" + reqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G01\",\"passengerName\":\"Nguyen Van A\"}";
+        String payload = "{\"requestId\":\"" + reqId
+                + "\",\"tripId\":\"SE-001\",\"seatId\":\"G01\",\"passengerName\":\"Nguyen Van A\"}";
         PendingEntry entry = PendingEntry.createPrepared(reqId, "BOOK_TICKET", payload);
 
         journal.recordPrepared(entry);
@@ -91,7 +92,8 @@ class PersistentPendingJournalTest {
     }
 
     // =========================================================================
-    // CA 2: Ghi journal phải xong trước khi gửi; journal ghi lỗi -> không được gửi (Fail-closed)
+    // CA 2: Ghi journal phải xong trước khi gửi; journal ghi lỗi -> không được gửi
+    // (Fail-closed)
     // =========================================================================
     @Test
     @DisplayName("Ca 2: Bắt buộc ghi journal trước khi gửi; lỗi ghi -> không được gửi (Fail-closed)")
@@ -104,7 +106,8 @@ class PersistentPendingJournalTest {
 
         BookingClient testDelegate = new MockBookingClient() {
             @Override
-            public CompletableFuture<vn.nhom6.railway.client.network.BookTicketResponseDto> book(BookTicketRequestDto req) {
+            public CompletableFuture<vn.nhom6.railway.client.network.BookTicketResponseDto> book(
+                    BookTicketRequestDto req) {
                 delegateCalled.set(true);
                 // Kiểm tra xem tại thời điểm delegate được gọi, journal đã có bản ghi chưa
                 journalHasRecordBeforeSend.set(journal.get(reqId).isPresent());
@@ -112,40 +115,47 @@ class PersistentPendingJournalTest {
             }
         };
 
-        JournalingBookingClient client = new JournalingBookingClient(testDelegate, journal);
-        client.book(request).join();
+        try (JournalingBookingClient client = new JournalingBookingClient(testDelegate, journal)) {
+            client.book(request).join();
 
-        assertTrue(delegateCalled.get(), "Delegate phải được gọi sau khi journal đã ghi");
-        assertTrue(journalHasRecordBeforeSend.get(), "Journal bắt buộc phải có bản ghi trước khi lệnh được gửi qua delegate");
+            assertTrue(delegateCalled.get(), "Delegate phải được gọi sau khi journal đã ghi");
+            assertTrue(journalHasRecordBeforeSend.get(),
+                    "Journal bắt buộc phải có bản ghi trước khi lệnh được gửi qua delegate");
+        }
 
         // Thử nghiệm fail-closed: đóng journal để cố tình gây lỗi ghi
         journal.close();
         AtomicBoolean delegateCalledOnFailure = new AtomicBoolean(false);
         BookingClient failDelegate = new MockBookingClient() {
             @Override
-            public CompletableFuture<vn.nhom6.railway.client.network.BookTicketResponseDto> book(BookTicketRequestDto req) {
+            public CompletableFuture<vn.nhom6.railway.client.network.BookTicketResponseDto> book(
+                    BookTicketRequestDto req) {
                 delegateCalledOnFailure.set(true);
                 return super.book(req);
             }
         };
 
-        JournalingBookingClient failClient = new JournalingBookingClient(failDelegate, journal);
-        String reqId2 = UUID.randomUUID().toString();
-        BookTicketRequestDto request2 = new BookTicketRequestDto(reqId2, "SE-001", "G03", "Nguyen Van C");
+        try (JournalingBookingClient failClient = new JournalingBookingClient(failDelegate, journal)) {
+            String reqId2 = UUID.randomUUID().toString();
+            BookTicketRequestDto request2 = new BookTicketRequestDto(reqId2, "SE-001", "G03", "Nguyen Van C");
 
-        CompletableFuture<?> future = failClient.book(request2);
-        assertTrue(future.isCompletedExceptionally(), "Phải trả về CompletableFuture lỗi khi ghi journal thất bại");
-        assertFalse(delegateCalledOnFailure.get(), "Tuyệt đối không được gửi lệnh qua mạng nếu ghi journal thất bại (Fail-closed)");
+            CompletableFuture<?> future = failClient.book(request2);
+            assertTrue(future.isCompletedExceptionally(), "Phải trả về CompletableFuture lỗi khi ghi journal thất bại");
+            assertFalse(delegateCalledOnFailure.get(),
+                    "Tuyệt đối không được gửi lệnh qua mạng nếu ghi journal thất bại (Fail-closed)");
+        }
     }
 
     // =========================================================================
-    // CA 3: Restart khi đang SENT_UNRESOLVED -> khôi phục CHƯA XÁC NHẬN, không tự nhận thành công
+    // CA 3: Restart khi đang SENT_UNRESOLVED -> khôi phục CHƯA XÁC NHẬN, không tự
+    // nhận thành công
     // =========================================================================
     @Test
     @DisplayName("Ca 3: Restart khi SENT_UNRESOLVED -> ViewModel khôi phục CHƯA XÁC NHẬN, không tự thành công")
     void testRestartWhenSentUnresolvedDisplaysUnknown() throws IOException {
         String reqId = UUID.randomUUID().toString();
-        String payload = "{\"requestId\":\"" + reqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G03\",\"passengerName\":\"Nguyen Van D\"}";
+        String payload = "{\"requestId\":\"" + reqId
+                + "\",\"tripId\":\"SE-001\",\"seatId\":\"G03\",\"passengerName\":\"Nguyen Van D\"}";
         PendingEntry entry = PendingEntry.createPrepared(reqId, "BOOK_TICKET", payload);
 
         journal.recordPrepared(entry);
@@ -162,14 +172,16 @@ class PersistentPendingJournalTest {
             PendingItem item = viewModel.getPendingItems().get(0);
             assertEquals(reqId, item.getRequestId());
             assertEquals(PendingState.SENT_UNRESOLVED, item.getState());
-            assertEquals("CHƯA XÁC NHẬN", item.getDisplayStatus(), "Không được tự ý hiển thị thành công khi chưa có phản hồi cuối");
+            assertEquals("CHƯA XÁC NHẬN", item.getDisplayStatus(),
+                    "Không được tự ý hiển thị thành công khi chưa có phản hồi cuối");
             assertEquals("booking-status-unknown", item.getStyleClass());
             assertTrue(item.isCanRetry(), "Mục chưa xác nhận phải cho phép người dùng kiểm tra hoặc gửi lại");
         }
     }
 
     // =========================================================================
-    // CA 4: Retry sau restart với FakeNodeServer: cùng requestId + payload, kết quả CONFIRMED -> RESOLVED
+    // CA 4: Retry sau restart với FakeNodeServer: cùng requestId + payload, kết quả
+    // CONFIRMED -> RESOLVED
     // =========================================================================
     @Test
     @DisplayName("Ca 4: Retry sau restart với FakeNodeServer: cùng requestId/payload -> CONFIRMED, đúng 1 vé")
@@ -179,7 +191,8 @@ class PersistentPendingJournalTest {
             int port = fakeServer.getPort();
 
             String reqId = UUID.randomUUID().toString();
-            String payload = "{\"requestId\":\"" + reqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G05\",\"passengerName\":\"Hanh Khach Fake\"}";
+            String payload = "{\"requestId\":\"" + reqId
+                    + "\",\"tripId\":\"SE-001\",\"seatId\":\"G05\",\"passengerName\":\"Hanh Khach Fake\"}";
             PendingEntry entry = PendingEntry.createPrepared(reqId, "BOOK_TICKET", payload);
 
             journal.recordPrepared(entry);
@@ -187,15 +200,16 @@ class PersistentPendingJournalTest {
             journal.close();
 
             // Restart ứng dụng
-            try (PersistentPendingJournal restartedJournal = new PersistentPendingJournal(tempJournalDir)) {
-                SocketBookingClient socketClient = new SocketBookingClient("127.0.0.1", port);
-                JournalingBookingClient journalingClient = new JournalingBookingClient(socketClient, restartedJournal);
+            try (PersistentPendingJournal restartedJournal = new PersistentPendingJournal(tempJournalDir);
+                 SocketBookingClient socketClient = new SocketBookingClient("127.0.0.1", port);
+                 JournalingBookingClient journalingClient = new JournalingBookingClient(socketClient, restartedJournal)) {
 
                 // Gửi lại (retry) từ journal
                 var future = journalingClient.retry(reqId);
                 var response = future.get();
 
-                assertEquals("CONFIRMED", response.getOutcome(), "Fake server phải trả về CONFIRMED [FAKE, không phải Node thật]");
+                assertEquals("CONFIRMED", response.getOutcome(),
+                        "Fake server phải trả về CONFIRMED [FAKE, không phải Node thật]");
                 assertEquals(reqId, response.getRequestId());
 
                 // Kiểm tra journal đã chuyển sang RESOLVED
@@ -204,13 +218,15 @@ class PersistentPendingJournalTest {
                 assertEquals("CONFIRMED", resolvedEntry.getFinalOutcome());
 
                 // Xác nhận bất biến trên Fake Server: Đúng 1 vé duy nhất được cấp cho ghế G05
-                assertEquals(1, fakeServer.getActiveTicketCount("G05"), "Bất biến: Retry cùng requestId phải idempotent, duy nhất 1 vé");
+                assertEquals(1, fakeServer.getActiveTicketCount("G05"),
+                        "Bất biến: Retry cùng requestId phải idempotent, duy nhất 1 vé");
             }
         }
     }
 
     // =========================================================================
-    // CA 5: checkResult sau restart bằng fake result: CONFIRMED, REJECTED, UNKNOWN, timeout
+    // CA 5: checkResult sau restart bằng fake result: CONFIRMED, REJECTED, UNKNOWN,
+    // timeout
     // =========================================================================
     @Test
     @DisplayName("Ca 5: checkResult sau restart với fake result: cập nhật đúng outcome, giữ pending khi UNKNOWN")
@@ -219,9 +235,12 @@ class PersistentPendingJournalTest {
         String reqRejected = UUID.randomUUID().toString();
         String reqUnknown = UUID.randomUUID().toString();
 
-        journal.recordPrepared(PendingEntry.createPrepared(reqSuccess, "BOOK_TICKET", "{\"requestId\":\"" + reqSuccess + "\"}"));
-        journal.recordPrepared(PendingEntry.createPrepared(reqRejected, "BOOK_TICKET", "{\"requestId\":\"" + reqRejected + "\"}"));
-        journal.recordPrepared(PendingEntry.createPrepared(reqUnknown, "BOOK_TICKET", "{\"requestId\":\"" + reqUnknown + "\"}"));
+        journal.recordPrepared(
+                PendingEntry.createPrepared(reqSuccess, "BOOK_TICKET", "{\"requestId\":\"" + reqSuccess + "\"}"));
+        journal.recordPrepared(
+                PendingEntry.createPrepared(reqRejected, "BOOK_TICKET", "{\"requestId\":\"" + reqRejected + "\"}"));
+        journal.recordPrepared(
+                PendingEntry.createPrepared(reqUnknown, "BOOK_TICKET", "{\"requestId\":\"" + reqUnknown + "\"}"));
 
         journal.markSent(reqSuccess);
         journal.markSent(reqRejected);
@@ -234,10 +253,12 @@ class PersistentPendingJournalTest {
                 public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
                     if (requestId.equals(reqSuccess)) {
                         return CompletableFuture.completedFuture(
-                                new GetRequestResultResponseDto(requestId, "APPLIED_SUCCESS", "BOOK_TICKET", "ticket-1", null, 10L, true));
+                                new GetRequestResultResponseDto(requestId, "APPLIED_SUCCESS", "BOOK_TICKET", "ticket-1",
+                                        null, 10L, true));
                     } else if (requestId.equals(reqRejected)) {
                         return CompletableFuture.completedFuture(
-                                new GetRequestResultResponseDto(requestId, "APPLIED_REJECTED", "BOOK_TICKET", null, "SEAT_ALREADY_BOOKED", 11L, true));
+                                new GetRequestResultResponseDto(requestId, "APPLIED_REJECTED", "BOOK_TICKET", null,
+                                        "SEAT_ALREADY_BOOKED", 11L, true));
                     } else {
                         // Node chưa từng thấy requestId
                         return CompletableFuture.completedFuture(
@@ -246,21 +267,22 @@ class PersistentPendingJournalTest {
                 }
             };
 
-            JournalingBookingClient journalingClient = new JournalingBookingClient(mockClient, restartedJournal);
+            try (JournalingBookingClient journalingClient = new JournalingBookingClient(mockClient, restartedJournal)) {
+                // 1. Kiểm tra thành công -> RESOLVED CONFIRMED
+                journalingClient.getRequestResult(reqSuccess).join();
+                assertEquals(PendingState.RESOLVED, restartedJournal.get(reqSuccess).orElseThrow().getState());
+                assertEquals("CONFIRMED", restartedJournal.get(reqSuccess).orElseThrow().getFinalOutcome());
 
-            // 1. Kiểm tra thành công -> RESOLVED CONFIRMED
-            journalingClient.getRequestResult(reqSuccess).join();
-            assertEquals(PendingState.RESOLVED, restartedJournal.get(reqSuccess).orElseThrow().getState());
-            assertEquals("CONFIRMED", restartedJournal.get(reqSuccess).orElseThrow().getFinalOutcome());
+                // 2. Kiểm tra bị từ chối -> RESOLVED REJECTED
+                journalingClient.getRequestResult(reqRejected).join();
+                assertEquals(PendingState.RESOLVED, restartedJournal.get(reqRejected).orElseThrow().getState());
+                assertEquals("REJECTED", restartedJournal.get(reqRejected).orElseThrow().getFinalOutcome());
 
-            // 2. Kiểm tra bị từ chối -> RESOLVED REJECTED
-            journalingClient.getRequestResult(reqRejected).join();
-            assertEquals(PendingState.RESOLVED, restartedJournal.get(reqRejected).orElseThrow().getState());
-            assertEquals("REJECTED", restartedJournal.get(reqRejected).orElseThrow().getFinalOutcome());
-
-            // 3. Node báo UNKNOWN -> Tiếp tục giữ pending (SENT_UNRESOLVED), không tự ý suy ra thất bại
-            journalingClient.getRequestResult(reqUnknown).join();
-            assertEquals(PendingState.SENT_UNRESOLVED, restartedJournal.get(reqUnknown).orElseThrow().getState());
+                // 3. Node báo UNKNOWN -> Tiếp tục giữ pending (SENT_UNRESOLVED), không tự ý suy
+                // ra thất bại
+                journalingClient.getRequestResult(reqUnknown).join();
+                assertEquals(PendingState.SENT_UNRESOLVED, restartedJournal.get(reqUnknown).orElseThrow().getState());
+            }
 
             // 4. Lỗi mạng / timeout -> Vẫn giữ nguyên pending
             BookingClient timeoutClient = new MockBookingClient() {
@@ -269,8 +291,11 @@ class PersistentPendingJournalTest {
                     return CompletableFuture.failedFuture(new IOException("Simulated network timeout"));
                 }
             };
-            JournalingBookingClient timeoutJournalingClient = new JournalingBookingClient(timeoutClient, restartedJournal);
-            timeoutJournalingClient.getRequestResult(reqUnknown).whenComplete((res, err) -> {});
+            try (JournalingBookingClient timeoutJournalingClient = new JournalingBookingClient(timeoutClient,
+                    restartedJournal)) {
+                timeoutJournalingClient.getRequestResult(reqUnknown).whenComplete((res, err) -> {
+                });
+            }
 
             assertEquals(PendingState.SENT_UNRESOLVED, restartedJournal.get(reqUnknown).orElseThrow().getState());
         }
@@ -287,7 +312,8 @@ class PersistentPendingJournalTest {
         journal.recordPrepared(entry1);
         journal.close();
 
-        // Cố tình ghi thêm một dòng dở (mô phỏng crash mất điện đột ngột khi đang ghi dở)
+        // Cố tình ghi thêm một dòng dở (mô phỏng crash mất điện đột ngột khi đang ghi
+        // dở)
         Path journalFile = tempJournalDir.resolve(PersistentPendingJournal.JOURNAL_FILE_NAME);
         String partialLine = "{\"requestId\":\"corrupt-id\",\"commandType\":\"BOOK_TIC";
         Files.writeString(journalFile, partialLine, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
@@ -313,8 +339,7 @@ class PersistentPendingJournalTest {
         PendingEntry corruptEntry = new PendingEntry(
                 reqId, "BOOK_TICKET", "{\"requestId\":\"" + reqId + "\",\"seatId\":\"G07\"}", // Payload bị sửa
                 validEntry.getPayloadHash(), // Nhưng hash vẫn là của G06
-                PendingState.PREPARED, Instant.now(), null, 0, null, null, 1
-        );
+                PendingState.PREPARED, Instant.now(), null, 0, null, null, 1);
 
         assertFalse(corruptEntry.isPayloadValid(), "isPayloadValid phải trả về false khi hash không khớp");
 
@@ -330,16 +355,19 @@ class PersistentPendingJournalTest {
 
         try (PersistentPendingJournal restartedJournal = new PersistentPendingJournal(tempJournalDir)) {
             PendingEntry loaded = restartedJournal.get(reqId).orElseThrow();
-            assertEquals(PendingState.CORRUPT, loaded.getState(), "Phải đánh dấu CORRUPT khi nạp bản ghi có hash không khớp");
+            assertEquals(PendingState.CORRUPT, loaded.getState(),
+                    "Phải đánh dấu CORRUPT khi nạp bản ghi có hash không khớp");
 
-            JournalingBookingClient client = new JournalingBookingClient(new MockBookingClient(), restartedJournal);
-            var retryFuture = client.retry(reqId);
-            assertTrue(retryFuture.isCompletedExceptionally(), "Phải từ chối retry khi bản ghi bị CORRUPT");
+            try (JournalingBookingClient client = new JournalingBookingClient(new MockBookingClient(), restartedJournal)) {
+                var retryFuture = client.retry(reqId);
+                assertTrue(retryFuture.isCompletedExceptionally(), "Phải từ chối retry khi bản ghi bị CORRUPT");
+            }
         }
     }
 
     // =========================================================================
-    // CA 8: Ghi trùng requestId: cùng payload -> idempotent; khác payload -> REQUEST_ID_CONFLICT
+    // CA 8: Ghi trùng requestId: cùng payload -> idempotent; khác payload ->
+    // REQUEST_ID_CONFLICT
     // =========================================================================
     @Test
     @DisplayName("Ca 8: Idempotency & Conflict: cùng payload thì idempotent, khác payload thì từ chối")
@@ -355,9 +383,11 @@ class PersistentPendingJournalTest {
         assertDoesNotThrow(() -> journal.recordPrepared(entry1));
         assertEquals(1, journal.getAll().size());
 
-        // Ghi lại CÙNG requestId nhưng KHÁC payload: phải ném IllegalArgumentException (REQUEST_ID_CONFLICT)
+        // Ghi lại CÙNG requestId nhưng KHÁC payload: phải ném IllegalArgumentException
+        // (REQUEST_ID_CONFLICT)
         PendingEntry conflictEntry = PendingEntry.createPrepared(reqId, "BOOK_TICKET", payload2);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> journal.recordPrepared(conflictEntry));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> journal.recordPrepared(conflictEntry));
         assertTrue(ex.getMessage().contains("REQUEST_ID_CONFLICT"), "Phải thông báo rõ lỗi REQUEST_ID_CONFLICT");
 
         // Bản ghi ban đầu không bị ghi đè
@@ -371,9 +401,12 @@ class PersistentPendingJournalTest {
     @DisplayName("Ca 9: Single-process lock: Chặn instance thứ hai mở cùng thư mục journal")
     void testSingleProcessLockPreventsSecondInstance() {
         assertNotNull(journal);
-        // Cố gắng mở instance thứ hai trên cùng tempJournalDir khi instance thứ nhất đang mở
+        // Cố gắng mở instance thứ hai trên cùng tempJournalDir khi instance thứ nhất
+        // đang mở
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
-            new PersistentPendingJournal(tempJournalDir);
+            try (PersistentPendingJournal secondInstance = new PersistentPendingJournal(tempJournalDir)) {
+                // Không đạt tới đây vì sẽ ném ngoại lệ IllegalStateException
+            }
         });
         assertTrue(ex.getMessage().contains("journal.lock") || ex.getMessage().contains("tiến trình khác"),
                 "Phải ném ngoại lệ báo không thể lấy khóa độc quyền journal.lock");
@@ -388,11 +421,13 @@ class PersistentPendingJournalTest {
         String reqResolved = UUID.randomUUID().toString();
         String reqPending = UUID.randomUUID().toString();
 
-        journal.recordPrepared(PendingEntry.createPrepared(reqResolved, "BOOK_TICKET", "{\"requestId\":\"" + reqResolved + "\"}"));
+        journal.recordPrepared(
+                PendingEntry.createPrepared(reqResolved, "BOOK_TICKET", "{\"requestId\":\"" + reqResolved + "\"}"));
         journal.markSent(reqResolved);
         journal.markResolved(reqResolved, "CONFIRMED");
 
-        journal.recordPrepared(PendingEntry.createPrepared(reqPending, "BOOK_TICKET", "{\"requestId\":\"" + reqPending + "\"}"));
+        journal.recordPrepared(
+                PendingEntry.createPrepared(reqPending, "BOOK_TICKET", "{\"requestId\":\"" + reqPending + "\"}"));
         journal.markSent(reqPending);
 
         assertEquals(2, journal.getAll().size());
@@ -440,10 +475,14 @@ class PersistentPendingJournalTest {
                     capturedLogs.add(record.getMessage());
                 }
             }
+
             @Override
-            public void flush() {}
+            public void flush() {
+            }
+
             @Override
-            public void close() throws SecurityException {}
+            public void close() throws SecurityException {
+            }
         };
 
         Logger journalLogger = Logger.getLogger(PersistentPendingJournal.class.getName());

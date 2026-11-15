@@ -1,0 +1,115 @@
+================================================================================
+BÁO CÁO KẾT QUẢ THỰC HIỆN TASK TV1-D15 — SEATS REFRESH SERVICE VỚI FAKE READ ADAPTER
+================================================================================
+Người thực hiện: TV1 (Nguyễn Đăng Khoa) — Desktop Client Subsystem
+Thời gian hoàn thành: 2026-11-15 08:53:30 +07:00
+Môi trường thực thi:
+  - Hệ điều hành: Windows 11 (build 10.0, amd64)
+  - JDK: OpenJDK 21.0.12.1 (LTS) [Target: -Dmaven.compiler.release=21]
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+  - Base Commit: 008a058 (Merge pull request #85 from XuanHuu2906/dat)
+
+--------------------------------------------------------------------------------
+1. BƯỚC 0 — KẾT QUẢ PREFLIGHT
+--------------------------------------------------------------------------------
+1.1. Khảo sát SPEC-03 (docs/specs/03-CONTRACTS.md §4.1, §7) & SPEC-04 (Read Barrier):
+  - Cấu trúc response GET_SEATS:
+    * Request: {"tripId": "SE-001"}
+    * Response: {"tripId": "SE-001", "seats": [{"seatId":"G01","status":"AVAILABLE","ticketId":null}, ...], "readIndex": 42, "leaderId": "node-3"}
+    * seats: đúng 10 ghế (G01–G10), trạng thái chỉ AVAILABLE hoặc BOOKED (không có SELECTED từ server).
+  - Mã lỗi READ_UNAVAILABLE:
+    * Trả về trong ERROR_RESPONSE: {"errorCode":"READ_UNAVAILABLE","message":"...","leaderHint":...,"term":...,"requestId":...}.
+    * Ý nghĩa: "Không chứng minh được read hiện hành. Không hiển thị kết quả như dữ liệu mới nhất".
+  - Dấu hiệu "đã xác minh" (Verified):
+    * SPEC-03 không định nghĩa trường boolean "verified" trên wire DTO. Tính chất tuyến tính hóa (linearizability) của dữ liệu đọc được bảo đảm bởi cơ chế Read Barrier tại Leader (TV4-D19).
+    * Kết luận Preflight: Vì TV4-D19 (Raft Read Barrier) chưa được triển khai/nghiệm thu, mọi dữ liệu đọc từ Node ở thời điểm hiện tại đều là UNVERIFIED. UI Desktop bắt buộc phải hiển thị nhãn "Chưa xác minh" (UNVERIFIED) một cách minh bạch, tuyệt đối không được coi là sự thật đã chứng minh. Chỉ lệnh BOOK qua Raft mới quyết định ghế có được cấp hay không.
+
+1.2. Khảo sát mã nguồn hiện có trong desktop-client:
+  - `SeatViewModel`: đã có 4 trạng thái ghế (AVAILABLE, BOOKED, SELECTED, UNKNOWN).
+  - `SeatGridController`: trước đây gọi `MockSeatSource.createRefreshedMockSnapshot()` cục bộ khi bấm nút refresh. Cần chuyển sang điều phối qua `SeatsRefreshService`.
+  - `ErrorPresentationMapper`: đã có sẵn ánh xạ cho mã `READ_UNAVAILABLE` sang `PresentationKind.UNKNOWN` với styleClass `STYLE_UNKNOWN`.
+  - `BookingClient.getSeats`: trả về CompletableFuture<GetSeatsResponseDto>.
+
+1.3. Kiểm tra kiểm thử ban đầu (Preflight Baseline Test):
+  - Lệnh: `mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  - Kết quả: PASS (164 tests run, 0 failures, 0 errors, 6 skipped).
+
+--------------------------------------------------------------------------------
+2. CÁC THAY ĐỔI ĐÃ THỰC HIỆN
+--------------------------------------------------------------------------------
+2.1. Các lớp mô hình và siêu dữ liệu đọc (Network & Model):
+  - `VerificationLevel.java`:
+    * Enum gồm: `UNVERIFIED` ("Chưa xác minh", style `badge-unverified`), `VERIFIED` ("Đã xác minh qua Raft Read Barrier", style `badge-verified`).
+  - `DataSource.java`:
+    * Enum phân loại nguồn dữ liệu: `FAKE` (Testbed adapter), `MOCK` (Mô phỏng UI), `REAL` (TCP Socket cụm Node), `NONE`.
+  - `SeatsSnapshot.java`:
+    * Lớp bất biến (immutable) lưu trữ dữ liệu đọc của 10 ghế (G01–G10) kèm đầy đủ siêu dữ liệu: verification, source, asOf (Instant), readIndex, leaderId, errorCode, errorMessage.
+    * Factory methods: `unverified(...)`, `verified(...)`, `readUnavailable(...)`, `error(...)`.
+
+2.2. Tầng Adapter đọc ghế (Read Adapters):
+  - `ReadAdapter.java`: Interface bất đồng bộ trừu tượng hóa việc đọc ghế (`CompletableFuture<SeatsSnapshot> readSeats()`, `getDataSource()`, `isBarrierSupported()`).
+  - `FakeReadAdapter.java`:
+    * Triển khai `ReadAdapter` hỗ trợ tiêm 7 kịch bản lỗi: `OK`, `READ_UNAVAILABLE`, `TIMEOUT`, `DISCONNECTED`, `STALE`, `DELAY`, `OUT_OF_ORDER`.
+    * Invariant an toàn: Luôn trả về `DataSource.FAKE`, `isBarrierSupported() = false`, và **TUYỆT ĐỐI KHÔNG BAO GIỜ** trả về `VerificationLevel.VERIFIED`.
+  - `BookingClientReadAdapter.java`:
+    * Adapter bọc `BookingClient.getSeats()`.
+    * Chuyển đổi `GetSeatsResponseDto` sang `SeatsSnapshot`. Mọi dữ liệu đọc đều mang mức `VerificationLevel.UNVERIFIED`.
+    * Bắt các ngoại lệ `NotLeaderException`, `READ_UNAVAILABLE`, `TimeoutException`, `IOException` và chuyển đổi an toàn sang snapshot lỗi tương ứng mà không làm gián đoạn UI.
+
+2.3. Dịch vụ làm mới sơ đồ ghế an toàn (SeatsRefreshService):
+  - `SeatsRefreshService.java` (tại package `vn.nhom6.railway.client`):
+    * **Single-Flight:** Gộp nhiều yêu cầu refresh đồng thời thành 1 truy vấn duy nhất; nếu đang có request in-flight thì trả về future hiện tại.
+    * **Monotonic Generation Counter:** Mỗi lần gọi tăng thế hệ (`generationSequence`). Khi snapshot mạng về muộn hơn thế hệ mới nhất đã áp dụng, snapshot cũ đó sẽ bị BỎ QUA (drop), ngăn chặn tình trạng dữ liệu cũ ghi đè dữ liệu mới (anti-stale).
+    * **Xử lý xung đột lựa chọn ghế (Selection Conflict):**
+      - Ghế đang `SELECTED`: nếu snapshot báo `BOOKED` -> tự động hủy chọn, chuyển sang `BOOKED`, bật cảnh báo `hasConflict`.
+      - Ghế đang `SELECTED`: nếu snapshot báo `AVAILABLE` -> giữ nguyên `SELECTED`.
+      - Ghế đang `SELECTED`: nếu snapshot báo `UNKNOWN` (ví dụ do READ_UNAVAILABLE) -> giữ nguyên `SELECTED` kèm cảnh báo không thể xác minh.
+    * **Bảo vệ Pending Request:** Tích hợp với `PersistentPendingJournal`, trích xuất các ghế đang có lệnh `BOOK_TICKET` ở trạng thái `PREPARED` hoặc `SENT_UNRESOLVED`. Ghế đang pending tuyệt đối không bao giờ hiển thị thành `AVAILABLE` sạch.
+    * **Lập lịch định kỳ:** Hỗ trợ daemon scheduler tự động làm mới theo chu kỳ (`startPeriodicRefresh`, `stopPeriodicRefresh`).
+    * **An toàn UI Thread:** Mọi thay đổi dữ liệu và properties đều bọc qua `Platform.runLater()` (hỗ trợ fallback an toàn khi chạy trong môi trường headless unit test).
+
+2.4. Cập nhật giao diện và liên kết (UI & ClientFactory):
+  - `SeatViewModel.java`: Thêm thuộc tính `verification` (`ObjectProperty<VerificationLevel>`), getter `isVerified()`.
+  - `seat-grid.fxml`: Thêm nhãn `<Label fx:id="verificationBadgeLabel" text="[Chưa xác minh]" styleClass="badge-unverified" />` ngay trên thanh tiêu đề.
+  - `SeatGridController.java`:
+    * Tích hợp `SeatsRefreshService`, tự động liên kết `verificationBadgeLabel` với `verificationProperty`.
+    * Lắng nghe `hasConflictProperty` và `statusMessageProperty` để cập nhật `screenStateModel` sang trạng thái cảnh báo khi có xung đột hoặc gặp `READ_UNAVAILABLE`.
+    * Nút "Làm mới sơ đồ" kết nối trực tiếp với `seatsRefreshService.refreshNow()`.
+  - `railway.css`: Thêm kiểu dáng cho `.badge-unverified` (màu hổ phách), `.badge-verified` (màu xanh lá), `.badge-fake` (màu tím).
+  - `ClientFactory.java`: Cung cấp `createDefaultReadAdapter()`, `getReadAdapter()`, `setReadAdapter()`, `getSeatsRefreshService(ObservableList<SeatViewModel>)`.
+
+--------------------------------------------------------------------------------
+3. KẾT QUẢ KIỂM THỬ THỰC TẾ
+--------------------------------------------------------------------------------
+3.1. Kiểm thử đơn vị mới: `SeatsRefreshServiceTest.java` (10 test cases):
+  - [PASS] AC-D15-01: Refresh thành công cập nhật đủ 10 ghế và trạng thái luôn là UNVERIFIED.
+  - [PASS] AC-D15-02: READ_UNAVAILABLE chuyển toàn bộ 10 ghế sang UNKNOWN và giữ UNVERIFIED.
+  - [PASS] AC-D15-03: TIMEOUT và DISCONNECTED được xử lý an toàn không làm crash UI thread.
+  - [PASS] AC-D15-04: Single-Flight gộp nhiều yêu cầu gọi đồng thời thành 1 truy vấn duy nhất.
+  - [PASS] AC-D15-05: Monotonic Generation phát hiện và loại bỏ phản hồi cũ (out-of-order drop).
+  - [PASS] AC-D15-06: Ghế SELECTED bị người khác đặt (BOOKED) thì tự động hủy chọn và cảnh báo.
+  - [PASS] AC-D15-07: Ghế SELECTED được bảo lưu khi server báo AVAILABLE hoặc READ_UNAVAILABLE.
+  - [PASS] AC-D15-08: Ghế có lệnh BOOK_TICKET pending trong Journal không bị hiển thị AVAILABLE sạch.
+  - [PASS] AC-D15-09: FakeReadAdapter TUYỆT ĐỐI không bao giờ trả về VerificationLevel.VERIFIED.
+  - [PASS] AC-D15-10: BookingClientReadAdapter bọc MockBookingClient trả DataSource.MOCK và UNVERIFIED.
+
+  Kết quả chạy: Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 (5.831 s).
+
+3.2. Chạy toàn bộ test suite dự án:
+  - Lệnh: `mvn -B -ntp -pl shared,desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  - Kết quả:
+    * shared: Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+    * desktop-client: Tests run: 174, Failures: 0, Errors: 0, Skipped: 6
+    * Tổng cộng: 204 tests, 0 failures, 0 errors, 6 skipped.
+    * BUILD SUCCESS (Tổng thời gian: 33.800 s).
+
+--------------------------------------------------------------------------------
+4. ĐỐI CHIẾU SPEC & QUY TẮC AN TOÀN HỆ THỐNG
+--------------------------------------------------------------------------------
+- Đúng 10 ghế G01–G10; bảo toàn ràng buộc nghiệp vụ.
+- Không thay đổi wire contract protocol SPEC-03; không tự ý tạo message type mới trên đường truyền.
+- Gắn nhãn `UNVERIFIED` cho toàn bộ dữ liệu đọc trước khi TV4-D19 (Raft Read Barrier) được nghiệm thu.
+- Tuyệt đối không coi dữ liệu từ fake là kết quả Raft thật; không tự ý xác nhận booking thành công.
+- Không sử dụng web/REST/HTTP layer; 100% mã nguồn thuộc Desktop Client Java/JavaFX.
+================================================================================

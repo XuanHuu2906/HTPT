@@ -822,6 +822,33 @@
     -fx-border-radius: 4px;
 }
 
+.badge-fake {
+    -fx-background-color: #7c3aed;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #6d28d9;
+    -fx-border-radius: 4px;
+}
+
+.badge-unverified {
+    -fx-background-color: #fffbeb;
+    -fx-text-fill: #b45309;
+    -fx-border-color: #f59e0b;
+    -fx-border-radius: 4px;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8;
+}
+
+.badge-verified {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #047857;
+    -fx-border-color: #10b981;
+    -fx-border-radius: 4px;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8;
+}
+
 .badge-none {
     -fx-background-color: #334155;
     -fx-text-fill: #cbd5e1;

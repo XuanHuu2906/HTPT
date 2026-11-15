@@ -39,6 +39,10 @@ public class App extends Application {
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(850);
         primaryStage.setMinHeight(550);
+        primaryStage.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
         primaryStage.show();
 
         // Tự động lưu ảnh chụp giao diện làm bằng chứng kiểm thử D01
@@ -84,6 +88,18 @@ public class App extends Application {
         } catch (Exception e) {
             System.err.println("[EVIDENCE D01] Không thể lưu ảnh chụp: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void stop() throws Exception {
+        var j = ClientFactory.getJournal();
+        if (j != null && !j.isClosed()) {
+            try {
+                j.close();
+            } catch (Exception ignored) {}
+        }
+        super.stop();
+        System.exit(0);
     }
 
     public static void main(String[] args) {
