@@ -1,61 +1,40 @@
-﻿================================================================================
- RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | CLUSTER STATUS & LOG HARNESS (TV6-D12)
-================================================================================
-
-[1. THONG TIN MOI TRUONG THUC THI]
-  Thoi diem (Local)          : 2026-11-14 13:00:26 +07:00
-  Thoi diem (UTC)            : 2026-11-14T06:00:26.344Z
-  Ten may (Hostname)         : HOANGDAT
-  He dieu hanh               : Microsoft Windows 11 Pro
-  Thu muc du an              : D:\HTPT
-  Git Branch                 : dat
-  Git Commit SHA             : bb37f76046035e8ba776d2a24765764477b0dc42
-
-[2. THU THAP TRANG THAI REALTIME QUA SOCKET (NODE_STATUS)]
-+--------+-------+---------+-----------+------+-------------+-------------+------------+
-| NODE   | PORT  | STATUS  | ROLE      | TERM | COMMITINDEX | LASTAPPLIED | STORAGE    |
-+--------+-------+---------+-----------+------+-------------+-------------+------------+
-| node-1 | 9101  | OFFLINE | UNKNOWN   | -    | -           | -           | UNKNOWN    |
-| node-2 | 9102  | OFFLINE | UNKNOWN   | -    | -           | -           | UNKNOWN    |
-| node-3 | 9103  | OFFLINE | UNKNOWN   | -    | -           | -           | UNKNOWN    |
-| node-4 | 9104  | OFFLINE | UNKNOWN   | -    | -           | -           | UNKNOWN    |
-| node-5 | 9105  | OFFLINE | UNKNOWN   | -    | -           | -           | UNKNOWN    |
-+--------+-------+---------+-----------+------+-------------+-------------+------------+
-
-[3. DOI CHIEU BAT BIEN CUM PHAN TAN (INVARIANT CROSS-CHECK)]
-  1. Kiem tra tinh duy nhat cua Leader (Leader Uniqueness):
-     [INFO] Hien khong co Leader nao (Cum offline hoac dang trong giai doan bau cu)
-  2. Kiem tra ranh gioi Quorum Majority (3/5):
-     - So Node dang ket noi Online : 0 / 5
-     - Trang thai Quorum           : [NO_QUORUM] Thieu da so (<3/5). He thong fail-closed, chan ghi moi.
-
-[4. KIEM TRA CHUAN HOA LOGGING & AN TOAN THONG TIN]
-  - Format logback MDC [nodeId]     : [PASS]
-  - Format logback MDC [term]       : [PASS]
-  - Format logback MDC [requestId]  : [PASS]
-  - Quy tac cam log du lieu nhay cam: [PASS] Khong ghi CCCD, Phone, Password
-
-[5. DANH MUC TEST IDS CHO FAILURE SCENARIOS (SPEC-07)]
-+---------+-----------+-----------------------------+---------------------------------------+--------------------------------------------------+
-| TEST ID | SPEC TC   | TEN KICH BAN LOI            | DIEU KIEN / SETUP                     | KY VONG KET QUA (SPEC ASSERTION)                 |
-+---------+-----------+-----------------------------+---------------------------------------+--------------------------------------------------+
-| FS-01   | TC-AC05A  | 1-Follower Crash            | Dung 1 Follower that, cum con 4/5     | Commit hop le, tiep tuc dat ve tren 4/5          |
-| FS-02   | TC-AC05B  | 2-Node Crash                | Dung 2 Node, cum con dung 3/5 (Quorum ranh gioi) | Majority 3 Node van commit va apply thanh cong   |
-| FS-03   | TC-AC06   | Majority Loss               | Dung 3 Node, chi con 2/5 (< Quorum)   | Fail-closed: Tu choi commit, khong xac nhan lenh moi |
-| FS-04   | TC-AC07   | Leader Crash & Re-election  | Dung Leader hien tai khi co lenh dang xu ly | Bau Leader moi hop le khi con quorum, tra cuu an toan |
-| FS-05   | TC-AC08   | Node Restart & Catch-up     | Node offline qua vai lenh, khoi dong lai | Replay log index, lastApplied bat kip committed state |
-| FS-06   | TC-AC09   | Network Partition 3-2       | Cat peer giua phia 3 Node va 2 Node bang fault script | Phia 2/5 khong commit; phia 3/5 tiep tuc; khong split-brain |
-| FS-07   | TC-AC10   | Response Drop / Disconnect  | Cat ket noi ngay sau khi Node commit truoc khi gui response | Client giu requestId, retry cung intent, khong sinh ve trung |
-+---------+-----------+-----------------------------+---------------------------------------+--------------------------------------------------+
-
-================================================================================
- TONG KET DANH GIA NHIEM VU TV6-D12 (COLLECT LOG & STATUS)
-================================================================================
-  1. Script thu thap & doi chieu : [PASS] scripts/collect-node-status.ps1 san sang.
-  2. Quy tac doi chieu Invariants: [PASS] Leader Uniqueness, Quorum Boundary, Monotonicity.
-  3. Chuan hoa Logging & Privacy : [PASS] logback.xml day du nodeId, term, requestId.
-  4. Danh muc Failure Scenarios  : [PASS] 7 kich ban loi (FS-01..07) gan ma TC-AC05A..AC10.
-  5. Trang thai cum tren may host: [NOT_RUN / BLOCKED: Docker Desktop/Containers chua khoi dong tren host]
-================================================================================
- File bang chung da ghi tai: D:\HTPT\artifacts\evidence\D12\TV6-D12-result.log
-================================================================================
+TV6-D12 | REAL LOG/STATUS COLLECTION | supplemental run, not historical D12 execution
+CollectedAtUTC=2026-11-16T18:42:35.7650126Z; Host=HOANGDAT
+GitCommit=1f6668ffa5419c745761c96955915dab31e275d2; Branch=dat
+Compose=D:\HTPT\docker\compose.dev.yml; Evidence=D:\HTPT\artifacts\evidence\D12\collection-2026-11-17; RequestId=5e2af271-8272-4db4-814b-140dca6b5527
+Command: scripts/collect-logs.ps1 -ComposeFile 'docker/compose.dev.yml' -OutputDirectory 'D:\HTPT\artifacts\evidence\D12\collection-2026-11-17' -RequestId '5e2af271-8272-4db4-814b-140dca6b5527' -TimeoutMs 2000 -Tail 3000
+Contract: SPEC-03 NODE_STATUS; diagnostics are local observations, not proof of quorum/commit.
+Legacy result replaced: offline/static config checks did not prove runtime logging or privacy.
+Docker ps exit=0; raw=docker-ps.log
+node-1 status=ONLINE role=FOLLOWER term=15 commitIndex=0 lastApplied=0 client=9101 peer=9201 peerOpen=True logsExit=0
+  SPEC-03=GAP; missing=term,leaderId,lastLogIndex; extra=currentTerm; peerKeysMismatch=False; raw=node-1-status.json
+node-2 status=ONLINE role=FOLLOWER term=15 commitIndex=0 lastApplied=0 client=9102 peer=9202 peerOpen=True logsExit=0
+  SPEC-03=GAP; missing=term,leaderId,lastLogIndex; extra=currentTerm; peerKeysMismatch=True; raw=node-2-status.json
+node-3 status=ONLINE role=FOLLOWER term=15 commitIndex=0 lastApplied=0 client=9103 peer=9203 peerOpen=True logsExit=0
+  SPEC-03=GAP; missing=term,leaderId,lastLogIndex; extra=currentTerm; peerKeysMismatch=True; raw=node-3-status.json
+node-4 status=ONLINE role=LEADER term=15 commitIndex=0 lastApplied=0 client=9104 peer=9204 peerOpen=True logsExit=0
+  SPEC-03=GAP; missing=term,leaderId,lastLogIndex; extra=currentTerm; peerKeysMismatch=True; raw=node-4-status.json
+node-5 status=ONLINE role=FOLLOWER term=15 commitIndex=0 lastApplied=0 client=9105 peer=9205 peerOpen=True logsExit=0
+  SPEC-03=GAP; missing=term,leaderId,lastLogIndex; extra=currentTerm; peerKeysMismatch=True; raw=node-5-status.json
+COLLECT-01 PASS: nonempty real Docker node logs=5/5
+COLLECT-02 PASS: correlated NODE_STATUS responses=5/5; schema result is recorded separately.
+OBSERVATION-CHECK: applied<=commit violations=0 among 5 samples; not a Raft safety test.
+OBSERVED leaders=1: node-4@term=15; sequential local samples, not an atomic cluster snapshot.
+Quorum/safety/privacy: NOT_RUN. Reachable client ports, log patterns, or a config comment cannot prove these.
+COLLECT-03 BLOCKED: requestId=5e2af271-8272-4db4-814b-140dca6b5527 found in 0 node logs; see request-trace.log. Search uses literal Select-String -SimpleMatch.
+READ-ONLY-PROBE node-1: type=ERROR_RESPONSE error=INVALID_REQUEST message=No handler registered for message type: GET_REQUEST_RESULT; client-side transcript, not a backend log trace.
+READ-ONLY-PROBE node-2: type=ERROR_RESPONSE error=INVALID_REQUEST message=No handler registered for message type: GET_REQUEST_RESULT; client-side transcript, not a backend log trace.
+READ-ONLY-PROBE node-3: type=ERROR_RESPONSE error=INVALID_REQUEST message=No handler registered for message type: GET_REQUEST_RESULT; client-side transcript, not a backend log trace.
+READ-ONLY-PROBE node-4: type=ERROR_RESPONSE error=INVALID_REQUEST message=No handler registered for message type: GET_REQUEST_RESULT; client-side transcript, not a backend log trace.
+READ-ONLY-PROBE node-5: type=ERROR_RESPONSE error=INVALID_REQUEST message=No handler registered for message type: GET_REQUEST_RESULT; client-side transcript, not a backend log trace.
+Failure scenario IDs (catalog only; fault actions were NOT_RUN in this collection):
+  FS-01 TC-AC05A follower crash : NOT_RUN
+  FS-02 TC-AC05B two-node crash : NOT_RUN
+  FS-03 TC-AC06 majority loss : NOT_RUN
+  FS-04 TC-AC07 leader crash/re-election : NOT_RUN
+  FS-05 TC-AC08 restart/catch-up : NOT_RUN
+  FS-06 TC-AC09 partition 3-2 : NOT_RUN
+  FS-07 TC-AC10 response drop/retry : NOT_RUN
+If COLLECT-03 is BLOCKED with working nodes, coordinate requestId runtime instrumentation with TV3/TV4/TV5; do not inject fake log lines.
+Current runtime uses java.util.logging for TCP/dispatcher paths; logback.xml MDC configuration alone is not evidence those paths emit requestId.
+SourceScriptSHA256=6451400173D9334395CED93B27FD3EE0B5BB47F21B7A11D860A636EE8EB62541

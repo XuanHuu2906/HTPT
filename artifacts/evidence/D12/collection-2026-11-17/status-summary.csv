@@ -1,0 +1,6 @@
+﻿"nodeId","clientPort","peerPort","peerPortOpen","status","role","term","commitIndex","lastApplied","storageHealthy","termField","contract"
+"node-1","9101","9201","True","ONLINE","FOLLOWER","15","0","0","True","currentTerm (legacy, not SPEC-03)","GAP"
+"node-2","9102","9202","True","ONLINE","FOLLOWER","15","0","0","True","currentTerm (legacy, not SPEC-03)","GAP"
+"node-3","9103","9203","True","ONLINE","FOLLOWER","15","0","0","True","currentTerm (legacy, not SPEC-03)","GAP"
+"node-4","9104","9204","True","ONLINE","LEADER","15","0","0","True","currentTerm (legacy, not SPEC-03)","GAP"
+"node-5","9105","9205","True","ONLINE","FOLLOWER","15","0","0","True","currentTerm (legacy, not SPEC-03)","GAP"

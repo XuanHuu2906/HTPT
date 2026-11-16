@@ -1,0 +1,7 @@
+PASS: PowerShell parser, 0 syntax errors.
+Search tests below use SYNTHETIC fixtures ONLY in TEMP, not Railway runtime evidence.
+PASS: SearchOnly matching same literal UUID in 2 files exits 0.
+Literal requestId search: 2/5 nodes. See C:\Users\dattr\AppData\Local\Temp\railway-d12-search-test-df867cecd36244df897d386a9dfdb9c9/request-trace.log
+PASS: SearchOnly absent UUID exits 2, not false PASS.
+Literal requestId search: 0/5 nodes. See C:\Users\dattr\AppData\Local\Temp\railway-d12-search-test-df867cecd36244df897d386a9dfdb9c9/request-trace.log
+Runtime collector exit=2

@@ -1,0 +1,16 @@
+TV6-D12 supplemental evidence, collected 2026-11-17 Asia/Saigon.
+Source revision: 1f6668ffa5419c745761c96955915dab31e275d2 plus uncommitted collect-logs.ps1.
+Actual commands and observed exits:
+1. docker compose -f docker/compose.dev.yml --profile nodes config --quiet : exit 0; compose-validation.log (empty stdout is normal)
+2. docker compose -f docker/compose.dev.yml --profile nodes build backend-node-1 : exit 0; docker-build.log
+3. docker compose -f docker/compose.dev.yml --profile nodes up -d --no-build : exit 0; docker-start.log
+4. Read-only GET_REQUEST_RESULT probe via Python TCP, same business requestId to five client ports: process exit 0; all five received correlated ERROR_RESPONSE INVALID_REQUEST because this runtime has no registered lookup handler. See request-probe.log; this is a client-side transcript, not proof of backend tracing.
+5. powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/collect-logs.ps1 -OutputDirectory D:/HTPT/artifacts/evidence/D12/collection-2026-11-17 -RequestId 5e2af271-8272-4db4-814b-140dca6b5527 : exit 2 (incomplete evidence, intentional); summary ../TV6-D12-result.log
+6. Parser and positive/negative SearchOnly tests: PASS; script-validation.log. Synthetic test fixtures were kept in TEMP and are NOT runtime evidence.
+Observed: five nonempty backend logs, five correlated NODE_STATUS responses, five reachable peer ports. node-4 reported LEADER, term 15. commitIndex/lastApplied remained 0; no booking commit claim.
+Blocking acceptance: requestId occurs in 0 backend node logs. Missing runtime request logging/handler must be coordinated with TV3/TV4/TV5. Do not mark the cross-node request trace accepted yet.
+SPEC-03 GAP: currentTerm instead of term; leaderId and lastLogIndex absent; peer keys wrong on node-2 through node-5. Raw JSON retained, no contract modification.
+Failure IDs FS-01..07 assigned to TC-AC05A/05B/06/07/08/09/10; fault execution NOT_RUN, as D12 collection only requires IDs.
+No database writes or artificial runtime log injection; no volumes deleted. Railway containers started for this run remain running. Other projects were not stopped or modified.
+Existing user edit scripts/collect-node-status.ps1 was preserved.
+Build uses the existing Dockerfile: Maven/Temurin 21; Docker Server 29.4.3. PowerShell Windows host; raw UTC times may fall on 2026-11-16, corresponding to 2026-11-17 Asia/Saigon.
