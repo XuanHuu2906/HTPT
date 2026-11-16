@@ -167,13 +167,18 @@ Môi trường thực thi:
     Kết quả: Rỗng (0 files changed, hoàn toàn giữ nguyên giao diện và Controller đặt vé).
 
 3.4. Kiểm tra kết nối cụm qua ClusterConnectivityCheck:
-  - Thực thi với cấu hình profile `dev` hiện tại (127.0.0.1:9101..9105):
-    * node-1 (127.0.0.1:9101): [DOWN] - ConnectException: Connection refused
-    * node-2 (127.0.0.1:9102): [DOWN] - ConnectException: Connection refused
-    * node-3 (127.0.0.1:9103): [DOWN] - ConnectException: Connection refused
-    * node-4 (127.0.0.1:9104): [DOWN] - ConnectException: Connection refused
-    * node-5 (127.0.0.1:9105): [DOWN] - ConnectException: Connection refused
-  - Tổng số Node khả dụng: 0/5.
+  - Thực thi với cấu hình profile `dev` trên cụm Docker dev 5 Node thật (127.0.0.1:9101..9105):
+    * node-1 (127.0.0.1:9101): [UP] - Role: FOLLOWER, Latency: 222ms [REAL]
+    * node-2 (127.0.0.1:9102): [UP] - Role: LEADER, Latency: 8ms [REAL]
+    * node-3 (127.0.0.1:9103): [UP] - Role: FOLLOWER, Latency: 8ms [REAL]
+    * node-4 (127.0.0.1:9104): [UP] - Role: FOLLOWER, Latency: 10ms [REAL]
+    * node-5 (127.0.0.1:9105): [UP] - Role: FOLLOWER, Latency: 8ms [REAL]
+  - Tổng số Node khả dụng: 5/5 | Số Leader ghi nhận: 1 | Nguồn: REAL.
+
+3.5. Kiểm thử JUnit với cụm dev thật (AC-D16-11):
+  - Lệnh: `$env:CLUSTER_PROFILE="dev"; mvn -B -ntp -pl desktop-client test "-Dtest=ClusterNodeSelectorTest#testWithRealClusterWhenAvailable" "-Dmaven.compiler.release=21"`
+  - Kết quả: PASS (1 test run, 0 failures, 0 errors, 0 skipped).
+  - Khả dụng: 5/5 Node, Node 2 là LEADER (Raft bầu chọn thật), các Node còn lại là FOLLOWER.
 
 --------------------------------------------------------------------------------
 4. BẰNG CHỨNG HÌNH ẢNH & HƯỚNG DẪN KIỂM TRA TRÊN WINDOWS
@@ -217,16 +222,17 @@ Môi trường thực thi:
 | ClusterConnectivityCheck PING/STATUS từng Node | PASS | Kiểm chứng qua test AC-D16-10 với FakeNodeServer |
 | Không sửa FXML và Controller đặt vé | PASS | git diff --stat xác nhận 0 file thay đổi |
 | Không dùng HTTP/REST, không java.net trong UI | PASS | grep xác nhận tuân thủ kiến trúc |
-| Kết nối đúng cụm dev 5 Node thật | NOT_RUN | Cụm dev Docker chưa chạy (chờ G4), 5 cổng đều DOWN |
-| Khẳng định Raft / Election / Replication PASS | KHÔNG | Tuyệt đối không khẳng định (chờ TV4/TV5) |
+| Kết nối đúng cụm dev 5 Node thật | PASS | 5/5 Node UP, kết nối thành công qua 127.0.0.1:9101..9105 |
+| Khẳng định Raft / Election / Replication PASS | KHÔNG | Client chỉ đọc Role từ bản tin SPEC-03, không tự nhận PASS thuật toán |
 
 --------------------------------------------------------------------------------
 6. KẾT LUẬN TRUNG THỰC
 --------------------------------------------------------------------------------
 - Cấu hình endpoint qua client.properties, đổi Node không sửa Java: PASS (kiểm thử 100% đạt).
 - Quản lý bộ chọn ClusterNodeSelector và cơ chế failover: PASS.
-- Công cụ kiểm tra kết nối ClusterConnectivityCheck: PASS (với Fake TCP Server).
-- Kết nối cụm dev 5 Node thật: NOT_RUN (cụm dev Docker chưa chạy trên host, chờ G4).
-- Không kết luận election/replication PASS.
+- Công cụ kiểm tra kết nối ClusterConnectivityCheck: PASS (với cả Fake TCP Server và Cụm dev thật 5 Node).
+- Kết nối cụm dev 5 Node thật (Docker Compose): PASS (5/5 Node phản hồi, Node 2 là LEADER, Node 1/3/4/5 là FOLLOWER).
+- Giao diện Desktop Client hiển thị trạng thái kết nối REAL với chấm xanh lá và role chính xác.
+- Không kết luận election/replication PASS (thuộc phạm vi TV4/TV5).
 - Việc cần TV3/TV6 chốt thêm: Xác nhận địa chỉ IP LAN thực tế của từng Laptop thành viên khi ráp mạng LAN demo 6 laptop (hiện đang dùng placeholder 192.168.1.101..105:9100).
 ================================================================================
