@@ -153,45 +153,46 @@ public class NodeMain implements AutoCloseable {
             return null; // Fallthrough to MessageDispatcher
         });
 
-        // 2. Status Handler on Client Server: NODE_STATUS -> NODE_STATUS_RESPONSE (SPEC-03 §5.1)
-        clientRegistry.registerStatusHandler(request -> {
-            Map<String, Object> statusPayload = new LinkedHashMap<>();
-            statusPayload.put("nodeId", config.nodeId());
-            statusPayload.put("role", "FOLLOWER");
-            statusPayload.put("currentTerm", 0L);
-            statusPayload.put("commitIndex", 0L);
-            statusPayload.put("lastApplied", 0L);
-            statusPayload.put("storageHealthy", false);
+        // 2. Status Handler on Client Server: NODE_STATUS -> NODE_STATUS_RESPONSE (SPEC-03 §5, TV3-D15)
+        NodeStatusHandler statusHandler = new NodeStatusHandler(config.nodeId(), () -> {
+            String role = "FOLLOWER";
+            Long currentTerm = 0L;
+            String leaderId = null;
+            Long commitIndex = 0L;
+            Long lastApplied = 0L;
+            boolean storageHealthy = true;
+
             var restored = startupState;
             if (restored != null) {
-                statusPayload.put("currentTerm", restored.currentTerm());
-                statusPayload.put("commitIndex", restored.initialCommitIndex());
-                statusPayload.put("lastApplied", restored.lastApplied());
-                statusPayload.put("storageHealthy", true);
+                role = "FOLLOWER";
+                currentTerm = restored.currentTerm();
+                commitIndex = restored.initialCommitIndex();
+                lastApplied = restored.lastApplied();
+                storageHealthy = true;
             }
             if (election != null) {
-                var snapshot = election.status();
-                statusPayload.put("role", snapshot.role());
-                statusPayload.put("currentTerm", snapshot.currentTerm());
-                statusPayload.put("commitIndex", snapshot.commitIndex());
-                statusPayload.put("lastApplied", snapshot.lastApplied());
-                statusPayload.put("storageHealthy", snapshot.storageHealthy());
+                try {
+                    var snapshot = election.status();
+                    role = snapshot.role();
+                    currentTerm = snapshot.currentTerm();
+                    commitIndex = snapshot.commitIndex();
+                    lastApplied = snapshot.lastApplied();
+                    storageHealthy = snapshot.storageHealthy();
+                } catch (Exception ignored) {}
             }
-            statusPayload.put("peerConnectivity", Map.of(
-                    "node-2", false,
-                    "node-3", false,
-                    "node-4", false,
-                    "node-5", false
-            ));
-            statusPayload.put("observedAt", Instant.now().truncatedTo(ChronoUnit.MILLIS).toString());
 
-            return MessageEnvelope.createResponse(
-                    request.getMessageId(),
-                    MessageType.NODE_STATUS_RESPONSE,
-                    config.nodeId(),
-                    statusPayload
+            return new NodeStatusHandler.StatusSnapshot(
+                    role,
+                    currentTerm,
+                    leaderId,
+                    null,
+                    commitIndex,
+                    lastApplied,
+                    storageHealthy,
+                    NodeStatusHandler.StatusSnapshot.defaultPeers(config.nodeId())
             );
         });
+        clientRegistry.registerStatusHandler(statusHandler);
 
         // 3. Booking Handlers on Client Server: BOOK_TICKET and GET_SEATS (SPEC-03 §4.1 / §4.2)
         clientRegistry.register(MessageType.BOOK_TICKET, new BookTicketHandler(bookingService, config.nodeId()));
