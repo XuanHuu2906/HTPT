@@ -1,0 +1,232 @@
+================================================================================
+BÁO CÁO KẾT QUẢ THỰC HIỆN TASK TV1-D16 — CẤU HÌNH CLIENT KẾT NỐI CỤM 5 NODE
+================================================================================
+Người thực hiện: TV1 (Nguyễn Đăng Khoa) — Desktop Client Subsystem
+Thời gian: 2026-11-16 13:24:00 +07:00
+Môi trường thực thi:
+  - Hệ điều hành: Windows 11 (build 10.0, amd64)
+  - JDK: OpenJDK 21.0.12.1 (LTS) [Target: -Dmaven.compiler.release=21]
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+  - Base Commit: 888a944 (Merge pull request #88 from XuanHuu2906/tv2/TV2-D01-booking-command)
+
+--------------------------------------------------------------------------------
+1. BƯỚC 0 — KẾT QUẢ PREFLIGHT (KHẢO SÁT THỰC TẾ)
+--------------------------------------------------------------------------------
+1.1. Khảo sát SPEC-08 (§3, §3.1) và cấu hình của TV3/TV6:
+  - Nguồn chuẩn TV6: `configs/dev/cluster.properties`
+    * cluster.id=railway-demo-5, cluster.total-nodes=5, cluster.quorum=3
+    * cluster.nodes=node-1,node-2,node-3,node-4,node-5
+    * Quy ước key: node.<nodeId>.client.host và node.<nodeId>.client.port
+  - Nguồn chuẩn TV3: `configs/lan/node-1.properties`
+    * node.id=node-1, client.port=9100 (cho LAN)
+  - Bảng ánh xạ Node ID -> Host:Port:
+    + Profile DEV (Desktop trên Windows host kết nối 5 Docker containers):
+      * node-1 -> 127.0.0.1:9101 (container internal: 9100)
+      * node-2 -> 127.0.0.1:9102 (container internal: 9100)
+      * node-3 -> 127.0.0.1:9103 (container internal: 9100)
+      * node-4 -> 127.0.0.1:9104 (container internal: 9100)
+      * node-5 -> 127.0.0.1:9105 (container internal: 9100)
+    + Profile LAN (6 Laptop mạng LAN vật lý - CỔNG 9100, IP CHỜ TV3/TV6 CHỐT):
+      * node-1 -> 192.168.1.101:9100 (placeholder có chú thích)
+      * node-2 -> 192.168.1.102:9100 (placeholder có chú thích)
+      * node-3 -> 192.168.1.103:9100 (placeholder có chú thích)
+      * node-4 -> 192.168.1.104:9100 (placeholder có chú thích)
+      * node-5 -> 192.168.1.105:9100 (placeholder có chú thích)
+
+1.2. Khảo sát file Docker Compose trong repo:
+  - File tồn tại: `docker/compose.dev.yml` và `docker/dev.yml`.
+  - Cả 2 file đều định nghĩa 5 backend-nodes (`backend-node-1` .. `backend-node-5`).
+  - Port mapping:
+    * backend-node-1: "${NODE1_CLIENT_PORT:-9101}:9100", "${NODE1_PEER_PORT:-9201}:9200"
+    * backend-node-2: "${NODE2_CLIENT_PORT:-9102}:9100", "${NODE2_PEER_PORT:-9202}:9200"
+    * backend-node-3: "${NODE3_CLIENT_PORT:-9103}:9100", "${NODE3_PEER_PORT:-9203}:9200"
+    * backend-node-4: "${NODE4_CLIENT_PORT:-9104}:9100", "${NODE4_PEER_PORT:-9204}:9200"
+    * backend-node-5: "${NODE5_CLIENT_PORT:-9105}:9100", "${NODE5_PEER_PORT:-9205}:9200"
+
+1.3. Khảo sát các điểm hardcode trong desktop-client cần thay thế:
+  - `SocketBookingClient.java`: DEFAULT_HOST ("127.0.0.1"), DEFAULT_PORT (9101), đọc riêng lẻ configs/dev/cluster.properties.
+  - `SocketClusterStatusClient.java`: DEFAULT_HOST ("127.0.0.1"), DEFAULT_PORT (9101).
+  - `ClusterEndpoints.java`: loadDefault() fallback hardcode danh sách 5 node node-1..node-5.
+  - `ClientFactory.java`: chưa tích hợp ClusterNodeSelector để lựa chọn node và failover.
+
+1.4. Baseline Test ban đầu:
+  - Lệnh: `mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  - Kết quả: PASS (174 tests run, 0 failures, 0 errors, 6 skipped).
+
+1.5. Trạng thái cụm Docker thực tế tại thời điểm kiểm tra:
+  - Lệnh: `docker ps` -> Rỗng (0 container đang chạy).
+  - Lệnh: `Test-NetConnection 127.0.0.1 -Port 9101..9105`:
+    * Port 9101: TcpTestSucceeded = False (DOWN)
+    * Port 9102: TcpTestSucceeded = False (DOWN)
+    * Port 9103: TcpTestSucceeded = False (DOWN)
+    * Port 9104: TcpTestSucceeded = False (DOWN)
+    * Port 9105: TcpTestSucceeded = False (DOWN)
+  - Kết luận: Cụm dev 5 Node chưa được khởi động (chờ nghiệm thu G4 Backend/Raft).
+    Phần "Kết nối cụm dev 5 Node thật" ghi nhận trạng thái: NOT_RUN (cụm chưa lên, chờ G4).
+
+--------------------------------------------------------------------------------
+2. CÁC THAY ĐỔI VÀ TÍNH NĂNG MỚI ĐÃ TRIỂN KHAI
+--------------------------------------------------------------------------------
+2.1. File cấu hình `client.properties`:
+  - Đường dẫn: `desktop-client/src/main/resources/config/client.properties`
+  - Hỗ trợ 2 profile: `dev` và `lan`, chuyển đổi qua khóa `cluster.profile`.
+  - Quy ước đặt tên key tương thích hoàn toàn với TV6 (`configs/dev/cluster.properties`):
+    * `dev.cluster.nodes=node-1,node-2,node-3,node-4,node-5`
+    * `dev.node.<nodeId>.client.host=127.0.0.1` (tránh phân giải IPv6 chậm trên Windows)
+    * `dev.node.<nodeId>.client.port=9101..9105`
+    * `lan.cluster.nodes=...`, port 9100, IP placeholder kèm ghi chú "CHỜ TV3/TV6 CHỐT".
+  - Các tùy chọn kết nối:
+    * `client.selectionStrategy`: RANDOM | ROUND_ROBIN | PREFERRED_FIRST (mặc định ROUND_ROBIN).
+    * `client.preferredNode`: nodeId ưu tiên kết nối (để trống nếu không ưu tiên).
+    * `client.connectTimeoutMs`: 2000 (ms).
+    * `client.readTimeoutMs`: 5000 (ms).
+    * `client.maxRedirects`: 3.
+    * `client.failureCooldownMs`: 15000 (ms).
+  - TUYỆT ĐỐI KHÔNG có thuộc tính "leader" trong cấu hình. Leader được xác định động qua Raft.
+
+2.2. Lớp nạp và kiểm tra cấu hình `ClientConfig.java`:
+  - Thứ tự ưu tiên 4 tầng:
+    1) System Properties (`-Dclient.config=<path>` và từng key `-Dcluster.profile=...`, `-Dclient.connectTimeoutMs=...`)
+    2) Biến môi trường (`CLIENT_CONFIG`, `CLUSTER_PROFILE`, `CLIENT_CONNECT_TIMEOUT_MS`,...)
+    3) File `client.properties` đặt cạnh ứng dụng (thư mục làm việc hiện tại)
+    4) Bản mặc định trong classpath (`/config/client.properties`)
+  - Đọc tệp bằng `BufferedReader` UTF-8 và `java.nio.file.Path`, chạy đúng khi có khoảng trắng hoặc ký tự có dấu trong đường dẫn Windows.
+  - Validation fail-fast nghiêm ngặt:
+    * Kiểm tra profile tồn tại và có ít nhất 1 Node.
+    * Kiểm tra nodeId duy nhất, không trùng lặp.
+    * Kiểm tra host không được rỗng.
+    * Kiểm tra port trong khoảng [1, 65535].
+    * Kiểm tra `preferredNode` phải nằm trong danh sách Node của profile đã chọn.
+    * Kiểm tra timeouts > 0, cooldown >= 0, redirects >= 0.
+  - Cảnh báo (warning log, không chặn) khi host có dạng tên container Docker nội bộ (`backend-node\d*`, `pg\d*`, hoặc không có dấu chấm và không phải `localhost`/`127.0.0.1`).
+
+2.3. Lớp điều phối và failover `ClusterNodeSelector.java`:
+  - Nhận danh sách `NodeEndpoint` và thông số từ `ClientConfig`.
+  - Hỗ trợ 3 chiến lược: `PREFERRED_FIRST`, `RANDOM` (cho phép tiêm seed để test xác định), `ROUND_ROBIN` (xoay vòng qua danh sách khả dụng).
+  - Quản lý failover và cooldown:
+    * `markFailed(nodeId)`: đánh dấu Node gặp lỗi tạm thời với thời gian cooldown cấu hình được.
+    * `markSuccess(nodeId)`: xóa trạng thái lỗi khi Node kết nối thành công.
+    * Tự động bỏ qua các Node đang trong cooldown.
+    * Khi TẤT CẢ các Node đều bị cooldown -> ném ngoại lệ rõ ràng phía client (không giả mạo mã lỗi SPEC-03).
+  - Cung cấp `endpointOf(nodeId)` duy nhất cho `LeaderAwareBookingClient`.
+  - Hỗ trợ `reload()` khi người dùng thay đổi file cấu hình.
+  - Thread-safe, không mở socket trong constructor, không chặn JavaFX UI thread.
+
+2.4. Refactor tích hợp:
+  - `ClusterEndpoints.java`: Nạp danh bạ từ `ClientConfig.loadDefault()`, hỗ trợ `fromClientConfig()` và `fromSelector()`, bỏ fallback hardcode 5 node cũ.
+  - `LeaderAwareBookingClient.java`: Tích hợp `ClusterNodeSelector`, tự động chọn Node ban đầu theo selector, gọi `markFailed()` khi gặp lỗi kết nối/timeout, gọi `markSuccess()` khi nhận phản hồi TCP hợp lệ, cập nhật `ClusterConnectionViewModel.updateConnectedNode()`.
+  - `ClientFactory.java`: Khởi tạo và quản lý `ClusterNodeSelector` dùng chung, tiêm vào `LeaderAwareBookingClient`, `ClusterEndpoints` và `SocketClusterStatusClient`.
+  - `SocketBookingClient.java` & `SocketClusterStatusClient.java`: Bỏ đọc hardcode, ủy quyền phân giải endpoint mặc định qua `ClientConfig.loadDefault()` và `ClusterNodeSelector`.
+
+2.5. Công cụ kiểm tra kết nối `ClusterConnectivityCheck.java`:
+  - Gửi bản tin chẩn đoán `NODE_STATUS` (SPEC-03 §5) qua framing 4-byte BE length + UTF-8 JSON envelope tới từng Node.
+  - Đo thời gian phản hồi (latency ms), trạng thái reachable, vai trò Raft (`LEADER`, `FOLLOWER`, `CANDIDATE`, `UNKNOWN`), term, và nodeId do Node tự báo.
+  - Tự động so khớp `reportedNodeId` với `configuredNodeId` và đưa ra cảnh báo nếu có sự sai lệch.
+  - Gắn nhãn minh bạch: `DataSource.REAL` (Node thật) vs `DataSource.FAKE` (Fake server).
+  - Tuyệt đối không suy diễn Leader: chỉ hiển thị đúng vai trò Node trả về; không tự tuyên bố election hay replication PASS.
+  - Có method `main(String[] args)` để chạy kiểm tra trực tiếp từ dòng lệnh.
+
+--------------------------------------------------------------------------------
+3. KẾT QUẢ KIỂM THỬ THỰC TẾ
+--------------------------------------------------------------------------------
+3.1. Bộ kiểm thử đơn vị mới `ClusterNodeSelectorTest.java`:
+  Lệnh: `mvn -B -ntp -pl desktop-client -am test -Dtest=ClusterNodeSelectorTest "-Dsurefire.failIfNoSpecifiedTests=false" "-Dmaven.compiler.release=21"`
+  Kết quả: 11 tests run, 0 failures, 0 errors, 1 skipped (0.432s):
+  - [PASS] AC-D16-01: Nạp cấu hình từ file tạm (@TempDir) với 5 Node -> đúng endpoint từng Node.
+  - [PASS] AC-D16-02: Đổi Node qua config mà không sửa Java -> endpoint đổi theo mà không build lại.
+  - [PASS] AC-D16-03: Thứ tự ưu tiên cấu hình 4 tầng (SysProp > Env > File > Classpath).
+  - [PASS] AC-D16-04: Validation fail-fast bắt đúng các lỗi: thiếu node, trùng id, port ngoài dải, host rỗng, profile sai, preferredNode không tồn tại.
+  - [PASS] AC-D16-05: Cảnh báo đúng các hostname Docker nội bộ; bỏ qua không cảnh báo 127.0.0.1 và IP LAN.
+  - [PASS] AC-D16-06: Chiến lược PREFERRED_FIRST, RANDOM (tiêm Random), ROUND_ROBIN xoay vòng đủ 5 Node.
+  - [PASS] AC-D16-07: Cơ chế failover: Node lỗi bị cooldown -> chọn Node kế tiếp; hết Node khả dụng -> lỗi kết nối rõ ràng.
+  - [PASS] AC-D16-08: Không có thuộc tính 'leader' trong client.properties mặc định; không gán sẵn Leader trong code.
+  - [PASS] AC-D16-09: Đọc đúng đường dẫn Windows có khoảng trắng/dấu và tệp UTF-8 có comment tiếng Việt.
+  - [PASS] AC-D16-10: ClusterConnectivityCheck với FakeNodeServer: phát hiện Node UP, Node DOWN, và cảnh báo lệch nodeId.
+  - [SKIPPED] AC-D16-11: Kiểm thử kết nối tới cụm dev thật (chỉ kích hoạt khi có CLUSTER_PROFILE=dev).
+
+3.2. Toàn bộ test suite dự án:
+  Lệnh: `mvn -B -ntp -pl shared,desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  Kết quả:
+  - shared: Tests run: 30, Failures: 0, Errors: 0, Skipped: 0 (BUILD SUCCESS)
+  - desktop-client: Tests run: 185, Failures: 0, Errors: 0, Skipped: 7 (BUILD SUCCESS)
+  - Tổng cộng: 215 tests run, 0 failures, 0 errors.
+
+3.3. Kiểm tra bằng chứng Grep & Kiến trúc (DoD Verification):
+  - Kiểm tra HTTP client trong desktop-client:
+    Command: `Select-String -Path desktop-client/src/main/java/**/*.java -Pattern "HttpClient|HttpURLConnection|RestTemplate|WebClient|okhttp|retrofit"`
+    Kết quả: 0 kết quả (KHÔNG sử dụng HTTP/REST).
+  - Kiểm tra java.net / java.sql trong controller hoặc viewmodel:
+    Command: `Select-String -Path desktop-client/src/main/java/vn/nhom6/railway/client/controller/*.java, desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/*.java -Pattern "import java\.net|import java\.sql"`
+    Kết quả: 0 kết quả (Clean Architecture, socket chỉ nằm trong package network).
+  - Kiểm tra Thread.sleep trong controller hoặc viewmodel:
+    Command: `Select-String -Path desktop-client/src/main/java/vn/nhom6/railway/client/controller/*.java, desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/*.java -Pattern "Thread\.sleep"`
+    Kết quả: 0 kết quả (Không chặn luồng JavaFX UI).
+  - Kiểm tra FXML và Controller đặt vé không đổi:
+    Command: `git diff --stat HEAD~3 desktop-client/src/main/resources/fxml/ desktop-client/src/main/java/vn/nhom6/railway/client/controller/`
+    Kết quả: Rỗng (0 files changed, hoàn toàn giữ nguyên giao diện và Controller đặt vé).
+
+3.4. Kiểm tra kết nối cụm qua ClusterConnectivityCheck:
+  - Thực thi với cấu hình profile `dev` hiện tại (127.0.0.1:9101..9105):
+    * node-1 (127.0.0.1:9101): [DOWN] - ConnectException: Connection refused
+    * node-2 (127.0.0.1:9102): [DOWN] - ConnectException: Connection refused
+    * node-3 (127.0.0.1:9103): [DOWN] - ConnectException: Connection refused
+    * node-4 (127.0.0.1:9104): [DOWN] - ConnectException: Connection refused
+    * node-5 (127.0.0.1:9105): [DOWN] - ConnectException: Connection refused
+  - Tổng số Node khả dụng: 0/5.
+
+--------------------------------------------------------------------------------
+4. BẰNG CHỨNG HÌNH ẢNH & HƯỚNG DẪN KIỂM TRA TRÊN WINDOWS
+--------------------------------------------------------------------------------
+4.1. Ảnh bằng chứng:
+  - `artifacts/evidence/D16/TV1-D16-config-switch.png`:
+    * Ảnh ghép chứng minh cùng một bản build Desktop Client:
+      1) Khi cấu hình `client.preferredNode=node-1` -> kết nối tới Node 1 (127.0.0.1:9101), thanh trạng thái hiển thị "Node: node-1", Role "FOLLOWER", DataSource "[FAKE]".
+      2) Khi đổi cấu hình sang `client.preferredNode=node-2` (không sửa code Java) -> kết nối tới Node 2 (127.0.0.1:9102), thanh trạng thái hiển thị "Node: node-2", Role "LEADER", DataSource "[FAKE]".
+    * Tiêu đề cửa sổ ghi rõ: `[FAKE TCP SERVER]`.
+  - `TV1-D16-cluster-check.png`:
+    * Trạng thái: NOT_RUN (Cụm dev Docker 5 Node chưa được khởi động trên host, chờ G4 backend nghiệm thu).
+
+4.2. Hướng dẫn các bước tự chạy kiểm tra cụm trên Windows khi cụm dev lên:
+  Bước 1: Khởi động 5 backend node và 5 PostgreSQL:
+    `docker compose -f docker/dev.yml up -d`
+    (hoặc `docker compose -f docker/compose.dev.yml --profile nodes up -d`)
+  Bước 2: Kiểm tra các cổng 9101..9105 đã mở trên Windows host:
+    `9101..9105 | ForEach-Object { Test-NetConnection 127.0.0.1 -Port $_ }`
+  Bước 3: Chạy công cụ kiểm tra kết nối cụm:
+    `mvn -B -ntp -pl desktop-client exec:java "-Dexec.mainClass=vn.nhom6.railway.client.network.ClusterConnectivityCheck" "-Dmaven.compiler.release=21"`
+  Bước 4: Chạy test cụm thật:
+    `mvn -B -ntp -pl desktop-client test -Dtest=ClusterNodeSelectorTest#testWithRealClusterWhenAvailable "-DCLUSTER_PROFILE=dev" "-Dsurefire.failIfNoSpecifiedTests=false" "-Dmaven.compiler.release=21"`
+  Bước 5: Khởi chạy Desktop Client kết nối vào cụm dev:
+    `mvn -B -ntp -pl desktop-client javafx:run "-Dbooking.client=socket" "-Dcluster.client=socket" "-Dmaven.compiler.release=21"`
+
+--------------------------------------------------------------------------------
+5. ĐỐI CHIẾU TIÊU CHÍ HOÀN THÀNH (DEFINITION OF DONE)
+--------------------------------------------------------------------------------
+| Tiêu chí | Trạng thái | Ghi chú |
+|---|---|---|
+| Đổi Node qua config mà không sửa Java | PASS | Kiểm chứng qua test AC-D16-02 và ảnh config-switch.png |
+| Client nạp từ nguồn duy nhất client.properties | PASS | Đã triển khai ClientConfig và ClusterNodeSelector |
+| Thứ tự ưu tiên 4 tầng (SysProp > Env > File > Classpath) | PASS | Kiểm chứng qua test AC-D16-03 |
+| Validation fail-fast đầy đủ với thông báo rõ | PASS | Kiểm chứng qua test AC-D16-04 |
+| Cảnh báo hostname Docker nội bộ | PASS | Kiểm chứng qua test AC-D16-05 |
+| Chiến lược chọn Node (PREFERRED, RANDOM, ROUND_ROBIN) | PASS | Kiểm chứng qua test AC-D16-06 |
+| Cơ chế failover và cooldown an toàn | PASS | Kiểm chứng qua test AC-D16-07 |
+| Không hardcode Leader trong code/config | PASS | Kiểm chứng qua test AC-D16-08 và grep |
+| Chạy được trên Windows host với đường dẫn có khoảng trắng/dấu | PASS | Kiểm chứng qua test AC-D16-09 |
+| ClusterConnectivityCheck PING/STATUS từng Node | PASS | Kiểm chứng qua test AC-D16-10 với FakeNodeServer |
+| Không sửa FXML và Controller đặt vé | PASS | git diff --stat xác nhận 0 file thay đổi |
+| Không dùng HTTP/REST, không java.net trong UI | PASS | grep xác nhận tuân thủ kiến trúc |
+| Kết nối đúng cụm dev 5 Node thật | NOT_RUN | Cụm dev Docker chưa chạy (chờ G4), 5 cổng đều DOWN |
+| Khẳng định Raft / Election / Replication PASS | KHÔNG | Tuyệt đối không khẳng định (chờ TV4/TV5) |
+
+--------------------------------------------------------------------------------
+6. KẾT LUẬN TRUNG THỰC
+--------------------------------------------------------------------------------
+- Cấu hình endpoint qua client.properties, đổi Node không sửa Java: PASS (kiểm thử 100% đạt).
+- Quản lý bộ chọn ClusterNodeSelector và cơ chế failover: PASS.
+- Công cụ kiểm tra kết nối ClusterConnectivityCheck: PASS (với Fake TCP Server).
+- Kết nối cụm dev 5 Node thật: NOT_RUN (cụm dev Docker chưa chạy trên host, chờ G4).
+- Không kết luận election/replication PASS.
+- Việc cần TV3/TV6 chốt thêm: Xác nhận địa chỉ IP LAN thực tế của từng Laptop thành viên khi ráp mạng LAN demo 6 laptop (hiện đang dùng placeholder 192.168.1.101..105:9100).
+================================================================================
