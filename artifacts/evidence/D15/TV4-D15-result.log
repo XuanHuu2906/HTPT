@@ -1,0 +1,151 @@
+TV4-D15 validation evidence
+===========================
+
+Task: TV4-D15 five-peer FakeNetwork replication safety tests.
+Code commit under test: e5002965463f5d0334143237ed036b293ceaed92
+  test(raft): add 5-peer FakeNetwork replication safety tests [TV4-D15]
+Base commit: f2e15fb (local branch nguyen HEAD before D15)
+  The task prompt named 9da84cf as base, but the actual checked-out base of
+  branch nguyen was f2e15fb (docs(evidence): TV4 D12-D14 full-suite log).
+  This log records the real base, not the prompt's assumption.
+
+Files added by the D15 commit:
+- backend-node/src/test/java/vn/nhom6/railway/raft/replication/FivePeerReplicationSafetyTest.java
+
+Production code change for D15: none.
+RaftReplicationService không cần thay đổi cho D15.
+No defect was found in RaftReplicationService, AppendEntriesHandler,
+ReplicationTracker, AppendRetryCoordinator, RaftTransportAdapter,
+LeaderHeartbeatScheduler, RaftState or PersistentRaftNode while writing
+these tests, so none of those files were edited.
+
+Environment:
+- Host: Windows; Docker Engine 29.8.0.
+- Test container: maven:3.9-eclipse-temurin-25; OpenJDK 25.0.4.1; Maven 3.9.16.
+- Network: railway-dev-network.
+- No PostgreSQL, TCP socket, Docker node, or real sleep/scheduler is used by
+  this test class. Storage is FakeRaftStorage; RPC is an in-memory FakeNetwork;
+  retry scheduling and heartbeats are driven manually by the test.
+
+Command (targeted suite, re-run on current HEAD 7047b07):
+docker run --rm --network railway-dev-network -v D:/HOCTAP/HTPT:/workspace -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am "-Dtest=vn.nhom6.railway.raft.replication.FivePeerReplicationSafetyTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Result: PASS; Maven exit code 0.
+FivePeerReplicationSafetyTest: 12 tests, 0 failures, 0 errors, 0 skipped.
+The same class passed 12/0/0/0 in the original targeted run made at commit
+e500296. The re-run above was performed at HEAD 7047b07; the test file is
+byte-identical between e500296 and 7047b07 (git diff for that path is empty),
+so the result applies to the D15 code commit.
+
+Test methods (12):
+1. replicatesFiveEntriesToAllFivePeersAndLogsConverge
+2. logMatchingPropertyHoldsForEveryPairOfNodes
+3. delayedFollowerCatchesUpInBoundedBatches
+4. uncommittedConflictingSuffixConvergesWithoutDeletingMatchingPrefix
+5. committedConflictFailsClosedAndKeepsLog
+6. partitionedFollowersDoNotBlockProgressAndCatchUpAfterHeal
+7. higherTermReplyStepsLeaderDown
+8. lateHigherTermIsHandledButLateEqualTermIsIgnored
+9. heartbeatPreservesFollowerLogAndDoesNotInflateMatchIndex
+10. transportTimeoutInvalidResponseAndPeerErrorNeverCountAsAck
+11. enforcesOneInFlightAppendPerPeerWithIndependentProgress
+12. replicationNeverAdvancesLeaderCommitAndFollowersNeverOvershootTheirOwnLog
+
+Scope of the timeout/error case:
+- Case 10 drives RaftReplicationService with a fake RPC client whose future
+  completes exceptionally (simulated timeout), returns a malformed response,
+  or returns a peer error. This is a service-level check. Wire-level late
+  replies in RaftTransportAdapter are covered by the pre-existing
+  RaftTransportAdapterTest, because RaftTransportAdapter.TimeoutScheduler is
+  package-private to vn.nhom6.railway.raft.core and cannot be driven from
+  this test package.
+
+Honest scope boundary:
+- All D15 validation is FakeNetwork only. It does not prove real TCP framing,
+  five Docker nodes on five hosts, OS-level socket timeouts, PostgreSQL
+  durability, or recovery after process restart.
+- Tests do not use Thread.sleep or real timers; scheduler rounds are stepped
+  explicitly, so results are deterministic and fast (~2 s for the class).
+
+Full Maven output:
+
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /workspace/shared/src/main/resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /workspace/backend-node/src/test/resources
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.raft.replication.FivePeerReplicationSafetyTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.014 s -- in vn.nhom6.railway.raft.replication.FivePeerReplicationSafetyTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
+[INFO] shared ............................................. SUCCESS [ 19.467 s]
+[INFO] backend-node ....................................... SUCCESS [ 10.600 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  30.244 s
+[INFO] Finished at: 2026-11-16T07:54:08Z
+[INFO] ------------------------------------------------------------------------
+
+Related full-suite evidence:
+- The full clean verify at commit 7047b07 (recorded in
+  artifacts/evidence/D16/TV4-D16-result.log) also included this class and
+  ended with BUILD SUCCESS: 1,048 tests total, 0 failures, 0 errors, 6 skipped.
+  Those 6 skips are environment-gated integration tests unrelated to D15.
