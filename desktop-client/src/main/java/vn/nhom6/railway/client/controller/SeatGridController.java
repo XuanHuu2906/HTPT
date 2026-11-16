@@ -28,6 +28,7 @@ import javafx.scene.control.TextField;
 import vn.nhom6.railway.client.BookingOutcome;
 import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.SeatsRefreshService;
+import vn.nhom6.railway.client.network.ClientConfig;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockScenario;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
@@ -186,8 +187,17 @@ public class SeatGridController {
 
     @FXML
     public void initialize() {
+        ClientConfig cfg = ClientConfig.loadDefault();
         if (mockBadgeLabel != null) {
-            mockBadgeLabel.setText(MockSeatSource.MOCK_LABEL);
+            if (cfg.isSocketMode()) {
+                mockBadgeLabel.setText("CỤM 5 NODE (" + cfg.getProfile().toUpperCase() + ")");
+                mockBadgeLabel.setStyle("-fx-background-color: #0284c7; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-padding: 3 8; -fx-background-radius: 4;");
+            } else {
+                mockBadgeLabel.setText(MockSeatSource.MOCK_LABEL);
+            }
+        }
+        if (screenStatusLabel != null && cfg.isSocketMode()) {
+            screenStatusLabel.setText("Hệ thống kết nối Cụm 5 Node (" + cfg.getProfile().toUpperCase() + ") qua TCP Socket.");
         }
 
         // 1. Lắng nghe thay đổi danh sách ObservableList để refresh lưới nếu cấu trúc
@@ -229,6 +239,12 @@ public class SeatGridController {
         // mock-panel (không sửa FXML)
         if (mockStatusComboBox != null && mockStatusComboBox.getParent() != null
                 && mockStatusComboBox.getParent().getParent() instanceof javafx.scene.layout.VBox mockPanel) {
+            ClientConfig cfg = ClientConfig.loadDefault();
+            if (cfg.isSocketMode()) {
+                mockPanel.setVisible(false);
+                mockPanel.setManaged(false);
+                return;
+            }
             HBox d07Row = new HBox(8);
             d07Row.setAlignment(Pos.CENTER_LEFT);
             d07Row.setStyle("-fx-padding: 4 0 0 0;");

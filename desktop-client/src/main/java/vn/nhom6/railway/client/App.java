@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
+import vn.nhom6.railway.client.network.ClientConfig;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -35,7 +36,9 @@ public class App extends Application {
 
         Scene scene = new Scene(root, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
-        primaryStage.setTitle("Hệ thống Bán Vé Tàu Cao Tốc - SE-001 [MOCK - D01]");
+        ClientConfig cfg = ClientConfig.loadDefault();
+        String modeDesc = cfg.isSocketMode() ? "CỤM 5 NODE - " + cfg.getProfile().toUpperCase() : "MOCK";
+        primaryStage.setTitle("Hệ thống Bán Vé Tàu Cao Tốc - SE-001 [" + modeDesc + "]");
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(850);
         primaryStage.setMinHeight(550);

@@ -53,6 +53,7 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
     private final Function<NodeEndpoint, BookingClient> clientFactory;
     private final RedirectPolicy redirectPolicy;
     private final ClusterConnectionViewModel connectionViewModel;
+    private final ClusterNodeSelector nodeSelector;
     private final ExecutorService executor;
 
     private final AtomicReference<String> knownLeaderId = new AtomicReference<>(null);
@@ -70,16 +71,34 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
             Function<NodeEndpoint, BookingClient> clientFactory,
             RedirectPolicy redirectPolicy,
             ClusterConnectionViewModel connectionViewModel,
-            String initialNodeId) {
+            String initialNodeId,
+            ClusterNodeSelector nodeSelector) {
         this.clusterEndpoints = Objects.requireNonNull(clusterEndpoints, "clusterEndpoints không được null");
         this.clientFactory = (clientFactory != null) ? clientFactory : this::createDefaultSocketClient;
         this.redirectPolicy = (redirectPolicy != null) ? redirectPolicy : RedirectPolicy.defaultPolicy();
         this.connectionViewModel = connectionViewModel;
+        this.nodeSelector = nodeSelector;
         this.executor = Executors.newCachedThreadPool(DAEMON_THREAD_FACTORY);
 
         if (initialNodeId != null && !initialNodeId.isBlank() && this.clusterEndpoints.containsNode(initialNodeId)) {
             this.knownLeaderId.set(initialNodeId.trim());
         }
+    }
+
+    public LeaderAwareBookingClient(
+            ClusterEndpoints clusterEndpoints,
+            Function<NodeEndpoint, BookingClient> clientFactory,
+            RedirectPolicy redirectPolicy,
+            ClusterConnectionViewModel connectionViewModel,
+            String initialNodeId) {
+        this(clusterEndpoints, clientFactory, redirectPolicy, connectionViewModel, initialNodeId, null);
+    }
+
+    public LeaderAwareBookingClient(
+            ClusterEndpoints clusterEndpoints,
+            ClusterConnectionViewModel connectionViewModel,
+            ClusterNodeSelector nodeSelector) {
+        this(clusterEndpoints, null, RedirectPolicy.defaultPolicy(), connectionViewModel, null, nodeSelector);
     }
 
     public LeaderAwareBookingClient(ClusterEndpoints clusterEndpoints) {
@@ -119,6 +138,10 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
         return clusterEndpoints;
     }
 
+    public ClusterNodeSelector getNodeSelector() {
+        return nodeSelector;
+    }
+
     public RedirectPolicy getRedirectPolicy() {
         return redirectPolicy;
     }
@@ -156,7 +179,16 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
 
         String targetNodeId = knownLeaderId.get();
         if (targetNodeId == null || !clusterEndpoints.containsNode(targetNodeId)) {
-            targetNodeId = clusterEndpoints.getDefaultNodeId();
+            if (nodeSelector != null) {
+                try {
+                    NodeEndpoint sel = nodeSelector.selectNode();
+                    targetNodeId = sel.nodeId();
+                } catch (Exception e) {
+                    targetNodeId = clusterEndpoints.getDefaultNodeId();
+                }
+            } else {
+                targetNodeId = clusterEndpoints.getDefaultNodeId();
+            }
         }
 
         while (true) {
@@ -223,6 +255,9 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
             try {
                 client = getOrCreateClient(targetNodeId);
             } catch (Exception e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
                 if (targetNodeId.equals(knownLeaderId.get())) {
                     resetKnownLeader();
                 }
@@ -249,7 +284,13 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
             try {
                 // Gửi nguyên request với cùng requestId và cùng payload
                 response = client.book(request).get(stepTimeout, TimeUnit.MILLISECONDS);
+                if (nodeSelector != null) {
+                    nodeSelector.markSuccess(targetNodeId);
+                }
             } catch (TimeoutException e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
                 long totalElapsed = System.currentTimeMillis() - startTime;
                 boolean isTotalTimeout = totalElapsed >= redirectPolicy.totalTimeoutMs() || remainingTotal <= stepTimeout;
                 String msg = isTotalTimeout
@@ -270,6 +311,9 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
                         msg
                 );
             } catch (ExecutionException e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 if (targetNodeId.equals(knownLeaderId.get())) {
                     resetKnownLeader();
@@ -467,7 +511,16 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
 
         String targetNodeId = knownLeaderId.get();
         if (targetNodeId == null || !clusterEndpoints.containsNode(targetNodeId)) {
-            targetNodeId = clusterEndpoints.getDefaultNodeId();
+            if (nodeSelector != null) {
+                try {
+                    NodeEndpoint sel = nodeSelector.selectNode();
+                    targetNodeId = sel.nodeId();
+                } catch (Exception e) {
+                    targetNodeId = clusterEndpoints.getDefaultNodeId();
+                }
+            } else {
+                targetNodeId = clusterEndpoints.getDefaultNodeId();
+            }
         }
 
         while (true) {
@@ -492,6 +545,9 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
             try {
                 long stepTimeout = redirectPolicy.stepTimeoutMs();
                 GetSeatsResponseDto res = client.getSeats(request).get(stepTimeout, TimeUnit.MILLISECONDS);
+                if (nodeSelector != null) {
+                    nodeSelector.markSuccess(targetNodeId);
+                }
 
                 if (res.getLeaderId() != null && clusterEndpoints.containsNode(res.getLeaderId())) {
                     knownLeaderId.set(res.getLeaderId());
@@ -504,6 +560,9 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 if (cause instanceof NotLeaderException nle) {
+                    if (nodeSelector != null) {
+                        nodeSelector.markSuccess(targetNodeId);
+                    }
                     String hint = nle.getLeaderHint();
                     if (hint != null && clusterEndpoints.containsNode(hint) && !hint.equals(targetNodeId)
                             && !visitedNodes.contains(hint) && redirectCount < redirectPolicy.maxRedirects()) {
@@ -515,9 +574,16 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
                         }
                         continue;
                     }
+                } else {
+                    if (nodeSelector != null) {
+                        nodeSelector.markFailed(targetNodeId);
+                    }
                 }
                 throw new CompletionException(cause);
             } catch (Exception e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
                 throw new CompletionException(e);
             }
         }

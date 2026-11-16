@@ -1,9 +1,14 @@
 package vn.nhom6.railway.client.network;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,10 +19,10 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
- * Danh bạ ánh xạ các Node trong cụm phân tán (nodeId -> {@link NodeEndpoint}) theo TASK TV1-D12.
+ * Danh bạ ánh xạ các Node trong cụm phân tán (nodeId -> {@link NodeEndpoint}) theo TASK TV1-D12 & TV1-D16.
  * <p>
- * Nạp từ file cấu hình {@code configs/dev/cluster.properties} của TV3 hoặc cấu hình tùy chỉnh.
- * Tuyệt đối không hardcode host/port cố định trong logic nghiệp vụ.
+ * Nạp từ nguồn cấu hình duy nhất {@link ClientConfig} (client.properties) hoặc cấu hình tùy chỉnh.
+ * Tuyệt đối không hardcode host/port/nodeId cố định trong logic nghiệp vụ.
  */
 public class ClusterEndpoints {
 
@@ -51,6 +56,22 @@ public class ClusterEndpoints {
 
     public static ClusterEndpoints fromMap(Map<String, NodeEndpoint> map, String defaultNodeId) {
         return new ClusterEndpoints(map, defaultNodeId);
+    }
+
+    /**
+     * Tạo {@link ClusterEndpoints} từ đối tượng cấu hình chuẩn {@link ClientConfig} (TASK TV1-D16).
+     */
+    public static ClusterEndpoints fromClientConfig(ClientConfig config) {
+        Objects.requireNonNull(config, "config không được null");
+        return fromEndpoints(config.getEndpoints(), config.getPreferredNode());
+    }
+
+    /**
+     * Tạo {@link ClusterEndpoints} liên kết trực tiếp với {@link ClusterNodeSelector} (TASK TV1-D16).
+     */
+    public static ClusterEndpoints fromSelector(ClusterNodeSelector selector) {
+        Objects.requireNonNull(selector, "selector không được null");
+        return fromClientConfig(selector.getConfig());
     }
 
     public NodeEndpoint getEndpoint(String nodeId) {
@@ -127,49 +148,55 @@ public class ClusterEndpoints {
         }
 
         for (String id : nodeIds) {
-            String host = props.getProperty("node." + id + ".client.host", "127.0.0.1").trim();
+            String host = props.getProperty("node." + id + ".client.host");
+            if (host == null || host.isBlank()) {
+                host = props.getProperty(id + ".client.host");
+            }
+            if (host == null || host.isBlank()) {
+                continue;
+            }
+            host = host.trim();
+
             String portStr = props.getProperty("node." + id + ".client.port");
-            int port = 9101;
+            if (portStr == null || portStr.isBlank()) {
+                portStr = props.getProperty(id + ".client.port");
+            }
+            int port = 0;
             if (portStr != null && !portStr.isBlank()) {
                 try {
                     port = Integer.parseInt(portStr.trim());
                 } catch (NumberFormatException ignored) {}
             }
-            map.put(id, new NodeEndpoint(id, host, port));
+            if (port > 0 && port <= 65535) {
+                map.put(id, new NodeEndpoint(id, host, port));
+            }
         }
 
         if (map.isEmpty()) {
-            // Fallback cấu hình mặc định 5 node chuẩn theo SPEC-08
-            map.put("node-1", new NodeEndpoint("node-1", "127.0.0.1", 9101));
-            map.put("node-2", new NodeEndpoint("node-2", "127.0.0.1", 9102));
-            map.put("node-3", new NodeEndpoint("node-3", "127.0.0.1", 9103));
-            map.put("node-4", new NodeEndpoint("node-4", "127.0.0.1", 9104));
-            map.put("node-5", new NodeEndpoint("node-5", "127.0.0.1", 9105));
+            // Nạp từ ClientConfig mặc định nếu Properties rỗng
+            return fromClientConfig(ClientConfig.loadDefault());
         }
 
-        String defaultNode = props.getProperty("cluster.default-node", nodeIds.isEmpty() ? "node-1" : nodeIds.get(0));
+        String defaultNode = props.getProperty("cluster.default-node", nodeIds.isEmpty() ? map.keySet().iterator().next() : nodeIds.get(0));
         return new ClusterEndpoints(map, defaultNode);
     }
 
     /**
-     * Nạp danh bạ từ file.
+     * Nạp danh bạ từ file với mã hóa UTF-8.
      */
     public static ClusterEndpoints loadFromFile(File file) throws IOException {
         Objects.requireNonNull(file, "file không được null");
+        Path path = file.toPath();
         Properties props = new Properties();
-        try (InputStream in = new FileInputStream(file)) {
-            props.load(in);
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            props.load(reader);
         }
         return loadFromProperties(props);
     }
 
     /**
      * Nạp cấu hình mặc định của hệ thống:
-     * 1. System property: railway.cluster.config
-     * 2. File: configs/dev/cluster.properties
-     * 3. File: ../configs/dev/cluster.properties
-     * 4. Resource: /cluster.properties
-     * 5. Mặc định 5 node (127.0.0.1:9101..9105)
+     * Gom về một nguồn duy nhất qua {@link ClientConfig#loadDefault()}.
      */
     public static ClusterEndpoints loadDefault() {
         String customPath = System.getProperty("railway.cluster.config");
@@ -182,41 +209,21 @@ public class ClusterEndpoints {
             }
         }
 
-        File devConfig = new File("configs/dev/cluster.properties");
-        if (devConfig.exists() && devConfig.isFile()) {
-            try {
-                return loadFromFile(devConfig);
-            } catch (IOException ignored) {}
+        try {
+            ClientConfig config = ClientConfig.loadDefault();
+            return fromClientConfig(config);
+        } catch (Exception ignored) {
+            // Fallback an toàn nếu có ngoại lệ bất thường
+            Properties fallback = new Properties();
+            try (InputStream res = ClusterEndpoints.class.getResourceAsStream("/config/client.properties")) {
+                if (res != null) {
+                    try (BufferedReader r = new BufferedReader(new InputStreamReader(res, StandardCharsets.UTF_8))) {
+                        fallback.load(r);
+                        return loadFromProperties(fallback);
+                    }
+                }
+            } catch (IOException ignored2) {}
+            throw new IllegalStateException("Không thể nạp danh bạ cụm từ bất kỳ nguồn cấu hình nào");
         }
-
-        File parentDevConfig = new File("../configs/dev/cluster.properties");
-        if (parentDevConfig.exists() && parentDevConfig.isFile()) {
-            try {
-                return loadFromFile(parentDevConfig);
-            } catch (IOException ignored) {}
-        }
-
-        try (InputStream res = ClusterEndpoints.class.getResourceAsStream("/cluster.properties")) {
-            if (res != null) {
-                Properties props = new Properties();
-                props.load(res);
-                return loadFromProperties(props);
-            }
-        } catch (IOException ignored) {}
-
-        // Fallback chuẩn 5 node theo SPEC-08
-        Properties fallbackProps = new Properties();
-        fallbackProps.setProperty("cluster.nodes", "node-1,node-2,node-3,node-4,node-5");
-        fallbackProps.setProperty("node.node-1.client.host", "127.0.0.1");
-        fallbackProps.setProperty("node.node-1.client.port", "9101");
-        fallbackProps.setProperty("node.node-2.client.host", "127.0.0.1");
-        fallbackProps.setProperty("node.node-2.client.port", "9102");
-        fallbackProps.setProperty("node.node-3.client.host", "127.0.0.1");
-        fallbackProps.setProperty("node.node-3.client.port", "9103");
-        fallbackProps.setProperty("node.node-4.client.host", "127.0.0.1");
-        fallbackProps.setProperty("node.node-4.client.port", "9104");
-        fallbackProps.setProperty("node.node-5.client.host", "127.0.0.1");
-        fallbackProps.setProperty("node.node-5.client.port", "9105");
-        return loadFromProperties(fallbackProps);
     }
 }

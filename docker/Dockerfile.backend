@@ -44,7 +44,7 @@ COPY --from=builder /build/backend-node/target/lib /app/lib
 
 # Copy entrypoint script
 COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
-RUN chmod +x /app/entrypoint-backend.sh
+RUN sed -i 's/\r$//' /app/entrypoint-backend.sh && chmod +x /app/entrypoint-backend.sh
 
 # Cac bien moi truong mac dinh (se duoc inject ghi de tu compose.dev.yml)
 ENV NODE_ID=node-1 \
