@@ -83,6 +83,13 @@ public final class RaftReplicationService {
 
         default void onFailure(String peerId, Throwable failure) {
         }
+
+        /**
+         * Called after a verified ACK advanced the peer's {@code matchIndex}. A commit integration
+         * may run {@link CommitAdvancer#advance()} here; this service never computes commit itself.
+         */
+        default void onMatchIndexAdvanced(String peerId, long matchIndex) {
+        }
     }
 
     private final String localId;
@@ -222,6 +229,7 @@ public final class RaftReplicationService {
             return;
         }
         state.advanceMatchIndex(peerId, expected);
+        hooks.onMatchIndexAdvanced(peerId, expected);
         consecutiveFailures.remove(peerId);
         resetRetry(peerId);
         if (retryCoordinator != null) {
