@@ -2,13 +2,16 @@ package vn.nhom6.railway.client;
 
 import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.BookingClientReadAdapter;
+import vn.nhom6.railway.client.network.ClientConfig;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
+import vn.nhom6.railway.client.network.ClusterNodeSelector;
 import vn.nhom6.railway.client.network.ClusterStatusClient;
 import vn.nhom6.railway.client.network.FakeReadAdapter;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.network.MockClusterStatusClient;
+import vn.nhom6.railway.client.network.NodeEndpoint;
 import vn.nhom6.railway.client.network.ReadAdapter;
 import vn.nhom6.railway.client.network.RedirectPolicy;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
@@ -37,6 +40,7 @@ import javafx.collections.ObservableList;
 public final class ClientFactory {
 
     private static volatile PersistentPendingJournal journal = createDefaultJournal();
+    private static volatile ClusterNodeSelector clusterNodeSelector = createDefaultClusterNodeSelector();
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
     private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(
             clusterStatusClient);
@@ -105,6 +109,27 @@ public final class ClientFactory {
         return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), fallback);
     }
 
+    public static synchronized ClusterNodeSelector getClusterNodeSelector() {
+        if (clusterNodeSelector == null) {
+            clusterNodeSelector = createDefaultClusterNodeSelector();
+        }
+        return clusterNodeSelector;
+    }
+
+    public static synchronized void setClusterNodeSelector(ClusterNodeSelector selector) {
+        clusterNodeSelector = selector;
+    }
+
+    private static ClusterNodeSelector createDefaultClusterNodeSelector() {
+        try {
+            ClientConfig config = ClientConfig.loadDefault();
+            return new ClusterNodeSelector(config);
+        } catch (Exception e) {
+            System.err.println("[ClientFactory] Không thể nạp ClientConfig mặc định: " + e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
      * -Dbooking.client=socket -> LeaderAwareBookingClient bọc SocketBookingClient
@@ -117,9 +142,26 @@ public final class ClientFactory {
     public static BookingClient createDefaultBookingClient() {
         String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
-            ClusterEndpoints endpoints = ClusterEndpoints.loadDefault();
-            RedirectPolicy policy = RedirectPolicy.defaultPolicy();
-            return new LeaderAwareBookingClient(endpoints, null, policy, clusterConnectionViewModel, null);
+            ClusterNodeSelector selector = getClusterNodeSelector();
+            ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
+            if (selector == null) {
+                selector = new ClusterNodeSelector(config);
+                setClusterNodeSelector(selector);
+            }
+            ClusterEndpoints endpoints = ClusterEndpoints.fromSelector(selector);
+            RedirectPolicy policy = new RedirectPolicy(
+                    config.getMaxRedirects(),
+                    config.getConnectTimeoutMs(),
+                    config.getReadTimeoutMs()
+            );
+            return new LeaderAwareBookingClient(
+                    endpoints,
+                    null,
+                    policy,
+                    clusterConnectionViewModel,
+                    config.getPreferredNode(),
+                    selector
+            );
         }
         return MockBookingClient.getInstance();
     }
@@ -131,7 +173,26 @@ public final class ClientFactory {
         }
         mode = mode.trim().toLowerCase();
         if ("socket".equals(mode) || "tcp".equals(mode) || "real".equals(mode)) {
-            return new SocketClusterStatusClient();
+            ClusterNodeSelector selector = getClusterNodeSelector();
+            ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
+            NodeEndpoint ep = null;
+            if (selector != null) {
+                try {
+                    ep = selector.selectNode();
+                } catch (Exception ignored) {}
+            }
+            if (ep == null) {
+                ep = config.getEndpoints().isEmpty()
+                        ? new NodeEndpoint("node-1", "127.0.0.1", 9101)
+                        : config.getEndpoints().get(0);
+            }
+            return new SocketClusterStatusClient(
+                    ep.host(),
+                    ep.port(),
+                    config.getConnectTimeoutMs(),
+                    config.getReadTimeoutMs(),
+                    "client-status-monitor"
+            );
         }
         return MockClusterStatusClient.getInstance();
     }
@@ -197,6 +258,7 @@ public final class ClientFactory {
      * Thiết lập lại toàn bộ client và viewModel theo cấu hình hệ thống hiện tại.
      */
     public static synchronized void resetToConfiguredClient() {
+        clusterNodeSelector = createDefaultClusterNodeSelector();
         setBookingClient(createDefaultBookingClient());
         setClusterStatusClient(createDefaultClusterStatusClient());
     }

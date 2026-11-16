@@ -447,6 +447,16 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     // Configuration Resolution
     // =========================================================================
 
+    private static NodeEndpoint resolveDefaultEndpoint() {
+        try {
+            ClientConfig config = ClientConfig.loadDefault();
+            ClusterNodeSelector selector = new ClusterNodeSelector(config);
+            return selector.selectNode();
+        } catch (Exception e) {
+            return new NodeEndpoint("node-1", DEFAULT_HOST, DEFAULT_PORT);
+        }
+    }
+
     private static String resolveConfiguredHost() {
         String sysHost = System.getProperty("booking.client.host");
         if (sysHost == null || sysHost.isBlank()) {
@@ -456,20 +466,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
             return sysHost.strip();
         }
 
-        Properties props = loadProperties("configs/dev/cluster.properties");
-        if (props == null) {
-            props = loadProperties("configs/lan/node-1.properties");
-        }
-        if (props != null) {
-            String propHost = props.getProperty("node.node-1.client.host");
-            if (propHost == null || propHost.isBlank()) {
-                propHost = props.getProperty("client.host");
-            }
-            if (propHost != null && !propHost.isBlank() && !"0.0.0.0".equals(propHost.strip())) {
-                return propHost.strip();
-            }
-        }
-        return DEFAULT_HOST;
+        return resolveDefaultEndpoint().host();
     }
 
     private static int resolveConfiguredPort() {
@@ -484,23 +481,7 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
             }
         }
 
-        Properties props = loadProperties("configs/dev/cluster.properties");
-        if (props == null) {
-            props = loadProperties("configs/lan/node-1.properties");
-        }
-        if (props != null) {
-            String propPort = props.getProperty("node.node-1.client.port");
-            if (propPort == null || propPort.isBlank()) {
-                propPort = props.getProperty("client.port");
-            }
-            if (propPort != null && !propPort.isBlank()) {
-                try {
-                    return Integer.parseInt(propPort.strip());
-                } catch (NumberFormatException ignored) {
-                }
-            }
-        }
-        return DEFAULT_PORT;
+        return resolveDefaultEndpoint().port();
     }
 
     private static Properties loadProperties(String relativePath) {
