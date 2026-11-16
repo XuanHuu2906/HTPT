@@ -11,11 +11,11 @@ import vn.nhom6.railway.client.network.ClusterConnectivityCheck.NodeCheckResult;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
 import vn.nhom6.railway.client.network.ClusterNodeSelector;
 import vn.nhom6.railway.client.network.DataSource;
+import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.NodeEndpoint;
 import vn.nhom6.railway.client.network.SelectionStrategy;
 import vn.nhom6.railway.client.smoke.FakeNodeServer;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -361,9 +361,9 @@ class ClusterNodeSelectorTest {
 
         // LeaderAwareBookingClient ban đầu không có knownLeader
         ClusterEndpoints endpoints = ClusterEndpoints.fromClientConfig(config);
-        vn.nhom6.railway.client.network.LeaderAwareBookingClient client =
-                new vn.nhom6.railway.client.network.LeaderAwareBookingClient(endpoints);
-        assertNull(client.getKnownLeaderId(), "Ban đầu knownLeaderId phải là null (chưa biết ai là Leader)");
+        try (LeaderAwareBookingClient client = new LeaderAwareBookingClient(endpoints)) {
+            assertNull(client.getKnownLeaderId(), "Ban đầu knownLeaderId phải là null (chưa biết ai là Leader)");
+        }
     }
 
     // =========================================================================
