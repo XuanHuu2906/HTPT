@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import vn.nhom6.railway.protocol.dto.AppendEntriesRequestDto;
 import vn.nhom6.railway.raft.election.ElectionTimer;
+import vn.nhom6.railway.raft.election.LeadershipGuard;
 import vn.nhom6.railway.raft.election.PersistentElectionState;
 import vn.nhom6.railway.raft.replication.AppendEntriesHandler;
 import vn.nhom6.railway.raft.replication.PersistentLogAppender;
@@ -21,6 +22,7 @@ public final class PersistentRaftNode implements RaftNode {
     private final RaftState state;
     private final PersistentElectionState persistence;
     private final PersistentLogAppender appender;
+    private final LeadershipGuard leadershipGuard;
     private final List<CommitListener> listeners = new ArrayList<>();
     private AppendEntriesHandler appendHandler;
     private Runnable onStepDown = () -> {};
@@ -34,6 +36,7 @@ public final class PersistentRaftNode implements RaftNode {
         }
         this.localId = localId;
         this.state = Objects.requireNonNull(state);
+        leadershipGuard = new LeadershipGuard(state);
         persistence = new PersistentElectionState(state, storage);
         appender = new PersistentLogAppender(storage);
         var durable = appender.recover();
@@ -47,6 +50,8 @@ public final class PersistentRaftNode implements RaftNode {
     }
 
     public PersistentElectionState persistence() { return persistence; }
+    /** Guard for callbacks that were created while this node was Leader. */
+    public LeadershipGuard leadershipGuard() { return leadershipGuard; }
 
     /** Bind once, after the component constructs its sole election timer. */
     public void bindLifecycle(ElectionTimer timer, Runnable onStepDown) {
