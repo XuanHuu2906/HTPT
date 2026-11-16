@@ -18,6 +18,7 @@ import vn.nhom6.railway.raft.core.RaftNode;
 import vn.nhom6.railway.raft.core.RaftState;
 import vn.nhom6.railway.raft.core.RaftTransportAdapter;
 import vn.nhom6.railway.raft.core.Role;
+import vn.nhom6.railway.raft.election.LeadershipGuard;
 
 /**
  * Leader-side sender for APPEND_ENTRIES RPCs. This service is intentionally small and focused on
@@ -87,6 +88,7 @@ public final class RaftReplicationService {
 
     private final String localId;
     private final RaftState state;
+    private final LeadershipGuard leadershipGuard;
     private final RaftTransportAdapter transport;
     private final Set<String> peers;
     private final Executor raftLoop;
@@ -105,6 +107,7 @@ public final class RaftReplicationService {
             Backoff backoff, Hooks hooks) {
         this.localId = requireVoterId(localId, "localId");
         this.state = Objects.requireNonNull(state, "state");
+        this.leadershipGuard = new LeadershipGuard(state);
         this.transport = Objects.requireNonNull(transport, "transport");
         this.peers = normalizePeers(peers, localId);
         this.raftLoop = Objects.requireNonNull(raftLoop, "raftLoop");
@@ -196,7 +199,7 @@ public final class RaftReplicationService {
             hooks.onHigherTerm(responseTerm);
             return;
         }
-        if (state.role() != Role.LEADER || state.currentTerm() != request.term()) {
+        if (!leadershipGuard.isCurrent(request.term())) {
             return;
         }
         if (responseTerm != request.term()) {
