@@ -1,0 +1,167 @@
+TV4-D16 validation evidence
+===========================
+
+Task: TV4-D16 CommitAdvancer majority/current-term commit rule.
+Code commit under test: 7047b07bc857cfa9d8aa36b55d8162f9b08a2708
+  feat(raft): add CommitAdvancer majority commit with current-term rule [TV4-D16]
+Base commit: e5002965463f5d0334143237ed036b293ceaed92 (TV4-D15 test commit)
+No commit was pushed.
+
+Files changed by the D16 commit:
+- backend-node/src/main/java/vn/nhom6/railway/raft/replication/CommitAdvancer.java (new)
+- backend-node/src/main/java/vn/nhom6/railway/raft/replication/RaftReplicationService.java
+    Added Hooks.onMatchIndexAdvanced(String peerId, long matchIndex) as a default
+    no-op, invoked after a successful state.advanceMatchIndex(...). The hook is
+    additive; existing hook implementations and existing tests are unaffected.
+- backend-node/src/test/java/vn/nhom6/railway/raft/replication/CommitSafetyTest.java (new)
+
+Files that were not modified: RaftState, PersistentRaftNode,
+AppendEntriesHandler, RaftTransportAdapter, LeaderHeartbeatScheduler,
+ReplicationTracker, AppendRetryCoordinator, and all pre-existing tests.
+
+Implemented rule (SPEC-04 section 5):
+- Only a LEADER advances commitIndex; a non-leader always returns empty.
+- Cluster size = ReplicationTracker snapshot size + 1 (the Leader itself).
+- Quorum = size / 2 + 1; for 5 Nodes this is 3.
+- Samples are the Leader's lastLogIndex plus every peer matchIndex, sorted
+  descending; candidate N is the quorum-th largest value.
+- No advance when N <= commitIndex (idempotent, monotonic).
+- No direct advance when termAt(N) != currentTerm(); old-term entries can only
+  be committed indirectly by a later current-term entry (Figure 8 safety).
+- No advance when N > lastLogIndex or when state.advanceCommitIndex refuses.
+- Returns OptionalLong of the new commit index, or empty.
+
+Environment:
+- Host: Windows; Docker Engine 29.8.0.
+- Test container: maven:3.9-eclipse-temurin-25; OpenJDK 25.0.4.1; Maven 3.9.16.
+- PostgreSQL: railway-postgres-1, healthy on railway-dev-network; database
+  railway_node1 used by the JDBC integration tests.
+- JDBC URL/user came from environment variables; the password is redacted in
+  every command recorded here.
+
+--- 1. Targeted D16 suite ---
+
+Command:
+docker run --rm --network railway-dev-network -v D:/HOCTAP/HTPT:/workspace -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am "-Dtest=vn.nhom6.railway.raft.replication.CommitSafetyTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Result: PASS; Maven exit code 0.
+CommitSafetyTest: 11 tests, 0 failures, 0 errors, 0 skipped.
+
+Test methods (11):
+1. commitsWithLeaderPlusTwoFollowersAtCurrentTerm
+2. doesNotCommitWithOnlyTwoOfFiveNodes
+3. oldTermEntryIsNotCommittedDirectly
+4. currentTermEntryCommitsOldTermPrefixIndirectly
+5. figure8OldEntryOnMajorityIsNeverCommittedByItsOldLeader
+6. nonLeaderNeverAdvancesCommit
+7. commitIndexIsIdempotentMonotonicAndBoundedByLastLogIndex
+8. failedOrMalformedPeerReplyNeverContributesToQuorum
+9. quorumFollowsClusterSizeAndIgnoresOneSlowPeer
+10. matchHookRunsOnlyAfterAVerifiedAck
+11. partitionedClusterCommitsOnlyAfterThreeOfFiveAcknowledgements
+
+Tests 1, 2, 5, 6, 11 use the five-peer Cluster/FollowerNode/FakeNetwork helpers
+from FivePeerReplicationSafetyTest; the rest drive CommitAdvancer directly with
+RaftState + ReplicationTracker. No real socket, sleep, Docker node or PostgreSQL
+is involved in this class.
+
+--- 2. Full clean verify on the same commit ---
+
+Command (database password redacted):
+docker run --rm --network railway-dev-network -v D:/HOCTAP/HTPT:/workspace -w /workspace -e RAILWAY_TEST_JDBC_URL=jdbc:postgresql://postgres-1:5432/railway_node1 -e RAILWAY_TEST_DB_USER=railway -e RAILWAY_TEST_DB_PASSWORD=[REDACTED] maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+
+Result: BUILD SUCCESS; Maven exit code 0; total time 01:53 min.
+Surefire XML totals across the reactor: 1,048 tests, 0 failures, 0 errors,
+6 skipped. backend-node module: 866 tests, 0 failures, 0 errors, 0 skipped.
+JdbcRaftStorageIntegrationTest: 7 tests, 0 failures, 0 errors, 0 skipped
+(PostgreSQL-backed, against railway-postgres-1).
+Reactor modules: railway-distributed-system, shared, backend-node,
+desktop-client, desktop-monitor, integration-tests - all SUCCESS.
+
+Skipped tests (6, all environment-gated; none are D15/D16 tests):
+- ClusterConnectionViewModelTest.testRealNodeClusterModeConditional
+- ClusterStatusUiEvidenceTest.testCaptureAllEvidenceSnapshots
+- LeaderAwareBookingClientTest.testRealClusterIntegration
+  (JUnit reason: Environment variable [NODE_ENDPOINTS] does not exist.)
+- UiSmokeTest.testJavaFxUiSmokeWithFakeTcpServer
+- SocketBookingClientTest.testIntegrationWithRealNode
+  (JUnit reason: Environment variable [NODE_HOST] does not exist.)
+- Node1DatabaseIntegrationTest.testNode1DatabaseThroughJdbc
+
+--- 3. Not implemented / not proven (explicit gaps) ---
+
+3.1 CommitAdvancer is not yet wired into the runtime Leader loop. The D16
+    change adds the rule, the test suite and the onMatchIndexAdvanced hook; a
+    production caller must still invoke CommitAdvancer.advance() on the
+    serialized Raft event loop.
+3.2 The Leader does not yet deliver newly committed entries to a commit
+    listener; no apply notification is emitted by this change.
+3.3 No Leader no-op entry is appended on becomeLeader, so entries inherited
+    from a previous term still cannot be committed until a current-term entry
+    follows them.
+3.4 There is no markApplied / BookingStateMachine apply in this change, so
+    "Raft-committed" is not yet the same statement as "applied to the booking
+    database".
+3.5 All validation is FakeNetwork plus RaftState/ReplicationTracker unit
+    testing. This run does not prove real TCP replication, five Docker nodes,
+    clock/scheduler behavior at real latency, process-crash recovery, or
+    PostgreSQL durability of applied bookings.
+
+Raw Maven output, targeted suite:
+
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.986 s -- in vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
+[INFO] shared ............................................. SUCCESS [ 16.934 s]
+[INFO] backend-node ....................................... SUCCESS [  8.489 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.614 s
+[INFO] Finished at: 2026-11-16T07:54:39Z
+[INFO] ------------------------------------------------------------------------
+
+Raw Maven output, full clean verify (excerpts):
+
+[INFO] Running vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.200 s -- in vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+[INFO] Tests run: 866, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  5.226 s]
+[INFO] shared ............................................. SUCCESS [ 31.626 s]
+[INFO] backend-node ....................................... SUCCESS [ 55.381 s]
+[INFO] desktop-client ..................................... SUCCESS [ 16.854 s]
+[INFO] desktop-monitor .................................... SUCCESS [  2.649 s]
+[INFO] integration-tests .................................. SUCCESS [  1.899 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:53 min
+[INFO] Finished at: 2026-11-16T07:51:30Z
+[INFO] ------------------------------------------------------------------------
