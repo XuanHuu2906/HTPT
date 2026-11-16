@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import vn.nhom6.railway.client.network.ClientConfig;
 
 import java.io.IOException;
 
@@ -73,8 +74,17 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        ClientConfig cfg = ClientConfig.loadDefault();
         if (mockBadgeLabel != null) {
-            mockBadgeLabel.setText("MOCK DATA");
+            if (cfg.isSocketMode()) {
+                mockBadgeLabel.setText("CỤM 5 NODE (" + cfg.getProfile().toUpperCase() + ")");
+                mockBadgeLabel.setStyle("-fx-background-color: #0284c7; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 4 14; -fx-background-radius: 6; -fx-border-color: #0369a1; -fx-border-radius: 6;");
+            } else {
+                mockBadgeLabel.setText("MOCK DATA");
+            }
+        }
+        if (statusMessageLabel != null && cfg.isSocketMode()) {
+            statusMessageLabel.setText("Hệ thống kết nối Cụm 5 Node (" + cfg.getProfile().toUpperCase() + "). Nhấn 'Đặt vé' để vào sơ đồ ghế.");
         }
 
         bindNavigationHandlers();

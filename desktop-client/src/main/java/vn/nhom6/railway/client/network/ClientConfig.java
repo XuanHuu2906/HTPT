@@ -38,6 +38,7 @@ public final class ClientConfig {
     private static final System.Logger LOGGER = System.getLogger(ClientConfig.class.getName());
 
     public static final String KEY_CLUSTER_PROFILE = "cluster.profile";
+    public static final String KEY_CLIENT_MODE = "client.mode";
     public static final String KEY_CONNECT_TIMEOUT_MS = "client.connectTimeoutMs";
     public static final String KEY_READ_TIMEOUT_MS = "client.readTimeoutMs";
     public static final String KEY_MAX_REDIRECTS = "client.maxRedirects";
@@ -57,6 +58,7 @@ public final class ClientConfig {
     );
 
     private final String profile;
+    private final String clientMode;
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
     private final int maxRedirects;
@@ -80,6 +82,8 @@ public final class ClientConfig {
             Properties rawProperties,
             String sourceDescription) {
         this.profile = Objects.requireNonNull(profile, "profile không được null").trim();
+        this.rawProperties = (rawProperties != null) ? (Properties) rawProperties.clone() : new Properties();
+        this.clientMode = this.rawProperties.getProperty(KEY_CLIENT_MODE, "socket").trim().toLowerCase();
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutMs = readTimeoutMs;
         this.maxRedirects = maxRedirects;
@@ -92,8 +96,15 @@ public final class ClientConfig {
             map.put(ep.nodeId(), ep);
         }
         this.endpointMap = Collections.unmodifiableMap(map);
-        this.rawProperties = (rawProperties != null) ? (Properties) rawProperties.clone() : new Properties();
         this.sourceDescription = sourceDescription != null ? sourceDescription : "unknown";
+    }
+
+    public String getClientMode() {
+        return clientMode;
+    }
+
+    public boolean isSocketMode() {
+        return "socket".equalsIgnoreCase(clientMode) || "tcp".equalsIgnoreCase(clientMode) || "real".equalsIgnoreCase(clientMode);
     }
 
     public String getProfile() {
@@ -259,6 +270,8 @@ public final class ClientConfig {
 
         // Áp dụng ghi đè từ Environment Variables (từng key)
         applyEnvOverride(merged, KEY_CLUSTER_PROFILE, "CLUSTER_PROFILE", envVarsOverride);
+        applyEnvOverride(merged, KEY_CLIENT_MODE, "CLIENT_MODE", envVarsOverride);
+        applyEnvOverride(merged, KEY_CLIENT_MODE, "BOOKING_CLIENT", envVarsOverride);
         applyEnvOverride(merged, KEY_CONNECT_TIMEOUT_MS, "CLIENT_CONNECT_TIMEOUT_MS", envVarsOverride);
         applyEnvOverride(merged, KEY_READ_TIMEOUT_MS, "CLIENT_READ_TIMEOUT_MS", envVarsOverride);
         applyEnvOverride(merged, KEY_MAX_REDIRECTS, "CLIENT_MAX_REDIRECTS", envVarsOverride);
@@ -268,6 +281,11 @@ public final class ClientConfig {
 
         // Áp dụng ghi đè từ System Properties (từng key - mức ưu tiên cao nhất)
         applySysPropOverride(merged, KEY_CLUSTER_PROFILE, sysPropsOverride);
+        applySysPropOverride(merged, KEY_CLIENT_MODE, sysPropsOverride);
+        String sysBookingClient = getSysPropVal("booking.client", sysPropsOverride);
+        if (sysBookingClient != null && !sysBookingClient.isBlank()) {
+            merged.setProperty(KEY_CLIENT_MODE, sysBookingClient.trim());
+        }
         applySysPropOverride(merged, KEY_CONNECT_TIMEOUT_MS, sysPropsOverride);
         applySysPropOverride(merged, KEY_READ_TIMEOUT_MS, sysPropsOverride);
         applySysPropOverride(merged, KEY_MAX_REDIRECTS, sysPropsOverride);

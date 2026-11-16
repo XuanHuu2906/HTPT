@@ -42,8 +42,19 @@ public final class ClientFactory {
     private static volatile PersistentPendingJournal journal = createDefaultJournal();
     private static volatile ClusterNodeSelector clusterNodeSelector = createDefaultClusterNodeSelector();
     private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
-    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = new ClusterConnectionViewModel(
-            clusterStatusClient);
+    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = createInitialClusterConnectionViewModel();
+
+    private static ClusterConnectionViewModel createInitialClusterConnectionViewModel() {
+        ClusterConnectionViewModel vm = new ClusterConnectionViewModel(clusterStatusClient);
+        try {
+            ClientConfig cfg = ClientConfig.loadDefault();
+            if (cfg.isSocketMode() && clusterNodeSelector != null) {
+                NodeEndpoint ep = clusterNodeSelector.selectNode(true);
+                vm.updateConnectedNode(ep.nodeId(), ep.toAddressString());
+            }
+        } catch (Exception ignored) {}
+        return vm;
+    }
 
     private static volatile BookingClient rawBookingClient = createDefaultBookingClient();
     private static volatile JournalingBookingClient journalingBookingClient = wrapWithJournal(rawBookingClient);
@@ -140,10 +151,10 @@ public final class ClientFactory {
     }
 
     public static BookingClient createDefaultBookingClient() {
-        String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
+        ClusterNodeSelector selector = getClusterNodeSelector();
+        ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
+        String clientMode = config.getClientMode();
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
-            ClusterNodeSelector selector = getClusterNodeSelector();
-            ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
             if (selector == null) {
                 selector = new ClusterNodeSelector(config);
                 setClusterNodeSelector(selector);
@@ -154,6 +165,15 @@ public final class ClientFactory {
                     config.getConnectTimeoutMs(),
                     config.getReadTimeoutMs()
             );
+
+            // Cập nhật ngay Node ban đầu vào ClusterConnectionViewModel
+            try {
+                NodeEndpoint initialEp = selector.selectNode(true);
+                if (clusterConnectionViewModel != null) {
+                    clusterConnectionViewModel.updateConnectedNode(initialEp.nodeId(), initialEp.toAddressString());
+                }
+            } catch (Exception ignored) {}
+
             return new LeaderAwareBookingClient(
                     endpoints,
                     null,
@@ -167,18 +187,18 @@ public final class ClientFactory {
     }
 
     public static ClusterStatusClient createDefaultClusterStatusClient() {
+        ClusterNodeSelector selector = getClusterNodeSelector();
+        ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
         String mode = System.getProperty("cluster.client");
         if (mode == null || mode.isBlank()) {
-            mode = System.getProperty("booking.client", "mock");
+            mode = config.getClientMode();
         }
         mode = mode.trim().toLowerCase();
         if ("socket".equals(mode) || "tcp".equals(mode) || "real".equals(mode)) {
-            ClusterNodeSelector selector = getClusterNodeSelector();
-            ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
             NodeEndpoint ep = null;
             if (selector != null) {
                 try {
-                    ep = selector.selectNode();
+                    ep = selector.selectNode(true);
                 } catch (Exception ignored) {}
             }
             if (ep == null) {
@@ -293,7 +313,9 @@ public final class ClientFactory {
         if ("fake".equals(readMode)) {
             return new FakeReadAdapter();
         }
-        String clientMode = System.getProperty("booking.client", "mock").trim().toLowerCase();
+        ClusterNodeSelector selector = getClusterNodeSelector();
+        ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
+        String clientMode = config.getClientMode();
         if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
             return new BookingClientReadAdapter(getBookingClient());
         }

@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Region;
 import vn.nhom6.railway.client.ClientFactory;
+import vn.nhom6.railway.client.network.ClientConfig;
 import vn.nhom6.railway.client.network.ClusterStatusClient.DataSource;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel.ConnectionState;
@@ -58,6 +59,13 @@ public class ClusterStatusBarController {
     public void initialize() {
         this.viewModel = ClientFactory.getClusterConnectionViewModel();
         bindViewModel(this.viewModel);
+        try {
+            ClientConfig cfg = ClientConfig.loadDefault();
+            if (cfg.isSocketMode()) {
+                this.viewModel.pollNow();
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     /**
