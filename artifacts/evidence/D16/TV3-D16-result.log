@@ -1,0 +1,1233 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] desktop-client                                                     [jar]
+[INFO] desktop-monitor                                                    [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/6]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/6]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24410 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to plexus.snapshots (https://oss.sonatype.org/content/repositories/plexus-snapshots): oss.sonatype.org: Temporary failure in name resolution
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to central-snapshots (https://central.sonatype.com/repository/maven-snapshots): central.sonatype.com: Temporary failure in name resolution
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/6]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.networking.NodeMainTest
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-1.properties
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37657 (maxThreads=8, soTimeout=5000ms)
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43265 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=37657 raft=43265
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37657 stopped.
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43265 stopped.
+Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[Subprocess Node] Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeConfig load
+[Subprocess Node] INFO: Loaded configuration from file: /tmp/node-subprocess-14155996179179182181.properties
+[Subprocess Node] ================================================================================
+[Subprocess Node]  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+[Subprocess Node] ================================================================================
+[Subprocess Node]   Node ID          : node-sub-1
+[Subprocess Node]   Cluster ID       : railway-demo-5
+[Subprocess Node]   Client Port      : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Raft Peer Port   : 0 (Host: 127.0.0.1)
+[Subprocess Node]   Database Target  : None (In-Memory / Test Mode)
+[Subprocess Node] ================================================================================
+[Subprocess Node] Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.NodeMain start
+[Subprocess Node] WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+[Subprocess Node] Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 43489 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] Nov 16, 2026 9:22:59 PM vn.nhom6.railway.networking.TcpServer start
+[Subprocess Node] INFO: TcpServer started on port 33033 (maxThreads=32, soTimeout=15000ms)
+[Subprocess Node] [READY] node-sub-1 client=43489 raft=33033
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.067 s -- in vn.nhom6.railway.networking.NodeMainTest
+[INFO] Running vn.nhom6.railway.networking.NodeStatusTcpIntegrationTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32937 (maxThreads=8, soTimeout=5000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42911 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=32937 raft=42911
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32937 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42911 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37945 (maxThreads=8, soTimeout=5000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38165 (maxThreads=8, soTimeout=5000ms)
+[READY] node-1 client=37945 raft=38165
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37945 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38165 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in vn.nhom6.railway.networking.NodeStatusTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.RaftRpcServerHandlersTcpIntegrationTest
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45789 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45789 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38405 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38405 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43161 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43161 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45301 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Unexpected character ('}' (code 125)): was expecting a colon to separate field name and value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 104]
+com.fasterxml.jackson.core.JsonParseException: Unexpected character ('}' (code 125)): was expecting a colon to separate field name and value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 104]
+	at com.fasterxml.jackson.core.JsonParser._constructReadException(JsonParser.java:2672)
+	at com.fasterxml.jackson.core.base.ParserMinimalBase._reportUnexpectedChar(ParserMinimalBase.java:742)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._skipColon2(UTF8StreamJsonParser.java:3215)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser._skipColon(UTF8StreamJsonParser.java:3144)
+	at com.fasterxml.jackson.core.json.UTF8StreamJsonParser.nextToken(UTF8StreamJsonParser.java:761)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:425)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.deser.DefaultDeserializationContext.readRootValue(DefaultDeserializationContext.java:342)
+	at com.fasterxml.jackson.databind.ObjectMapper._readMapAndClose(ObjectMapper.java:4971)
+	at com.fasterxml.jackson.databind.ObjectMapper.readValue(ObjectMapper.java:3965)
+	at vn.nhom6.railway.protocol.codec.MessageCodec.decode(MessageCodec.java:110)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:229)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:330)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45301 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46157 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46157 stopped.
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35297 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35297 stopped.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.213 s -- in vn.nhom6.railway.networking.RaftRpcServerHandlersTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34525 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34491 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:00 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35167 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34525 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34491 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39301 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42265 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39301 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42265 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45169 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44667 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45169 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44667 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39467 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39725 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39467 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+SEVERE: Handler threw unhandled exception for type REQUEST_VOTE: sleep interrupted
+java.lang.InterruptedException: sleep interrupted
+	at java.base/java.lang.Thread.sleepNanos0(Native Method)
+	at java.base/java.lang.Thread.sleepNanos(Thread.java:562)
+	at java.base/java.lang.Thread.sleep(Thread.java:593)
+	at vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest.lambda$testTimeoutOnUnresponsivePeer$0(RaftRpcTcpIntegrationTest.java:236)
+	at vn.nhom6.railway.networking.MessageDispatcher.dispatch(MessageDispatcher.java:156)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:230)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:330)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer handleClient
+WARNING: Failed to process message envelope: Socket closed
+java.net.SocketException: Socket closed
+	at java.base/sun.nio.ch.NioSocketImpl.ensureOpenAndConnected(NioSocketImpl.java:157)
+	at java.base/sun.nio.ch.NioSocketImpl.beginWrite(NioSocketImpl.java:372)
+	at java.base/sun.nio.ch.NioSocketImpl.implWrite(NioSocketImpl.java:418)
+	at java.base/sun.nio.ch.NioSocketImpl.write(NioSocketImpl.java:454)
+	at java.base/sun.nio.ch.NioSocketImpl$2.write(NioSocketImpl.java:821)
+	at java.base/java.net.Socket$SocketOutputStream.implWrite(Socket.java:1097)
+	at java.base/java.net.Socket$SocketOutputStream.write(Socket.java:1087)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(BufferedOutputStream.java:123)
+	at java.base/java.io.BufferedOutputStream.flush(BufferedOutputStream.java:203)
+	at vn.nhom6.railway.protocol.dto.FrameCodec.writeFrame(FrameCodec.java:58)
+	at vn.nhom6.railway.protocol.dto.FrameCodec.writeMessage(FrameCodec.java:93)
+	at vn.nhom6.railway.networking.TcpServer.handleClient(TcpServer.java:233)
+	at vn.nhom6.railway.networking.TcpServer.lambda$acceptLoop$0(TcpServer.java:171)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:330)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39725 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45001 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36501 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45001 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36501 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41725 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39155 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41725 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39155 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40171 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36261 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36261 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42305 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40171 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42305 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44405 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42615 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44405 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42615 stopped.
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.808 s -- in vn.nhom6.railway.networking.RaftRpcTcpIntegrationTest
+[INFO] Running vn.nhom6.railway.networking.TcpClusterSmokeTest
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37979 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34019 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=37979 raft=34019
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40191 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41747 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=40191 raft=41747
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46825 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43635 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=46825 raft=43635
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36899 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45771 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=36899 raft=45771
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45069 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38115 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=45069 raft=38115
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testDockerClusterConnectivityIfAvailable
+INFO: [DOCKER-CHECK] Docker compose containers not running on ports 9101..9105. Skipping live container probe.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37979 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34019 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40191 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41747 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46825 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43635 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36899 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45771 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45069 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38115 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34479 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39847 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=34479 raft=39847
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42459 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38033 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=42459 raft=38033
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40677 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37763 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=40677 raft=37763
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38695 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34505 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=38695 raft=34505
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38329 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44753 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=38329 raft=44753
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testConcurrentMonitorStatusBroadcast
+INFO: [MONITOR] Successfully broadcasted and received NODE_STATUS across all 5 nodes.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34479 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39847 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42459 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38033 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40677 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37763 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38695 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34505 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38329 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44753 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34479 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39581 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=34479 raft=39581
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35161 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37153 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=35161 raft=37153
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37241 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38561 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=37241 raft=38561
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37287 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34395 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=37287 raft=34395
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35217 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32987 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=35217 raft=32987
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testConcurrentFullMeshRpcWorkload
+INFO: [PERF] 100 concurrent RPCs (20 RPC/Node) completed successfully in 48 ms (~0.48 ms/RPC)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34479 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39581 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35161 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37153 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37241 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38561 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37287 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34395 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35217 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32987 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37935 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32923 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=37935 raft=32923
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36461 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35265 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=36461 raft=35265
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35085 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41177 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=35085 raft=41177
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38279 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40245 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=38279 raft=40245
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34591 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37891 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=34591 raft=37891
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: APPEND_ENTRIES from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: GET_SEATS from sender=client-hacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: APPEND_ENTRIES from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: GET_SEATS from sender=client-hacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: APPEND_ENTRIES from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: GET_SEATS from sender=client-hacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: APPEND_ENTRIES from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: GET_SEATS from sender=client-hacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Raft RPC rejected on CLIENT channel: APPEND_ENTRIES from sender=node-attacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Non-Raft message rejected on PEER channel: GET_SEATS from sender=client-hacker
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testChannelBoundaryAcrossFiveNodes
+INFO: [SECURITY] Channel boundaries successfully verified across all 5 nodes.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37935 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32923 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36461 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35265 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35085 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41177 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38279 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40245 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34591 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37891 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42147 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 36561 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=42147 raft=36561
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37573 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43997 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=37573 raft=43997
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35689 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42013 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=35689 raft=42013
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 40287 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35675 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=40287 raft=35675
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35473 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39615 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=35473 raft=39615
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testClusterPortAllocationAndPeerListVerification
+INFO: [CLUSTER] Successfully verified 5 nodes, 10 TCP ports, and 20 directed peer channels.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42147 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 36561 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37573 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43997 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35689 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42013 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 40287 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35675 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35473 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39615 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-1
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46697 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44619 (maxThreads=32, soTimeout=15000ms)
+[READY] node-1 client=46697 raft=44619
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-1] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-2
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32997 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42533 (maxThreads=32, soTimeout=15000ms)
+[READY] node-2 client=32997 raft=42533
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-2] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-3
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33727 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33389 (maxThreads=32, soTimeout=15000ms)
+[READY] node-3 client=33727 raft=33389
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-3] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-4
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43019 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 32975 (maxThreads=32, soTimeout=15000ms)
+[READY] node-4 client=43019 raft=32975
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-4] initialized and ready for traffic.
+================================================================================
+ RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+================================================================================
+  Node ID          : node-5
+  Cluster ID       : railway-demo-5
+  Client Port      : 0 (Host: 127.0.0.1)
+  Raft Peer Port   : 0 (Host: 127.0.0.1)
+  Database Target  : None (In-Memory / Test Mode)
+================================================================================
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+WARNING: Election disabled: durable core and peer transport adapters were not supplied.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39579 (maxThreads=32, soTimeout=15000ms)
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 34733 (maxThreads=32, soTimeout=15000ms)
+[READY] node-5 client=39579 raft=34733
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain start
+INFO: Backend Node [node-5] initialized and ready for traffic.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpClusterSmokeTest testLogCorrelationByNodeAndTerm
+INFO: [CORRELATION-CHECK] Verified 60 correlation log entries across terms [1, 2, 5]. Sample:
+[CORRELATION] sender=node-1 target=node-2 type=REQUEST_VOTE_RESPONSE reqId=3f8504b7-0dc6-4337-850c-70f7e12266be corrId=3f8504b7-0dc6-4337-850c-70f7e12266be term=1 status=SUCCESS latency=3ms
+[CORRELATION] sender=node-5 target=node-3 type=REQUEST_VOTE_RESPONSE reqId=3a8b15b1-adc6-41c2-af6a-c586d6b4cb7c corrId=3a8b15b1-adc6-41c2-af6a-c586d6b4cb7c term=5 status=SUCCESS latency=12ms
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-1]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46697 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44619 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-1] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-2]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32997 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42533 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-2] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-3]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33727 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33389 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-3] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-4]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43019 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 32975 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-4] shutdown cleanly completed.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Shutting down Backend Node [node-5]...
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39579 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 34733 stopped.
+Nov 16, 2026 9:23:01 PM vn.nhom6.railway.networking.NodeMain stop
+INFO: Backend Node [node-5] shutdown cleanly completed.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.255 s -- in vn.nhom6.railway.networking.TcpClusterSmokeTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-client >-------------------
+[INFO] Building desktop-client 1.0.0-SNAPSHOT                             [4/6]
+[INFO]   from desktop-client/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-fxml:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-client ---
+[INFO] Copying 13 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-client ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-client ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/desktop-client/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-client ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-client ---
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-monitor >------------------
+[INFO] Building desktop-monitor 1.0.0-SNAPSHOT                            [5/6]
+[INFO]   from desktop-monitor/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-monitor ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-monitor ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-monitor ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/desktop-monitor/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-monitor ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-monitor ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [6/6]
+[INFO]   from integration-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/integration-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
+[INFO] shared ............................................. SUCCESS [  1.899 s]
+[INFO] backend-node ....................................... SUCCESS [  3.283 s]
+[INFO] desktop-client ..................................... SUCCESS [  0.073 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.069 s]
+[INFO] integration-tests .................................. SUCCESS [  0.044 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.565 s
+[INFO] Finished at: 2026-11-16T21:23:01+07:00
+[INFO] ------------------------------------------------------------------------
