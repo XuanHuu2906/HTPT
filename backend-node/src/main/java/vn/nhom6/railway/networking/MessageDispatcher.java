@@ -1,12 +1,14 @@
 package vn.nhom6.railway.networking;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import vn.nhom6.railway.booking.BookingRequestHandler;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +32,14 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
     /**
+     * Message types requiring Raft Leader authority (write commands modifying distributed state).
+     */
+    public static final Set<MessageType> LEADER_ONLY_MESSAGE_TYPES = Set.of(
+            MessageType.BOOK_TICKET,
+            MessageType.CANCEL_TICKET
+    );
+
+    /**
      * Channel type defining which category of messages are accepted on this port/connection.
      */
     public enum ChannelType {
@@ -46,19 +56,25 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     private final HandlerRegistry registry;
     private final ChannelType channelType;
     private final String nodeId;
+    private volatile LeaderRouter leaderRouter;
 
     public MessageDispatcher(HandlerRegistry registry) {
-        this(registry, ChannelType.ALL, "node-server");
+        this(registry, ChannelType.ALL, "node-server", null);
     }
 
     public MessageDispatcher(HandlerRegistry registry, ChannelType channelType) {
-        this(registry, channelType, "node-server");
+        this(registry, channelType, "node-server", null);
     }
 
     public MessageDispatcher(HandlerRegistry registry, ChannelType channelType, String nodeId) {
+        this(registry, channelType, nodeId, null);
+    }
+
+    public MessageDispatcher(HandlerRegistry registry, ChannelType channelType, String nodeId, LeaderRouter leaderRouter) {
         this.registry = Objects.requireNonNull(registry, "HandlerRegistry must not be null");
         this.channelType = Objects.requireNonNull(channelType, "ChannelType must not be null");
         this.nodeId = (nodeId != null && !nodeId.isBlank()) ? nodeId : "node-server";
+        this.leaderRouter = leaderRouter;
     }
 
     @Override
@@ -144,14 +160,32 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
         }
 
-        // 9. Lookup handler in registry
+        // 9. Enforce Leader Authority / Redirection for write commands per SPEC-02 §4 and SPEC-03 §7 (TV3-D17)
+        if (leaderRouter != null && isLeaderOnlyRequest(type)) {
+            try {
+                LeaderRouter.RoutingOutcome outcome = leaderRouter.route(request);
+                if (outcome != null && outcome.isHandled()) {
+                    MessageEnvelope<?> redirectResponse = outcome.getResponse();
+                    if (redirectResponse != null) {
+                        LOGGER.info(() -> "[" + nodeId + "] Intercepted write request " + type + " for leader redirect; returning "
+                                + redirectResponse.getType() + " (correlationId=" + redirectResponse.getCorrelationId() + ")");
+                        return redirectResponse;
+                    }
+                }
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "[" + nodeId + "] Leader routing check failed for " + type + ", messageId=" + messageId + ": " + ex.getMessage(), ex);
+                return createErrorResponse(messageId, "INTERNAL_ERROR", "Leader routing failed: " + ex.getMessage(), requestId);
+            }
+        }
+
+        // 10. Lookup handler in registry
         HandlerRegistry.RequestHandler handler = registry.getHandler(type);
         if (handler == null) {
             LOGGER.warning(() -> "No handler registered for message type: " + type);
             return createErrorResponse(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
         }
 
-        // 10. Execute handler and catch any exceptions safely
+        // 11. Execute handler and catch any exceptions safely
         try {
             MessageEnvelope<?> response = handler.handle(request);
             if (response != null && response.getCorrelationId() == null) {
@@ -163,10 +197,46 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         } catch (IllegalArgumentException ex) {
             LOGGER.log(Level.WARNING, "Handler validation failed for type " + type + ": " + ex.getMessage(), ex);
             return createErrorResponse(messageId, "INVALID_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Invalid request parameter", requestId);
+        } catch (BookingRequestHandler.NotLeaderException ex) {
+            LOGGER.log(Level.INFO, "Handler signaled NOT_LEADER for type " + type + ": hint=" + ex.leaderHint());
+            return handleNotLeaderException(messageId, requestId, ex.leaderHint());
         } catch (Throwable t) {
+            BookingRequestHandler.NotLeaderException notLeaderEx = findNotLeaderException(t);
+            if (notLeaderEx != null) {
+                LOGGER.log(Level.INFO, "Handler cause signaled NOT_LEADER for type " + type + ": hint=" + notLeaderEx.leaderHint());
+                return handleNotLeaderException(messageId, requestId, notLeaderEx.leaderHint());
+            }
             LOGGER.log(Level.SEVERE, "Handler threw unhandled exception for type " + type + ": " + t.getMessage(), t);
             return createErrorResponse(messageId, "INTERNAL_ERROR", "Internal server error: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()), requestId);
         }
+    }
+
+    private MessageEnvelope<?> handleNotLeaderException(String messageId, String requestId, String explicitHint) {
+        String hint = explicitHint;
+        Long term = null;
+        if (leaderRouter != null) {
+            try {
+                LeaderRouter.RoleSnapshot snapshot = leaderRouter.getRoleSnapshot();
+                if (snapshot != null) {
+                    term = snapshot.term();
+                }
+            } catch (Exception ignored) {}
+            if (hint == null || hint.isBlank() || hint.equals(nodeId)) {
+                hint = leaderRouter.resolveLeaderHint();
+            }
+        }
+        return ErrorReplyFactory.createNotLeader(messageId, requestId, nodeId, hint, term);
+    }
+
+    private static BookingRequestHandler.NotLeaderException findNotLeaderException(Throwable t) {
+        Throwable current = t;
+        while (current != null) {
+            if (current instanceof BookingRequestHandler.NotLeaderException notLeaderEx) {
+                return notLeaderEx;
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 
     private MessageEnvelope<ErrorResponseDto> createErrorResponse(String requestMessageId, String errorCode, String message, String requestId) {
@@ -200,5 +270,17 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public String getNodeId() {
         return nodeId;
+    }
+
+    public LeaderRouter getLeaderRouter() {
+        return leaderRouter;
+    }
+
+    public void setLeaderRouter(LeaderRouter leaderRouter) {
+        this.leaderRouter = leaderRouter;
+    }
+
+    public boolean isLeaderOnlyRequest(MessageType type) {
+        return type != null && LEADER_ONLY_MESSAGE_TYPES.contains(type);
     }
 }

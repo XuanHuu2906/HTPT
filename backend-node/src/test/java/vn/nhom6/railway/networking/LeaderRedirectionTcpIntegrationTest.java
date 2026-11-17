@@ -258,4 +258,85 @@ public class LeaderRedirectionTcpIntegrationTest {
         // Verified: Forwarding loop prevented, forward was NEVER executed
         assertEquals(0, forwardCounter.get(), "Must not forward request originating from a peer voter");
     }
+
+    @Test
+    @DisplayName("TV3-D17: MessageDispatcher-level redirect guarantees Follower NEVER writes to DB or confirms")
+    public void testDispatcherLevelRedirectGuaranteesZeroDatabaseWrites() throws Exception {
+        AtomicInteger bookingServiceCallCount = new AtomicInteger(0);
+
+        // Booking service with call tracking
+        FakeBookingService service = new FakeBookingService("node-2") {
+            @Override
+            public vn.nhom6.railway.booking.ApplyResult bookTicket(String requestId, String tripId, String seatId, String passengerName) throws Exception {
+                bookingServiceCallCount.incrementAndGet();
+                fail("BookingService should NEVER be called on a Follower!");
+                return super.bookTicket(requestId, tripId, seatId, passengerName);
+            }
+        };
+        service.setLeader(false, "node-1");
+
+        NodeConfig config = new NodeConfig("node-2", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        NodeMain followerNode = new NodeMain(config, service);
+        resources.add(followerNode);
+        followerNode.start();
+
+        TcpClient client = new TcpClient("127.0.0.1", followerNode.getClientPort(), 3000, 3000);
+        resources.add(client);
+        client.connect();
+
+        String reqId = UUID.randomUUID().toString();
+        BookTicketRequestDto bookDto = new BookTicketRequestDto(reqId, "SE-001", "G08", "Passenger Non-Leader");
+        MessageEnvelope<BookTicketRequestDto> request = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookDto
+        );
+
+        MessageEnvelope<ErrorResponseDto> response = client.sendAndReceive(request, ErrorResponseDto.class);
+
+        assertNotNull(response);
+        assertEquals(MessageType.ERROR_RESPONSE, response.getType());
+        ErrorResponseDto err = response.getPayload();
+        err.validate();
+        assertEquals("NOT_LEADER", err.getErrorCode());
+        assertEquals("node-1", err.getLeaderHint());
+        assertEquals(reqId, err.getRequestId(), "requestId must be strictly preserved");
+
+        // Verify Follower safety invariant: DB write / booking service counter is exactly 0
+        assertEquals(0, bookingServiceCallCount.get(), "Follower must NEVER touch booking storage or self-confirm");
+    }
+
+    @Test
+    @DisplayName("TV3-D17: Fallback peer candidate rotation when leaderHint is null or stale over TCP")
+    public void testFollowerFallbackCandidatesWhenHintNullOrStaleOverTcp() throws Exception {
+        // Node 2 has null leaderHint
+        FakeBookingService service = new FakeBookingService("node-2");
+        service.setLeader(false, null);
+
+        NodeConfig config = new NodeConfig("node-2", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        NodeMain followerNode = new NodeMain(config, service);
+        resources.add(followerNode);
+        followerNode.start();
+
+        TcpClient client = new TcpClient("127.0.0.1", followerNode.getClientPort(), 3000, 3000);
+        resources.add(client);
+        client.connect();
+
+        String reqId = UUID.randomUUID().toString();
+        BookTicketRequestDto bookDto = new BookTicketRequestDto(reqId, "SE-001", "G09", "Passenger Fallback");
+        MessageEnvelope<BookTicketRequestDto> request = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookDto
+        );
+
+        MessageEnvelope<ErrorResponseDto> response = client.sendAndReceive(request, ErrorResponseDto.class);
+
+        assertNotNull(response);
+        assertEquals(MessageType.ERROR_RESPONSE, response.getType());
+        ErrorResponseDto err = response.getPayload();
+        err.validate();
+        assertEquals("NOT_LEADER", err.getErrorCode());
+        assertNotNull(err.getLeaderHint(), "Fallback hint must not be null");
+        assertNotEquals("node-2", err.getLeaderHint(), "Self-hint must NEVER be returned");
+        assertTrue(List.of("node-1", "node-3", "node-4", "node-5").contains(err.getLeaderHint()),
+                "Fallback must be one of the cluster peers");
+        assertEquals(reqId, err.getRequestId());
+    }
 }
