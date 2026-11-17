@@ -129,10 +129,7 @@ public class NodeMain implements AutoCloseable {
         this.clientRegistry = new HandlerRegistry();
         this.raftRegistry = new HandlerRegistry();
 
-        LeaderRouter leaderRouter = new LeaderRouter(
-                config.nodeId(),
-                createRoleProvider(election, bookingService)
-        );
+        LeaderRouter leaderRouter = resolveLeaderRouter(config.nodeId(), election, bookingService, persistentBooking);
         this.clientDispatcher = new MessageDispatcher(clientRegistry, MessageDispatcher.ChannelType.CLIENT, config.nodeId(), leaderRouter);
         this.raftDispatcher = new MessageDispatcher(raftRegistry, MessageDispatcher.ChannelType.PEER, config.nodeId());
 
@@ -346,6 +343,25 @@ public class NodeMain implements AutoCloseable {
 
     public MessageDispatcher getRaftDispatcher() {
         return raftDispatcher;
+    }
+
+    private static LeaderRouter resolveLeaderRouter(
+            String nodeId,
+            RaftElectionComponent election,
+            BookingService bookingService,
+            BookingRequestHandler persistentBooking) {
+        if (election != null) {
+            return new LeaderRouter(nodeId, createRoleProvider(election, bookingService));
+        }
+        if (persistentBooking != null) {
+            // When election is null but persistentBooking is supplied (e.g. commit test harness),
+            // persistentBooking's CommandSubmitter is the authoritative boundary for leadership/commit.
+            return null;
+        }
+        if (!(bookingService instanceof UnavailableBookingService)) {
+            return new LeaderRouter(nodeId, createRoleProvider(null, bookingService));
+        }
+        return null;
     }
 
     private static LeaderRouter.RoleProvider createRoleProvider(RaftElectionComponent election, BookingService bookingService) {

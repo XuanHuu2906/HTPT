@@ -22,7 +22,10 @@
 - Thêm getter `getRoleSnapshot()` và `getRoleProvider()` phục vụ truy xuất term và role hiện tại.
 
 ### 2.3. `backend-node/src/main/java/vn/nhom6/railway/networking/NodeMain.java`
-- Khởi tạo `LeaderRouter` dựa trên `election` và `bookingService` và truyền vào `clientDispatcher`.
+- Khởi tạo `LeaderRouter` linh hoạt qua `resolveLeaderRouter`:
+  - Khi có `RaftElectionComponent election != null`: khởi tạo `LeaderRouter` dựa trên trạng thái đồng thuận Raft thật.
+  - Khi có `bookingService` tùy biến (e.g. `FakeBookingService` trong các bài test mạng): khởi tạo `LeaderRouter` dựa trên `bookingService.isLeader()`.
+  - Khi chạy chế độ kiểm thử commit bền vững `persistentBooking != null && election == null`: để `leaderRouter = null` nhằm phân quyền xử lý trực tiếp cho `CommandSubmitter` của `BookingRequestHandler` (tránh chặn nhầm harness trong `JdbcBookingTcpIntegrationTest`).
 - Thêm getter `getClientDispatcher()` và `getRaftDispatcher()`.
 
 ### 2.4. `backend-node/src/test/java/vn/nhom6/railway/networking/MessageDispatcherTest.java`

@@ -70,26 +70,26 @@
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 36581 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 40549 (maxThreads=4, soTimeout=3000ms)
-[READY] node-2 client=36581 raft=40549
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44773 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45555 (maxThreads=4, soTimeout=3000ms)
+[READY] node-2 client=44773 raft=45555
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-2] initialized and ready for traffic.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=0, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=ec891522-a8b9-4c7b-91e7-a2a0c638b8bb)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=0aa1740d-e5cf-40d9-b9b9-f93311e637db)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-2]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 36581 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 40549 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44773 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45555 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-2] shutdown cleanly completed.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
@@ -100,33 +100,33 @@ INFO: Backend Node [node-2] shutdown cleanly completed.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 46645 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 39713 (maxThreads=4, soTimeout=3000ms)
-[READY] node-2 client=46645 raft=39713
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33671 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43887 (maxThreads=4, soTimeout=3000ms)
+[READY] node-2 client=33671 raft=43887
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-2] initialized and ready for traffic.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=0, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=2062bd8d-2746-46c7-8186-83c2c32af0d7)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=2445bce5-6d73-4116-9a35-17edfc8f3da5)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-2]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 46645 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 39713 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33671 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43887 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-2] shutdown cleanly completed.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 32769 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-WARNING: [node-2] Forward loop detected for requestId=94bf78f0-7651-4c28-901b-299b9ba6ff28, senderId=node-1. Halting forward and rejecting as NOT_LEADER.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 32769 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45667 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+WARNING: [node-2] Forward loop detected for requestId=540829e1-cad6-4842-a87e-aa2671ca1d31, senderId=node-1. Halting forward and rejecting as NOT_LEADER.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45667 stopped.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
 ================================================================================
@@ -136,14 +136,14 @@ INFO: TcpServer on port 32769 stopped.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 34599 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 41959 (maxThreads=4, soTimeout=3000ms)
-[READY] node-1 client=34599 raft=41959
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 44913 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33429 (maxThreads=4, soTimeout=3000ms)
+[READY] node-1 client=44913 raft=33429
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-1] initialized and ready for traffic.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
@@ -154,34 +154,34 @@ INFO: Backend Node [node-1] initialized and ready for traffic.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 42851 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 38839 (maxThreads=4, soTimeout=3000ms)
-[READY] node-2 client=42851 raft=38839
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38139 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 35253 (maxThreads=4, soTimeout=3000ms)
+[READY] node-2 client=38139 raft=35253
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-2] initialized and ready for traffic.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=0, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=a802d874-822a-47b8-9cd9-04991798c95c)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=5df0293c-6694-4abc-9480-5ac00da3a38d)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-1]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 34599 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 41959 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 44913 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33429 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-1] shutdown cleanly completed.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-2]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 42851 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 38839 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38139 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 35253 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-2] shutdown cleanly completed.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
@@ -192,26 +192,26 @@ INFO: Backend Node [node-2] shutdown cleanly completed.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 46459 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 38825 (maxThreads=4, soTimeout=3000ms)
-[READY] node-2 client=46459 raft=38825
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 45263 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39261 (maxThreads=4, soTimeout=3000ms)
+[READY] node-2 client=45263 raft=39261
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-2] initialized and ready for traffic.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=0, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=17964784-6e0b-48a4-a41f-0ec7bf54ceba)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=728dcd9b-9953-40ce-835d-46ea3f6d75b5)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-2]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 46459 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 38825 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 45263 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39261 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-2] shutdown cleanly completed.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
@@ -222,56 +222,56 @@ INFO: Backend Node [node-2] shutdown cleanly completed.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 45973 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 35475 (maxThreads=4, soTimeout=3000ms)
-[READY] node-1 client=45973 raft=35475
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain start
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 38417 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39027 (maxThreads=4, soTimeout=3000ms)
+[READY] node-1 client=38417 raft=39027
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-1] initialized and ready for traffic.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 39967 (maxThreads=4, soTimeout=3000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-INFO: [node-2] Forwarding request messageId=351153cf-f172-4d38-b55d-2a101de4bd19, requestId=051c84af-9f07-49ef-8bcf-802ae198db60 to leader node-1
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 46013 (maxThreads=4, soTimeout=3000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+INFO: [node-2] Forwarding request messageId=8708dcbb-5bb4-4604-a026-489ddda9b72e, requestId=eee02003-927d-4ca5-83aa-80a906187de6 to leader node-1
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-1]...
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 45973 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 35475 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 38417 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39027 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-1] shutdown cleanly completed.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 39967 stopped.
-[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.534 s -- in vn.nhom6.railway.networking.LeaderRedirectionTcpIntegrationTest
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 46013 stopped.
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.524 s -- in vn.nhom6.railway.networking.LeaderRedirectionTcpIntegrationTest
 [INFO] Running vn.nhom6.railway.networking.LeaderRouterTest
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=1, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-INFO: [node-2] Forwarding request messageId=903c508d-e115-4caa-842e-92daed78884f, requestId=123ba1fc-681c-41c0-b3ba-b911225d6d25 to leader node-1
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+INFO: [node-2] Forwarding request messageId=f72fbf21-8c6b-47eb-a24e-c76de62973d1, requestId=80f86143-35fa-4657-9708-07b1c21be145 to leader node-1
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 WARNING: [node-2] Forwarding to node-1 failed: Connection refused to node-1, falling back to NOT_LEADER reply
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=3, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-3] Rejecting request as NOT_LEADER (role=FOLLOWER, term=3, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=5, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-INFO: [node-2] Forwarding request messageId=26d5499d-2171-43ef-a976-28c244bdcd05, requestId=d25325de-c0e0-459e-8843-5bd65b4bd48d to leader node-1
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-WARNING: [node-2] Forward loop detected for requestId=d25325de-c0e0-459e-8843-5bd65b4bd48d, senderId=client-1. Halting forward and rejecting as NOT_LEADER.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-INFO: [node-2] Forwarding request messageId=2a761c2a-d1f8-44f9-874d-cae4460a0261, requestId=1e3af8e3-a314-40c8-8d17-4bde982bbe51 to leader node-1
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
-WARNING: [node-2] Forward loop detected for requestId=0eed8aff-03b3-49ee-b3d7-58f712dfea63, senderId=node-3. Halting forward and rejecting as NOT_LEADER.
-[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.058 s -- in vn.nhom6.railway.networking.LeaderRouterTest
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+INFO: [node-2] Forwarding request messageId=63a996b3-a040-4713-9ac1-e0978ced29a8, requestId=34e48985-567b-4951-9421-b333221b0904 to leader node-1
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+WARNING: [node-2] Forward loop detected for requestId=34e48985-567b-4951-9421-b333221b0904, senderId=client-1. Halting forward and rejecting as NOT_LEADER.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+INFO: [node-2] Forwarding request messageId=5bd7853e-44ab-41f3-a87d-16f0af72d6ab, requestId=dce02dfe-5420-4b28-bdce-9e5c44a74bca to leader node-1
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
+WARNING: [node-2] Forward loop detected for requestId=93378d67-c518-4206-9943-cada20c64ff5, senderId=node-3. Halting forward and rejecting as NOT_LEADER.
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.networking.LeaderRouterTest
 [INFO] Running vn.nhom6.railway.networking.MessageDispatcherTest
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Non-monitor message rejected on MONITOR channel: GET_SEATS from sender=client-1
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Handler validation failed for type GET_SEATS: Response phải có correlationId là UUID hợp lệ
 java.lang.IllegalArgumentException: Response phải có correlationId là UUID hợp lệ
 	at vn.nhom6.railway.protocol.dto.MessageEnvelope.validate(MessageEnvelope.java:146)
@@ -349,19 +349,19 @@ java.lang.IllegalArgumentException: Response phải có correlationId là UUID h
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
 
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=5, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=04d994b9-026e-442e-9113-e4264759ae7a)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=3006ac4b-46c4-4af9-b21a-b8f122478585)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-5] Rejecting request as NOT_LEADER (role=FOLLOWER, term=3, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-5] Intercepted write request CANCEL_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=27c1e7a2-926b-47be-b231-53f99d8fc546)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-5] Intercepted write request CANCEL_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=d4298377-ea2c-4015-8756-151c8c17d727)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 INFO: Handler signaled NOT_LEADER for type BOOK_TICKET: hint=node-4
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-2
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 SEVERE: Handler threw unhandled exception for type BOOK_TICKET: Simulated unexpected database failure
 java.lang.RuntimeException: Simulated unexpected database failure
 	at vn.nhom6.railway.networking.MessageDispatcherTest.lambda$testHandlerExceptionReturnsInternalError$0(MessageDispatcherTest.java:228)
@@ -437,35 +437,35 @@ java.lang.RuntimeException: Simulated unexpected database failure
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
 
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-3] Rejecting request as NOT_LEADER (role=FOLLOWER, term=2, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-3] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=961b51d8-4937-4985-b8bf-62cb10979295)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-WARNING: Unexpected response message type arriving on request dispatcher: BOOK_TICKET_RESPONSE, messageId=071aab7c-a19a-49e8-8c79-dc878c3d5426
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 34815 (maxThreads=8, soTimeout=5000ms)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-3] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=97395b35-aa82-40ac-96f1-09bdee421aef)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+WARNING: Unexpected response message type arriving on request dispatcher: BOOK_TICKET_RESPONSE, messageId=41398a1c-87c6-4f6e-b424-0a5bc31af656
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 39165 (maxThreads=8, soTimeout=5000ms)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Raft RPC rejected on CLIENT channel: REQUEST_VOTE from sender=node-hack
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 34815 stopped.
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 39165 stopped.
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: No handler registered for message type: GET_SEATS
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Received null request envelope in MessageDispatcher
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: No handler registered for message type: CANCEL_TICKET
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-2] Rejecting request as NOT_LEADER (role=FOLLOWER, term=1, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=3932d9ba-5c2d-4c06-8fab-e7b5a4771935)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.LeaderRouter route
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-2] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=96a3aa7e-efa5-41cf-bad5-a1a3a1a9292e)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.LeaderRouter route
 INFO: [node-3] Rejecting request as NOT_LEADER (role=FOLLOWER, term=1, hint=node-1)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
-INFO: [node-3] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=3932d9ba-5c2d-4c06-8fab-e7b5a4771935)
-Nov 17, 2026 5:42:59 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+INFO: [node-3] Intercepted write request BOOK_TICKET for leader redirect; returning ERROR_RESPONSE (correlationId=96a3aa7e-efa5-41cf-bad5-a1a3a1a9292e)
+Nov 17, 2026 5:55:19 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
 WARNING: Non-Raft message rejected on PEER channel: BOOK_TICKET from sender=client-1
-[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.131 s -- in vn.nhom6.railway.networking.MessageDispatcherTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.123 s -- in vn.nhom6.railway.networking.MessageDispatcherTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -476,8 +476,8 @@ WARNING: Non-Raft message rejected on PEER channel: BOOK_TICKET from sender=clie
 [INFO] Building desktop-client 1.0.0-SNAPSHOT                             [4/6]
 [INFO]   from desktop-client/pom.xml
 [INFO] --------------------------------[ jar ]---------------------------------
-[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
 [WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-fxml:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
 [INFO] 
 [INFO] --- resources:3.4.0:resources (default-resources) @ desktop-client ---
 [INFO] Copying 13 resources from src/main/resources to target/classes
@@ -533,15 +533,15 @@ WARNING: Non-Raft message rejected on PEER channel: BOOK_TICKET from sender=clie
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
 [INFO] 
-[INFO] railway-distributed-system ......................... SUCCESS [  0.004 s]
-[INFO] shared ............................................. SUCCESS [  1.136 s]
-[INFO] backend-node ....................................... SUCCESS [  1.515 s]
-[INFO] desktop-client ..................................... SUCCESS [  0.078 s]
-[INFO] desktop-monitor .................................... SUCCESS [  0.055 s]
-[INFO] integration-tests .................................. SUCCESS [  0.038 s]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
+[INFO] shared ............................................. SUCCESS [  1.278 s]
+[INFO] backend-node ....................................... SUCCESS [  1.488 s]
+[INFO] desktop-client ..................................... SUCCESS [  0.070 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.052 s]
+[INFO] integration-tests .................................. SUCCESS [  0.030 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  2.980 s
-[INFO] Finished at: 2026-11-17T17:43:00+07:00
+[INFO] Total time:  3.062 s
+[INFO] Finished at: 2026-11-17T17:55:19+07:00
 [INFO] ------------------------------------------------------------------------
