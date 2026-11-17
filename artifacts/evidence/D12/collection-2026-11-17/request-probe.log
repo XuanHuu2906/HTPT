@@ -1,0 +1,157 @@
+[
+  {
+    "nodeId": "node-1",
+    "port": 9101,
+    "request": {
+      "protocolVersion": 1,
+      "messageId": "994445d6-fe91-47a3-a4ed-260f2e51aeb4",
+      "correlationId": null,
+      "type": "GET_REQUEST_RESULT",
+      "senderId": "client-tv6-d12-probe",
+      "sentAt": "2026-11-16T18:40:46.050Z",
+      "payload": {
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    },
+    "purpose": "Read-only correlation probe; no BOOK, SQL write or fake log insertion",
+    "response": {
+      "protocolVersion": 1,
+      "messageId": "af0687cd-223f-4263-a267-c73daad1df7c",
+      "correlationId": "994445d6-fe91-47a3-a4ed-260f2e51aeb4",
+      "type": "ERROR_RESPONSE",
+      "senderId": "node-1",
+      "sentAt": "2026-11-16T18:40:45.858Z",
+      "payload": {
+        "errorCode": "INVALID_REQUEST",
+        "message": "No handler registered for message type: GET_REQUEST_RESULT",
+        "leaderHint": null,
+        "term": null,
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    }
+  },
+  {
+    "nodeId": "node-2",
+    "port": 9102,
+    "request": {
+      "protocolVersion": 1,
+      "messageId": "373010e3-04d2-4cf1-a66a-84a31b87284f",
+      "correlationId": null,
+      "type": "GET_REQUEST_RESULT",
+      "senderId": "client-tv6-d12-probe",
+      "sentAt": "2026-11-16T18:40:46.087Z",
+      "payload": {
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    },
+    "purpose": "Read-only correlation probe; no BOOK, SQL write or fake log insertion",
+    "response": {
+      "protocolVersion": 1,
+      "messageId": "f58d39ad-a99b-4827-9f7c-f16fd5bdd353",
+      "correlationId": "373010e3-04d2-4cf1-a66a-84a31b87284f",
+      "type": "ERROR_RESPONSE",
+      "senderId": "node-2",
+      "sentAt": "2026-11-16T18:40:45.887Z",
+      "payload": {
+        "errorCode": "INVALID_REQUEST",
+        "message": "No handler registered for message type: GET_REQUEST_RESULT",
+        "leaderHint": null,
+        "term": null,
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    }
+  },
+  {
+    "nodeId": "node-3",
+    "port": 9103,
+    "request": {
+      "protocolVersion": 1,
+      "messageId": "58886f0a-c070-4961-bbd6-7c6886ad316a",
+      "correlationId": null,
+      "type": "GET_REQUEST_RESULT",
+      "senderId": "client-tv6-d12-probe",
+      "sentAt": "2026-11-16T18:40:46.115Z",
+      "payload": {
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    },
+    "purpose": "Read-only correlation probe; no BOOK, SQL write or fake log insertion",
+    "response": {
+      "protocolVersion": 1,
+      "messageId": "0b4cb613-2775-46f1-a70d-dd67841cb279",
+      "correlationId": "58886f0a-c070-4961-bbd6-7c6886ad316a",
+      "type": "ERROR_RESPONSE",
+      "senderId": "node-3",
+      "sentAt": "2026-11-16T18:40:45.897Z",
+      "payload": {
+        "errorCode": "INVALID_REQUEST",
+        "message": "No handler registered for message type: GET_REQUEST_RESULT",
+        "leaderHint": null,
+        "term": null,
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    }
+  },
+  {
+    "nodeId": "node-4",
+    "port": 9104,
+    "request": {
+      "protocolVersion": 1,
+      "messageId": "ed3156bc-ce30-45b8-bfa3-156694ed9f98",
+      "correlationId": null,
+      "type": "GET_REQUEST_RESULT",
+      "senderId": "client-tv6-d12-probe",
+      "sentAt": "2026-11-16T18:40:46.125Z",
+      "payload": {
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    },
+    "purpose": "Read-only correlation probe; no BOOK, SQL write or fake log insertion",
+    "response": {
+      "protocolVersion": 1,
+      "messageId": "8ceff1ad-1c17-4821-8ce6-54dcad2a7aad",
+      "correlationId": "ed3156bc-ce30-45b8-bfa3-156694ed9f98",
+      "type": "ERROR_RESPONSE",
+      "senderId": "node-4",
+      "sentAt": "2026-11-16T18:40:45.928Z",
+      "payload": {
+        "errorCode": "INVALID_REQUEST",
+        "message": "No handler registered for message type: GET_REQUEST_RESULT",
+        "leaderHint": null,
+        "term": null,
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    }
+  },
+  {
+    "nodeId": "node-5",
+    "port": 9105,
+    "request": {
+      "protocolVersion": 1,
+      "messageId": "a0103e9d-89c8-4fac-bace-b1d20bb80bb6",
+      "correlationId": null,
+      "type": "GET_REQUEST_RESULT",
+      "senderId": "client-tv6-d12-probe",
+      "sentAt": "2026-11-16T18:40:46.155Z",
+      "payload": {
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    },
+    "purpose": "Read-only correlation probe; no BOOK, SQL write or fake log insertion",
+    "response": {
+      "protocolVersion": 1,
+      "messageId": "3046ad14-09a2-4f73-b666-7efbd9a1ec37",
+      "correlationId": "a0103e9d-89c8-4fac-bace-b1d20bb80bb6",
+      "type": "ERROR_RESPONSE",
+      "senderId": "node-5",
+      "sentAt": "2026-11-16T18:40:45.938Z",
+      "payload": {
+        "errorCode": "INVALID_REQUEST",
+        "message": "No handler registered for message type: GET_REQUEST_RESULT",
+        "leaderHint": null,
+        "term": null,
+        "requestId": "5e2af271-8272-4db4-814b-140dca6b5527"
+      }
+    }
+  }
+]

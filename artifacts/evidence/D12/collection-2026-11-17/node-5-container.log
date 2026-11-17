@@ -1,0 +1,1 @@
+256cb2d0ed489bd143d97d3d0b9ef35eb84a0face592909238e9455fde15b0a0 image=sha256:f378d75f7285debe8c336ac829153d375246375947ee3c7097285228c20c326e state=running ports={"9100/tcp":[{"HostIp":"0.0.0.0","HostPort":"9105"},{"HostIp":"::","HostPort":"9105"}],"9200/tcp":[{"HostIp":"0.0.0.0","HostPort":"9205"},{"HostIp":"::","HostPort":"9205"}]}

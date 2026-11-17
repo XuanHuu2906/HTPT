@@ -1,0 +1,38 @@
+2026-11-16T18:39:44.202344269Z ================================================================================
+2026-11-16T18:39:44.202385328Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-3
+2026-11-16T18:39:44.202387647Z ================================================================================
+2026-11-16T18:39:44.202388817Z   Node ID          : node-3
+2026-11-16T18:39:44.202389794Z   Cluster ID       : railway-demo-5
+2026-11-16T18:39:44.202390747Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9103)
+2026-11-16T18:39:44.202391731Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-3:9200)
+2026-11-16T18:39:44.202392763Z   Raft Peers       : node-1@backend-node-1:9200,node-2@backend-node-2:9200,node-3@backend-node-3:9200,node-4@backend-node-4:9200,node-5@backend-node-5:9200
+2026-11-16T18:39:44.202393838Z   Database Target  : railway@postgres-3:5432/railway_node3
+2026-11-16T18:39:44.202394795Z   Raft Timers      : Heartbeat=50ms, Election=150-300ms
+2026-11-16T18:39:44.202395752Z ================================================================================
+2026-11-16T18:39:44.202396717Z [INFO] Kiem tra ket noi mang toi Database postgres-3:5432...
+2026-11-16T18:39:44.225236391Z Connection to postgres-3 (172.20.0.5) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:39:44.225583952Z   [OK] Ket noi mang thanh cong toi Database postgres-3:5432!
+2026-11-16T18:39:44.225597479Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:39:44.369798002Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:39:46.008928519Z Nov 16, 2026 6:39:45 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:39:46.008960283Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:39:46.212695463Z ================================================================================
+2026-11-16T18:39:46.212737291Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:39:46.212743768Z ================================================================================
+2026-11-16T18:39:46.212903433Z   Node ID          : node-3
+2026-11-16T18:39:46.212924131Z   Cluster ID       : railway-demo-5
+2026-11-16T18:39:46.221392602Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:39:46.221699967Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:39:46.230596740Z   Database Target  : railway@postgres-3:5432/railway_node3
+2026-11-16T18:39:46.230622239Z ================================================================================
+2026-11-16T18:39:46.370294512Z Nov 16, 2026 6:39:46 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:39:46.370330431Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:39:46.392314016Z Nov 16, 2026 6:39:46 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:39:46.392364184Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:39:46.394960828Z Nov 16, 2026 6:39:46 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:39:46.394990061Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:39:46.407570481Z [READY] node-3 client=9100 raft=9200
+2026-11-16T18:39:46.410596057Z Nov 16, 2026 6:39:46 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:39:46.410625510Z INFO: Backend Node [node-3] initialized and ready for traffic.
+2026-11-16T18:40:45.897080613Z Nov 16, 2026 6:40:45 PM vn.nhom6.railway.networking.MessageDispatcher dispatch
+2026-11-16T18:40:45.897117574Z WARNING: No handler registered for message type: GET_REQUEST_RESULT

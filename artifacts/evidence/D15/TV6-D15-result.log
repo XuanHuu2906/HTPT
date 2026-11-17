@@ -1,0 +1,2287 @@
+TV6-D15 | PREPARE AND TRY ACCEPTANCE HARNESS | GATES SEPARATED
+Run date: 2026-11-17 Asia/Saigon. Supplemental execution on D14 baseline, not historical day-D15 evidence.
+Owner: TV6 / Tran Hoang Dat
+Source base revision: f3c90f9fadb839da5d40b9b023c8995d9d0b0b9d plus uncommitted ClusterSmokeTest.java.
+This revision contains D13/D14 and D12 collector evidence. No claim that all D15 integration PRs are merged.
+Only task files added: ClusterSmokeTest.java, this result log, TV6-D15-notes.md. Existing user edit scripts/collect-node-status.ps1 preserved.
+Environment: Windows 11 amd64; Eclipse Adoptium JDK 25.0.4.1 from IDE; Maven 3.9.11 from TEMP; Java reactor release 25.
+Docker test runtime: Docker Server 29.4.3; existing Dockerfile builds/runs Temurin 21; five postgres:17-alpine DB containers.
+Existing isolated compose.election-test.yml; project railway-tv6-d15-262cdc44; client ports 19101..19105, peer 19201..19205.
+Backend image manifest: sha256:de92d778c54d75648300d021e322d73e324d36d0487e3eff4dd9b9c27a9df31f. Raw compose images output also retained.
+RESULT GATE-HARNESS: PASS. 7 discovered, 5 executed, 2 opt-in runtime tests skipped, 0 failures/errors. Exit 0.
+RESULT GATE-SMOKE-D14: PASS. 7 discovered, 6 executed, 1 strict G4-LEADER test skipped, 0 failures/errors. Exit 0.
+RESULT REAL-LEADER-BASELINE: PASS separately. Five correlated real TCP statuses; node-2 LEADER at term 2, three consecutive stable samples.
+RESULT LOG-COLLECTOR: PASS. Five nonempty actual backend Docker logs captured before stopping.
+RESULT STOP: PASS. Own ten-container test project stopped; ps -q empty; no down -v or DB-volume deletion. Dev containers not stopped.
+RESULT G4-LEADER STRICT: NOT_RUN. Flag cluster.g4.leader was not enabled; requires post-D15 candidate.
+RESULT G4 COMMON: NOT_RUN. No claim of booking majority commit, durable apply, concurrency, idempotency, or AC02-AC10 acceptance.
+KNOWN SPEC-03 GAP: baseline currentTerm vs term; missing leaderId/lastLogIndex and incorrect peer keys. Compatibility is explicit only in SMOKE-D14; strict G4 gate rejects legacy payload.
+Raw UTC times on 2026-11-16 correspond to 2026-11-17 in Asia/Saigon.
+
+ACTUAL COMMANDS (from D:\HTPT, JAVA_HOME set to the IDE JDK, Maven executable in TEMP):
+mvn -B -ntp -pl integration-tests -am -Dtest=ClusterSmokeTest -Dsurefire.failIfNoSpecifiedTests=false test => exit 0
+docker build -t railway-backend-node:d13-election -f docker/Dockerfile.backend . => exit 0
+mvn -B -ntp -pl integration-tests -am -Dtest=ClusterSmokeTest -Dsurefire.failIfNoSpecifiedTests=false -Dcluster.smoke=true -Dcluster.evidence=<TEMP>/railway-tv6-d15-checks/docker-runtime.log test => exit 0
+No command with cluster.g4.leader=true was executed.
+SHA256 integration-tests/src/test/java/vn/nhom6/railway/tests/ClusterSmokeTest.java 4D641EB3B70F0EFE6C419DC8CEC7D895236B2D576A480C5E7C2B52DE9530BCA1
+SHA256 docker/compose.election-test.yml B5C56AF30443522C0AAEB5357459A7BB40F2C3DAFA234DF75B90FB88169D32FA
+SHA256 docker/Dockerfile.backend 2F878653F04F45EB06EC93573FB81090907F9EC036B29281E6C57FE7E04B0EDA
+SHA256 shared/src/main/java/vn/nhom6/railway/protocol/dto/FrameCodec.java E5BDC3AFA334C527C85A091064260853878C8711E8389C5FC01EFCCB5EA66A9F
+SHA256 shared/src/main/java/vn/nhom6/railway/protocol/codec/MessageCodec.java 48B8DFA73F8D475B9C083C4B22054A67FC57F28A1D9E79CDD89B969CC67BFFB5
+
+========================= HARNESS MAVEN RAW OUTPUT =========================
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:2 char:330
++ ... | Out-Null; & $maven -B -ntp -pl integration-tests -am '-Dtest=Cluste ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner 
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 68 source files with javac [debug release 25] to target\classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\backend-node\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 62 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.ClusterSmokeTest
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 0.191 s -- in vn.nhom6.railway.tests.ClusterSmokeTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 2
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  2.622 s]
+[INFO] backend-node ....................................... SUCCESS [  8.610 s]
+[INFO] integration-tests .................................. SUCCESS [  1.676 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.082 s
+[INFO] Finished at: 2026-11-17T01:50:21+07:00
+[INFO] ------------------------------------------------------------------------
+
+
+========================= IMAGE BUILD RAW OUTPUT =========================
+docker : #0 building with "desktop-linux" instance using docker driver
+At line:2 char:59
++ ... 15-checks'; docker build -t railway-backend-node:d13-election -f dock ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (#0 building wit...g docker driver:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+#1 [internal] load build definition from Dockerfile.backend
+#1 transferring dockerfile: 3.12kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#2 DONE 1.8s
+
+#3 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#3 DONE 1.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 143B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [stage-1 1/7] FROM 
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474
+#6 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae742042
+9cbc5baf474 0.1s done
+#6 DONE 0.1s
+
+#7 [builder  1/11] FROM docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219
+466211c805f6d5728c3c9c7614661b
+#7 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d
+5728c3c9c7614661b
+#7 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d
+5728c3c9c7614661b 0.1s done
+#7 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 19.46kB 0.0s done
+#5 DONE 0.0s
+
+#8 [builder 10/11] COPY backend-node/src backend-node/src
+#8 CACHED
+
+#9 [stage-1 3/7] RUN apk add --no-cache bash netcat-openbsd
+#9 CACHED
+
+#10 [builder  3/11] COPY pom.xml ./
+#10 CACHED
+
+#11 [builder  8/11] COPY integration-tests/pom.xml integration-tests/
+#11 CACHED
+
+#12 [builder  9/11] COPY shared/src shared/src
+#12 CACHED
+
+#13 [stage-1 6/7] COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
+#13 CACHED
+
+#14 [stage-1 4/7] COPY --from=builder /build/backend-node/target/*.jar /app/backend-node.jar
+#14 CACHED
+
+#15 [stage-1 5/7] COPY --from=builder /build/backend-node/target/lib /app/lib
+#15 CACHED
+
+#16 [builder  6/11] COPY desktop-client/pom.xml desktop-client/
+#16 CACHED
+
+#17 [stage-1 2/7] WORKDIR /app
+#17 CACHED
+
+#18 [builder  2/11] WORKDIR /build
+#18 CACHED
+
+#19 [builder  5/11] COPY backend-node/pom.xml backend-node/
+#19 CACHED
+
+#20 [builder  4/11] COPY shared/pom.xml shared/
+#20 CACHED
+
+#21 [builder  7/11] COPY desktop-monitor/pom.xml desktop-monitor/
+#21 CACHED
+
+#22 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&     
+mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#22 CACHED
+
+#23 [stage-1 7/7] RUN chmod +x /app/entrypoint-backend.sh
+#23 CACHED
+
+#24 exporting to image
+#24 exporting layers done
+#24 exporting manifest sha256:2fd462b21a87558160f5fddc998cc898fa6678f63acedcb2574e8bfe688475ae 0.0s done
+#24 exporting config sha256:fe6a5e4de40be06e7a7619e26cc1054aa5dca3bb929eaa9f487d26206600bfad 0.0s done
+#24 exporting attestation manifest sha256:ff247dbdeef4a47d6ae80fbefc2ebd317ae05856a040ff6726d914a533a5bd15 0.1s done
+#24 exporting manifest list sha256:de92d778c54d75648300d021e322d73e324d36d0487e3eff4dd9b9c27a9df31f 0.0s done
+#24 naming to docker.io/library/railway-backend-node:d13-election done
+#24 unpacking to docker.io/library/railway-backend-node:d13-election
+#24 unpacking to docker.io/library/railway-backend-node:d13-election 0.0s done
+#24 DONE 0.2s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "DB_PASSWORD") (line 50)
+
+
+========================= SMOKE MAVEN RAW OUTPUT =========================
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:2 char:327
++ ... ntime.log'; & $maven -B -ntp -pl integration-tests -am '-Dtest=Cluste ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner 
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\backend-node\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.ClusterSmokeTest
+GATE=SMOKE-D14 PASS; evidence=C:\Users\dattr\AppData\Local\Temp\railway-tv6-d15-checks\docker-runtime.log
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 53.35 s -- in vn.nhom6.railway.tests.ClusterSmokeTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.652 s]
+[INFO] backend-node ....................................... SUCCESS [  0.085 s]
+[INFO] integration-tests .................................. SUCCESS [ 54.225 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  55.082 s
+[INFO] Finished at: 2026-11-17T01:52:13+07:00
+[INFO] ------------------------------------------------------------------------
+
+
+========================= LIVE COMMAND / STATUS / FIVE NODE LOGS / STOP RAW OUTPUT =========================
+BEGIN 2026-11-16T18:51:20.304424500Z project=railway-tv6-d15-262cdc44 strict=false
+GATE=SMOKE-D14; full G4 booking/commit/apply/idempotency acceptance=NOT_RUN
+COMMAND version: docker version --format {{.Server.Version}}
+EXIT 0 version
+29.4.3
+
+COMMAND config: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml config --quiet
+EXIT 0 config
+
+COMMAND start: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml up -d --no-build --wait --wait-timeout 70
+EXIT 0 start
+ Image postgres:17-alpine Pulling 
+ Image postgres:17-alpine Pulling 
+ Image postgres:17-alpine Pulling 
+ Image postgres:17-alpine Pulling 
+ Image postgres:17-alpine Pulling 
+ 85ddf073ee21 Pulling fs layer 0B
+ 80a6d6821c69 Pulling fs layer 0B
+ 757a8b4a37a7 Pulling fs layer 0B
+ 1a3f31804c8b Pulling fs layer 0B
+ 9e2c9b6e2242 Pulling fs layer 0B
+ 896471a54bfa Pulling fs layer 0B
+ a4fd82683a7d Pulling fs layer 0B
+ dff154c98026 Pulling fs layer 0B
+ a010cfcfa1af Pulling fs layer 0B
+ 85ddf073ee21 Pulling fs layer 0B
+ a010cfcfa1af Pulling fs layer 0B
+ a4fd82683a7d Pulling fs layer 0B
+ 9e2c9b6e2242 Pulling fs layer 0B
+ 80a6d6821c69 Pulling fs layer 0B
+ 757a8b4a37a7 Pulling fs layer 0B
+ 896471a54bfa Pulling fs layer 0B
+ 1a3f31804c8b Pulling fs layer 0B
+ dff154c98026 Pulling fs layer 0B
+ 85ddf073ee21 Pulling fs layer 0B
+ dff154c98026 Pulling fs layer 0B
+ 1a3f31804c8b Pulling fs layer 0B
+ a010cfcfa1af Pulling fs layer 0B
+ a4fd82683a7d Pulling fs layer 0B
+ 896471a54bfa Pulling fs layer 0B
+ 80a6d6821c69 Pulling fs layer 0B
+ 757a8b4a37a7 Pulling fs layer 0B
+ 9e2c9b6e2242 Pulling fs layer 0B
+ 85ddf073ee21 Download complete 0B
+ 85ddf073ee21 Download complete 0B
+ 85ddf073ee21 Download complete 0B
+ 757a8b4a37a7 Download complete 0B
+ 1a3f31804c8b Download complete 0B
+ 1a3f31804c8b Download complete 0B
+ 757a8b4a37a7 Download complete 0B
+ 1a3f31804c8b Download complete 0B
+ 757a8b4a37a7 Download complete 0B
+ 85ddf073ee21 Pulling fs layer 0B
+ dff154c98026 Pulling fs layer 0B
+ 896471a54bfa Pulling fs layer 0B
+ a010cfcfa1af Pulling fs layer 0B
+ 9e2c9b6e2242 Pulling fs layer 0B
+ 80a6d6821c69 Pulling fs layer 0B
+ 1a3f31804c8b Pulling fs layer 0B
+ 757a8b4a37a7 Pulling fs layer 0B
+ a4fd82683a7d Pulling fs layer 0B
+ 85ddf073ee21 Download complete 0B
+ 757a8b4a37a7 Download complete 0B
+ 1a3f31804c8b Download complete 0B
+ 896471a54bfa Download complete 0B
+ a4fd82683a7d Download complete 0B
+ 9e2c9b6e2242 Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 9e2c9b6e2242 Download complete 0B
+ 896471a54bfa Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ a4fd82683a7d Download complete 0B
+ 896471a54bfa Download complete 0B
+ 9e2c9b6e2242 Download complete 0B
+ a4fd82683a7d Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 9e2c9b6e2242 Download complete 0B
+ a4fd82683a7d Download complete 0B
+ 896471a54bfa Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ dff154c98026 Download complete 0B
+ dff154c98026 Pull complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ dff154c98026 Download complete 0B
+ dff154c98026 Pull complete 0B
+ dff154c98026 Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ dff154c98026 Download complete 0B
+ 85ddf073ee21 Pulling fs layer 0B
+ 1a3f31804c8b Pulling fs layer 0B
+ 757a8b4a37a7 Pulling fs layer 0B
+ 80a6d6821c69 Pulling fs layer 0B
+ dff154c98026 Pulling fs layer 0B
+ a010cfcfa1af Pulling fs layer 0B
+ 896471a54bfa Pulling fs layer 0B
+ a4fd82683a7d Pulling fs layer 0B
+ 9e2c9b6e2242 Pulling fs layer 0B
+ dff154c98026 Pull complete 0B
+ dff154c98026 Pull complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ dff154c98026 Download complete 0B
+ a4fd82683a7d Download complete 0B
+ 9e2c9b6e2242 Download complete 0B
+ 1a3f31804c8b Download complete 0B
+ 757a8b4a37a7 Download complete 0B
+ 85ddf073ee21 Download complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 896471a54bfa Download complete 0B
+ dff154c98026 Pull complete 0B
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 1.049MB
+ 80a6d6821c69 Downloading 2.097MB
+ a010cfcfa1af Download complete 0B
+ a010cfcfa1af Download complete 0B
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ a010cfcfa1af Download complete 0B
+ a010cfcfa1af Download complete 0B
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ a010cfcfa1af Download complete 0B
+ a4fd82683a7d Extracting 1B
+ a4fd82683a7d Extracting 1B
+ a010cfcfa1af Pull complete 0B
+ a010cfcfa1af Pull complete 0B
+ a4fd82683a7d Pull complete 0B
+ a010cfcfa1af Pull complete 0B
+ a010cfcfa1af Pull complete 0B
+ a010cfcfa1af Pull complete 0B
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ a4fd82683a7d Pull complete 0B
+ 80a6d6821c69 Downloading 2.097MB
+ a4fd82683a7d Pull complete 0B
+ a4fd82683a7d Pull complete 0B
+ a4fd82683a7d Pull complete 0B
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 2.097MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 3.146MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 4.194MB
+ 80a6d6821c69 Downloading 5.243MB
+ 5e28e400aeb3 Downloading 41.69kB
+ 5e28e400aeb3 Downloading 41.69kB
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 5.243MB
+ 5e28e400aeb3 Download complete 0B
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 5.243MB
+ 5e28e400aeb3 Download complete 0B
+ 5e28e400aeb3 Download complete 0B
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 5.243MB
+ 5e28e400aeb3 Download complete 0B
+ 80a6d6821c69 Downloading 5.243MB
+ 80a6d6821c69 Downloading 6.291MB
+ 80a6d6821c69 Downloading 6.291MB
+ 5e28e400aeb3 Download complete 0B
+ 80a6d6821c69 Downloading 6.291MB
+ 80a6d6821c69 Downloading 6.291MB
+ 80a6d6821c69 Downloading 6.291MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ 80a6d6821c69 Downloading 7.34MB
+ c169a652c10b Download complete 0B
+ 80a6d6821c69 Downloading 8.389MB
+ 80a6d6821c69 Downloading 8.389MB
+ c169a652c10b Download complete 0B
+ 80a6d6821c69 Downloading 8.389MB
+ c169a652c10b Download complete 0B
+ c169a652c10b Download complete 0B
+ 80a6d6821c69 Downloading 8.389MB
+ c169a652c10b Download complete 0B
+ 80a6d6821c69 Downloading 8.389MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 9.437MB
+ 80a6d6821c69 Downloading 10.49MB
+ 80a6d6821c69 Downloading 10.49MB
+ 80a6d6821c69 Downloading 10.49MB
+ 80a6d6821c69 Downloading 10.49MB
+ 80a6d6821c69 Downloading 10.49MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 11.53MB
+ 80a6d6821c69 Downloading 12.58MB
+ 80a6d6821c69 Downloading 12.58MB
+ 80a6d6821c69 Downloading 12.58MB
+ 80a6d6821c69 Downloading 12.58MB
+ 80a6d6821c69 Downloading 12.58MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 13.63MB
+ 80a6d6821c69 Downloading 14.68MB
+ 80a6d6821c69 Downloading 14.68MB
+ 80a6d6821c69 Downloading 14.68MB
+ 80a6d6821c69 Downloading 14.68MB
+ 80a6d6821c69 Downloading 14.68MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 15.73MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 16.78MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 17.83MB
+ 80a6d6821c69 Downloading 18.87MB
+ 80a6d6821c69 Downloading 18.87MB
+ 80a6d6821c69 Downloading 18.87MB
+ 80a6d6821c69 Downloading 18.87MB
+ 80a6d6821c69 Downloading 18.87MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 19.92MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 20.97MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 22.02MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 23.07MB
+ 80a6d6821c69 Downloading 24.12MB
+ 80a6d6821c69 Downloading 24.12MB
+ 80a6d6821c69 Downloading 24.12MB
+ 80a6d6821c69 Downloading 24.12MB
+ 80a6d6821c69 Downloading 24.12MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 25.17MB
+ 80a6d6821c69 Downloading 26.21MB
+ 80a6d6821c69 Downloading 26.21MB
+ 80a6d6821c69 Downloading 26.21MB
+ 80a6d6821c69 Downloading 26.21MB
+ 80a6d6821c69 Downloading 26.21MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 27.26MB
+ 80a6d6821c69 Downloading 28.31MB
+ 80a6d6821c69 Downloading 28.31MB
+ 80a6d6821c69 Downloading 28.31MB
+ 80a6d6821c69 Downloading 28.31MB
+ 80a6d6821c69 Downloading 28.31MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 29.36MB
+ 80a6d6821c69 Downloading 30.41MB
+ 80a6d6821c69 Downloading 30.41MB
+ 80a6d6821c69 Downloading 30.41MB
+ 80a6d6821c69 Downloading 30.41MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 31.46MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 32.51MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 33.55MB
+ 80a6d6821c69 Downloading 34.6MB
+ 80a6d6821c69 Downloading 34.6MB
+ 80a6d6821c69 Downloading 34.6MB
+ 80a6d6821c69 Downloading 34.6MB
+ 80a6d6821c69 Downloading 34.6MB
+ 80a6d6821c69 Downloading 35.65MB
+ 80a6d6821c69 Downloading 35.65MB
+ 80a6d6821c69 Downloading 35.65MB
+ 80a6d6821c69 Downloading 35.65MB
+ 80a6d6821c69 Downloading 35.65MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 36.7MB
+ 80a6d6821c69 Downloading 37.75MB
+ 80a6d6821c69 Downloading 37.75MB
+ 80a6d6821c69 Downloading 37.75MB
+ 80a6d6821c69 Downloading 38.08MB
+ 80a6d6821c69 Downloading 38.47MB
+ 80a6d6821c69 Downloading 38.8MB
+ 80a6d6821c69 Downloading 38.8MB
+ 80a6d6821c69 Downloading 38.8MB
+ 80a6d6821c69 Downloading 38.8MB
+ 80a6d6821c69 Downloading 38.8MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 39.85MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 40.89MB
+ 80a6d6821c69 Downloading 41.94MB
+ 80a6d6821c69 Downloading 41.94MB
+ 80a6d6821c69 Downloading 41.94MB
+ 80a6d6821c69 Downloading 41.94MB
+ 80a6d6821c69 Downloading 41.94MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 42.99MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 44.04MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 45.09MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 46.14MB
+ 80a6d6821c69 Downloading 47.19MB
+ 80a6d6821c69 Downloading 47.19MB
+ 80a6d6821c69 Downloading 47.19MB
+ 80a6d6821c69 Downloading 47.19MB
+ 80a6d6821c69 Downloading 47.19MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 48.23MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 49.28MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 50.33MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 51.38MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 52.43MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 53.48MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 54.53MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 55.57MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 56.62MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 57.67MB
+ 80a6d6821c69 Downloading 58.72MB
+ 80a6d6821c69 Downloading 58.72MB
+ 80a6d6821c69 Downloading 58.72MB
+ 80a6d6821c69 Downloading 58.72MB
+ 80a6d6821c69 Downloading 58.72MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 59.77MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 60.82MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 61.87MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 62.91MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 63.96MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 65.01MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 66.06MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 67.11MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 68.16MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 69.21MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 70.25MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 71.3MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 72.35MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 73.4MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 74.45MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 75.5MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 76.55MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 77.59MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.64MB
+ 80a6d6821c69 Downloading 78.99MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 79.69MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 80.74MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 81.79MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 82.84MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 83.89MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 84.93MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 85.98MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 87.03MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 88.08MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 89.13MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 90.18MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 91.23MB
+ 80a6d6821c69 Downloading 92.27MB
+ 80a6d6821c69 Downloading 92.27MB
+ 80a6d6821c69 Downloading 92.27MB
+ 80a6d6821c69 Downloading 92.27MB
+ 80a6d6821c69 Downloading 92.27MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 93.32MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 94.37MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 95.42MB
+ 80a6d6821c69 Downloading 96.47MB
+ 80a6d6821c69 Downloading 96.47MB
+ 80a6d6821c69 Downloading 96.47MB
+ 80a6d6821c69 Downloading 96.47MB
+ 80a6d6821c69 Downloading 96.47MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 97.52MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 98.57MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 99.61MB
+ 80a6d6821c69 Downloading 100.7MB
+ 80a6d6821c69 Downloading 100.7MB
+ 80a6d6821c69 Downloading 100.7MB
+ 80a6d6821c69 Downloading 100.7MB
+ 80a6d6821c69 Downloading 100.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 101.7MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 103.8MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 104.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 105.9MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 107MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 108MB
+ 80a6d6821c69 Downloading 109.1MB
+ 80a6d6821c69 Downloading 109.1MB
+ 80a6d6821c69 Downloading 109.1MB
+ 80a6d6821c69 Downloading 109.1MB
+ 80a6d6821c69 Downloading 109.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 110.1MB
+ 80a6d6821c69 Downloading 111.1MB
+ 80a6d6821c69 Downloading 111.1MB
+ 80a6d6821c69 Downloading 111.1MB
+ 80a6d6821c69 Downloading 111.1MB
+ 80a6d6821c69 Downloading 111.1MB
+ 80a6d6821c69 Downloading 112.2MB
+ 80a6d6821c69 Downloading 112.2MB
+ 80a6d6821c69 Downloading 112.2MB
+ 80a6d6821c69 Downloading 112.2MB
+ 80a6d6821c69 Downloading 112.2MB
+ 80a6d6821c69 Download complete 0B
+ 80a6d6821c69 Download complete 0B
+ 80a6d6821c69 Download complete 0B
+ 80a6d6821c69 Download complete 0B
+ 80a6d6821c69 Download complete 0B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 1B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 2B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 3B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 4B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Extracting 5B
+ 80a6d6821c69 Pull complete 0B
+ 80a6d6821c69 Pull complete 0B
+ 80a6d6821c69 Pull complete 0B
+ 80a6d6821c69 Pull complete 0B
+ 80a6d6821c69 Pull complete 0B
+ 9e2c9b6e2242 Pull complete 0B
+ 9e2c9b6e2242 Pull complete 0B
+ 9e2c9b6e2242 Pull complete 0B
+ 896471a54bfa Extracting 1B
+ 9e2c9b6e2242 Pull complete 0B
+ 9e2c9b6e2242 Pull complete 0B
+ 1a3f31804c8b Pull complete 0B
+ 1a3f31804c8b Pull complete 0B
+ 757a8b4a37a7 Extracting 1B
+ 1a3f31804c8b Pull complete 0B
+ 757a8b4a37a7 Extracting 1B
+ 896471a54bfa Pull complete 0B
+ 1a3f31804c8b Pull complete 0B
+ 1a3f31804c8b Pull complete 0B
+ 896471a54bfa Pull complete 0B
+ 757a8b4a37a7 Pull complete 0B
+ 757a8b4a37a7 Pull complete 0B
+ 896471a54bfa Pull complete 0B
+ 896471a54bfa Pull complete 0B
+ 896471a54bfa Pull complete 0B
+ 85ddf073ee21 Pull complete 0B
+ 85ddf073ee21 Pull complete 0B
+ 85ddf073ee21 Pull complete 0B
+ 757a8b4a37a7 Pull complete 0B
+ 757a8b4a37a7 Pull complete 0B
+ 85ddf073ee21 Pull complete 0B
+ 757a8b4a37a7 Pull complete 0B
+ 85ddf073ee21 Pull complete 0B
+ Image postgres:17-alpine Pulled 
+ Image postgres:17-alpine Pulled 
+ Image postgres:17-alpine Pulled 
+ Image postgres:17-alpine Pulled 
+ Image postgres:17-alpine Pulled 
+ Network railway-tv6-d15-262cdc44_default Creating 
+ Network railway-tv6-d15-262cdc44_default Created 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Created 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Created 
+ Container railway-tv6-d15-262cdc44-node-5-1 Creating 
+ Container railway-tv6-d15-262cdc44-node-2-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Created 
+ Container railway-tv6-d15-262cdc44-node-1-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Created 
+ Container railway-tv6-d15-262cdc44-node-4-1 Creating 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Created 
+ Container railway-tv6-d15-262cdc44-node-3-1 Creating 
+ Container railway-tv6-d15-262cdc44-node-2-1 Created 
+ Container railway-tv6-d15-262cdc44-node-5-1 Created 
+ Container railway-tv6-d15-262cdc44-node-1-1 Created 
+ Container railway-tv6-d15-262cdc44-node-4-1 Created 
+ Container railway-tv6-d15-262cdc44-node-3-1 Created 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-2-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-4-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-1-1 Starting 
+ Container railway-tv6-d15-262cdc44-node-2-1 Started 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-3-1 Starting 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-5-1 Starting 
+ Container railway-tv6-d15-262cdc44-node-4-1 Started 
+ Container railway-tv6-d15-262cdc44-node-1-1 Started 
+ Container railway-tv6-d15-262cdc44-node-3-1 Started 
+ Container railway-tv6-d15-262cdc44-node-5-1 Started 
+ Container railway-tv6-d15-262cdc44-node-2-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Waiting 
+ Container railway-tv6-d15-262cdc44-node-4-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Waiting 
+ Container railway-tv6-d15-262cdc44-node-3-1 Waiting 
+ Container railway-tv6-d15-262cdc44-node-5-1 Waiting 
+ Container railway-tv6-d15-262cdc44-node-1-1 Waiting 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Waiting 
+ Container railway-tv6-d15-262cdc44-node-1-1 Healthy 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-4-1 Healthy 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-3-1 Healthy 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-5-1 Healthy 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Healthy 
+ Container railway-tv6-d15-262cdc44-node-2-1 Healthy 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Healthy 
+
+COMMAND ps-running: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml ps -a
+EXIT 0 ps-running
+NAME                                IMAGE                               COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+railway-tv6-d15-262cdc44-node-1-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-1    10 seconds ago   Up 5 seconds              127.0.0.1:19101->9100/tcp, 127.0.0.1:19201->9200/tcp
+railway-tv6-d15-262cdc44-node-2-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-2    10 seconds ago   Up 5 seconds              127.0.0.1:19102->9100/tcp, 127.0.0.1:19202->9200/tcp
+railway-tv6-d15-262cdc44-node-3-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-3    10 seconds ago   Up 3 seconds              127.0.0.1:19103->9100/tcp, 127.0.0.1:19203->9200/tcp
+railway-tv6-d15-262cdc44-node-4-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-4    10 seconds ago   Up 5 seconds              127.0.0.1:19104->9100/tcp, 127.0.0.1:19204->9200/tcp
+railway-tv6-d15-262cdc44-node-5-1   railway-backend-node:d13-election   "/app/entrypoint-bac…"   node-5    10 seconds ago   Up 3 seconds              127.0.0.1:19105->9100/tcp, 127.0.0.1:19205->9200/tcp
+railway-tv6-d15-262cdc44-pg-1-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-1      11 seconds ago   Up 10 seconds (healthy)   5432/tcp
+railway-tv6-d15-262cdc44-pg-2-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-2      11 seconds ago   Up 10 seconds (healthy)   5432/tcp
+railway-tv6-d15-262cdc44-pg-3-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-3      11 seconds ago   Up 10 seconds (healthy)   5432/tcp
+railway-tv6-d15-262cdc44-pg-4-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-4      11 seconds ago   Up 10 seconds (healthy)   5432/tcp
+railway-tv6-d15-262cdc44-pg-5-1     postgres:17-alpine                  "docker-entrypoint.s…"   pg-5      11 seconds ago   Up 10 seconds (healthy)   5432/tcp
+
+COMMAND images: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml images
+EXIT 0 images
+CONTAINER                           REPOSITORY             TAG                 PLATFORM            IMAGE ID            SIZE                CREATED
+railway-tv6-d15-262cdc44-node-1-1   railway-backend-node   d13-election        linux/amd64         de92d778c54d        80.8MB              14 minutes ago
+railway-tv6-d15-262cdc44-node-2-1   railway-backend-node   d13-election        linux/amd64         de92d778c54d        80.8MB              14 minutes ago
+railway-tv6-d15-262cdc44-node-3-1   railway-backend-node   d13-election        linux/amd64         de92d778c54d        80.8MB              14 minutes ago
+railway-tv6-d15-262cdc44-node-4-1   railway-backend-node   d13-election        linux/amd64         de92d778c54d        80.8MB              14 minutes ago
+railway-tv6-d15-262cdc44-node-5-1   railway-backend-node   d13-election        linux/amd64         de92d778c54d        80.8MB              14 minutes ago
+railway-tv6-d15-262cdc44-pg-1-1     postgres               17-alpine           linux/amd64         a77aa70e6414        117MB               3 days ago
+railway-tv6-d15-262cdc44-pg-2-1     postgres               17-alpine           linux/amd64         a77aa70e6414        117MB               3 days ago
+railway-tv6-d15-262cdc44-pg-3-1     postgres               17-alpine           linux/amd64         a77aa70e6414        117MB               3 days ago
+railway-tv6-d15-262cdc44-pg-4-1     postgres               17-alpine           linux/amd64         a77aa70e6414        117MB               3 days ago
+railway-tv6-d15-262cdc44-pg-5-1     postgres               17-alpine           linux/amd64         a77aa70e6414        117MB               3 days ago
+
+STATUS 2026-11-16T18:52:07.465874200Z [{"nodeId":"node-1","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:06.734Z"},{"nodeId":"node-2","role":"LEADER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:06.798Z"},{"nodeId":"node-3","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-3":false,"node-4":false,"node-5":false,"node-2":false},"observedAt":"2026-11-16T18:52:06.809Z"},{"nodeId":"node-4","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:06.819Z"},{"nodeId":"node-5","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:06.829Z"}]
+STATUS 2026-11-16T18:52:07.742989200Z [{"nodeId":"node-1","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.107Z"},{"nodeId":"node-2","role":"LEADER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.111Z"},{"nodeId":"node-3","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-3":false,"node-4":false,"node-5":false,"node-2":false},"observedAt":"2026-11-16T18:52:07.115Z"},{"nodeId":"node-4","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.120Z"},{"nodeId":"node-5","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.124Z"}]
+STATUS 2026-11-16T18:52:08.023589600Z [{"nodeId":"node-1","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.397Z"},{"nodeId":"node-2","role":"LEADER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.402Z"},{"nodeId":"node-3","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-3":false,"node-4":false,"node-5":false,"node-2":false},"observedAt":"2026-11-16T18:52:07.407Z"},{"nodeId":"node-4","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-4":false,"node-3":false,"node-2":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.412Z"},{"nodeId":"node-5","role":"FOLLOWER","currentTerm":2,"commitIndex":0,"lastApplied":0,"storageHealthy":true,"peerConnectivity":{"node-2":false,"node-3":false,"node-4":false,"node-5":false},"observedAt":"2026-11-16T18:52:07.416Z"}]
+REAL-LEADER PASS node=node-2 term=2 mode=D14-currentTerm-compatibility
+COMMAND collect-node-1: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml logs --no-color --no-log-prefix --timestamps --tail 200 node-1
+EXIT 0 collect-node-1
+2026-11-16T18:52:05.306924862Z ================================================================================
+2026-11-16T18:52:05.306956192Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-1
+2026-11-16T18:52:05.306959339Z ================================================================================
+2026-11-16T18:52:05.306961100Z   Node ID          : node-1
+2026-11-16T18:52:05.306962872Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:05.306964478Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+2026-11-16T18:52:05.306968005Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+2026-11-16T18:52:05.306969719Z   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+2026-11-16T18:52:05.306971426Z   Database Target  : railway_test@pg-1:5432/railway_node1
+2026-11-16T18:52:05.306972959Z   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+2026-11-16T18:52:05.306974541Z ================================================================================
+2026-11-16T18:52:05.306976215Z [INFO] Kiem tra ket noi mang toi Database pg-1:5432...
+2026-11-16T18:52:05.319768351Z Connection to pg-1 (172.21.0.6) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:52:05.319980453Z   [OK] Ket noi mang thanh cong toi Database pg-1:5432!
+2026-11-16T18:52:05.319992033Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:52:05.415376314Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:52:05.972748294Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:05.972782785Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:06.040946150Z ================================================================================
+2026-11-16T18:52:06.040983696Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:52:06.040988197Z ================================================================================
+2026-11-16T18:52:06.040990585Z   Node ID          : node-1
+2026-11-16T18:52:06.041066453Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:06.046298607Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:52:06.046350076Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:52:06.051752756Z   Database Target  : railway_test@pg-1:5432/railway_node1
+2026-11-16T18:52:06.051785006Z ================================================================================
+2026-11-16T18:52:06.113990899Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:06.114024417Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:06.142381037Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.142430585Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.150644033Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.150675622Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.155683672Z [READY] node-1 client=9100 raft=9200
+2026-11-16T18:52:06.156651147Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:52:06.156663972Z INFO: Backend Node [node-1] initialized and ready for traffic.
+
+COMMAND collect-node-2: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml logs --no-color --no-log-prefix --timestamps --tail 200 node-2
+EXIT 0 collect-node-2
+2026-11-16T18:52:03.435792955Z ================================================================================
+2026-11-16T18:52:03.435827291Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-2
+2026-11-16T18:52:03.435829577Z ================================================================================
+2026-11-16T18:52:03.435830721Z   Node ID          : node-2
+2026-11-16T18:52:03.435831830Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:03.435832859Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+2026-11-16T18:52:03.435833836Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+2026-11-16T18:52:03.435834856Z   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+2026-11-16T18:52:03.435835869Z   Database Target  : railway_test@pg-2:5432/railway_node2
+2026-11-16T18:52:03.435836820Z   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+2026-11-16T18:52:03.435837797Z ================================================================================
+2026-11-16T18:52:03.435839739Z [INFO] Kiem tra ket noi mang toi Database pg-2:5432...
+2026-11-16T18:52:03.451763472Z Connection to pg-2 (172.21.0.3) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:52:03.452115387Z   [OK] Ket noi mang thanh cong toi Database pg-2:5432!
+2026-11-16T18:52:03.452126856Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:52:03.537940041Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:52:04.192877604Z Nov 16, 2026 6:52:04 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:04.192914260Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:04.272882700Z ================================================================================
+2026-11-16T18:52:04.272919466Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:52:04.272923531Z ================================================================================
+2026-11-16T18:52:04.272925923Z   Node ID          : node-2
+2026-11-16T18:52:04.272928147Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:04.278261205Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:52:04.278607528Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:52:04.282692604Z   Database Target  : railway_test@pg-2:5432/railway_node2
+2026-11-16T18:52:04.282715441Z ================================================================================
+2026-11-16T18:52:04.345343117Z Nov 16, 2026 6:52:04 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:04.345378612Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:04.380480357Z Nov 16, 2026 6:52:04 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:04.380528723Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:04.424839754Z Nov 16, 2026 6:52:04 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:04.424862622Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:04.428623657Z [READY] node-2 client=9100 raft=9200
+2026-11-16T18:52:04.430264622Z Nov 16, 2026 6:52:04 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:52:04.430320510Z INFO: Backend Node [node-2] initialized and ready for traffic.
+2026-11-16T18:52:06.734435696Z [RAFT] node=node-2 role=LEADER term=2
+
+COMMAND collect-node-3: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml logs --no-color --no-log-prefix --timestamps --tail 200 node-3
+EXIT 0 collect-node-3
+2026-11-16T18:52:06.009253153Z ================================================================================
+2026-11-16T18:52:06.009310870Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-3
+2026-11-16T18:52:06.009316573Z ================================================================================
+2026-11-16T18:52:06.009319018Z   Node ID          : node-3
+2026-11-16T18:52:06.009320994Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:06.009322879Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+2026-11-16T18:52:06.009324936Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+2026-11-16T18:52:06.009327045Z   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+2026-11-16T18:52:06.009329002Z   Database Target  : railway_test@pg-3:5432/railway_node3
+2026-11-16T18:52:06.009330884Z   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+2026-11-16T18:52:06.009332708Z ================================================================================
+2026-11-16T18:52:06.009334634Z [INFO] Kiem tra ket noi mang toi Database pg-3:5432...
+2026-11-16T18:52:06.020841755Z Connection to pg-3 (172.21.0.2) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:52:06.021254934Z   [OK] Ket noi mang thanh cong toi Database pg-3:5432!
+2026-11-16T18:52:06.021270149Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:52:06.089012748Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:52:06.766055294Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:06.766093812Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:06.835072209Z ================================================================================
+2026-11-16T18:52:06.835107545Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:52:06.835112985Z ================================================================================
+2026-11-16T18:52:06.835120309Z   Node ID          : node-3
+2026-11-16T18:52:06.835122624Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:06.839744809Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:52:06.839780188Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:52:06.845250153Z   Database Target  : railway_test@pg-3:5432/railway_node3
+2026-11-16T18:52:06.845276417Z ================================================================================
+2026-11-16T18:52:06.908821260Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:06.908855734Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:06.920541489Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.920576362Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.922644691Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.922665290Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.927259940Z [READY] node-3 client=9100 raft=9200
+2026-11-16T18:52:06.928236594Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:52:06.928248452Z INFO: Backend Node [node-3] initialized and ready for traffic.
+
+COMMAND collect-node-4: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml logs --no-color --no-log-prefix --timestamps --tail 200 node-4
+EXIT 0 collect-node-4
+2026-11-16T18:52:04.368972423Z ================================================================================
+2026-11-16T18:52:04.369019510Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-4
+2026-11-16T18:52:04.369022332Z ================================================================================
+2026-11-16T18:52:04.369024016Z   Node ID          : node-4
+2026-11-16T18:52:04.369025575Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:04.369026898Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+2026-11-16T18:52:04.369028286Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+2026-11-16T18:52:04.369029750Z   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+2026-11-16T18:52:04.369031145Z   Database Target  : railway_test@pg-4:5432/railway_node4
+2026-11-16T18:52:04.369032436Z   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+2026-11-16T18:52:04.369033785Z ================================================================================
+2026-11-16T18:52:04.369330107Z [INFO] Kiem tra ket noi mang toi Database pg-4:5432...
+2026-11-16T18:52:04.414416476Z Connection to pg-4 (172.21.0.4) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:52:04.414866023Z   [OK] Ket noi mang thanh cong toi Database pg-4:5432!
+2026-11-16T18:52:04.414889690Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:52:04.490295073Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:52:05.208600985Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:05.208632879Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:05.309209222Z ================================================================================
+2026-11-16T18:52:05.309234170Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:52:05.309237003Z ================================================================================
+2026-11-16T18:52:05.309538446Z   Node ID          : node-4
+2026-11-16T18:52:05.309817141Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:05.315131115Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:52:05.315168608Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:52:05.322013741Z   Database Target  : railway_test@pg-4:5432/railway_node4
+2026-11-16T18:52:05.322040846Z ================================================================================
+2026-11-16T18:52:05.398076061Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:05.398101871Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:05.421939083Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:05.421980951Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:05.435843510Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:05.435868885Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:05.441328561Z [READY] node-4 client=9100 raft=9200
+2026-11-16T18:52:05.442564439Z Nov 16, 2026 6:52:05 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:52:05.442578030Z INFO: Backend Node [node-4] initialized and ready for traffic.
+
+COMMAND collect-node-5: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml logs --no-color --no-log-prefix --timestamps --tail 200 node-5
+EXIT 0 collect-node-5
+2026-11-16T18:52:06.609056758Z ================================================================================
+2026-11-16T18:52:06.609098731Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE: node-5
+2026-11-16T18:52:06.609103899Z ================================================================================
+2026-11-16T18:52:06.609106149Z   Node ID          : node-5
+2026-11-16T18:52:06.609108151Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:06.609110024Z   Client Bind      : 0.0.0.0:9100 (Advertise: 127.0.0.1:9101)
+2026-11-16T18:52:06.609111950Z   Peer Bind        : 0.0.0.0:9200 (Advertise: backend-node-1:9200)
+2026-11-16T18:52:06.609114080Z   Raft Peers       : node-1@node-1:9200,node-2@node-2:9200,node-3@node-3:9200,node-4@node-4:9200,node-5@node-5:9200
+2026-11-16T18:52:06.609116053Z   Database Target  : railway_test@pg-5:5432/railway_node5
+2026-11-16T18:52:06.609117936Z   Raft Timers      : Heartbeat=150ms, Election=700-1400ms
+2026-11-16T18:52:06.609119835Z ================================================================================
+2026-11-16T18:52:06.609121779Z [INFO] Kiem tra ket noi mang toi Database pg-5:5432...
+2026-11-16T18:52:06.612821621Z Connection to pg-5 (172.21.0.5) 5432 port [tcp/postgresql] succeeded!
+2026-11-16T18:52:06.613196467Z   [OK] Ket noi mang thanh cong toi Database pg-5:5432!
+2026-11-16T18:52:06.613209752Z [INFO] Khoi dong Backend Node runtime...
+2026-11-16T18:52:06.732228683Z [INFO] Thuc thi vn.nhom6.railway.node.NodeMain...
+2026-11-16T18:52:07.286882594Z Nov 16, 2026 6:52:07 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:07.286922006Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:07.346204857Z ================================================================================
+2026-11-16T18:52:07.346229844Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+2026-11-16T18:52:07.346231478Z ================================================================================
+2026-11-16T18:52:07.346236836Z   Node ID          : node-5
+2026-11-16T18:52:07.346238007Z   Cluster ID       : railway-demo-5
+2026-11-16T18:52:07.350880851Z   Client Port      : 9100 (Host: 0.0.0.0)
+2026-11-16T18:52:07.350913195Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+2026-11-16T18:52:07.354896591Z   Database Target  : railway_test@pg-5:5432/railway_node5
+2026-11-16T18:52:07.354959791Z ================================================================================
+2026-11-16T18:52:06.843127346Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.persistence.DbStateLoader load
+2026-11-16T18:52:06.843163527Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+2026-11-16T18:52:06.869166591Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.869211414Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.871592805Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.TcpServer start
+2026-11-16T18:52:06.871613223Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+2026-11-16T18:52:06.877152872Z [READY] node-5 client=9100 raft=9200
+2026-11-16T18:52:06.878283447Z Nov 16, 2026 6:52:06 PM vn.nhom6.railway.networking.NodeMain start
+2026-11-16T18:52:06.878294167Z INFO: Backend Node [node-5] initialized and ready for traffic.
+
+COLLECTOR PASS: five nonempty actual Docker backend logs captured before stop
+COMMAND stop: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml stop --timeout 5
+EXIT 0 stop
+ Container railway-tv6-d15-262cdc44-node-5-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-4-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-3-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-2-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-1-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-4-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-1-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-5-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-3-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Stopping 
+ Container railway-tv6-d15-262cdc44-node-2-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Stopping 
+ Container railway-tv6-d15-262cdc44-pg-5-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-1-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-4-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-3-1 Stopped 
+ Container railway-tv6-d15-262cdc44-pg-2-1 Stopped 
+
+COMMAND ps-after-stop: docker compose -p railway-tv6-d15-262cdc44 -f D:\HTPT\docker\compose.election-test.yml ps -q
+EXIT 0 ps-after-stop
+
+STOP PASS: own project stopped; no down -v, no database volume deletion
+GATE=SMOKE-D14 PASS: start/verifyLeader/log collector/stop all completed
+
