@@ -1,0 +1,344 @@
+================================================================================
+TV4-D17 — PHÁT TÁN commitIndex (leaderCommit propagation) — KẾT QUẢ
+================================================================================
+Ngày chạy            : 2026-11-17
+Owner                : TV4 (replication / durable log + commit)
+Phạm vi              : CHỈ test + bằng chứng. KHÔNG sửa code production.
+Deliverable          : backend-node/src/test/java/vn/nhom6/railway/raft/replication/
+                       CommitPropagationTest.java
+Reference            : docs/specs/04-RAFT.md (current-term rule, commit advance),
+                       docs/specs/03-CONTRACTS.md (AppendEntriesRequest.leaderCommit)
+
+================================================================================
+1. MÔI TRƯỜNG
+================================================================================
+Host                 : Windows (D:\HOCTAP\HTPT), git branch "nguyen"
+Build runtime        : Docker Desktop 29.8.0 (WSL2 backend, linux/amd64)
+Docker network       : railway-dev-network (chỉ dùng để chạy Maven; test D17 không
+                       mở socket/không cần PostgreSQL)
+Image                : maven:3.9-eclipse-temurin-25
+                       maven@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976
+Maven                : Apache Maven 3.9.16
+JDK                  : Eclipse Temurin 25.0.4.1+1 (build 25.0.4.1+1-LTS), release 25
+Test framework       : JUnit 5 (surefire 3.5.2 / junit-platform provider)
+Biến môi trường JDBC : KHÔNG đặt. RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER,
+                       RAILWAY_TEST_DB_PASSWORD đều vắng mặt trong lần chạy này.
+                       => toàn bộ test JDBC/PostgreSQL thật bị SKIP (không phải PASS).
+
+================================================================================
+2. GIT
+================================================================================
+Branch                              : nguyen
+Base sau khi merge origin/main      : c2a26986b7d1a9ff710fd125e9d84ab4f4417d37
+                                      (merge fast-forward từ dc41a29 -> c2a2698;
+                                       origin/main trỏ đúng c2a2698 tại thời điểm chạy)
+SHA commit code (test)              : a6c7137ad00d5fc0b6e7d38fec0e5861a1aa3623
+                                      "test(raft): add CommitPropagationTest for
+                                       leaderCommit propagation [TV4-D17]"
+Commit log (file này)               : "docs(evidence): add TV4-D17 result log"
+                                      (SHA của chính commit này không thể tự nằm trong
+                                       nội dung file; báo ở phản hồi cuối.)
+Đã push                             : KHÔNG
+
+Nội dung commit code (git show --stat a6c7137):
+  .../raft/replication/CommitPropagationTest.java    | 1188 ++++++++++++++++++++
+  1 file changed, 1188 insertions(+)
+=> Chỉ 1 file, không đụng file production hay test cũ.
+
+================================================================================
+3. LỆNH ĐÃ CHẠY (nguyên văn)
+================================================================================
+[3.1] Targeted (chạy trước khi commit, đã báo ở bước trước):
+  mvn -B -ntp -pl backend-node -am -Dtest=CommitPropagationTest
+      "-Dsurefire.failIfNoSpecifiedTests=false" test
+  => Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+
+[3.2] Full suite tại commit code a6c7137 (lần chạy dùng cho log này):
+  docker run --rm -v D:\HOCTAP\HTPT:/src:ro -v htpt-m2:/root/.m2 \
+      maven:3.9-eclipse-temurin-25 \
+      sh -c "cp -a /src /build && cd /build && \
+             rm -rf shared/target backend-node/target desktop-client/target \
+                    desktop-monitor/target integration-tests/target && \
+             git rev-parse HEAD && mvn -B -ntp clean verify"
+  => DOCKER_EXIT=0, BUILD SUCCESS
+
+  GHI CHÚ MÔI TRƯỜNG (trung thực): lần thử ĐẦU dùng bind mount trực tiếp
+  (-v D:\HOCTAP\HTPT:/workspace -w /workspace mvn clean verify) đã FAIL ở
+  maven-clean-plugin:3.2.0: "Failed to delete /workspace/shared/target".
+  Nguyên nhân: container Linux không xoá được thư mục target/ do Windows tạo
+  qua bind mount NTFS. Đó là lỗi môi trường, KHÔNG phải lỗi code/test.
+  Vì vậy build được copy sang /build (filesystem container) rồi mới `clean verify`
+  để đảm bảo build sạch thật. SHA tại thời điểm build được in ở dòng đầu output:
+  a6c7137ad00d5fc0b6e7d38fec0e5861a1aa3623
+
+[3.3] Baseline main (để có số test gốc, chạy riêng trên base c2a2698):
+  docker run --rm -v D:\HOCTAP\HTPT:/src:ro -v htpt-m2:/root/.m2 \
+      maven:3.9-eclipse-temurin-25 \
+      sh -c "cp -a /src /build && cd /build && \
+             git config --global --add safe.directory /build && \
+             git checkout -q c2a26986b7d1a9ff710fd125e9d84ab4f4417d37 && \
+             rm -rf shared/target backend-node/target desktop-client/target \
+                    desktop-monitor/target integration-tests/target && \
+             git rev-parse HEAD && mvn -B -ntp clean verify"
+  => EXIT=0, BUILD SUCCESS, SHA in ra: c2a2698...
+
+================================================================================
+4. OUTPUT MAVEN THÔ
+================================================================================
+[4.1] Class mới (trích nguyên văn từ output full suite tại a6c7137):
+  [INFO] Running vn.nhom6.railway.raft.replication.CommitPropagationTest
+  [INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.050 s -- in vn.nhom6.railway.raft.replication.CommitPropagationTest
+
+[4.2] Tổng kết module backend-node (nguyên văn):
+  [INFO]
+  [INFO] Results:
+  [INFO]
+  [WARNING] Tests run: 943, Failures: 0, Errors: 0, Skipped: 66
+
+[4.3] Tóm tắt reactor (nguyên văn):
+  [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+  [INFO]
+  [INFO] railway-distributed-system ......................... SUCCESS [  0.131 s]
+  [INFO] shared ............................................. SUCCESS [  3.250 s]
+  [INFO] backend-node ....................................... SUCCESS [ 12.815 s]
+  [INFO] desktop-client ..................................... SUCCESS [ 10.546 s]
+  [INFO] desktop-monitor .................................... SUCCESS [  0.131 s]
+  [INFO] integration-tests .................................. SUCCESS [  0.761 s]
+  [INFO] ------------------------------------------------------------------------
+  [INFO] BUILD SUCCESS
+  [INFO] ------------------------------------------------------------------------
+  [INFO] Total time:  27.753 s
+  [INFO] Finished at: 2026-11-17T09:17:16Z
+
+[4.4] Số test từng module (dòng "Results:" của mỗi module):
+  shared             : Tests run:  33, Failures: 0, Errors: 0, Skipped:  0
+  backend-node       : Tests run: 943, Failures: 0, Errors: 0, Skipped: 66
+  desktop-client     : Tests run: 185, Failures: 0, Errors: 0, Skipped:  7
+  desktop-monitor    : (không có test)
+  integration-tests  : Tests run:   8, Failures: 0, Errors: 0, Skipped:  3
+  ----------------------------------------------------------------------------
+  TỔNG               : 1169 tests, 0 failures, 0 errors, 76 skipped
+
+[4.5] Baseline tại base c2a2698 (KHÔNG có CommitPropagationTest):
+  shared             : Tests run:  33, Failures: 0, Errors: 0, Skipped: 0
+  backend-node       : Tests run: 932, Failures: 0, Errors: 0, Skipped: 66
+  desktop-client     : Tests run: 185, Failures: 0, Errors: 0, Skipped:  7
+  integration-tests  : Tests run:   8, Failures: 0, Errors: 0, Skipped:  3
+  TỔNG               : 1158 tests, 0 failures, 0 errors, 76 skipped
+  BUILD SUCCESS, Total time 27.353 s, Finished at 2026-11-17T09:19:27Z
+
+  => 932 + 11 = 943 và 1158 + 11 = 1169: đúng bằng 11 test mới, không có test cũ
+     nào bị mất/đổi trạng thái. Số skipped giữ nguyên 76 ở cả hai lần chạy.
+
+================================================================================
+5. DANH SÁCH TEST BỊ SKIPPED + LÝ DO (76)
+================================================================================
+Không có test nào của CommitPropagationTest bị skip (11/11 chạy thật).
+
+5.1 backend-node — 66 skip, TẤT CẢ vì thiếu cấu hình JDBC/PostgreSQL thật
+    (assumeTrue trên RAILWAY_TEST_JDBC_URL + RAILWAY_TEST_DB_USER +
+    RAILWAY_TEST_DB_PASSWORD; không biến nào được đặt trong lần chạy này):
+      PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests  12/12 skip
+      BookingRequestHandlerTest                                  1/12 skip
+      DeterministicBookingTests                                  3/10 skip
+      SchemaMigrationTest                                        1/2  skip
+      JdbcRaftStorageTest                                       12/12 skip
+      JdbcRequestResultStoreTest                                 4/9  skip
+      JdbcBookingRepositoryTest                                 11/11 skip
+      JdbcCommittedCommandApplierTest                            9/9  skip
+      JdbcBookingTcpIntegrationTest                              2/2  skip
+      AtomicApplyTest                                            3/3  skip
+      ElectionChaosTest (JDBC smoke)                             1/3  skip
+      JdbcRaftStorageIntegrationTest                             7/7  skip
+    => Đây là SKIP/NOT_RUN, KHÔNG phải PASS. Không có bằng chứng nào trong log này
+       chứng minh đường apply/commit trên PostgreSQL thật.
+
+5.2 desktop-client — 7 skip, do cổng/môi trường UI chưa cấu hình:
+      smoke.UiSmokeTest                       1/1   (cờ bật UI smoke + headless)
+      ClusterStatusUiEvidenceTest             1/1   (cờ bằng chứng UI + headless)
+      ClusterConnectionViewModelTest          1/9   (thiếu -Dnode.host/-Dnode.port)
+      SocketBookingClientTest                 1/16  (@EnabledIfEnvironmentVariable NODE_HOST)
+      ClusterNodeSelectorTest                 1/11  (@EnabledIfEnvironmentVariable CLUSTER_PROFILE=dev)
+      LeaderAwareBookingClientTest            1/15  (@EnabledIfEnvironmentVariable NODE_ENDPOINTS)
+      PersistentPendingJournalTest            1/13  (@EnabledIfEnvironmentVariable NODE_HOST)
+
+5.3 integration-tests — 3 skip:
+      ClusterSmokeTest                        2/7   (@EnabledIfSystemProperty cluster.smoke=true,
+                                                     cluster.g4.leader=true)
+      Node1DatabaseIntegrationTest            1/1   (assumeTrue PostgreSQL 127.0.0.1:5433
+                                                     reachable — log ghi connection refused)
+
+================================================================================
+6. 11 TEST CỦA CommitPropagationTest (đều PASS, 0 skip)
+================================================================================
+ 1. leaderCommitReachesAllFourFollowersOnTheNextAppendEntriesRound
+ 2. appendSuccessWithoutQuorumNeverAppliesAnEntry
+ 3. followerDoesNotLearnCommitUntilTheNextSend
+ 4. laggingFollowerCommitsOnlyUpToItsMatchIndexThenCatchesUpWithoutDuplicates
+ 5. divergingUncommittedTailIsNeverCommittedAndNeverDelivered
+ 6. staleDuplicateAndReorderedLeaderCommitNeverLowerCommitOrRedeliver
+ 7. realHeartbeatSchedulerCarriesCommitWithoutNewEntries
+ 8. partitionedFollowersKeepTheirCommitAndAllFiveConvergeAfterHeal
+ 9. allFiveNodesConvergeWithMonotonicCommitAndIdenticalDeliveredEntries
+10. oldTermEntryIsNotCommittedDirectlyAndOnlyTravelsBehindACurrentTermCommit
+11. staleTermFakeLeaderIsRejectedAndCannotRaiseFollowerCommit
+
+Cách dựng (không sleep thật, không socket, không thread thật trong test):
+  - Follower  : PersistentRaftNode THẬT + AppendEntriesHandler THẬT +
+                PersistentElectionState + PersistentLogAppender + FakeRaftStorage
+                (in-memory). Listener gắn qua node.addCommitListener(...) đúng điểm
+                deliverCommitted() của production.
+  - Leader    : RaftState THẬT + ReplicationTracker + RaftReplicationService +
+                AppendRetryCoordinator + CommitAdvancer, nối qua hook
+                onMatchIndexAdvanced.
+  - Kịch bản 4 và 7 dùng LeaderHeartbeatScheduler THẬT (timer không bao giờ fire).
+  - Mạng     : FakeNetwork dạng hàng đợi trong cùng JVM (copy pattern D15);
+                một ScheduledExecutorService thủ công, drain bằng tay.
+
+================================================================================
+7. GHI CHÚ: min(leaderCommit, matchIndex) VS SHEET
+================================================================================
+Sheet D17 mô tả follower đặt commit = min(leaderCommit, lastLogIndex) và gợi ý
+CommitAdvancer dùng min(leaderCommit, lastLogIndex). Code production hiện tại
+CHẶT HƠN, và test khẳng định đúng theo code (không nới lỏng để khớp sheet):
+
+  AppendEntriesHandler.java:223-225
+      long matchIndex = resolution.response().matchIndex();
+      long target = Math.max(state.commitIndex(),
+                             Math.min(request.leaderCommit(), matchIndex));
+
+  CommitAdvancer.java:43-71
+      - chỉ chạy khi role == LEADER
+      - lấy trung vị (quorum-th) của {leader.lastLogIndex, matchIndex của 4 peer}
+      - chỉ commit nếu termAt(candidate) == currentTerm()   (current-term rule)
+      - advanceCommitIndex là monotonic, không giảm
+
+Khác biệt có chủ đích:
+  a) Dùng matchIndex của chính RPC thay vì lastLogIndex => follower không bao giờ
+     commit entry mà nó chưa thực sự có (an toàn hơn).
+  b) Bọc Math.max(commitIndex, ...) => commitIndex không bao giờ giảm, kể cả khi
+     nhận AppendEntries cũ/trùng/đảo thứ tự.
+  c) Leader không dùng min(leaderCommit, lastLogIndex) mà dùng quorum matchIndex
+     + current-term rule (SPEC-04 §5), tức không thể commit entry term cũ chỉ vì
+     đủ số ACK.
+  => Nếu sheet/SPEC-04 cần đúng công thức min(leaderCommit, lastLogIndex) thì đó là
+     thay đổi contract cần owner review; D17 không tự sửa production.
+
+================================================================================
+8. GIỚI HẠN TRUNG THỰC (những gì bằng chứng này KHÔNG chứng minh)
+================================================================================
+- Không chứng minh được gì trên PostgreSQL thật: toàn bộ test JDBC bị skip
+  (mục 5.1). Chưa có bằng chứng "Raft commit -> booking DB apply" end-to-end.
+- Mạng là FakeNetwork in-JVM (hàng đợi + partition/heal giả lập), KHÔNG phải TCP
+  thật, không có độ trễ/mất gói/byte-level framing. Test D15 (TransportToFollower
+  RoundTrip) và TCP integration test riêng mới là bằng chứng transport.
+- Toàn bộ 5 node chạy trong 1 JVM, 1 thread logic; không kiểm tra data race,
+  visibility hay locking dưới đa luồng thật.
+- Election timer bị vô hiệu (executor thủ công không fire), nên KHÔNG kiểm tra
+  bầu cử/bước xuống khi mất leader trong lúc commit đang lan; các kịch bản 6/8/11
+  dùng leader giả lập term cũ để kiểm reject, không phải election thật.
+- Không kiểm tra crash/restart giữa lúc đang lan commit. Lưu ý: AppendEntriesHandler
+  (javadoc dòng 46) nói rõ nó KHÔNG persist commitIndex; hành vi sau restart của
+  commitIndex chưa được D17 kiểm chứng.
+- Không kiểm tra snapshot/log compaction, không kiểm tra dynamic membership.
+- CommitAdvancer trong test được gọi thủ công qua hook onMatchIndexAdvanced, đúng
+  như thiết kế D16, nhưng xem mục 9.1: production CHƯA nối hook này.
+- Test khẳng định hành vi code hiện tại; nếu SPEC-04 chốt công thức khác, test sẽ
+  phải sửa theo SPEC chứ không phải ngược lại.
+
+================================================================================
+9. CHƯA LÀM / BÀN GIAO TV2 & TV5  (kết quả grep THẬT trên code)
+================================================================================
+[9.1] CommitAdvancer.advance() có caller runtime nào không?  ==> KHÔNG CÓ
+  grep 'CommitAdvancer' trong backend-node/src/main:
+    CommitAdvancer.java:28   public final class CommitAdvancer {
+    CommitAdvancer.java:33   public CommitAdvancer(RaftState state, ReplicationTracker tracker) {
+    RaftReplicationService.java:90   (chỉ là javadoc: "may run CommitAdvancer#advance() here;
+                                      this service never computes commit itself")
+  grep 'new CommitAdvancer|\.advance\(\)' toàn repo: 24 kết quả, TẤT CẢ nằm trong
+  test (CommitSafetyTest.java 23 chỗ, CommitPropagationTest.java 2 chỗ).
+  => Không có NodeMain / RaftElectionComponent / RaftReplicationService nào khởi tạo
+     hay gọi CommitAdvancer. Trong runtime thật, commitIndex của Leader KHÔNG được
+     tiến theo SPEC-04 §5. Đây là GAP thuộc TV4, chưa xong ở D17.
+
+[9.2] Leader có tự gọi deliverCommitted() khi tiến commit không?  ==> KHÔNG
+  grep 'deliverCommitted' trong backend-node/src/main: chỉ 3 chỗ, đều trong
+  PersistentRaftNode.java:
+    115:  deliverCommitted();   // trong handleAppendEntries(AppendEntriesRequest)
+    131:  deliverCommitted();   // trong handleAppendEntries(AppendEntriesRequestDto)
+    158:  private void deliverCommitted() {
+  => Chỉ nhánh FOLLOWER giao entry cho CommitListener. Khi Leader tự advanceCommitIndex
+     (nếu có), không có lời gọi deliverCommitted() tương ứng => Leader không apply
+     entry đã commit của chính nó. Cần TV4/TV2 chốt điểm gọi.
+
+[9.3] Đã có cầu nối RaftNode.CommitListener (RaftLogEntry) <-> 
+      CommittedCommandApplier.CommitListener (logIndex, BookingCommand) chưa?
+      ==> CHƯA CÓ
+  grep 'addCommitListener|implements .*CommitListener|commitListener\(\)' toàn repo:
+  36 kết quả; trong src/main chỉ có:
+    RaftNode.java:136            void addCommitListener(CommitListener listener);   (interface)
+    PersistentRaftNode.java:153  @Override public void addCommitListener(CommitListener listener)
+    CommittedCommandApplier.java:17   public interface CommitListener {
+    CommittedCommandApplier.java:42   public CommitListener commitListener() {
+    JdbcCommittedCommandApplier.java:66  public CommittedCommandApplier.CommitListener commitListener() {
+    AppendEntriesHandler.java:46    (chỉ javadoc)
+  Không có class/adapter nào implements RaftNode.CommitListener để gọi
+  CommittedCommandApplier.commitListener(). Mọi chỗ nối thật đều nằm trong TEST
+  (RaftCoreContractTest.FakeBookingAdapter, BookingRaftContractTest.FakeRaftCallback,
+  CommitPropagationTest.RecordingListener...).
+  => Chưa có dây production: Raft commit chưa chạm tới booking apply.
+
+[9.4] Chưa có Leader no-op khi becomeLeader  ==> ĐÚNG, CHƯA CÓ
+  RaftState.java:273-290  becomeLeader(Set): chỉ clearLeaderVolatileState, khởi tạo
+                          nextIndex = lastLogIndex()+1, matchIndex = 0, role = LEADER.
+                          KHÔNG append entry no-op.
+  CandidateElection.java:166  state.becomeLeader(peers);  -> ngay sau đó onLeader.run()
+  RaftElectionComponent.java:83-94  onLeader hook: timerStop(), in log, start heartbeat.
+                          Không append no-op.
+  => Không có no-op entry của term mới, nên current-term rule có thể trì hoãn commit
+     các entry cũ cho tới khi có một entry mới của term hiện tại.
+
+[9.5] Ghi nhận thêm (ngoài 4 mục yêu cầu):
+  RaftElectionComponent.java:70-74 có CommitPropagationHook nhưng thân lambda RỖNG
+  ("tracked here for visibility and potential future use") => hook chết, không nối
+  vào commit path nào.
+
+================================================================================
+10. NGHI VẤN AN TOÀN RAFT (từ góc nhìn D17)
+================================================================================
+S1. [CAO] Không có commit advance ở runtime (9.1). Hệ quả: nếu một booking command
+    được append và đủ 3/5 ACK, commitIndex của Leader vẫn không tiến => Appen-
+    dEntries gửi leaderCommit cũ => follower không bao giờ biết entry đã committed
+    => không apply. Ở chiều ngược lại, nếu ai đó tiến commitIndex mà không qua
+    CommitAdvancer (ví dụ đặt trực tiếp), có thể vi phạm current-term rule và commit
+    entry term cũ. Kết luận: luồng "commit -> apply" hiện KHÔNG hoạt động end-to-end
+    trong runtime, dù test D16/D17 chứng minh từng mảnh đúng.
+S2. [CAO] Không có bridge CommitListener -> CommittedCommandApplier (9.3). Kể cả khi
+    follower biết commit, entry không được apply vào DB.
+S3. [TRUNG BÌNH] Leader không deliver entry đã commit của chính nó (9.2) => trạng
+    thái apply của Leader và follower lệch nhau; nếu Leader sau đó trả CONFIRMED dựa
+    trên commitIndex mà chưa apply local, sẽ vi phạm nguyên tắc "không CONFIRMED nếu
+    chưa apply bền vững".
+S4. [TRUNG BÌNH] Không có no-op term mới (9.4) => sau bầu cử, các entry cũ chỉ được
+    commit gián tiếp khi có command mới. Không sai an toàn, nhưng ảnh hưởng liveness
+    và có thể làm khách hàng thấy UNKNOWN lâu hơn dự kiến.
+S5. [THẤP] commitIndex không được persist (AppendEntriesHandler javadoc) => sau
+    restart, follower phải học lại commit từ leader. Không vi phạm safety nhưng cần
+    kiểm chứng replay/apply idempotent cùng TV2.
+Không phát hiện sai lệch trong phần ĐÃ test: follower commit <= matchIndex của chính
+nó, commitIndex đơn điệu không giảm, listener không nhận entry chưa commit, không
+giao trùng, append success không tự thành committed, leader term cũ bị từ chối.
+
+================================================================================
+11. KẾT LUẬN D17
+================================================================================
+- 11/11 test D17 PASS, không sleep thật, không socket/DB trong test.
+- Full suite tại a6c7137: 1169 tests, 0 failures, 0 errors, 76 skipped, BUILD SUCCESS
+  (DOCKER_EXIT=0). Baseline c2a2698: 1158 tests, đúng chênh lệch +11.
+- Không sửa file production, không sửa test cũ (commit a6c7137 chỉ 1 file).
+- Chưa push.
+- D17 chỉ chứng minh CƠ CHẾ phát tán commit ở mức unit/in-memory. Chuỗi
+  "Leader commit -> propagate -> follower apply -> DB" vẫn hở ở 9.1/9.2/9.3 và phải
+  do TV4 + TV2 nối lại (và TV5 cho heartbeat/commit path) trước khi báo distributed
+  booking PASS.
+================================================================================
