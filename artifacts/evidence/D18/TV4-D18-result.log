@@ -1,0 +1,224 @@
+TV4-D18 — Ordered apply evidence
+Date: 2026-11-17
+Branch: nguyen
+
+Environment
+- OS: Windows 11 (Microsoft Windows 10.0.26200, amd64)
+- JDK: OpenJDK 25.0.2 (Microsoft build, C:\Users\Nguyen\.jdk\jdk-25.0.2)
+- Maven: 3.9.15 (C:\Users\Nguyen\.maven\maven-3.9.15)
+- Repository: D:\HOCTAP\HTPT
+- Base after merge: 8b8416f228e24d9ba1d389b65d925007d5a8aa84
+- Code commit: f93662afd62e3c1ed284e2bfc86deb60b6b8ce71
+- Code fix commit: d2367f0f83cd6cae25ee903012067a409fe6e979
+- Evidence-log commit before this update: 0321296c68e86203ba961cfea4679da6fe5627c3
+- Raw-output commit: 1fd617ae8bf222a8589f59cce3d086b54627893a
+- HEAD when this evidence was collected: 1fd617ae8bf222a8589f59cce3d086b54627893a
+
+Pre-edit repository checks
+Command: git status --short
+Output: (empty; working tree clean)
+
+Command: git rev-parse --short HEAD
+Output:
+1fd617a
+
+Command: git rev-parse --short d2367f0
+Output:
+d2367f0
+
+Command: git diff --stat d2367f0 HEAD -- backend-node
+Output: (empty)
+
+The empty backend-node diff proves the backend code and tests were unchanged from code commit d2367f0 through HEAD 1fd617a. Therefore the raw Maven logs below still correspond to the code at d2367f0.
+
+Verification commands and raw output
+The raw output files were produced on 2026-11-17 at 22:07 (+07:00). They are committed separately and were not edited while finalizing this log.
+
+Targeted command:
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2'; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"; cd D:\HOCTAP\HTPT; & 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp -pl backend-node -am "-Dtest=RaftStateMachineApplierTest,RaftStateMachineApplierJdbcTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Raw output: artifacts/evidence/D18/TV4-D18-targeted-raw.log
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0.051 s -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.233 s -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierTest
+[WARNING] Tests run: 17, Failures: 0, Errors: 0, Skipped: 3
+[INFO] BUILD SUCCESS
+[INFO] Finished at: 2026-11-17T22:07:23+07:00
+
+Full-suite command:
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2'; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"; cd D:\HOCTAP\HTPT; & 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp clean verify
+
+Raw output: artifacts/evidence/D18/TV4-D18-full-raw.log
+[WARNING] Tests run: 960, Failures: 0, Errors: 0, Skipped: 69
+[INFO] BUILD SUCCESS
+[INFO] Finished at: 2026-11-17T22:07:57+07:00
+
+Test inventory
+RaftStateMachineApplierTest (14 run, 0 failures, 0 errors, 0 skipped):
+- appliesCommittedPrefixInOrderAndNeverBeyondCommitIndex
+- commitAdvanceIsAppliedIncrementallyWithoutDuplicates
+- noOpAdvancesPersistentCheckpointWithoutBusinessEvent
+- sameSeatRequestsProduceOneConfirmedAndOneRejectedInLogOrder
+- restartReplayDoesNotSellTwice
+- crashBetweenSinkSuccessAndMarkAppliedDoesNotSellTwice
+- transientStorageFailureRetriesSameIndexAndNeverSkipsLaterEntries
+- appliedHookFailureIsSwallowedAndDoesNotLatchFatalFailure
+- fatalDecodeFailureLatchesAndStopsWithoutThrowing
+- durableIndexHoleIsFatalAndFailsClosed
+- lyingCallbackCannotApplyBeyondCommitIndex
+- fiveNodesApplyTheSameOrderAndLaggingNodesStayPrefixes
+- repeatedAndNestedCallsAreIgnored
+- persistentFollowerAppliesOnlyEntriesAtOrBelowLeaderCommit
+
+RaftStateMachineApplierJdbcTest (3 run, 0 failures, 0 errors, 3 skipped):
+- appliesCommittedPrefixAndNoOpAdvancesOnlyTheDurableCheckpoint
+- replayAfterCrashDoesNotSellTwice
+- sqlFailureMidwayRollsBackAndRetryAppliesTheSameIndexOnce
+Reason for all three skips: RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER, and RAILWAY_TEST_DB_PASSWORD were not set. JDBC behavior is SKIPPED, not PASS. The same three variables were absent when checked while finalizing this log; no JDBC test was run against PostgreSQL.
+
+Sheet criteria and focused evidence
+- "Each Node applies in the same order": fiveNodesApplyTheSameOrderAndLaggingNodesStayPrefixes. This uses five independent in-memory RaftState/applier/repository fixtures in one JVM. It is not five running Node processes, TCP replication, or a majority-commit test.
+- "Crash/replay does not sell twice": restartReplayDoesNotSellTwice and crashBetweenSinkSuccessAndMarkAppliedDoesNotSellTwice. Replay preserves repository checkpoint, tickets, seats, and business event count; the replayed NO_OP reports no business outcome.
+- "NO_OP does not create business event": noOpAdvancesPersistentCheckpointWithoutBusinessEvent.
+- Additional covered behavior: transientStorageFailureRetriesSameIndexAndNeverSkipsLaterEntries; fatalDecodeFailureLatchesAndStopsWithoutThrowing; durableIndexHoleIsFatalAndFailsClosed; lyingCallbackCannotApplyBeyondCommitIndex; repeatedAndNestedCallsAreIgnored; appliedHookFailureIsSwallowedAndDoesNotLatchFatalFailure.
+
+Limitations
+- The in-memory tests use fakes/fixtures. The follower test uses PersistentRaftNode with a simulated leader request in-process; this does not prove communication over real TCP.
+- The five-node test is five independent in-memory states within one JVM, not five real nodes and not evidence of Raft majority commit.
+- PostgreSQL-backed D18 tests were skipped as noted above; no claim of JDBC verification is made.
+- The applier's defensive catch for state.entryAt(index) failure has no direct test. A legal RaftState cannot be created with commitIndex beyond lastLogIndex: advanceCommitIndex rejects it; truncateSuffixFrom refuses to truncate committed entries; restore validates contiguous log entries and lastApplied within the log. RaftState was not modified to manufacture an invalid state.
+
+Production handoff searches
+Commands below were run against the current tree. Empty output is stated explicitly.
+
+Command: git grep -n "CommitAdvancer" -- backend-node/src/main/java
+Output:
+backend-node/src/main/java/vn/nhom6/railway/raft/replication/CommitAdvancer.java:28:public final class CommitAdvancer {
+backend-node/src/main/java/vn/nhom6/railway/raft/replication/CommitAdvancer.java:33:    public CommitAdvancer(RaftState state, ReplicationTracker tracker) {
+backend-node/src/main/java/vn/nhom6/railway/raft/replication/RaftReplicationService.java:90:         * may run {@link CommitAdvancer#advance()} here; this service never computes commit itself.
+Conclusion: no runtime caller of CommitAdvancer.advance() found; the only reference outside its declaration/constructor is the RaftReplicationService Javadoc.
+
+Command: git grep -n "RaftStateMachineApplier" -- backend-node/src/main/java
+Output:
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:59:public final class RaftStateMachineApplier implements RaftNode.CommitListener {
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:123:    public RaftStateMachineApplier(
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:138:    public RaftStateMachineApplier(
+Conclusion: no wiring to PersistentRaftNode or NodeMain found; no Leader-side invocation after commit advancement found.
+
+Command: git grep -n -i "BookingCommand" -- backend-node/src/main/java
+Output:
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:7: * SPEC-05 §2 / SPEC-03 §6.1 — BookingCommand
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:18:public sealed interface BookingCommand permits
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:19:        BookingCommand.BookTicket,
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:20:        BookingCommand.CancelTicket,
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:21:        BookingCommand.NoOp {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:162:    ) implements BookingCommand {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:191:    ) implements BookingCommand {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingCommand.java:212:    record NoOp() implements BookingCommand {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRepository.java:31:    BookingStateMachine.ApplyOutcome applyAtomically(long logIndex, BookingCommand command);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:146:            BookingCommand.requireValidRequestId(requestId);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:147:            BookingCommand.requireValidTripId(tripId);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:148:            BookingCommand.requireValidSeatId(seatId);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:149:            passengerName = BookingCommand.requireValidPassengerName(passengerName);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:157:            BookingCommand.BookTicket command = new BookingCommand.BookTicket(
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:189:    private ApplyResult awaitApply(BookingCommand.BookTicket command)
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:217:            BookingCommand.requireValidTripId(tripId);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:298:                BookingCommand.requireValidTicketId(state.ticketId());
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:369:            if (BookingCommand.UUID_PATTERN.matcher(requestId).matches()) {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java:389:        CompletionStage<ApplyResult> submit(BookingCommand.BookTicket command) throws Exception;
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:56:     * Kết quả của một lần gọi {@link #apply(long, BookingCommand)}.
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:137:        final BookingCommand.Type commandType;
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:141:        StoredResult(BookingCommand.Type commandType,
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:210:    public ApplyOutcome apply(long logIndex, BookingCommand cmd) {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:221:            case BookingCommand.NoOp noOp -> applyNoOp();
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:222:            case BookingCommand.BookTicket book -> applyBook(logIndex, book);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:223:            case BookingCommand.CancelTicket cancel -> applyCancel(logIndex, cancel);
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:251:    private ApplyOutcome applyBook(long logIndex, BookingCommand.BookTicket book) {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:259:            if (stored.commandType == BookingCommand.Type.BOOK_TICKET
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:271:        // seat sẽ không null vì BookingCommand đã validate seatId hợp lệ
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:303:                BookingCommand.Type.BOOK_TICKET, fingerprint, result));
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:312:    private ApplyOutcome applyCancel(long logIndex, BookingCommand.CancelTicket cancel) {
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:319:            if (stored.commandType == BookingCommand.Type.CANCEL_TICKET
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:358:                BookingCommand.Type.CANCEL_TICKET, fingerprint, result));
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:379:                BookingCommand.Type.BOOK_TICKET.name(),
+backend-node/src/main/java/vn/nhom6/railway/booking/BookingStateMachine.java:394:                BookingCommand.Type.CANCEL_TICKET.name(),
+backend-node/src/main/java/vn/nhom6/railway/booking/CommittedCommandApplier.java:18:        Optional<BookingStateMachine.ApplyOutcome> onCommitted(long logIndex, BookingCommand command);
+backend-node/src/main/java/vn/nhom6/railway/booking/CommittedCommandApplier.java:56:            BookingCommand command) {
+backend-node/src/main/java/vn/nhom6/railway/networking/FakeBookingService.java:4:import vn.nhom6.railway.booking.BookingCommand;
+backend-node/src/main/java/vn/nhom6/railway/networking/FakeBookingService.java:54:        BookingCommand.BookTicket command = new BookingCommand.BookTicket(
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:17:import vn.nhom6.railway.booking.BookingCommand;
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:70:            long logIndex, BookingCommand command) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:99:            Connection connection, long logIndex, BookingCommand command) throws SQLException {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:109:        if (command instanceof BookingCommand.NoOp) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:111:        } else if (command instanceof BookingCommand.BookTicket book) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:113:        } else if (command instanceof BookingCommand.CancelTicket cancel) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:150:            Connection connection, long logIndex, BookingCommand command) throws SQLException {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:164:                if (command instanceof BookingCommand.NoOp) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:165:                    matches = BookingCommand.Type.NO_OP.name().equals(commandType);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:166:                } else if (command instanceof BookingCommand.BookTicket book) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:167:                    matches = BookingCommand.Type.BOOK_TICKET.name().equals(commandType)
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:174:                } else if (command instanceof BookingCommand.CancelTicket cancel) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:175:                    matches = BookingCommand.Type.CANCEL_TICKET.name().equals(commandType)
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:205:            Connection connection, long logIndex, BookingCommand.BookTicket book) throws SQLException {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:212:                        existing, BookingCommand.Type.BOOK_TICKET.name(), fingerprint);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:260:                connection, book.requestId(), BookingCommand.Type.BOOK_TICKET.name(),
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:267:            Connection connection, long logIndex, BookingCommand.CancelTicket cancel)
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:274:                        existing, BookingCommand.Type.CANCEL_TICKET.name(), fingerprint);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:325:                connection, cancel.requestId(), BookingCommand.Type.CANCEL_TICKET.name(),
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:369:    private static void insertTicket(Connection connection, BookingCommand.BookTicket book)
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:404:        BookingCommand.requireValidRequestId(requestId);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:445:            if (entry.commandType.equals(BookingCommand.Type.NO_OP.name())) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:452:            if (BookingCommand.Type.BOOK_TICKET.name().equals(entry.commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcBookingRepository.java:458:            } else if (BookingCommand.Type.CANCEL_TICKET.name().equals(entry.commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcCommittedCommandApplier.java:7:import vn.nhom6.railway.booking.BookingCommand;
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcCommittedCommandApplier.java:75:            long logIndex, BookingCommand command) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:12:import vn.nhom6.railway.booking.BookingCommand;
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:58:                if (BookingCommand.Type.BOOK_TICKET.name().equals(commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:62:                } else if (BookingCommand.Type.CANCEL_TICKET.name().equals(commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:88:        BookingCommand.requireValidRequestId(requestId);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:144:        BookingCommand.requireValidRequestId(requestId);
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:148:        if (!BookingCommand.Type.BOOK_TICKET.name().equals(commandType)
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:149:                && !BookingCommand.Type.CANCEL_TICKET.name().equals(commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:161:        if (BookingCommand.Type.BOOK_TICKET.name().equals(commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/persistence/JdbcRequestResultStore.java:212:            if (BookingCommand.Type.BOOK_TICKET.name().equals(commandType)) {
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:6:import vn.nhom6.railway.booking.BookingCommand;
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:54: * production {@code RaftLogEntry -> BookingCommand} codec exists in this repository; ownership of
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:75:        BookingCommand decode(RaftLogEntry entry);
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:182:                BookingCommand command;
+
+Command: git grep -n -i -E "class .*Codec|interface .*Codec|class .*Decoder|interface .*Decoder" -- backend-node/src/main/java
+Output:
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:68:    public interface CommandDecoder {
+Conclusion: BookingCommand is a production domain type, but there is no production codec/decoder implementation converting RaftLogEntry to BookingCommand. The injected CommandDecoder is only an interface.
+
+Command: git grep -n -i "noOp\|NO_OP" -- backend-node/src/main/java/vn/nhom6/railway/raft
+Output:
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:23: *                      {@link #COMMAND_TYPE_CANCEL_TICKET}, {@link #COMMAND_TYPE_NO_OP};
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:37:    public static final String COMMAND_TYPE_NO_OP = "NO_OP";
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:41:            Set.of(COMMAND_TYPE_BOOK_TICKET, COMMAND_TYPE_CANCEL_TICKET, COMMAND_TYPE_NO_OP);
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:71:    /** Convenience factory for a {@code NO_OP} read-barrier entry (SPEC-04 section 7). */
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:72:    public static RaftLogEntry noOp(long index, long term) {
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftLogEntry.java:73:        return new RaftLogEntry(index, term, COMMAND_TYPE_NO_OP, "{}");
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftNode.java:51:     * must not be silently ignored or applied out of order. Report {@code NO_OP} entries as
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftNode.java:52:     * applied too, so the checkpoint does not stop before a {@code NO_OP} (SPEC-04 section 6).
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:28: * <p><strong>NO_OP.</strong> A {@code NO_OP} entry also goes through the sink so the durable
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:32: * {@code NO_OP} must never stall the checkpoint.
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:92:         *                {@code NoOpApplied}/{@code RequestIdConflict} for a non-business entry,
+backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java:153:     * <p>An entry is marked applied only after the sink returned successfully. NO_OP entries are
+
+Command: git ls-tree -r --name-only origin/main | Select-String BookingRaftBridge
+Output: (no matches)
+
+Conclusions / unresolved ownership
+- No call appending a NO_OP during becomeLeader was found. The RaftLogEntry.noOp factory exists, but the search shows no production use on the leader transition path.
+- BookingRaftBridge (TV2-D17) is absent from origin/main.
+- Runtime wiring remains open: identify the owner to connect the applier to PersistentRaftNode and the Leader's post-CommitAdvancer path.
+- Assign production RaftLogEntry-to-BookingCommand decoder ownership to TV2/TV3; do not create a second codec in D18.
+- Identify the runtime caller/owner for CommitAdvancer.advance().
+
+TV2/TV6 handoff
+On replay, CommittedCommandApplier can return the prior BusinessResult to hooks.onApplied even though it does not apply the business operation again. This is a redelivery, not a new business event. The layer delivering a Client response must be idempotent and must not emit a duplicate CONFIRMED as a new event.
+
+Change scope
+- Only this evidence log is updated in this fix.
+- No source, test, or raw Maven log was changed.
+- JDBC remains unverified (SKIPPED). No real TCP, five-process cluster, or quorum commit was tested.
