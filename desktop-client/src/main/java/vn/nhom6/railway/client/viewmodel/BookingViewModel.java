@@ -272,10 +272,7 @@ public class BookingViewModel {
 
         // Kiểm tra nguyên tử chống double-click
         if (!isSubmittingAtomic.compareAndSet(false, true)) {
-            // Đang SUBMITTING: trả về active future hiện tại, không gọi client
-            if (activeFuture != null) {
-                return activeFuture;
-            }
+            // Đang SUBMITTING: từ chối các lệnh gọi tiếp theo, không tạo requestId mới, không gọi client
             CompletableFuture<BookTicketResponseDto> rejected = new CompletableFuture<>();
             rejected.completeExceptionally(new IllegalStateException("Hệ thống đang chờ Node xác nhận yêu cầu trước đó!"));
             return rejected;
@@ -343,13 +340,19 @@ public class BookingViewModel {
                 busy.set(false);
 
                 if (throwable != null) {
-                    handleException(throwable, reqId);
-                    completionFuture.completeExceptionally(throwable);
+                    try {
+                        handleException(throwable, reqId);
+                    } finally {
+                        completionFuture.completeExceptionally(throwable);
+                    }
                     return;
                 }
 
-                handleBookingResult(result, reqId, false);
-                completionFuture.complete(result);
+                try {
+                    handleBookingResult(result, reqId, false);
+                } finally {
+                    completionFuture.complete(result);
+                }
             });
         });
 
@@ -474,10 +477,15 @@ public class BookingViewModel {
 
     private void handleException(Throwable throwable, String reqId) {
         ErrorPresentation presentation = ErrorPresentationMapper.mapThrowable(throwable, mock.get());
-        message.set(presentation.message() + " (requestId: " + reqId + ")");
+        message.set(presentation.message() + (reqId != null ? " (requestId: " + reqId + ")" : ""));
         errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
 
-        if (presentation.kind() == PresentationKind.DISCONNECTED || presentation.kind() == PresentationKind.UNKNOWN) {
+        if (presentation.kind() == PresentationKind.DISCONNECTED) {
+            uiState.set(UiState.DISCONNECTED);
+            String targetSeat = (activeRequest != null) ? activeRequest.getSeatId() : null;
+            updateSeatStatus(targetSeat, SeatViewModel.SeatStatus.UNKNOWN);
+            ensureJournalPending(reqId);
+        } else if (presentation.kind() == PresentationKind.UNKNOWN) {
             uiState.set(UiState.UNKNOWN);
             String targetSeat = (activeRequest != null) ? activeRequest.getSeatId() : null;
             updateSeatStatus(targetSeat, SeatViewModel.SeatStatus.UNKNOWN);
@@ -579,8 +587,10 @@ public class BookingViewModel {
         PersistentPendingJournal j = getJournal();
         if (j != null && reqId != null && !reqId.isBlank()) {
             try {
-                j.markResolved(reqId, outcome);
-            } catch (IOException e) {
+                if (j.get(reqId).isPresent()) {
+                    j.markResolved(reqId, outcome);
+                }
+            } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Lỗi cập nhật journal markResolved cho requestId=" + reqId, e);
             }
         }
