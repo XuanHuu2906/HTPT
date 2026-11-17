@@ -194,6 +194,14 @@ public class LeaderRouter {
         return fallbackNodes;
     }
 
+    public RoleSnapshot getRoleSnapshot() {
+        return roleProvider.getRole();
+    }
+
+    public RoleProvider getRoleProvider() {
+        return roleProvider;
+    }
+
     /**
      * Resolves the authoritative or best-effort leader hint.
      *

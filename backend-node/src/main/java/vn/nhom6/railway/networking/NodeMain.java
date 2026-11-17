@@ -129,7 +129,8 @@ public class NodeMain implements AutoCloseable {
         this.clientRegistry = new HandlerRegistry();
         this.raftRegistry = new HandlerRegistry();
 
-        this.clientDispatcher = new MessageDispatcher(clientRegistry, MessageDispatcher.ChannelType.CLIENT, config.nodeId());
+        LeaderRouter leaderRouter = resolveLeaderRouter(config.nodeId(), election, bookingService, persistentBooking);
+        this.clientDispatcher = new MessageDispatcher(clientRegistry, MessageDispatcher.ChannelType.CLIENT, config.nodeId(), leaderRouter);
         this.raftDispatcher = new MessageDispatcher(raftRegistry, MessageDispatcher.ChannelType.PEER, config.nodeId());
 
         this.clientServer = new TcpServer(config.clientHost(), config.clientPort(), config.maxThreads(), config.soTimeoutMs());
@@ -334,6 +335,58 @@ public class NodeMain implements AutoCloseable {
 
     public HandlerRegistry getRaftRegistry() {
         return raftRegistry;
+    }
+
+    public MessageDispatcher getClientDispatcher() {
+        return clientDispatcher;
+    }
+
+    public MessageDispatcher getRaftDispatcher() {
+        return raftDispatcher;
+    }
+
+    private static LeaderRouter resolveLeaderRouter(
+            String nodeId,
+            RaftElectionComponent election,
+            BookingService bookingService,
+            BookingRequestHandler persistentBooking) {
+        if (election != null) {
+            return new LeaderRouter(nodeId, createRoleProvider(election, bookingService));
+        }
+        if (persistentBooking != null) {
+            // When election is null but persistentBooking is supplied (e.g. commit test harness),
+            // persistentBooking's CommandSubmitter is the authoritative boundary for leadership/commit.
+            return null;
+        }
+        if (!(bookingService instanceof UnavailableBookingService)) {
+            return new LeaderRouter(nodeId, createRoleProvider(null, bookingService));
+        }
+        return null;
+    }
+
+    private static LeaderRouter.RoleProvider createRoleProvider(RaftElectionComponent election, BookingService bookingService) {
+        return () -> {
+            vn.nhom6.railway.raft.core.Role role = vn.nhom6.railway.raft.core.Role.FOLLOWER;
+            long term = 0L;
+            String hint = null;
+
+            if (bookingService != null) {
+                if (bookingService.isLeader()) {
+                    role = vn.nhom6.railway.raft.core.Role.LEADER;
+                }
+                hint = bookingService.getLeaderHint();
+            }
+
+            if (election != null) {
+                try {
+                    var status = election.status();
+                    role = vn.nhom6.railway.raft.core.Role.valueOf(status.role());
+                    term = status.currentTerm();
+                } catch (Exception ignored) {}
+            }
+
+            return new LeaderRouter.RoleSnapshot(role, term, hint);
+        };
     }
 
     public static void main(String[] args) {
