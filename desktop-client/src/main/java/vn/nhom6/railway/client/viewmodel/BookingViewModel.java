@@ -32,7 +32,6 @@ import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -114,7 +113,6 @@ public class BookingViewModel {
 
     // === Cờ nguyên tử và kiểm soát đa luồng ===
     private final AtomicBoolean isSubmittingAtomic = new AtomicBoolean(false);
-    private volatile CompletableFuture<BookTicketResponseDto> activeFuture = null;
     private volatile BookTicketRequestDto activeRequest = null;
     private volatile long currentGeneration = 0;
 
@@ -308,7 +306,6 @@ public class BookingViewModel {
         startTimers(reqId, gen);
 
         CompletableFuture<BookTicketResponseDto> completionFuture = new CompletableFuture<>();
-        this.activeFuture = completionFuture;
 
         // Gọi BookingClient bất đồng bộ (D14 JournalingBookingClient đã ghi journal trước khi gửi)
         bookingClient.book(normalizedRequest).whenComplete((result, throwable) -> {

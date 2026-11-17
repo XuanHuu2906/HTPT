@@ -293,11 +293,11 @@ public class SeatGridController {
             if (newVal == null)
                 return;
             switch (newVal) {
-                case LOADING -> screenStateModel.setState(ScreenState.LOADING, bookingVm.getMessage());
+                case LOADING, SUBMITTING -> screenStateModel.setState(ScreenState.LOADING, bookingVm.getMessage());
                 case ERROR, REJECTED -> screenStateModel.setState(ScreenState.ERROR, bookingVm.getMessage());
                 case DISCONNECTED, UNKNOWN ->
                     screenStateModel.setState(ScreenState.DISCONNECTED, bookingVm.getMessage());
-                case SUCCESS, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
+                case SUCCESS, CONFIRMED, IDLE -> screenStateModel.setState(ScreenState.IDLE, bookingVm.getMessage());
             }
         });
     }

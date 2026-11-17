@@ -219,6 +219,8 @@ class BookingViewModelTest {
 
         // Gọi submit lần 1
         CompletableFuture<BookTicketResponseDto> future1 = viewModel.submit(request);
+        assertNotNull(future1, "future1 trả về không được null");
+        assertFalse(future1.isDone(), "future1 chưa thể hoàn thành khi fake backend chưa phản hồi");
         assertEquals(1, fakeClient.getBookCallCount(), "Client được gọi lần đầu");
 
         // Gọi submit thêm 9 lần (tổng cộng 10 lần)
@@ -237,6 +239,8 @@ class BookingViewModelTest {
         // Hoàn thành future thủ công
         manualFuture.complete(new BookTicketResponseDto("REQ-005", "CONFIRMED", "TCK-005", "SE-001", "G07", null, 105L, true, "node-1", "Đặt vé thành công"));
 
+        assertTrue(future1.isDone(), "future1 phải hoàn thành sau khi backend phản hồi");
+        assertFalse(future1.isCompletedExceptionally(), "future1 hoàn thành thành công, không có exception");
         assertFalse(viewModel.isBusy(), "Sau khi hoàn thành, busy giải phóng");
         assertEquals(BookingViewModel.UiState.CONFIRMED, viewModel.getUiState());
 
