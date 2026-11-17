@@ -9,8 +9,6 @@ import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -258,21 +255,5 @@ public class SocketClusterStatusClient implements ClusterStatusClient {
         }
 
         return resolveDefaultEndpoint().port();
-    }
-
-    private static Properties loadProperties(String relativePath) {
-        File file = new File(relativePath);
-        if (!file.exists() && new File("../" + relativePath).exists()) {
-            file = new File("../" + relativePath);
-        }
-        if (file.exists() && file.isFile()) {
-            Properties properties = new Properties();
-            try (InputStream is = new FileInputStream(file)) {
-                properties.load(is);
-                return properties;
-            } catch (IOException ignored) {
-            }
-        }
-        return null;
     }
 }

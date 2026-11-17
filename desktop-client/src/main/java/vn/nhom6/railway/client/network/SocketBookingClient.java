@@ -10,8 +10,6 @@ import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,7 +19,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -482,21 +479,5 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
         }
 
         return resolveDefaultEndpoint().port();
-    }
-
-    private static Properties loadProperties(String relativePath) {
-        File file = new File(relativePath);
-        if (!file.exists() && new File("../" + relativePath).exists()) {
-            file = new File("../" + relativePath);
-        }
-        if (file.exists() && file.isFile()) {
-            Properties properties = new Properties();
-            try (InputStream is = new FileInputStream(file)) {
-                properties.load(is);
-                return properties;
-            } catch (IOException ignored) {
-            }
-        }
-        return null;
     }
 }
