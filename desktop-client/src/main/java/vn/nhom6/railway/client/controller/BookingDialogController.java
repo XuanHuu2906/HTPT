@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -55,6 +56,9 @@ public class BookingDialogController {
     @FXML
     private Label statusLabel;
 
+    @FXML
+    private ProgressIndicator progressIndicator;
+
     private BookingViewModel bookingViewModel = ClientFactory.getBookingViewModel();
     private List<String> selectedSeats = new ArrayList<>();
     private BookingOutcome outcome = null;
@@ -82,10 +86,17 @@ public class BookingDialogController {
             statusLabel.setText("");
         }
 
+        if (progressIndicator != null) {
+            progressIndicator.setVisible(false);
+            progressIndicator.setManaged(false);
+        }
+
         // Lắng nghe thay đổi trên ô nhập họ tên
         if (passengerNameField != null) {
             passengerNameField.textProperty().addListener((obs, oldVal, newVal) -> handleNameChanged(newVal));
         }
+
+        bindViewModel();
     }
 
     /**
@@ -95,7 +106,57 @@ public class BookingDialogController {
     public void setBookingViewModel(BookingViewModel bookingViewModel) {
         if (bookingViewModel != null) {
             this.bookingViewModel = bookingViewModel;
+            bindViewModel();
         }
+    }
+
+    private void bindViewModel() {
+        if (bookingViewModel == null) {
+            return;
+        }
+
+        bookingViewModel.busyProperty().addListener((obs, oldV, isBusy) -> {
+            if (cancelBtn != null) {
+                cancelBtn.setDisable(isBusy);
+            }
+            if (passengerNameField != null) {
+                passengerNameField.setDisable(isBusy);
+            }
+            if (isBusy && confirmBtn != null) {
+                confirmBtn.setDisable(true);
+            } else if (!isBusy) {
+                String currentName = (passengerNameField != null) ? passengerNameField.getText() : "";
+                handleNameChanged(currentName);
+            }
+        });
+
+        bookingViewModel.uiStateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == BookingViewModel.UiState.SUBMITTING) {
+                if (progressIndicator != null) {
+                    progressIndicator.setVisible(true);
+                    progressIndicator.setManaged(true);
+                }
+                if (statusLabel != null) {
+                    statusLabel.getStyleClass().removeAll(
+                            "booking-status-submitting", "booking-status-confirmed", "booking-status-rejected",
+                            "booking-status-unknown", "status-error", "status-disconnected");
+                    statusLabel.getStyleClass().add("booking-status-submitting");
+                    statusLabel.setText("Đang chờ Node xác nhận... (requestId: " + bookingViewModel.getCurrentRequestId() + ")");
+                }
+            } else {
+                if (progressIndicator != null) {
+                    progressIndicator.setVisible(false);
+                    progressIndicator.setManaged(false);
+                }
+            }
+        });
+
+        bookingViewModel.waitingDurationSecondsProperty().addListener((obs, oldV, newSeconds) -> {
+            if (bookingViewModel.getUiState() == BookingViewModel.UiState.SUBMITTING && statusLabel != null) {
+                statusLabel.setText("Đang chờ Node xác nhận... (" + newSeconds + "s) [requestId: " +
+                        bookingViewModel.getCurrentRequestId() + "]");
+            }
+        });
     }
 
     /**
@@ -201,7 +262,7 @@ public class BookingDialogController {
      */
     @FXML
     public void onConfirm() {
-        if (isSubmitting) {
+        if (isSubmitting || (bookingViewModel != null && bookingViewModel.isBusy())) {
             return;
         }
 
@@ -296,6 +357,9 @@ public class BookingDialogController {
      */
     @FXML
     public void onCancel() {
+        if (bookingViewModel != null && bookingViewModel.isBusy()) {
+            return;
+        }
         this.outcome = null;
         closeDialogStage();
     }

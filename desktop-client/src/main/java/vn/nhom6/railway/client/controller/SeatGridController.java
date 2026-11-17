@@ -377,9 +377,20 @@ public class SeatGridController {
             selectedSeatsLabel.textProperty().bind(selectedSeatsSummaryProperty);
         }
 
-        // 2. Bind disableProperty của nút Tiếp tục (Đặt vé) qua BooleanProperty
+        // 2. Bind disableProperty của nút Tiếp tục (Đặt vé), lưới ghế, nút quay lại qua busyProperty
+        BookingViewModel bvm = ClientFactory.getBookingViewModel();
         if (continueBtn != null) {
-            continueBtn.disableProperty().bind(hasSelectedSeatsProperty.not());
+            if (bvm != null) {
+                continueBtn.disableProperty().bind(hasSelectedSeatsProperty.not().or(bvm.busyProperty()));
+            } else {
+                continueBtn.disableProperty().bind(hasSelectedSeatsProperty.not());
+            }
+        }
+        if (seatGridPane != null && bvm != null) {
+            seatGridPane.disableProperty().bind(bvm.busyProperty());
+        }
+        if (backBtn != null && bvm != null) {
+            backBtn.disableProperty().bind(bvm.busyProperty());
         }
 
         // 3. Bind 4 nhãn Legend trực tiếp vào các reactive IntegerProperties
