@@ -308,7 +308,36 @@ class RaftStateMachineApplierTest {
     }
 
     // -------------------------------------------------------------------------------------------
-    // 7. Fatal failures
+    // 7. Hook failures are swallowed, not fatal
+    // -------------------------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Hook onApplied ném RuntimeException bị nuốt: failed() false, apply tiếp tục")
+    void appliedHookFailureIsSwallowedAndDoesNotLatchFatalFailure() {
+        Fixture node = Fixture.withEntries(
+                book(1, 1, "G01"), book(2, 2, "G02"), book(3, 3, "G03"));
+        node.state.advanceCommitIndex(3);
+
+        var failingHooks = new RaftStateMachineApplier.Hooks() {
+            @Override
+            public void onApplied(RaftLogEntry entry, Optional<BookingStateMachine.ApplyOutcome> outcome) {
+                if (entry.index() == 2L) {
+                    throw new IllegalStateException("fixture: hook observer failed");
+                }
+            }
+        };
+        RaftStateMachineApplier applier = new RaftStateMachineApplier(
+                node.state, new TestCommandCodec(), node.committed.commitListener(), failingHooks);
+
+        assertDoesNotThrow(() -> applier.onCommitted(node.state.entryAt(3)));
+        assertFalse(applier.failed(), "a hook failure must not become fatal");
+        assertEquals(3L, node.state.lastApplied(), "the entry that triggered the hook still counts as applied");
+        assertEquals(List.of(1L, 2L, 3L), node.repository.appliedIndices());
+        assertEquals(3, node.results.size(), "all real business outcomes still emit a result");
+    }
+
+    // -------------------------------------------------------------------------------------------
+    // 8. Fatal failures
     // -------------------------------------------------------------------------------------------
 
     @Test

@@ -76,9 +76,11 @@ public final class RaftStateMachineApplier implements RaftNode.CommitListener {
     }
 
     /**
-     * Observability hooks. Both are optional and default to no-ops. A hook must not throw and must
-     * not call {@link #applyCommitted()} recursively; a throwing hook is swallowed so that a
-     * listener failure cannot break the Raft loop.
+     * Observability hooks. Both are optional and default to no-ops. A hook must not call
+     * {@link #applyCommitted()} recursively; if {@link #onApplied(RaftLogEntry, Optional)} throws,
+     * the exception is swallowed and the entry is still considered applied. This keeps the Raft loop
+     * running and avoids latching a fatal failure for a successful state-machine apply. A hook is
+     * therefore best-effort only.
      */
     public interface Hooks {
 
@@ -212,10 +214,8 @@ public final class RaftStateMachineApplier implements RaftNode.CommitListener {
                 try {
                     hooks.onApplied(entry, outcome);
                 } catch (RuntimeException hookFailure) {
-                    // Applied already happened, but a broken hook must not let the loop continue
-                    // touching state it cannot observe correctly.
-                    fail(entry, hookFailure);
-                    break;
+                    // A hook is best-effort only: the durable state-machine apply already succeeded,
+                    // so a broken observer must not turn a successful apply into a fatal Raft error.
                 }
             }
         } finally {
