@@ -1,0 +1,107 @@
+================================================================================
+NHOM 6 - RAILWAY DISTRIBUTED SYSTEM - TASK TV1-D17 RESULT LOG
+Hoan thien UI giao dich cho commit / UNKNOWN tren Raft that (Fake delay)
+================================================================================
+Timestamp: 2026-11-17T15:47:00+07:00
+OS: Windows 11 (version 10.0, amd64)
+JDK: 21.0.12.1 LTS / Eclipse Adoptium OpenJDK 21.0.13.9
+Maven: Apache Maven 3.10.0
+Git Branch: feature/UI
+
+--------------------------------------------------------------------------------
+BUOC 0: PREFLIGHT REPORT
+--------------------------------------------------------------------------------
+1. SPEC-03 va SPEC-05 Review:
+   - Phan hoi BOOK_TICKET theo SPEC-03 §4.2:
+     + outcome: CONFIRMED (da Raft commit + DB apply), REJECTED (da apply quyet dinh tu choi nghiep vu, reasonCode: SEAT_ALREADY_BOOKED), UNKNOWN (server het thoi han cho ket qua apply).
+     + Loi ha tang / validation truoc append: ERROR_RESPONSE voi errorCode (INVALID_REQUEST, NO_QUORUM, NOT_LEADER, REQUEST_ID_CONFLICT, TIMEOUT_UNKNOWN).
+     + TRANG THAI TRUNG GIAN TREN WIRE: KHONG CO. SPEC-03 §4.2 khong co early ACK hay PENDING gui ve truoc qua wire cho BOOK_TICKET. Node chi gui phan hoi sau khi DB apply thanh cong (SPEC-05 §5: "COMMIT DB truoc khi gui ket qua apply thanh cong cho Raft/Client").
+     + Trang thai PENDING chi ton tai khi tra cuu qua GET_REQUEST_RESULT (§4.4) tai Leader dang cho apply.
+     + Thoi gian cho khuyen nghi: booking.submitTimeoutMs mac dinh 5000ms.
+     + Quy tac retry / tra cuu: Khi nhan UNKNOWN hoac timeout, Client bat buoc giu nguyen requestId va payload de retry hoac goi GET_REQUEST_RESULT, tuyet doi KHONG tao requestId moi cho cung y dinh.
+   
+2. BookingViewModel va Controller hien co:
+   - BookingViewModel:
+     + UiState: IDLE, SUBMITTING, CONFIRMED, REJECTED, ERROR, UNKNOWN, DISCONNECTED (kem LOADING, SUCCESS giu tuong thich D07/D08).
+     + Double-click prevention: AtomicBoolean compare-and-set o tang ViewModel, tra ve exceptional future khi dang SUBMITTING.
+     + Timeout: ScheduledExecutorService tu chuyen sang UNKNOWN sau booking.submitTimeoutMs (mac dinh 5000ms).
+     + Property busyProperty: Expose ReadOnlyBooleanProperty de khoa confirmBtn, seatGrid, va backBtn.
+     + Property currentRequestIdProperty, waitingDurationSecondsProperty de hien thi thoi gian da cho commit.
+   - Controllers dang bind:
+     + BookingDialogController: bind busy vao confirmBtn, cancelBtn, passengerNameField; hien thi bo dem thoi gian cho va ProgressIndicator.
+     + SeatGridController: khoa thao tac khi busy, refresh ban do ghe sau CONFIRMED hoac REJECTED(SEAT_ALREADY_BOOKED).
+
+3. Kiem tra FakeBookingClient va D14 (JournalingBookingClient):
+   - FakeBookingClient: Da tao moi tai `desktop-client/src/test/java/vn/nhom6/railway/client/support/FakeBookingClient.java` (chi nam trong test sources, gan nhan FAKE).
+   - D14 (JournalingBookingClient): Da duoc tiem day du trong ClientFactory.createDefaultBookingClient() va wrapWithJournal() ca o socket mode va mock mode.
+
+4. Baseline Build & Test Result:
+   - Command: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+   - Result: BUILD SUCCESS (Tests run: 185, Failures: 0, Errors: 0, Skipped: 7)
+   - Status: PASS
+
+--------------------------------------------------------------------------------
+BUOC 1: KET QUA KIEM THU CHI TIET (JUnit 5 Test Suite)
+--------------------------------------------------------------------------------
+Command: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+Ket qua tong the:
+- railway-distributed-system: SUCCESS
+- shared: SUCCESS (33 tests run, 0 failures, 0 errors, 0 skipped)
+- desktop-client: SUCCESS (198 tests run, 0 failures, 0 errors, 8 skipped)
+
+Chi tiet 13 kich ban kiem thu trong vn.nhom6.railway.client.BookingViewModelTest:
+[PASS] test1_SubmitImmediateSubmitting: submit -> SUBMITTING ngay lap tuc, busy=true, chua CONFIRMED, ghe chua doi.
+[PASS] test2_FakeReturnsConfirmedAfterDelay: Fake tra CONFIRMED sau delay ao -> CONFIRMED, busy=false, ghe BOOKED, refreshNow() goi dung 1 lan.
+[PASS] test3_RejectedSeatAlreadyBooked: REJECTED(SEAT_ALREADY_BOOKED) -> REJECTED, ghe BOOKED, refresh duoc goi, thong bao tu mapper, khac UNKNOWN.
+[PASS] test4_OtherErrorsNoRefresh: Cac loi khac (INVALID_REQUEST, NO_QUORUM, NOT_LEADER) -> ERROR theo mapper, busy=false, ghe khong doi, KHONG refresh.
+[PASS] test5_DoubleClickSuppression: Double-click: goi submit 2 lan va 10 lan trong luc SUBMITTING -> chi 1 lan goi client, cung 1 requestId.
+[PASS] test6_TimeoutTransitionsToUnknown: Timeout -> UNKNOWN, requestId hien thi, ghe UNKNOWN, busy giai phong, co pending trong journal.
+[PASS] test7_LateArrivingConfirmedResolution: Timeout roi CONFIRMED den muon -> pending RESOLVED, UI chuyen CONFIRMED kem ghi chu den muon, ghe BOOKED.
+[PASS] test8_ExceptionAfterSend_TransitionsToUnknown: Fake nem ngoai le mat ket noi sau khi gui -> UNKNOWN/DISCONNECTED (khong REJECTED), pending con trong journal.
+[PASS] test9_DialogCloseIndependence: Dong/doi man hinh khi dang SUBMITTING -> ViewModel doc lap, van xu ly ket qua khi den.
+[PASS] test10_RetryAndCheckResultPreserveRequestId: Retry tu UNKNOWN va getRequestResult dung cung requestId, khong sinh requestId moi.
+[PASS] test11_UiDispatcherCount: Moi cap nhat property di qua UiDispatcher (kiem bang dispatcher dem lenh).
+[PASS] test12_MockFakeSourceLabelPreserved: Ket qua tu client MOCK/FAKE giu nhan nguon, khong bao gio thanh REAL.
+[SKIPPED] test13_RealRaftClusterSkippedWithoutEnv: Test voi cum Raft that bi bo qua do khong co bien moi truong CLUSTER_PROFILE=real (nghiem thu tai G5).
+
+--------------------------------------------------------------------------------
+BUOC 2: GREP INVARIANT CHECKS
+--------------------------------------------------------------------------------
+1. Kiem tra khong co java.net hoac java.sql trong controller/viewmodel:
+   - Command: Get-ChildItem controller, viewmodel | Select-String 'import\s+(java\.net|java\.sql)'
+   - Result: 0 matches (Chi co chu thich kien truc sach).
+   - Status: PASS
+
+2. Kiem tra khong co HTTP / REST client (Clean LAN/localhost TCP Architecture):
+   - Command: Select-String 'HttpClient|HttpURLConnection|okhttp|retrofit'
+   - Result: 0 matches.
+   - Status: PASS
+
+3. Kiem tra khong dung ma loi tu tao SEAT_SOLD (chi dung ma chuan SPEC-03 SEAT_ALREADY_BOOKED):
+   - Command: Select-String 'SEAT_SOLD'
+   - Result: 0 code usages (Chi xuat hien trong comment luu y quy tac cua SPEC-03).
+   - Status: PASS
+
+4. Kiem tra khong co blocking calls (.get(), .join(), Thread.sleep) tren UI thread trong controller/viewmodel:
+   - Command: Select-String '\.get\(|\.join\(|Thread\.sleep'
+   - Result: Tat ca .get() deu la JavaFX Property getter (busy.get(), uiState.get()) hoac Collection.get(index), KHONG co CompletableFuture.get() hay Thread.sleep trong controller/viewmodel.
+   - Status: PASS
+
+--------------------------------------------------------------------------------
+BUOC 3: BANG CHUNG ANH MAN HINH (artifacts/evidence/D17/)
+--------------------------------------------------------------------------------
+- TV1-D17-submitting.png: Man hinh hop thoai khi dang SUBMITTING, ProgressIndicator quay, requestId hien thi, bo dem thoi gian cho hoat dong, cac nut Xac nhan va Huy bi vo hieu hoa.
+- TV1-D17-unknown-pending.png: Man hinh sau khi timeout UI sang trang thai UNKNOWN, requestId hien thi ro rang, ban ghi da duoc luu vao Pending Journal.
+- TV1-D17-confirmed-refresh.png: Man hinh sau khi nhan CONFIRMED, ve da xac nhan, so do ghe da duoc lam moi tu dong qua SeatsRefreshService.
+
+--------------------------------------------------------------------------------
+KET LUAN TRUNG THUC (DEFINITION OF DONE)
+--------------------------------------------------------------------------------
+- UI SUBMITTING/UNKNOWN voi fake delay: PASS
+- Chống double submit (AtomicBoolean compare-and-set): PASS
+- UI Timeout va luu tru pending journal (D14): PASS
+- Tu dong lam moi ghe sau CONFIRMED/REJECTED(SEAT_ALREADY_BOOKED) (D15): PASS
+- Xu ly ket qua den muon khong de giao dich moi: PASS
+- Raft that (commit + apply): NOT_RUN / SKIPPED (nghiem thu tai G5 theo dung phan cong).
+- Khong tuyen bo Backend PASS.
+================================================================================
