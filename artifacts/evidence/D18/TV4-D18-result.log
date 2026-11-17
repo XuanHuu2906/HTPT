@@ -1,0 +1,30 @@
+﻿Environment
+- OS: Windows 11
+- JDK: 25.0.2 (C:\Users\Nguyen\.jdk\jdk-25.0.2)
+- Maven: 3.9.15 (C:\Users\Nguyen\.maven\maven-3.9.15)
+- Repo: D:\HOCTAP\HTPT
+- Base branch after merge: 8b8416f (Merge remote-tracking branch 'origin/main' into nguyen)
+- Current HEAD: 8b8416f (no code commit created for this task)
+
+Command run
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2'; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"; cd D:\HOCTAP\HTPT; & 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp -pl backend-node -am "-Dtest=RaftStateMachineApplierTest,RaftStateMachineApplierJdbcTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Result
+PASS
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 3
+- RaftStateMachineApplierTest: 13 tests run, 0 fail, 0 errors, 0 skipped
+- RaftStateMachineApplierJdbcTest: 3 tests run, 0 fail, 0 errors, 3 skipped
+  Reason: database env variables RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER and RAILWAY_TEST_DB_PASSWORD were not set in this environment, so the JDBC gate is SKIPPED instead of PASS.
+
+Notes
+- The applier implementation enforces strict ordered apply from lastApplied+1..commitIndex only.
+- NO_OP advances the durable checkpoint without emitting a business result.
+- Fatal decode/index-hole errors latch failed() and stop further applies; transient storage exceptions do not.
+- Production decoder ownership remains open between TV2/TV3; tests use a local fixture decoder as required.
+- No runtime wiring into PersistentRaftNode/NodeMain was added here; that remains an integration task outside this D18 apply-ordering fix.
+
+Checklist
+- Reentrant apply: covered in test suite and no recursion observed.
+- Replay after crash: covered and passes in-memory.
+- Ordered apply over 5-node-same-log scenario: covered in in-memory test fixture.
+- DB-backed replay: present and gated; environment lacked the required JDBC variables.
