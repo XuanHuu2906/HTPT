@@ -17,6 +17,7 @@ import vn.nhom6.railway.raft.core.PersistentRaftNode;
 import vn.nhom6.railway.protocol.dto.AppendEntriesRequestDto;
 import vn.nhom6.railway.raft.core.RaftState;
 import vn.nhom6.railway.raft.core.RaftStorage;
+import vn.nhom6.railway.raft.core.RaftNode.AppendEntriesResponse;
 
 /** Per-node election lifecycle. Core and transport adapters remain owned by their modules. */
 public final class RaftElectionComponent implements AutoCloseable {
@@ -28,6 +29,7 @@ public final class RaftElectionComponent implements AutoCloseable {
     private final RaftNode core;
     private final HigherTermHandler higherTermHandler;
     private LeaderHeartbeatScheduler heartbeat;
+    private HeartbeatStateCoordinator heartbeatCoordinator;
     private boolean heartbeatActive;
     private final ElectionConfig config;
     private final Consumer<Exception> onFailure;
@@ -65,6 +67,12 @@ public final class RaftElectionComponent implements AutoCloseable {
             if (core instanceof PersistentRaftNode durable) durable.observeHigherTerm(term);
             else persistence.observeHigherTerm(term);
         }, this::stopHeartbeat, this::timerStart);
+        // Commit propagation hook for the replication module (TV4-D16)
+        HeartbeatStateCoordinator.CommitPropagationHook commitHook = newCommitIndex -> {
+            // The heartbeat scheduler reads state.commitIndex() directly at send time,
+            // but we track it here for visibility and potential future use.
+        };
+
         election = new CandidateElection(localId, core, state, (peer, request, reply) ->
                 transport.requestVote(peer, request, response -> {
                     if (!closed) loop.execute(() -> {
@@ -75,7 +83,13 @@ public final class RaftElectionComponent implements AutoCloseable {
                 }), higherTermHandler, () -> {
                     timerStop();
                     System.out.println("[RAFT] node=" + localId + " role=LEADER term=" + state.currentTerm());
-                    if (heartbeat != null) { heartbeatActive = true; heartbeat.start(); }
+                    if (heartbeatCoordinator != null) {
+                        heartbeatActive = true;
+                        heartbeatCoordinator.start();
+                    } else if (heartbeat != null) {
+                        heartbeatActive = true;
+                        heartbeat.start();
+                    }
                     onLeader.run();
                 });
         timer = new ElectionTimer(election, loop, config, this::fail);
@@ -112,12 +126,29 @@ public final class RaftElectionComponent implements AutoCloseable {
             if (heartbeat != null) throw new IllegalStateException("heartbeat already configured");
             heartbeat = new LeaderHeartbeatScheduler(localId, state, loop, config, transport,
                     higherTermHandler, this::fail);
+            heartbeatCoordinator = new HeartbeatStateCoordinator(localId, state, heartbeat,
+                    newCommitIndex -> { /* tracked for visibility */ },
+                    higherTermHandler, this::fail);
             return null;
         });
     }
 
+    /**
+     * Called by the replication module (TV4-D16) when commitIndex advances.
+     * Ensures the next heartbeat carries the updated leaderCommit.
+     */
+    public void onCommitIndexAdvanced(long newCommitIndex) {
+        if (heartbeatCoordinator != null) {
+            heartbeatCoordinator.onCommitIndexAdvanced(newCommitIndex);
+        }
+    }
+
     private void stopHeartbeat() {
-        if (heartbeat != null) heartbeat.stop();
+        if (heartbeatCoordinator != null) {
+            heartbeatCoordinator.stop();
+        } else if (heartbeat != null) {
+            heartbeat.stop();
+        }
         if (heartbeatActive) {
             heartbeatActive = false;
             System.out.println("[RAFT] node=" + localId + " heartbeat=STOPPED term=" + state.currentTerm());
@@ -190,7 +221,11 @@ public final class RaftElectionComponent implements AutoCloseable {
         if (failed) return;
         failed = true;
         timer.close();
-        if (heartbeat != null) heartbeat.close();
+        if (heartbeatCoordinator != null) {
+            heartbeatCoordinator.close();
+        } else if (heartbeat != null) {
+            heartbeat.close();
+        }
         onFailure.accept(failure);
     }
 
@@ -216,11 +251,19 @@ public final class RaftElectionComponent implements AutoCloseable {
         try {
             if (Thread.currentThread() == raftThread) {
                 timer.close();
-                if (heartbeat != null) heartbeat.close();
+                if (heartbeatCoordinator != null) {
+                    heartbeatCoordinator.close();
+                } else if (heartbeat != null) {
+                    heartbeat.close();
+                }
             } else {
                 call(() -> {
                     timer.close();
-                    if (heartbeat != null) heartbeat.close();
+                    if (heartbeatCoordinator != null) {
+                        heartbeatCoordinator.close();
+                    } else if (heartbeat != null) {
+                        heartbeat.close();
+                    }
                     return null;
                 });
             }
