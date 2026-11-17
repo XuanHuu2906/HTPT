@@ -307,6 +307,11 @@ public class SeatGridController {
             seatsRefreshService = ClientFactory.getSeatsRefreshService(seats);
         }
         bindRefreshService();
+        BookingViewModel bvm = ClientFactory.getBookingViewModel();
+        if (bvm != null) {
+            bvm.setSeatsList(seats);
+            bvm.setSeatsRefreshService(seatsRefreshService);
+        }
     }
 
     public SeatsRefreshService getSeatsRefreshService() {
