@@ -10,6 +10,8 @@ import vn.nhom6.railway.protocol.dto.MessageType;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -53,28 +55,52 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         ALL
     }
 
+    /**
+     * Default maximum concurrent in-flight requests per dispatcher.
+     */
+    public static final int DEFAULT_MAX_IN_FLIGHT = 1000;
+
+    /**
+     * Context tracking an active in-flight request within MessageDispatcher.
+     */
+    public record InFlightContext(
+            String messageId,
+            String requestId,
+            MessageType type,
+            String senderId,
+            long startTimeNanos
+    ) {}
+
     private final HandlerRegistry registry;
     private final ChannelType channelType;
     private final String nodeId;
+    private final int maxInFlightRequests;
     private volatile LeaderRouter leaderRouter;
 
+    private final ConcurrentMap<String, InFlightContext> activeInFlight = new ConcurrentHashMap<>();
+
     public MessageDispatcher(HandlerRegistry registry) {
-        this(registry, ChannelType.ALL, "node-server", null);
+        this(registry, ChannelType.ALL, "node-server", null, DEFAULT_MAX_IN_FLIGHT);
     }
 
     public MessageDispatcher(HandlerRegistry registry, ChannelType channelType) {
-        this(registry, channelType, "node-server", null);
+        this(registry, channelType, "node-server", null, DEFAULT_MAX_IN_FLIGHT);
     }
 
     public MessageDispatcher(HandlerRegistry registry, ChannelType channelType, String nodeId) {
-        this(registry, channelType, nodeId, null);
+        this(registry, channelType, nodeId, null, DEFAULT_MAX_IN_FLIGHT);
     }
 
     public MessageDispatcher(HandlerRegistry registry, ChannelType channelType, String nodeId, LeaderRouter leaderRouter) {
+        this(registry, channelType, nodeId, leaderRouter, DEFAULT_MAX_IN_FLIGHT);
+    }
+
+    public MessageDispatcher(HandlerRegistry registry, ChannelType channelType, String nodeId, LeaderRouter leaderRouter, int maxInFlightRequests) {
         this.registry = Objects.requireNonNull(registry, "HandlerRegistry must not be null");
         this.channelType = Objects.requireNonNull(channelType, "ChannelType must not be null");
         this.nodeId = (nodeId != null && !nodeId.isBlank()) ? nodeId : "node-server";
         this.leaderRouter = leaderRouter;
+        this.maxInFlightRequests = (maxInFlightRequests > 0) ? maxInFlightRequests : DEFAULT_MAX_IN_FLIGHT;
     }
 
     @Override
@@ -160,54 +186,64 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
         }
 
-        // 9. Enforce Leader Authority / Redirection for write commands per SPEC-02 §4 and SPEC-03 §7 (TV3-D17)
-        if (leaderRouter != null && isLeaderOnlyRequest(type)) {
-            try {
-                LeaderRouter.RoutingOutcome outcome = leaderRouter.route(request);
-                if (outcome != null && outcome.isHandled()) {
-                    MessageEnvelope<?> redirectResponse = outcome.getResponse();
-                    if (redirectResponse != null) {
-                        LOGGER.info(() -> "[" + nodeId + "] Intercepted write request " + type + " for leader redirect; returning "
-                                + redirectResponse.getType() + " (correlationId=" + redirectResponse.getCorrelationId() + ")");
-                        return redirectResponse;
-                    }
-                }
-            } catch (Exception ex) {
-                LOGGER.log(Level.WARNING, "[" + nodeId + "] Leader routing check failed for " + type + ", messageId=" + messageId + ": " + ex.getMessage(), ex);
-                return createErrorResponse(messageId, "INTERNAL_ERROR", "Leader routing failed: " + ex.getMessage(), requestId);
-            }
+        // 8b. Enforce In-Flight Tracking and Limits (SPEC-03 §1, §3.0 & TV3-D18)
+        if (activeInFlight.containsKey(messageId)) {
+            LOGGER.warning(() -> "Duplicate in-flight messageId rejected: " + messageId);
+            return createErrorResponse(messageId, "INVALID_REQUEST", "Duplicate in-flight messageId: " + messageId, requestId);
+        }
+        if (activeInFlight.size() >= maxInFlightRequests) {
+            LOGGER.warning(() -> "Server in-flight request limit reached (" + maxInFlightRequests + "), rejecting messageId: " + messageId);
+            return createErrorResponse(messageId, "INTERNAL_ERROR", "Server in-flight request limit reached (" + maxInFlightRequests + ")", requestId);
         }
 
-        // 10. Lookup handler in registry
-        HandlerRegistry.RequestHandler handler = registry.getHandler(type);
-        if (handler == null) {
-            LOGGER.warning(() -> "No handler registered for message type: " + type);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
-        }
-
-        // 11. Execute handler and catch any exceptions safely
+        activeInFlight.put(messageId, new InFlightContext(messageId, requestId, type, request.getSenderId(), System.nanoTime()));
         try {
-            MessageEnvelope<?> response = handler.handle(request);
-            if (response != null && response.getCorrelationId() == null) {
-                // Ensure correlationId invariant is never violated
-                LOGGER.warning(() -> "Handler response missing correlationId, attaching request messageId=" + messageId);
-                return MessageEnvelope.createResponse(messageId, response.getType(), response.getSenderId(), response.getPayload());
+            // 9. Enforce Leader Authority / Redirection for write commands per SPEC-02 §4 and SPEC-03 §7 (TV3-D17)
+            if (leaderRouter != null && isLeaderOnlyRequest(type)) {
+                try {
+                    LeaderRouter.RoutingOutcome outcome = leaderRouter.route(request);
+                    if (outcome != null && outcome.isHandled()) {
+                        MessageEnvelope<?> redirectResponse = outcome.getResponse();
+                        if (redirectResponse != null) {
+                            LOGGER.info(() -> "[" + nodeId + "] Intercepted write request " + type + " for leader redirect; returning "
+                                    + redirectResponse.getType() + " (correlationId=" + redirectResponse.getCorrelationId() + ")");
+                            return ensureStrictCorrelation(redirectResponse, messageId, requestId);
+                        }
+                    }
+                } catch (Exception ex) {
+                    LOGGER.log(Level.WARNING, "[" + nodeId + "] Leader routing check failed for " + type + ", messageId=" + messageId + ": " + ex.getMessage(), ex);
+                    return createErrorResponse(messageId, "INTERNAL_ERROR", "Leader routing failed: " + ex.getMessage(), requestId);
+                }
             }
-            return response;
-        } catch (IllegalArgumentException ex) {
-            LOGGER.log(Level.WARNING, "Handler validation failed for type " + type + ": " + ex.getMessage(), ex);
-            return createErrorResponse(messageId, "INVALID_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Invalid request parameter", requestId);
-        } catch (BookingRequestHandler.NotLeaderException ex) {
-            LOGGER.log(Level.INFO, "Handler signaled NOT_LEADER for type " + type + ": hint=" + ex.leaderHint());
-            return handleNotLeaderException(messageId, requestId, ex.leaderHint());
-        } catch (Throwable t) {
-            BookingRequestHandler.NotLeaderException notLeaderEx = findNotLeaderException(t);
-            if (notLeaderEx != null) {
-                LOGGER.log(Level.INFO, "Handler cause signaled NOT_LEADER for type " + type + ": hint=" + notLeaderEx.leaderHint());
-                return handleNotLeaderException(messageId, requestId, notLeaderEx.leaderHint());
+
+            // 10. Lookup handler in registry
+            HandlerRegistry.RequestHandler handler = registry.getHandler(type);
+            if (handler == null) {
+                LOGGER.warning(() -> "No handler registered for message type: " + type);
+                return createErrorResponse(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
             }
-            LOGGER.log(Level.SEVERE, "Handler threw unhandled exception for type " + type + ": " + t.getMessage(), t);
-            return createErrorResponse(messageId, "INTERNAL_ERROR", "Internal server error: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()), requestId);
+
+            // 11. Execute handler and catch any exceptions safely
+            try {
+                MessageEnvelope<?> response = handler.handle(request);
+                return ensureStrictCorrelation(response, messageId, requestId);
+            } catch (IllegalArgumentException ex) {
+                LOGGER.log(Level.WARNING, "Handler validation failed for type " + type + ": " + ex.getMessage(), ex);
+                return createErrorResponse(messageId, "INVALID_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Invalid request parameter", requestId);
+            } catch (BookingRequestHandler.NotLeaderException ex) {
+                LOGGER.log(Level.INFO, "Handler signaled NOT_LEADER for type " + type + ": hint=" + ex.leaderHint());
+                return handleNotLeaderException(messageId, requestId, ex.leaderHint());
+            } catch (Throwable t) {
+                BookingRequestHandler.NotLeaderException notLeaderEx = findNotLeaderException(t);
+                if (notLeaderEx != null) {
+                    LOGGER.log(Level.INFO, "Handler cause signaled NOT_LEADER for type " + type + ": hint=" + notLeaderEx.leaderHint());
+                    return handleNotLeaderException(messageId, requestId, notLeaderEx.leaderHint());
+                }
+                LOGGER.log(Level.SEVERE, "Handler threw unhandled exception for type " + type + ": " + t.getMessage(), t);
+                return createErrorResponse(messageId, "INTERNAL_ERROR", "Internal server error: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()), requestId);
+            }
+        } finally {
+            activeInFlight.remove(messageId);
         }
     }
 
@@ -237,6 +273,24 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             current = current.getCause();
         }
         return null;
+    }
+
+    private MessageEnvelope<?> ensureStrictCorrelation(MessageEnvelope<?> response, String expectedCorrelationId, String requestId) {
+        if (response == null) {
+            return null;
+        }
+        if (expectedCorrelationId.equals(response.getCorrelationId())) {
+            return response;
+        }
+        LOGGER.warning(() -> "CorrelationId mismatch or missing in response! Expected: "
+                + expectedCorrelationId + ", actual: " + response.getCorrelationId()
+                + ". Recreating envelope to preserve transport correlation invariant.");
+        return MessageEnvelope.createResponse(
+                expectedCorrelationId,
+                response.getType(),
+                response.getSenderId(),
+                response.getPayload()
+        );
     }
 
     private MessageEnvelope<ErrorResponseDto> createErrorResponse(String requestMessageId, String errorCode, String message, String requestId) {
@@ -282,5 +336,21 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public boolean isLeaderOnlyRequest(MessageType type) {
         return type != null && LEADER_ONLY_MESSAGE_TYPES.contains(type);
+    }
+
+    public int getActiveInFlightCount() {
+        return activeInFlight.size();
+    }
+
+    public boolean isInFlight(String messageId) {
+        return messageId != null && activeInFlight.containsKey(messageId);
+    }
+
+    public InFlightContext getInFlightContext(String messageId) {
+        return messageId != null ? activeInFlight.get(messageId) : null;
+    }
+
+    public int getMaxInFlightRequests() {
+        return maxInFlightRequests;
     }
 }
