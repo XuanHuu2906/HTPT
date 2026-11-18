@@ -1,0 +1,174 @@
+================================================================================
+NHOM 6 - RAILWAY DISTRIBUTED SYSTEM - TASK TV1-D18 RESULT LOG
+Chuan bi kich ban 6 JavaFX Client cung ghe voi Mock/fixture (FAKE SERVER)
+================================================================================
+Timestamp (Preflight): 2026-11-18T12:07:00+07:00
+OS: Windows 11 (version 10.0, amd64)
+JDK: Java 21.0.12.1 LTS / Eclipse Adoptium OpenJDK 21.0.13.9
+Maven: Apache Maven 3.10.0
+PowerShell: Windows PowerShell 5.1.26100.9818
+Screen Resolution: 1536 x 864 (Du khong gian xep 6 cua so luoi 3x2: 512 x 432/cua so)
+Git Branch: feature/UI
+
+--------------------------------------------------------------------------------
+BUOC 0: PREFLIGHT REPORT (TRUOC KHI CODE)
+--------------------------------------------------------------------------------
+1. Doi chieu SPEC-03 (§4.2, §4.4, §7) va SPEC-05 (§1, §3) ve BOOK_TICKET tranh chap:
+   - Nhieu requestId khac nhau dat cung mot ghe (vi du G02):
+     + Chi duy nhat 1 lenh den/commit truoc thanh cong: outcome=CONFIRMED, ticketId non-null, reasonCode=null, appliedLogIndex >= 1.
+     + Toi da 1 ve ACTIVE cho cung (tripId, seatId).
+     + Tat ca cac requestId khac cung ghe bi tu choi tat dinh: outcome=REJECTED, ticketId=null, reasonCode=SEAT_ALREADY_BOOKED, appliedLogIndex >= 1.
+   - Idempotency theo requestId:
+     + Cung requestId + cung payload (business intent): tra dung ket qua da luu (appliedLogIndex goc), KHONG tao ve thu hai.
+     + Cung requestId + khac payload: ERROR_RESPONSE voi errorCode=REQUEST_ID_CONFLICT, khong ghi de ket qua goc.
+   - GET_REQUEST_RESULT (§4.4):
+     + Request: {"requestId": "<uuid>"}
+     + Response state: APPLIED_SUCCESS | APPLIED_REJECTED | PENDING | UNKNOWN.
+     + GHI NHAN TRUNG THUC: Module `shared` (do TV3 so huu) hien CHUA co DTO `GetRequestResultRequestDto` / `GetRequestResultResponseDto` (da kiem tra `shared/src/main/java/.../dto`). Do do `SocketBookingClient.getRequestResult()` trong `src/main` van giu nguyen trang thai `BLOCKED: thieu DTO GET_REQUEST_RESULT tu TV3` (bao ve D09/D10 tests, khong sua `shared`). Trong test harness D18 (test sources), kiem chung ca retry cung requestId qua `SocketBookingClient` that va tra cuu `GET_REQUEST_RESULT` dung JSON wire SPEC-03 §4.4 voi `FakeNodeServer`.
+
+2. Kiem tra thanh phan D09-D17 va Baseline Test:
+   - D09: SocketBookingClient.java -> CO
+   - D10: smoke/FakeNodeServer.java + SingleNodeSmokeTest.java -> CO
+   - D12: LeaderAwareBookingClient.java + ClusterEndpoints.java -> CO
+   - D13: ErrorPresentationMapper.java -> CO
+   - D14: PersistentPendingJournal.java + JournalingBookingClient.java -> CO
+   - D15: SeatsRefreshService.java + BookingClientReadAdapter.java -> CO
+   - D16: ClientConfig.java + ClusterNodeSelector.java -> CO
+   - D17: BookingViewModel.java (SUBMITTING/UNKNOWN/AtomicBoolean/timeout) -> CO
+   - Command: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+   - Result: BUILD SUCCESS (shared: 33 passed, 0 failed; desktop-client: 198 passed, 0 failed, 8 skipped)
+   - Status: PASS (KHONG BLOCKED)
+
+3. Kiem tra FakeNodeServer (D10) tai test sources:
+   - Da co: accept loop da luong (thread per client), `synchronized handleBookTicket`, luat ghe BOOKED -> REJECTED(SEAT_ALREADY_BOOKED), idempotency cung requestId+payload, REQUEST_ID_CONFLICT khi khac payload, dem `activeTicketsPerSeat`, xu ly `GET_REQUEST_RESULT`, `GET_SEATS`, `NODE_STATUS`.
+   - Can bo sung (CHI trong test sources):
+     + Constructor cho phep chon cong cau hinh (mac dinh 0 = ngau nhien).
+     + Do tre ngau nhien theo seed (`Random(seed)`) truoc khi vao lock de tai lap thu tu den khac nhau.
+     + Co che "lam roi phan hoi" (drop response) cho 1 client chi dinh sau khi da xu ly va luu ket qua trong `storedBookings`, de tao UNKNOWN ma van cho phep retry / GET_REQUEST_RESULT tra dung ket qua da luu.
+     + Ghi audit log phia fake server: thu tu den, requestId, senderId, nodeId gia, ket qua, so ve ACTIVE (KHONG ghi passengerName).
+
+4. Cach khoi chay JavaFX on dinh cho 6 tien trinh tren Windows (D01/D16):
+   - Module `desktop-client` KHONG co `module-info.java`; `desktop-client/pom.xml` dung `javafx-maven-plugin` voi `mainClass = vn.nhom6.railway.client.App`.
+   - De mo 6 cua so JavaFX doc lap nhanh va on dinh bang `java -cp` tren Windows: tao launcher class `SixClientAutopilot` (KHONG extends Application, goi `Application.launch(...)` ben trong) trong test sources va lay classpath day du bang `mvn dependency:build-classpath` (khong sua `pom.xml`).
+
+5. Moi truong Windows & Man hinh:
+   - Co man hinh thuc (1536 x 864), PowerShell 5.1, ho tro `System.Windows.Forms` va `System.Drawing` de xep cua so 3x2 va chup man hinh `TV1-D18-ui.png`.
+
+================================================================================
+
+--------------------------------------------------------------------------------
+KET QUA CHAY SCRIPT scripts/run-6-clients.ps1 (2026-11-18T12:24:18+07:00)
+Mode: fake (FAKE SERVER (khong phai Node that, khong phai Raft)) | Clients: 6 | Seat: G02 | Seed: 42 | DropResponseFor: NONE
+--------------------------------------------------------------------------------
+ClientId  | RequestId                            | SentAt (UTC)             | FinalState | Reason/ErrorCode     | Elapsed  | Seat G02  | Pending
+---------------------------------------------------------------------------------------------------------------------------------------
+client-1  | f943bc98-ef16-4dcc-8a45-d2f4c55f500e | 2026-11-18T05:24:12.840Z | REJECTED   | SEAT_ALREADY_BOOKED  | 756ms    | BOOKED    | 0
+client-2  | 1dca4766-e8ab-49d3-b554-1279d9efff55 | 2026-11-18T05:24:12.835Z | REJECTED   | SEAT_ALREADY_BOOKED  | 773ms    | BOOKED    | 0
+client-3  | 34f3aaba-5662-475c-8ed8-31e79e523237 | 2026-11-18T05:24:12.832Z | REJECTED   | SEAT_ALREADY_BOOKED  | 865ms    | BOOKED    | 0
+client-4  | 8f4aaf61-d3d4-4e3a-a197-1183b3a9c093 | 2026-11-18T05:24:12.840Z | CONFIRMED  | -                    | 618ms    | BOOKED    | 0
+client-5  | 5c5bb7aa-95b7-4024-93b6-2ab38fbdb2dc | 2026-11-18T05:24:12.841Z | REJECTED   | SEAT_ALREADY_BOOKED  | 715ms    | BOOKED    | 0
+client-6  | a29a9d7c-6b03-421d-8648-475b9e1b1868 | 2026-11-18T05:24:12.833Z | REJECTED   | SEAT_ALREADY_BOOKED  | 911ms    | BOOKED    | 0
+---------------------------------------------------------------------------------------------------------------------------------------
+Tong ket Client: CONFIRMED=1 | REJECTED=5 | UNKNOWN=0 | OTHER/ERROR=0 | Do tre trung binh=773ms
+Anh man hinh: D:\HTPT\artifacts\evidence\D18\TV1-D18-ui.png | Phuong thuc: JavaFX Scene.snapshot() 3x2 composite (CopyFromScreen khong kha dung: Exception calling "CopyFromScreen" with "3" argument(s): "The handle is invalid")
+Tong ket FAKE SERVER (khong phai Node that, khong phai Raft): activeTickets(G02)=1 | totalArrivals=6 | confirmed=1 | rejected=5 | dropped=0
+Audit log phia FAKE SERVER (khong ghi ho ten hanh khach):
+  [FAKE-CLUSTER-MAIN] Khởi động (FAKE, không phải Node thật, không phải Raft) | nodeId=node-1 | port=55966 | seed=42 | maxJitterMs=35 | dropResponseFor=NONE | startedAt=2026-11-18T05:24:00.513664100Z
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#1 node=node-1 sender=client-4 seat=G02 requestId=8f4aaf61-d3d4-4e3a-a197-1183b3a9c093 outcome=CONFIRMED reason=- ticketId=TCK-G02-8f4aaf61 activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#2 node=node-1 sender=client-5 seat=G02 requestId=5c5bb7aa-95b7-4024-93b6-2ab38fbdb2dc outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#3 node=node-1 sender=client-1 seat=G02 requestId=f943bc98-ef16-4dcc-8a45-d2f4c55f500e outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#4 node=node-1 sender=client-2 seat=G02 requestId=1dca4766-e8ab-49d3-b554-1279d9efff55 outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#5 node=node-1 sender=client-6 seat=G02 requestId=a29a9d7c-6b03-421d-8648-475b9e1b1868 outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#6 node=node-1 sender=client-3 seat=G02 requestId=34f3aaba-5662-475c-8ed8-31e79e523237 outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-CLUSTER-MAIN] Dừng (FAKE, không phải Node thật, không phải Raft) | seat=G02 | activeTickets=1 | totalBookingArrivals=6
+LUU Y: Ket qua voi FAKE SERVER chi chung minh luong UI/protocol phia Client, KHONG phai nghiem thu AC03 tren Raft that (G5).
+
+--------------------------------------------------------------------------------
+KET QUA CHAY SCRIPT scripts/run-6-clients.ps1 (2026-11-18T12:25:18+07:00)
+Mode: fake (FAKE SERVER (khong phai Node that, khong phai Raft)) | Clients: 6 | Seat: G02 | Seed: 77 | DropResponseFor: 3
+--------------------------------------------------------------------------------
+ClientId  | RequestId                            | SentAt (UTC)             | FinalState | Reason/ErrorCode     | Elapsed  | Seat G02  | Pending
+---------------------------------------------------------------------------------------------------------------------------------------
+client-1  | 7fe3b0f7-fc64-4374-ade7-ea7f060a30e5 | 2026-11-18T05:25:12.884Z | REJECTED   | SEAT_ALREADY_BOOKED  | 946ms    | BOOKED    | 0
+client-2  | 9f43f723-2af8-4f93-ac69-56ab8edf655a | 2026-11-18T05:25:12.881Z | REJECTED   | SEAT_ALREADY_BOOKED  | 770ms    | BOOKED    | 0
+client-3  | 533fd105-855d-4bb0-90c6-675840ef2e5e | 2026-11-18T05:25:12.891Z | UNKNOWN    | -                    | 2015ms   | UNKNOWN   | 1
+client-4  | 60702724-2dda-4efa-a802-78d39872e453 | 2026-11-18T05:25:12.885Z | CONFIRMED  | -                    | 720ms    | BOOKED    | 0
+client-5  | e45f6012-ab56-4ed5-b153-cf90315f0878 | 2026-11-18T05:25:12.878Z | REJECTED   | SEAT_ALREADY_BOOKED  | 758ms    | BOOKED    | 0
+client-6  | 560783f2-75dc-4e02-96d9-32735cd5f5eb | 2026-11-18T05:25:12.881Z | REJECTED   | SEAT_ALREADY_BOOKED  | 802ms    | BOOKED    | 0
+---------------------------------------------------------------------------------------------------------------------------------------
+Tong ket Client: CONFIRMED=1 | REJECTED=4 | UNKNOWN=1 | OTHER/ERROR=0 | Do tre trung binh=1001.8ms
+Anh man hinh: D:\HTPT\artifacts\evidence\D18\TV1-D18-ui.png | Phuong thuc: SKIPPED
+Tong ket FAKE SERVER (khong phai Node that, khong phai Raft): activeTickets(G02)=1 | totalArrivals=6 | confirmed=1 | rejected=5 | dropped=1
+Audit log phia FAKE SERVER (khong ghi ho ten hanh khach):
+  [FAKE-CLUSTER-MAIN] Khởi động (FAKE, không phải Node thật, không phải Raft) | nodeId=node-1 | port=56007 | seed=77 | maxJitterMs=35 | dropResponseFor=3 | startedAt=2026-11-18T05:25:00.546535800Z
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#1 node=node-1 sender=client-4 seat=G02 requestId=60702724-2dda-4efa-a802-78d39872e453 outcome=CONFIRMED reason=- ticketId=TCK-G02-60702724 activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#2 node=node-1 sender=client-5 seat=G02 requestId=e45f6012-ab56-4ed5-b153-cf90315f0878 outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#3 node=node-1 sender=client-2 seat=G02 requestId=9f43f723-2af8-4f93-ac69-56ab8edf655a outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#4 node=node-1 sender=client-6 seat=G02 requestId=560783f2-75dc-4e02-96d9-32735cd5f5eb outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#5 node=node-1 sender=client-3 seat=G02 requestId=533fd105-855d-4bb0-90c6-675840ef2e5e outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=true
+  [FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#6 node=node-1 sender=client-1 seat=G02 requestId=7fe3b0f7-fc64-4374-ade7-ea7f060a30e5 outcome=REJECTED reason=SEAT_ALREADY_BOOKED ticketId=- activeTickets=1 dropped=false
+  [FAKE-CLUSTER-MAIN] Dừng (FAKE, không phải Node thật, không phải Raft) | seat=G02 | activeTickets=1 | totalBookingArrivals=6
+LUU Y: Ket qua voi FAKE SERVER chi chung minh luong UI/protocol phia Client, KHONG phai nghiem thu AC03 tren Raft that (G5).
+
+
+--------------------------------------------------------------------------------
+KET QUA KIEM THU JUNIT 5 (HEADLESS HARNESS + FULL REGRESSION D01-D18)
+--------------------------------------------------------------------------------
+Command: mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+Ket qua tong the: BUILD SUCCESS (20.913 s)
+- shared: 33 tests run, 0 failures, 0 errors, 0 skipped
+- desktop-client: 203 tests run, 0 failures, 0 errors, 9 skipped
+
+Chi tiet vn.nhom6.railway.client.harness.SixClientContentionTest (5 tests: 4 PASS, 1 SKIPPED):
+- [PASS] testSixClientsSimultaneousContention_AllCoreInvariants (tieu chi 1-6):
+    6 Client dat G02 dong thoi qua CountDownLatch -> dung 1 CONFIRMED, 5 REJECTED(SEAT_ALREADY_BOOKED),
+    1 ve ACTIVE tren FAKE SERVER, 6 requestId doi mot khac nhau khop senderId, busy=false o ca 6 Client,
+    refresh G02=BOOKED kem nhan "Chua xac minh" (UNVERIFIED theo D15), 0 pending con lai trong 6 journal.
+- [PASS] testTwentyRoundsWithDifferentSeeds_AlwaysExactlyOneWinner (tieu chi 7):
+    Lap 20 vong voi 20 seed khac nhau -> moi vong dung 1 CONFIRMED, 5 REJECTED, 1 ve ACTIVE; Client thang da dang.
+- [PASS] testUnknownScenario_DroppedResponseThenGetRequestResultReconciles (tieu chi 8):
+    client-3 bi FAKE SERVER lam roi phan hoi -> chuyen UNKNOWN (khong REJECTED), con 1 pending trong journal;
+    sau getRequestResult cung requestId (SPEC-03 §4.4) nhan dung ket qua da luu, journal RESOLVED, tong 1 ve ACTIVE.
+- [PASS] testRetrySameRequestId_DoesNotCreateSecondTicket (tieu chi 9):
+    Retry cung requestId+payload tra dung ticketId/appliedLogIndex goc, tong ve ACTIVE van la 1.
+- [SKIPPED] testRealRaftClusterAC03_SkippedUntilG5:
+    Bo qua mac dinh (yeu cau bien moi truong CLUSTER_PROFILE=real; nghiem thu tai G5 sau TV4-D18).
+
+--------------------------------------------------------------------------------
+KIEM TRA GREP BAT BIEN KIEN TRUC
+--------------------------------------------------------------------------------
+1. HTTP/REST client trong desktop-client/src:
+   - Ket qua: 0 code usage (chi co 2 dong assertThrows(ClassNotFoundException) trong SocketBookingClientTest).
+   - Trang thai: PASS
+2. import java.net / java.sql trong controller va viewmodel:
+   - Ket qua: 0 matches (chi co 2 dong comment kien truc).
+   - Trang thai: PASS
+3. Autopilot / FAKE SERVER / SixClient trong desktop-client/src/main:
+   - Ket qua: 0 code usage (chi co 1 dong javadoc trong ClientFactory.java; toan bo autopilot & FAKE SERVER nam trong test sources).
+   - Trang thai: PASS
+4. JDBC / java.sql trong toan bo desktop-client/src:
+   - Ket qua: 0 matches.
+   - Trang thai: PASS
+
+--------------------------------------------------------------------------------
+BANG TRANG THAI TUNG TIEU CHI (DEFINITION OF DONE - TRUNG THUC)
+--------------------------------------------------------------------------------
+- Preflight (Buoc 0): PASS
+- FakeNodeServer mo rong + FakeClusterMain (test sources): PASS
+- SixClientContentionTest (6 client, 20 vong seed, UNKNOWN, retry idempotent): PASS
+- SixClientAutopilot (test sources, 6 cua so JavaFX xep 3x2): PASS
+- scripts/run-6-clients.ps1 (-Mode fake, 6 client tranh G02): PASS (1 CONFIRMED, 5 REJECTED, 1 ACTIVE, don sach tien trinh va thu muc tam)
+- scripts/run-6-clients.ps1 (-Mode fake, -DropResponseFor 3, kich ban UNKNOWN): PASS (1 CONFIRMED, 4 REJECTED, 1 UNKNOWN pending=1, 1 ACTIVE)
+- Anh bang chung artifacts/evidence/D18/TV1-D18-ui.png: PASS (ghep 3x2 tu 6 anh JavaFX Scene.snapshot() that do phien nen khong co interactive desktop cho CopyFromScreen; co the chay lai tren desktop tuong tac de chup bang CopyFromScreen hoac Win+Shift+S)
+- scripts/run-6-clients.ps1 (-Mode real, cum 5 Node Raft that): NOT_RUN (cho G5, sau TV4-D18)
+- SocketBookingClient.getRequestResult() trong src/main: BLOCKED (cho TV3 bo sung DTO GET_REQUEST_RESULT trong module shared)
+- AC03 tren Raft that (6 Client tranh cung ghe tren 5 Node + 5 PostgreSQL): NOT_RUN / SKIPPED (nghiem thu tai G5 sau TV4-D18)
+
+--------------------------------------------------------------------------------
+KET LUAN TRUNG THUC
+--------------------------------------------------------------------------------
+6 Client tranh G02 voi FAKE SERVER: 1 CONFIRMED, 5 REJECTED(SEAT_ALREADY_BOOKED), 1 ve ACTIVE: PASS (harness).
+Kich ban UNKNOWN (-DropResponseFor 3): 1 UNKNOWN (pending=1), doi soat getRequestResult thanh RESOLVED, tong 1 ve ACTIVE: PASS (harness).
+AC03 tren Raft that: NOT_RUN (nghiem thu tai G5 sau TV4-D18).
+Khong ket luan Backend PASS va khong ket luan AC03 PASS.
+================================================================================

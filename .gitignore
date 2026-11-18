@@ -59,3 +59,8 @@ Desktop.ini
 !artifacts/evidence/
 !artifacts/evidence/**/
 !artifacts/evidence/**/*.log
+
+# Temporary harness run folders and dynamic port files (TV1-D18)
+artifacts/evidence/D18/run-*/
+fake-cluster.port
+*.port.tmp
