@@ -25,10 +25,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * FAKE SERVER — không phải Node thật.
@@ -95,6 +98,21 @@ public class FakeNodeServer implements AutoCloseable {
     private volatile boolean simulateTimeoutOnBook = false;
     private volatile long timeoutSleepMs = 10000;
 
+    // Mở rộng cho kịch bản tranh chấp 6 Client cùng ghế (TASK TV1-D18 — FAKE SERVER, không phải Raft)
+    private volatile int maxJitterMs = 0;
+    private Random jitterRandom = new Random(42L);
+    private final Object randomLock = new Object();
+    private final Set<String> dropResponseForSenders = ConcurrentHashMap.newKeySet();
+    private final Set<String> droppedRequestIds = ConcurrentHashMap.newKeySet();
+    private volatile long dropResponseHoldMs = 15000L;
+    private final AtomicLong bookingArrivalSequence = new AtomicLong(0);
+    private final List<BookingAuditEntry> bookingAuditLog = new CopyOnWriteArrayList<>();
+    private volatile Consumer<String> auditLogListener = null;
+
+    // Sentinel nội bộ đánh dấu đã lưu kết quả nhưng giả lập rơi phản hồi (hold socket ngoài lock)
+    private static final MessageEnvelope<Object> DROP_RESPONSE_SENTINEL =
+            new MessageEnvelope<>(1, "drop-sentinel", null, MessageType.ERROR_RESPONSE, "fake-drop", Instant.EPOCH.toString(), null);
+
     public static record SeatState(String seatId, String status, String ticketId) {}
 
     public static record StoredBooking(
@@ -106,13 +124,34 @@ public class FakeNodeServer implements AutoCloseable {
             boolean isConflict
     ) {}
 
+    /**
+     * Bản ghi kiểm toán phía Fake Server (KHÔNG chứa passengerName theo quy định bảo mật dữ liệu demo).
+     */
+    public static record BookingAuditEntry(
+            long arrivalOrder,
+            String requestId,
+            String senderId,
+            String seatId,
+            String fakeNodeId,
+            String outcome,
+            String reasonCode,
+            String ticketId,
+            int activeTicketsOnSeat,
+            boolean responseDropped,
+            String recordedAt
+    ) {}
+
     public FakeNodeServer() throws IOException {
-        this(DEFAULT_NODE_ID);
+        this(DEFAULT_NODE_ID, 0);
     }
 
     public FakeNodeServer(String nodeId) throws IOException {
+        this(nodeId, 0);
+    }
+
+    public FakeNodeServer(String nodeId, int port) throws IOException {
         this.nodeId = Objects.requireNonNull(nodeId, "nodeId không được null");
-        this.serverSocket = new ServerSocket(0);
+        this.serverSocket = new ServerSocket(port);
         initDefaultSeats();
 
         this.acceptThread = new Thread(this::acceptLoop, "fake-node-server-accept-" + getPort());
@@ -175,6 +214,113 @@ public class FakeNodeServer implements AutoCloseable {
     public void resetAudit() {
         receivedRequests.clear();
         requestAttempts.clear();
+        bookingAuditLog.clear();
+        bookingArrivalSequence.set(0);
+    }
+
+    /**
+     * Đặt lại toàn bộ trạng thái ghế, kết quả đã lưu và audit cho vòng kiểm thử mới (TASK TV1-D18).
+     */
+    public synchronized void resetForNewRound() {
+        initDefaultSeats();
+        storedBookings.clear();
+        droppedRequestIds.clear();
+        resetAudit();
+    }
+
+    /**
+     * Cấu hình độ trễ ngẫu nhiên (jitter) theo seed để tái lập thứ tự đến khác nhau giữa các Client.
+     */
+    public void configureRandomDelay(long seed, int maxJitterMs) {
+        synchronized (randomLock) {
+            this.jitterRandom = new Random(seed);
+            this.maxJitterMs = Math.max(0, maxJitterMs);
+        }
+    }
+
+    /**
+     * Chỉ định senderId (ví dụ "client-3") bị giả lập rơi phản hồi ở lần gửi BOOK_TICKET đầu tiên.
+     * FakeNodeServer vẫn xử lý và lưu kết quả bền vững trong bộ nhớ, chỉ bỏ rơi gói tin trả lời
+     * để Client rơi vào UNKNOWN; lần retry cùng requestId hoặc GET_REQUEST_RESULT sẽ nhận lại đúng kết quả đã lưu.
+     */
+    public void addDropResponseForSender(String senderId) {
+        if (senderId != null && !senderId.isBlank()) {
+            dropResponseForSenders.add(senderId.trim());
+        }
+    }
+
+    public void clearDropResponseForSenders() {
+        dropResponseForSenders.clear();
+        droppedRequestIds.clear();
+    }
+
+    public void setDropResponseHoldMs(long holdMs) {
+        this.dropResponseHoldMs = Math.max(100L, holdMs);
+    }
+
+    public void setAuditLogListener(Consumer<String> listener) {
+        this.auditLogListener = listener;
+    }
+
+    public List<BookingAuditEntry> getBookingAuditLog() {
+        return Collections.unmodifiableList(bookingAuditLog);
+    }
+
+    public StoredBooking getStoredBooking(String requestId) {
+        return (requestId != null) ? storedBookings.get(requestId) : null;
+    }
+
+    private int nextJitterMs() {
+        int bound = maxJitterMs;
+        if (bound <= 0) {
+            return 0;
+        }
+        synchronized (randomLock) {
+            return jitterRandom.nextInt(bound + 1);
+        }
+    }
+
+    private void recordBookingAudit(
+            String requestId,
+            String senderId,
+            String seatId,
+            String outcome,
+            String reasonCode,
+            String ticketId,
+            boolean responseDropped) {
+        long order = bookingArrivalSequence.incrementAndGet();
+        int activeCount = (seatId != null) ? getActiveTicketCount(seatId) : 0;
+        BookingAuditEntry entry = new BookingAuditEntry(
+                order,
+                requestId,
+                senderId != null ? senderId : "unknown",
+                seatId != null ? seatId : "-",
+                nodeId,
+                outcome,
+                reasonCode,
+                ticketId,
+                activeCount,
+                responseDropped,
+                Instant.now().toString()
+        );
+        bookingAuditLog.add(entry);
+        Consumer<String> listener = this.auditLogListener;
+        if (listener != null) {
+            String line = String.format(
+                    "[FAKE-SERVER] (FAKE, không phải Node thật, không phải Raft) order=#%d node=%s sender=%s seat=%s requestId=%s outcome=%s reason=%s ticketId=%s activeTickets=%d dropped=%s",
+                    entry.arrivalOrder(),
+                    entry.fakeNodeId(),
+                    entry.senderId(),
+                    entry.seatId(),
+                    entry.requestId(),
+                    entry.outcome(),
+                    entry.reasonCode() != null ? entry.reasonCode() : "-",
+                    entry.ticketId() != null ? entry.ticketId() : "-",
+                    entry.activeTicketsOnSeat(),
+                    entry.responseDropped()
+            );
+            listener.accept(line);
+        }
     }
 
     private void acceptLoop() {
@@ -220,9 +366,13 @@ public class FakeNodeServer implements AutoCloseable {
                     break;
                 }
 
-                if (delayMs > 0) {
+                long totalDelay = delayMs;
+                if (requestEnv.getType() == MessageType.BOOK_TICKET) {
+                    totalDelay += nextJitterMs();
+                }
+                if (totalDelay > 0) {
                     try {
-                        Thread.sleep(delayMs);
+                        Thread.sleep(totalDelay);
                     } catch (InterruptedException ignored) {
                         Thread.currentThread().interrupt();
                         break;
@@ -230,7 +380,19 @@ public class FakeNodeServer implements AutoCloseable {
                 }
 
                 MessageEnvelope<?> responseEnv = processRequest(requestEnv);
-                if (responseEnv != null) {
+                if (responseEnv == DROP_RESPONSE_SENTINEL) {
+                    // Đã lưu kết quả trên fake server nhưng cố tình làm rơi phản hồi (giữ socket mở ngoài lock để Client timeout -> UNKNOWN)
+                    try {
+                        long endTime = System.currentTimeMillis() + dropResponseHoldMs;
+                        while (running.get() && !socket.isClosed() && System.currentTimeMillis() < endTime) {
+                            Thread.sleep(50L);
+                        }
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                    socket.close();
+                    break;
+                } else if (responseEnv != null) {
                     FrameCodec.writeMessage(out, responseEnv);
                 } else {
                     socket.close();
@@ -244,6 +406,7 @@ public class FakeNodeServer implements AutoCloseable {
     private MessageEnvelope<?> processRequest(MessageEnvelope<JsonNode> requestEnv) {
         MessageType type = requestEnv.getType();
         String reqMessageId = requestEnv.getMessageId();
+        String senderId = requestEnv.getSenderId();
         JsonNode payload = requestEnv.getPayload();
 
         if (type == null) {
@@ -253,7 +416,7 @@ public class FakeNodeServer implements AutoCloseable {
         return switch (type) {
             case NODE_STATUS -> handleNodeStatus(reqMessageId);
             case GET_SEATS -> handleGetSeats(reqMessageId, payload);
-            case BOOK_TICKET -> handleBookTicket(reqMessageId, payload);
+            case BOOK_TICKET -> handleBookTicket(reqMessageId, senderId, payload);
             case GET_REQUEST_RESULT -> handleGetRequestResult(reqMessageId, payload);
             default -> createErrorResponse(reqMessageId, "INVALID_REQUEST",
                     "Loại bản tin chưa hỗ trợ trên FakeNodeServer: " + type, null);
@@ -364,7 +527,7 @@ public class FakeNodeServer implements AutoCloseable {
         );
     }
 
-    private synchronized MessageEnvelope<?> handleBookTicket(String correlationId, JsonNode payload) {
+    private synchronized MessageEnvelope<?> handleBookTicket(String correlationId, String senderId, JsonNode payload) {
         if (payload == null) {
             return createErrorResponse(correlationId, "INVALID_REQUEST", "Payload đặt vé không được null", null);
         }
@@ -392,6 +555,7 @@ public class FakeNodeServer implements AutoCloseable {
                     appliedIndex
             );
             storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, confirmedDto, false));
+            recordBookingAudit(requestId, senderId, seatId, "CONFIRMED", null, ticketId, true);
             try {
                 Thread.sleep(timeoutSleepMs);
             } catch (InterruptedException ignored) {
@@ -423,14 +587,17 @@ public class FakeNodeServer implements AutoCloseable {
 
             if (samePayload) {
                 // CÙNG requestId + CÙNG payload: Trả về ĐÚNG kết quả cũ đã lưu, KHÔNG cấp vé thứ hai
+                BookTicketResponseDto dto = stored.responseDto();
+                recordBookingAudit(requestId, senderId, seatId, dto.getOutcome() + "(REPLAY)", dto.getReasonCode(), dto.getTicketId(), false);
                 return MessageEnvelope.createResponse(
                         correlationId,
                         MessageType.BOOK_TICKET_RESPONSE,
                         nodeId,
-                        stored.responseDto()
+                        dto
                 );
             } else {
                 // CÙNG requestId + KHÁC payload: Xung đột REQUEST_ID_CONFLICT
+                recordBookingAudit(requestId, senderId, seatId, "ERROR", "REQUEST_ID_CONFLICT", null, false);
                 return createErrorResponse(
                         correlationId,
                         "REQUEST_ID_CONFLICT",
@@ -443,10 +610,14 @@ public class FakeNodeServer implements AutoCloseable {
         // 2. Yêu cầu mới: Kiểm tra tình trạng ghế
         SeatState currentSeat = seatStates.get(seatId);
         if (currentSeat == null) {
+            recordBookingAudit(requestId, senderId, seatId, "ERROR", "INVALID_REQUEST", null, false);
             return createErrorResponse(correlationId, "INVALID_REQUEST", "Mã ghế không hợp lệ: " + seatId, requestId);
         }
 
         long appliedIndex = logIndexSequence.incrementAndGet();
+        boolean shouldDropResponse = senderId != null
+                && dropResponseForSenders.contains(senderId)
+                && droppedRequestIds.add(requestId);
 
         if ("BOOKED".equalsIgnoreCase(currentSeat.status())) {
             // Ghế đã có người đặt -> REJECTED SEAT_ALREADY_BOOKED
@@ -459,7 +630,11 @@ public class FakeNodeServer implements AutoCloseable {
             );
 
             storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, rejectedDto, false));
+            recordBookingAudit(requestId, senderId, seatId, "REJECTED", "SEAT_ALREADY_BOOKED", null, shouldDropResponse);
 
+            if (shouldDropResponse) {
+                return DROP_RESPONSE_SENTINEL;
+            }
             return MessageEnvelope.createResponse(
                     correlationId,
                     MessageType.BOOK_TICKET_RESPONSE,
@@ -482,7 +657,11 @@ public class FakeNodeServer implements AutoCloseable {
         );
 
         storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, confirmedDto, false));
+        recordBookingAudit(requestId, senderId, seatId, "CONFIRMED", null, ticketId, shouldDropResponse);
 
+        if (shouldDropResponse) {
+            return DROP_RESPONSE_SENTINEL;
+        }
         return MessageEnvelope.createResponse(
                 correlationId,
                 MessageType.BOOK_TICKET_RESPONSE,
