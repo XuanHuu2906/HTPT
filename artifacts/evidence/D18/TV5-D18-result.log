@@ -1,0 +1,97 @@
+TV5-D18 validation evidence
+===========================
+
+Task: TV5-D18 Xử lý leader cũ bị cô lập (Minority write safety under 3-2 partition)
+Date: 2026-11-18
+Scope: 5-node cluster over FakeNetwork; election recovery + majority replication commit safety.
+
+Deliverables:
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/MinorityWriteSafetyTest.java (new)
+
+Dependencies & Integration:
+- TV5-D16: LeadershipGuard (validates callbacks against leadership term; detects stale term/step-down).
+- TV4-D16: CommitAdvancer (calculates majority quorum commit index; ignores minority writes).
+- FakeNetwork: Deterministic 5-node network partition simulator (splits 3-2 and heals without real TCP/threads).
+- TV4-D18: Không chờ TV4-D18 (dùng BookingStateMachine trực tiếp để kiểm chứng áp dụng kết quả).
+
+Implemented & Verified Rules:
+1. Chia 3–2 trong test:
+   - Cụm 5 Node ("node-1" .. "node-5") với Leader ban đầu là node-1 tại term 1.
+   - Mạng bị phân vùng thành 2 phần:
+     + Thiểu số 2/5: {node-1, node-2} (chứa leader cũ).
+     + Đa số 3/5: {node-3, node-4, node-5}.
+2. Leader phía thiểu số không được commit writes:
+   - Node-1 nhận yêu cầu BOOK_TICKET, ghi log cục bộ, sao chép sang node-2.
+   - Node-2 gửi AppendEntries ACK (matchIndex=1).
+   - CommitAdvancer chỉ thấy 2/5 Node nắm log entry -> Quorum cần 3/5 -> CommitAdvancer.advance() trả về empty.
+   - commitIndex của node-1 và node-2 đều giữ nguyên ở 0.
+3. Không dùng role == Leader để tự báo success:
+   - Node-1 phía thiểu số vẫn giữ role == Role.LEADER (chưa biết mình bị cô lập).
+   - Hệ thống không được dựa vào role == LEADER để báo CONFIRMED.
+   - Yêu cầu ghi chưa đạt quorum commit thì kết quả không được báo thành công; client timeout nhận UNKNOWN, không nhận CONFIRMED.
+4. Append ack chưa commit không tạo BOOK_CONFIRMED:
+   - ACK từ node-2 không làm tăng commitIndex -> không kích hoạt apply vào state machine.
+   - 0 sự kiện BOOK_CONFIRMED được tạo ra trên toàn bộ phân vùng 2/5.
+5. Lost leader không tự báo REJECTED:
+   - Lệnh hợp lệ không bị từ chối nghiệp vụ; leader bị cô lập giữ lệnh ở trạng thái uncommitted / pending, không tự báo REJECTED.
+6. Đa số 3/5 bầu leader mới và commit an toàn:
+   - Phân vùng 3/5 {node-3, node-4, node-5} nhận thấy thiếu heartbeat, bầu node-3 làm Leader term 2 (3/5 phiếu).
+   - Node-3 nhận lệnh ghi, sao chép sang node-4 và node-5 -> Đạt 3/5 quorum.
+   - CommitAdvancer trên node-3 nâng commitIndex lên 1 -> Áp dụng lệnh thành công, tạo BOOK_CONFIRMED cho majority request.
+7. Hàn gắn mạng và ghi đè log thiểu số (Split-brain Prevention):
+   - Mạng được hàn gắn, node-3 phát AppendEntries term 2 tới node-1 và node-2.
+   - Node-1 phát hiện term 2 > term 1 -> giáng chức thành FOLLOWER.
+   - LeadershipGuard của node-1 vô hiệu hóa term 1 (isCurrent(1) = false, runIfCurrent = false) -> chặn đứng callback cũ.
+   - Entry chưa commit của term 1 trên node-1 và node-2 bị ghi đè hoàn toàn bởi log term 2 của node-3.
+   - Toàn cụm đồng thuận duy nhất 1 vé CONFIRMED (của majority request); không có bất kỳ vé CONFIRMED nào cho minority request.
+
+Environment:
+- OS: Linux 6.17.7-200.fc42.x86_64
+- Java: OpenJDK 25.0.1
+- Maven: 3.9.9
+
+--- Targeted D18 Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="MinorityWriteSafetyTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.139 s -- in vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.300 s]
+[INFO] backend-node ....................................... SUCCESS [  0.514 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+Test Methods (8):
+1. isolatedLeaderInMinority_doesNotCommitWrites_andProducesNoBookConfirmed: PASS
+2. cannotUseRoleLeaderToSelfReportSuccess: PASS
+3. appendAckWithoutQuorum_doesNotCreateBookConfirmed_andLostLeaderDoesNotReportRejected: PASS
+4. splitBrainPrevention_majorityPartitionElectsLeaderAndCommits_overwritesMinorityLog: PASS
+5. multipleWritesInMinority_remainUncommitted_allOverwrittenAfterHeal: PASS
+6. healingToQuorum_allowsPendingMinorityWriteToCommit: PASS
+7. staleAckAfterStepDown_rejectedByLeadershipGuard: PASS
+8. heartbeatsInMinorityPartition_propagateZeroCommitIndex: PASS
+
+--- Full Election and Replication Regression Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test,vn.nhom6.railway.raft.replication.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Results:
+[INFO] 
+[WARNING] Tests run: 469, Failures: 0, Errors: 0, Skipped: 8
+[INFO] 
+[INFO] BUILD SUCCESS
+[INFO] Total time: 4.680 s
