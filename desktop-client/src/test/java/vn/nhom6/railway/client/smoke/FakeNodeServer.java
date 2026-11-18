@@ -110,8 +110,9 @@ public class FakeNodeServer implements AutoCloseable {
     private volatile Consumer<String> auditLogListener = null;
 
     // Sentinel nội bộ đánh dấu đã lưu kết quả nhưng giả lập rơi phản hồi (hold socket ngoài lock)
-    private static final MessageEnvelope<Object> DROP_RESPONSE_SENTINEL =
-            new MessageEnvelope<>(1, "drop-sentinel", null, MessageType.ERROR_RESPONSE, "fake-drop", Instant.EPOCH.toString(), null);
+    private static final MessageEnvelope<ObjectNode> DROP_RESPONSE_SENTINEL =
+            MessageEnvelope.createResponse("00000000-0000-0000-0000-000000000000", MessageType.ERROR_RESPONSE, "node-1",
+                    MessageCodec.getMapper().createObjectNode());
 
     public static record SeatState(String seatId, String status, String ticketId) {}
 
