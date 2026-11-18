@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -521,6 +527,242 @@ public class MessageDispatcherTest {
         assertEquals("NOT_LEADER", err.getErrorCode());
         assertEquals("node-1", err.getLeaderHint());
         assertEquals(reqId, err.getRequestId());
+    }
+
+    @Test
+    @DisplayName("TV3-D18: 6 independent concurrent requests have distinct messageId/requestId and no cross-talk")
+    public void testSixIndependentRequestsNoInterference() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        AtomicInteger counter = new AtomicInteger(0);
+        registry.registerBookingHandler(req -> {
+            if (req.getType() == MessageType.BOOK_TICKET) {
+                String reqId = req.getPayload().get("requestId").asText();
+                String seatId = req.getPayload().get("seatId").asText();
+                int idx = counter.incrementAndGet();
+                return MessageEnvelope.createResponse(req.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                        Map.of("outcome", "CONFIRMED", "requestId", reqId, "ticketId", "TKT-" + seatId + "-" + idx));
+            }
+            return null;
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+
+        int n = 6;
+        ExecutorService executor = Executors.newFixedThreadPool(n);
+        resources.add(executor::shutdownNow);
+
+        List<Future<MessageEnvelope<?>>> futures = new ArrayList<>();
+        List<MessageEnvelope<JsonNode>> requests = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            String seatId = String.format("G%02d", i);
+            String reqId = UUID.randomUUID().toString();
+            BookTicketRequestDto dto = new BookTicketRequestDto(reqId, "SE-001", seatId, "Passenger " + i);
+            MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.BOOK_TICKET, "client-" + i, dto);
+            requests.add(req);
+            futures.add(executor.submit(() -> dispatcher.dispatch(req)));
+        }
+
+        List<String> ticketIds = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            MessageEnvelope<?> resp = futures.get(i).get(5, TimeUnit.SECONDS);
+            MessageEnvelope<JsonNode> req = requests.get(i);
+            assertNotNull(resp);
+            assertEquals(MessageType.BOOK_TICKET_RESPONSE, resp.getType());
+            assertEquals(req.getMessageId(), resp.getCorrelationId(), "Correlation ID must strictly match request.messageId");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = (Map<String, Object>) resp.getPayload();
+            assertEquals("CONFIRMED", payload.get("outcome"));
+            assertEquals(req.getPayload().get("requestId").asText(), payload.get("requestId"), "requestId must match original payload");
+            ticketIds.add((String) payload.get("ticketId"));
+        }
+
+        assertEquals(6, ticketIds.stream().distinct().count(), "All 6 requests must yield distinct tickets");
+    }
+
+    @Test
+    @DisplayName("TV3-D18: Retry with same requestId preserves idempotency, receives new correlationId, zero double-booking")
+    public void testRetryWithSameRequestIdPreservesIdempotencyAndNewCorrelation() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        AtomicInteger executionCount = new AtomicInteger(0);
+        Map<String, Map<String, Object>> idempotencyStore = new ConcurrentHashMap<>();
+
+        registry.registerBookingHandler(req -> {
+            if (req.getType() == MessageType.BOOK_TICKET) {
+                String reqId = req.getPayload().get("requestId").asText();
+                Map<String, Object> cached = idempotencyStore.computeIfAbsent(reqId, k -> {
+                    int c = executionCount.incrementAndGet();
+                    return Map.of("outcome", "CONFIRMED", "requestId", reqId, "ticketId", "TKT-SEAT-01-" + c);
+                });
+                return MessageEnvelope.createResponse(req.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1", cached);
+            }
+            return null;
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+
+        String businessRequestId = UUID.randomUUID().toString();
+        BookTicketRequestDto dto = new BookTicketRequestDto(businessRequestId, "SE-001", "G01", "Passenger Idempotent");
+
+        // 1. Initial attempt: messageId M1
+        MessageEnvelope<JsonNode> req1 = createRawEnvelope(MessageType.BOOK_TICKET, "client-app", dto);
+        MessageEnvelope<?> resp1 = dispatcher.dispatch(req1);
+        assertNotNull(resp1);
+        assertEquals(req1.getMessageId(), resp1.getCorrelationId());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> p1 = (Map<String, Object>) resp1.getPayload();
+        assertEquals("CONFIRMED", p1.get("outcome"));
+        assertEquals("TKT-SEAT-01-1", p1.get("ticketId"));
+        assertEquals(businessRequestId, p1.get("requestId"));
+
+        // 2. Retry attempt: same payload & requestId, but NEW messageId M2 (per SPEC-03)
+        MessageEnvelope<JsonNode> req2 = createRawEnvelope(MessageType.BOOK_TICKET, "client-app", dto);
+        assertNotEquals(req1.getMessageId(), req2.getMessageId(), "Retry must have a fresh transport messageId");
+
+        MessageEnvelope<?> resp2 = dispatcher.dispatch(req2);
+        assertNotNull(resp2);
+        assertEquals(req2.getMessageId(), resp2.getCorrelationId(), "Retry response must correlate to new messageId");
+        assertNotEquals(resp1.getCorrelationId(), resp2.getCorrelationId());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> p2 = (Map<String, Object>) resp2.getPayload();
+        assertEquals("CONFIRMED", p2.get("outcome"));
+        assertEquals("TKT-SEAT-01-1", p2.get("ticketId"), "Must return identical ticketId (idempotent)");
+        assertEquals(businessRequestId, p2.get("requestId"));
+
+        // Verify business logic was executed exactly once (no double-booking!)
+        assertEquals(1, executionCount.get(), "Underlying state machine must only execute once for same requestId");
+    }
+
+    @Test
+    @DisplayName("TV3-D18: Dispatcher enforces strict correlationId even if handler returns wrong or null correlationId")
+    public void testLateOrMismatchedCorrelationIdEnforcedByDispatcher() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        // Malicious or buggy handler returns a response with a stale/different correlationId
+        registry.registerBookingHandler(req -> {
+            String staleCorrelationId = UUID.randomUUID().toString();
+            return MessageEnvelope.createResponse(staleCorrelationId, MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    Map.of("outcome", "CONFIRMED", "requestId", req.getPayload().get("requestId").asText()));
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+
+        String reqId = UUID.randomUUID().toString();
+        BookTicketRequestDto dto = new BookTicketRequestDto(reqId, "SE-001", "G02", "Passenger Strict Corr");
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.BOOK_TICKET, "client-app", dto);
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(req.getMessageId(), resp.getCorrelationId(), "Dispatcher must enforce correlationId == request.messageId");
+    }
+
+    @Test
+    @DisplayName("TV3-D18: Server in-flight request limit is enforced, rejecting excess requests with INTERNAL_ERROR")
+    public void testInFlightLimitEnforced() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        CountDownLatch inFlightLatch = new CountDownLatch(1);
+        CountDownLatch proceedLatch = new CountDownLatch(1);
+
+        registry.registerBookingHandler(req -> {
+            inFlightLatch.countDown();
+            try {
+                proceedLatch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return MessageEnvelope.createResponse(req.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    Map.of("outcome", "CONFIRMED"));
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1", null, 1);
+        assertEquals(1, dispatcher.getMaxInFlightRequests());
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        resources.add(executor::shutdownNow);
+
+        String reqId1 = UUID.randomUUID().toString();
+        MessageEnvelope<JsonNode> req1 = createRawEnvelope(MessageType.BOOK_TICKET, "client-1",
+                new BookTicketRequestDto(reqId1, "SE-001", "G01", "P1"));
+
+        Future<MessageEnvelope<?>> future1 = executor.submit(() -> dispatcher.dispatch(req1));
+
+        assertTrue(inFlightLatch.await(3, TimeUnit.SECONDS));
+        assertEquals(1, dispatcher.getActiveInFlightCount());
+        assertTrue(dispatcher.isInFlight(req1.getMessageId()));
+
+        // Submit req2 while req1 is still in-flight -> should be rejected immediately
+        String reqId2 = UUID.randomUUID().toString();
+        MessageEnvelope<JsonNode> req2 = createRawEnvelope(MessageType.BOOK_TICKET, "client-2",
+                new BookTicketRequestDto(reqId2, "SE-001", "G02", "P2"));
+
+        MessageEnvelope<?> resp2 = dispatcher.dispatch(req2);
+        assertNotNull(resp2);
+        assertEquals(MessageType.ERROR_RESPONSE, resp2.getType());
+        assertEquals(req2.getMessageId(), resp2.getCorrelationId());
+        ErrorResponseDto err2 = (ErrorResponseDto) resp2.getPayload();
+        assertEquals("INTERNAL_ERROR", err2.getErrorCode());
+        assertTrue(err2.getMessage().contains("Server in-flight request limit reached"));
+
+        // Release req1 and let it complete
+        proceedLatch.countDown();
+        MessageEnvelope<?> resp1 = future1.get(5, TimeUnit.SECONDS);
+        assertNotNull(resp1);
+        assertEquals(MessageType.BOOK_TICKET_RESPONSE, resp1.getType());
+        assertEquals(req1.getMessageId(), resp1.getCorrelationId());
+
+        assertEquals(0, dispatcher.getActiveInFlightCount());
+        assertFalse(dispatcher.isInFlight(req1.getMessageId()));
+    }
+
+    @Test
+    @DisplayName("TV3-D18: Duplicate in-flight messageId is rejected with INVALID_REQUEST")
+    public void testDuplicateInFlightMessageIdRejected() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        CountDownLatch inFlightLatch = new CountDownLatch(1);
+        CountDownLatch proceedLatch = new CountDownLatch(1);
+
+        registry.registerBookingHandler(req -> {
+            inFlightLatch.countDown();
+            try {
+                proceedLatch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return MessageEnvelope.createResponse(req.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-1",
+                    Map.of("outcome", "CONFIRMED"));
+        });
+
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1");
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        resources.add(executor::shutdownNow);
+
+        String reqId = UUID.randomUUID().toString();
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.BOOK_TICKET, "client-1",
+                new BookTicketRequestDto(reqId, "SE-001", "G01", "P1"));
+
+        Future<MessageEnvelope<?>> future1 = executor.submit(() -> dispatcher.dispatch(req));
+
+        assertTrue(inFlightLatch.await(3, TimeUnit.SECONDS));
+        assertTrue(dispatcher.isInFlight(req.getMessageId()));
+
+        // Dispatch exact same envelope with identical messageId while in-flight
+        MessageEnvelope<?> duplicateResp = dispatcher.dispatch(req);
+        assertNotNull(duplicateResp);
+        assertEquals(MessageType.ERROR_RESPONSE, duplicateResp.getType());
+        assertEquals(req.getMessageId(), duplicateResp.getCorrelationId());
+        ErrorResponseDto err = (ErrorResponseDto) duplicateResp.getPayload();
+        assertEquals("INVALID_REQUEST", err.getErrorCode());
+        assertTrue(err.getMessage().contains("Duplicate in-flight messageId"));
+
+        // Release first request
+        proceedLatch.countDown();
+        MessageEnvelope<?> resp1 = future1.get(5, TimeUnit.SECONDS);
+        assertNotNull(resp1);
+        assertEquals(MessageType.BOOK_TICKET_RESPONSE, resp1.getType());
+
+        assertEquals(0, dispatcher.getActiveInFlightCount());
     }
 
     public static void main(String[] args) {

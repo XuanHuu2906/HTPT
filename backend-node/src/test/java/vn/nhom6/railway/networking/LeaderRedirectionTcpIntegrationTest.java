@@ -16,6 +16,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -338,5 +342,143 @@ public class LeaderRedirectionTcpIntegrationTest {
         assertTrue(List.of("node-1", "node-3", "node-4", "node-5").contains(err.getLeaderHint()),
                 "Fallback must be one of the cluster peers");
         assertEquals(reqId, err.getRequestId());
+    }
+
+    @Test
+    @DisplayName("TV3-D18: 6 concurrent independent booking requests over TCP succeed without cross-talk")
+    public void testSixConcurrentIndependentBookingRequestsOverTcp() throws Exception {
+        NodeConfig config1 = new NodeConfig("node-1", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 10, 3000);
+        FakeBookingService leaderService = new FakeBookingService("node-1");
+        leaderService.setLeader(true, "node-1");
+        NodeMain leaderNode = new NodeMain(config1, leaderService);
+        resources.add(leaderNode);
+        leaderNode.start();
+
+        int n = 6;
+        ExecutorService executor = Executors.newFixedThreadPool(n);
+        resources.add(executor::shutdownNow);
+
+        List<Future<MessageEnvelope<BookTicketResponseDto>>> futures = new ArrayList<>();
+        List<MessageEnvelope<BookTicketRequestDto>> requests = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            final int index = i;
+            String seatId = String.format("G%02d", index);
+            String reqId = UUID.randomUUID().toString();
+            BookTicketRequestDto dto = new BookTicketRequestDto(reqId, "SE-001", seatId, "Passenger " + index);
+            MessageEnvelope<BookTicketRequestDto> req = MessageEnvelope.createRequest(
+                    MessageType.BOOK_TICKET, "client-" + index, dto
+            );
+            requests.add(req);
+
+            futures.add(executor.submit(() -> {
+                try {
+                    TcpClient client = new TcpClient("127.0.0.1", leaderNode.getClientPort(), 3000, 3000);
+                    client.connect();
+                    try {
+                        return client.sendAndReceive(req, BookTicketResponseDto.class);
+                    } finally {
+                        client.close();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+        }
+
+        List<String> ticketIds = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            MessageEnvelope<BookTicketResponseDto> resp = futures.get(i).get(10, TimeUnit.SECONDS);
+            MessageEnvelope<BookTicketRequestDto> req = requests.get(i);
+            assertNotNull(resp);
+            assertEquals(MessageType.BOOK_TICKET_RESPONSE, resp.getType());
+            assertEquals(req.getMessageId(), resp.getCorrelationId(), "Correlation ID must strictly match request transport messageId");
+
+            BookTicketResponseDto payload = resp.getPayload();
+            payload.validate();
+            assertEquals("CONFIRMED", payload.getOutcome());
+            assertEquals(req.getPayload().getRequestId(), payload.getRequestId(), "Business requestId must be strictly preserved");
+            ticketIds.add(payload.getTicketId());
+        }
+
+        assertEquals(6, ticketIds.stream().distinct().count(), "All 6 concurrent requests must yield distinct tickets");
+    }
+
+    @Test
+    @DisplayName("TV3-D18: Follower redirect -> Leader retry with new messageId preserves requestId and idempotency over TCP")
+    public void testFollowerRedirectThenLeaderRetryPreservesRequestIdAndIdempotencyOverTcp() throws Exception {
+        // 1. Leader Node
+        NodeConfig config1 = new NodeConfig("node-1", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        FakeBookingService leaderService = new FakeBookingService("node-1");
+        leaderService.setLeader(true, "node-1");
+        NodeMain leaderNode = new NodeMain(config1, leaderService);
+        resources.add(leaderNode);
+        leaderNode.start();
+
+        // 2. Follower Node
+        NodeConfig config2 = new NodeConfig("node-2", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        FakeBookingService followerService = new FakeBookingService("node-2");
+        followerService.setLeader(false, "node-1");
+        NodeMain followerNode = new NodeMain(config2, followerService);
+        resources.add(followerNode);
+        followerNode.start();
+
+        String businessRequestId = UUID.randomUUID().toString();
+        BookTicketRequestDto bookPayload = new BookTicketRequestDto(businessRequestId, "SE-001", "G07", "Passenger Idempotent TCP");
+
+        // Step 1: Send request to Follower with messageId M1
+        MessageEnvelope<BookTicketRequestDto> req1 = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookPayload
+        );
+        TcpClient followerClient = new TcpClient("127.0.0.1", followerNode.getClientPort(), 3000, 3000);
+        resources.add(followerClient);
+        followerClient.connect();
+
+        MessageEnvelope<ErrorResponseDto> followerResp = followerClient.sendAndReceive(req1, ErrorResponseDto.class);
+        assertNotNull(followerResp);
+        assertEquals(MessageType.ERROR_RESPONSE, followerResp.getType());
+        assertEquals(req1.getMessageId(), followerResp.getCorrelationId(), "Follower correlationId must match M1");
+        ErrorResponseDto followerErr = followerResp.getPayload();
+        followerErr.validate();
+        assertEquals("NOT_LEADER", followerErr.getErrorCode());
+        assertEquals("node-1", followerErr.getLeaderHint());
+        assertEquals(businessRequestId, followerErr.getRequestId());
+
+        // Step 2: Client resolves hint and retries on Leader with SAME businessRequestId and NEW messageId M2
+        MessageEnvelope<BookTicketRequestDto> req2 = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookPayload
+        );
+        assertNotEquals(req1.getMessageId(), req2.getMessageId(), "Retry must have fresh transport messageId");
+
+        TcpClient leaderClient = new TcpClient("127.0.0.1", leaderNode.getClientPort(), 3000, 3000);
+        resources.add(leaderClient);
+        leaderClient.connect();
+
+        MessageEnvelope<BookTicketResponseDto> leaderResp1 = leaderClient.sendAndReceive(req2, BookTicketResponseDto.class);
+        assertNotNull(leaderResp1);
+        assertEquals(MessageType.BOOK_TICKET_RESPONSE, leaderResp1.getType());
+        assertEquals(req2.getMessageId(), leaderResp1.getCorrelationId(), "Leader response must correlate to M2, NOT M1");
+        BookTicketResponseDto book1 = leaderResp1.getPayload();
+        book1.validate();
+        assertEquals("CONFIRMED", book1.getOutcome());
+        assertEquals(businessRequestId, book1.getRequestId());
+        String initialTicketId = book1.getTicketId();
+        assertNotNull(initialTicketId);
+
+        // Step 3: Client retries AGAIN to Leader (e.g. simulated network reconnect) with SAME businessRequestId and NEW messageId M3
+        MessageEnvelope<BookTicketRequestDto> req3 = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookPayload
+        );
+        assertNotEquals(req2.getMessageId(), req3.getMessageId());
+
+        MessageEnvelope<BookTicketResponseDto> leaderResp2 = leaderClient.sendAndReceive(req3, BookTicketResponseDto.class);
+        assertNotNull(leaderResp2);
+        assertEquals(MessageType.BOOK_TICKET_RESPONSE, leaderResp2.getType());
+        assertEquals(req3.getMessageId(), leaderResp2.getCorrelationId(), "Retry response must correlate to M3");
+        BookTicketResponseDto book2 = leaderResp2.getPayload();
+        book2.validate();
+        assertEquals("CONFIRMED", book2.getOutcome());
+        assertEquals(businessRequestId, book2.getRequestId());
+        assertEquals(initialTicketId, book2.getTicketId(), "Must return identical ticketId; no double-booking occurred");
     }
 }
