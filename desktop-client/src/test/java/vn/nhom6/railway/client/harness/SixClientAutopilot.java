@@ -262,7 +262,11 @@ public final class SixClientAutopilot {
                 return;
             }
 
-            String reasonCode = bookingVm.getErrorCode();
+            String rawErrorCode = bookingVm.getErrorCode();
+            String reasonCode = (finalState == BookingViewModel.UiState.CONFIRMED
+                    || finalState == BookingViewModel.UiState.SUCCESS)
+                    ? "-"
+                    : (rawErrorCode != null && !rawErrorCode.isBlank() ? rawErrorCode : "-");
             String pillText;
             String pillStyle;
             switch (finalState) {
@@ -271,7 +275,7 @@ public final class SixClientAutopilot {
                     pillStyle = "-fx-background-color: #16a34a; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 2 10; -fx-background-radius: 10;";
                 }
                 case REJECTED -> {
-                    pillText = "REJECTED (" + (reasonCode != null && !reasonCode.isBlank() ? reasonCode : "SEAT_ALREADY_BOOKED") + ")";
+                    pillText = "REJECTED (" + (!"-".equals(reasonCode) ? reasonCode : "SEAT_ALREADY_BOOKED") + ")";
                     pillStyle = "-fx-background-color: #dc2626; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 2 10; -fx-background-radius: 10;";
                 }
                 case UNKNOWN -> {
@@ -287,53 +291,66 @@ public final class SixClientAutopilot {
             outcomePill.setText(pillText);
             outcomePill.setStyle(pillStyle);
 
-            // Chờ 1 nhịp refresh ghế để G02 hiển thị BOOKED nhất quán (trừ khi UNKNOWN)
+            // Chờ 1 nhịp refresh ghế (có bảo vệ timeout 2s) để G02 hiển thị BOOKED nhất quán (trừ khi UNKNOWN)
+            AtomicBoolean finalized = new AtomicBoolean(false);
             Runnable finalizeAndWrite = () -> {
-                SeatViewModel seatVm = seatGridController.getSeatViewModel(targetSeat);
-                String seatStatus = (seatVm != null) ? seatVm.getStatus().name() : "UNKNOWN";
-                String verLabel = (refreshService != null)
-                        ? refreshService.getVerification().getDisplayName()
-                        : "Chưa xác minh";
-                int pendingCount = 0;
-                PersistentPendingJournal j = ClientFactory.getJournal();
-                if (j != null && !j.isClosed()) {
-                    pendingCount = j.loadPending().size();
+                if (!finalized.compareAndSet(false, true)) {
+                    return;
                 }
+                try {
+                    SeatViewModel seatVm = seatGridController.getSeatViewModel(targetSeat);
+                    String seatStatus = (seatVm != null) ? seatVm.getStatus().name() : "UNKNOWN";
+                    String verLabel = (refreshService != null)
+                            ? refreshService.getVerification().getDisplayName()
+                            : "Chưa xác minh";
+                    int pendingCount = 0;
+                    PersistentPendingJournal j = ClientFactory.getJournal();
+                    if (j != null && !j.isClosed()) {
+                        pendingCount = j.loadPending().size();
+                    }
 
-                detailLabel.setText(String.format(
-                        "reqId: %s | %s: %s [%s] | %dms | pending=%d",
-                        requestId.substring(0, Math.min(13, requestId.length())) + "...",
-                        targetSeat,
-                        seatStatus,
-                        verLabel,
-                        elapsedMs,
-                        pendingCount
-                ));
-
-                if (!snapshotFileProp.isBlank()) {
-                    saveWindowSnapshot(scene, Paths.get(snapshotFileProp));
-                }
-
-                if (!resultFileProp.isBlank()) {
-                    writeResultFile(
-                            Paths.get(resultFileProp),
-                            clientId,
-                            requestId,
-                            Instant.ofEpochMilli(sentAtMs).toString(),
-                            finalState.name(),
-                            reasonCode != null && !reasonCode.isBlank() ? reasonCode : "-",
-                            elapsedMs,
+                    detailLabel.setText(String.format(
+                            "reqId: %s | %s: %s [%s] | %dms | pending=%d",
+                            requestId.substring(0, Math.min(13, requestId.length())) + "...",
+                            targetSeat,
                             seatStatus,
                             verLabel,
-                            sourceTag,
+                            elapsedMs,
                             pendingCount
-                    );
+                    ));
+
+                    if (!snapshotFileProp.isBlank()) {
+                        saveWindowSnapshot(scene, Paths.get(snapshotFileProp));
+                    }
+
+                    if (!resultFileProp.isBlank()) {
+                        writeResultFile(
+                                Paths.get(resultFileProp),
+                                clientId,
+                                requestId,
+                                Instant.ofEpochMilli(sentAtMs).toString(),
+                                finalState.name(),
+                                reasonCode,
+                                elapsedMs,
+                                seatStatus,
+                                verLabel,
+                                sourceTag,
+                                pendingCount
+                        );
+                    }
+                } catch (Throwable t) {
+                    System.err.println("[AUTOPILOT client-" + clientId + "] Lỗi finalizeAndWrite: " + t);
+                    t.printStackTrace(System.err);
                 }
             };
 
             if (refreshService != null && finalState != BookingViewModel.UiState.UNKNOWN) {
-                refreshService.refreshNow().whenComplete((snap, err) ->
-                        scheduler.schedule(() -> Platform.runLater(finalizeAndWrite), 250L, TimeUnit.MILLISECONDS));
+                refreshService.refreshNow()
+                        .orTimeout(2, TimeUnit.SECONDS)
+                        .whenComplete((snap, err) ->
+                                scheduler.schedule(() -> Platform.runLater(finalizeAndWrite), 250L, TimeUnit.MILLISECONDS));
+                // Bảo hiểm thêm nếu refresh callback chậm bất thường
+                scheduler.schedule(() -> Platform.runLater(finalizeAndWrite), 2800L, TimeUnit.MILLISECONDS);
             } else {
                 scheduler.schedule(() -> Platform.runLater(finalizeAndWrite), 250L, TimeUnit.MILLISECONDS);
             }
