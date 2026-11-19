@@ -16,6 +16,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.SeatsRefreshService;
+import vn.nhom6.railway.client.controller.ClientErrorKind;
 import vn.nhom6.railway.client.controller.ErrorPresentation;
 import vn.nhom6.railway.client.controller.ErrorPresentationMapper;
 import vn.nhom6.railway.client.controller.PresentationKind;
@@ -430,7 +431,10 @@ public class BookingViewModel {
             }
             case DISCONNECTED -> {
                 uiState.set(UiState.DISCONNECTED);
-                updateSeatStatus(result.getSeatId(), SeatViewModel.SeatStatus.UNKNOWN);
+                if (presentation.clientErrorKind() != ClientErrorKind.FAILED_NOT_SENT
+                        && !ErrorPresentationMapper.CODE_FAILED_NOT_SENT.equals(presentation.rawCode())) {
+                    updateSeatStatus(result.getSeatId(), SeatViewModel.SeatStatus.UNKNOWN);
+                }
                 ensureJournalPending(reqId);
             }
             case CLIENT_ERROR -> {
@@ -477,7 +481,14 @@ public class BookingViewModel {
         message.set(presentation.message() + (reqId != null ? " (requestId: " + reqId + ")" : ""));
         errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
 
-        if (presentation.kind() == PresentationKind.DISCONNECTED) {
+        if (presentation.clientErrorKind() == ClientErrorKind.FAILED_NOT_SENT
+                || presentation.clientErrorKind() == ClientErrorKind.CONNECTION_FAILED
+                || ErrorPresentationMapper.CODE_FAILED_NOT_SENT.equals(presentation.rawCode())) {
+            uiState.set(UiState.DISCONNECTED);
+            // Theo SPEC-03 / TV1-D19: Lỗi kết nối trước khi gửi (FAILED_NOT_SENT) -> GHẾ KHÔNG ĐỔI!
+            // Tuyệt đối không đổi trạng thái ghế sang UNKNOWN
+            ensureJournalPending(reqId);
+        } else if (presentation.kind() == PresentationKind.DISCONNECTED) {
             uiState.set(UiState.DISCONNECTED);
             String targetSeat = (activeRequest != null) ? activeRequest.getSeatId() : null;
             updateSeatStatus(targetSeat, SeatViewModel.SeatStatus.UNKNOWN);

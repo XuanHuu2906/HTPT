@@ -132,6 +132,55 @@ class BookingViewModelTest {
     }
 
     @Test
+    @DisplayName("Lỗi kết nối trước khi gửi FAILED_NOT_SENT: uiState=DISCONNECTED, ghế KHÔNG đổi sang UNKNOWN")
+    void testBookFailedNotSentStateDoesNotChangeSeat() throws Exception {
+        vn.nhom6.railway.client.network.BookingClient failedNotSentClient = new vn.nhom6.railway.client.network.BookingClient() {
+            @Override
+            public CompletableFuture<vn.nhom6.railway.client.network.GetSeatsResponseDto> getSeats(vn.nhom6.railway.protocol.dto.GetSeatsRequestDto request) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            @Override
+            public CompletableFuture<BookTicketResponseDto> book(vn.nhom6.railway.protocol.dto.BookTicketRequestDto request) {
+                CompletableFuture<BookTicketResponseDto> f = new CompletableFuture<>();
+                f.completeExceptionally(new vn.nhom6.railway.client.network.FailedNotSentException("Connect refused trước khi gửi"));
+                return f;
+            }
+
+            @Override
+            public CompletableFuture<CancelTicketResponseDto> cancel(vn.nhom6.railway.client.network.CancelTicketRequestDto request) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            @Override
+            public CompletableFuture<vn.nhom6.railway.client.network.GetRequestResultResponseDto> getRequestResult(String requestId) {
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+
+        BookingViewModel vm = new BookingViewModel(failedNotSentClient);
+        vm.setSyncMode(true);
+        javafx.collections.ObservableList<SeatViewModel> seats = javafx.collections.FXCollections.observableArrayList();
+        SeatViewModel seatG01 = new SeatViewModel("G01", SeatViewModel.SeatStatus.AVAILABLE);
+        seats.add(seatG01);
+        vm.setSeatsList(seats);
+
+        // Ban đầu ghế G01 là AVAILABLE
+        assertEquals(SeatViewModel.SeatStatus.AVAILABLE, seatG01.getStatus());
+
+        CompletableFuture<BookTicketResponseDto> future = vm.book("G01", "Khách Test");
+        try {
+            future.get(2, TimeUnit.SECONDS);
+        } catch (Exception ignored) {}
+
+        assertEquals(BookingViewModel.UiState.DISCONNECTED, vm.getUiState());
+        assertEquals("FAILED_NOT_SENT", vm.getErrorCode());
+        // Ghế G01 phải giữ nguyên AVAILABLE, không bị đổi sang UNKNOWN
+        assertEquals(SeatViewModel.SeatStatus.AVAILABLE, seatG01.getStatus(),
+                "Khi lỗi FAILED_NOT_SENT, trạng thái ghế không được đổi sang UNKNOWN vì lệnh chưa từng rời máy khách!");
+    }
+
+    @Test
     @DisplayName("Hủy vé thành công qua ViewModel")
     void testCancelSuccessState() throws Exception {
         mockClient.setScenario(MockScenario.SUCCESS);
