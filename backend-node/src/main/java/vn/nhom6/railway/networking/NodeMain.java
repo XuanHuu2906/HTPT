@@ -198,6 +198,12 @@ public class NodeMain implements AutoCloseable {
         // 3. Booking Handlers on Client Server: BOOK_TICKET and GET_SEATS (SPEC-03 §4.1 / §4.2)
         clientRegistry.register(MessageType.BOOK_TICKET, new BookTicketHandler(bookingService, config.nodeId()));
         clientRegistry.register(MessageType.GET_SEATS, new GetSeatsHandler(bookingService, config.nodeId()));
+
+        // 4. Result Lookup Handler on Client Server: GET_REQUEST_RESULT (SPEC-03 §4.4, TV3-D19)
+        ResultLookup resultLookup = (bookingService instanceof ResultLookup rl)
+                ? rl
+                : reqId -> ResultLookup.LookupResult.unknown(reqId);
+        clientRegistry.register(MessageType.GET_REQUEST_RESULT, new GetRequestResultHandler(resultLookup, config.nodeId(), clientDispatcher.getLeaderRouter()));
     }
 
     public BookingService getBookingService() {
