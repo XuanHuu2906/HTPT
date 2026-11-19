@@ -314,6 +314,10 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
                         false,
                         null,
                         "Hết thời gian chờ phản hồi từ máy chủ (read timeout)");
+            } catch (FailedNotSentException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "BOOK_TICKET", "FAILED_NOT_SENT", elapsed);
+                throw new CompletionException("Kết nối thất bại trước khi gửi: " + e.getMessage(), e);
             } catch (IOException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 logCall(requestId, messageId, "BOOK_TICKET", "CONNECTION_LOST", elapsed);
@@ -364,7 +368,12 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
 
     private MessageEnvelope<JsonNode> sendAndReceive(MessageEnvelope<?> requestEnvelope) throws IOException {
         synchronized (socketLock) {
-            ensureConnected();
+            try {
+                ensureConnected();
+            } catch (IOException e) {
+                closeSocket();
+                throw new FailedNotSentException("Kết nối thất bại trước khi gửi: " + e.getMessage(), e);
+            }
             try {
                 FrameCodec.writeMessage(out, requestEnvelope);
                 byte[] responseBytes = FrameCodec.readFrame(in);

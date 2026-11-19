@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import vn.nhom6.railway.client.ClientFactory;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
 import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
@@ -106,9 +107,17 @@ public class PendingRequestsViewModel {
                     if ("APPLIED_SUCCESS".equals(state)) {
                         item.updateResolved("CONFIRMED");
                         statusMessage.set("Yêu cầu " + item.getRequestId() + " đã được xác nhận THÀNH CÔNG (CONFIRMED)!");
+                        vn.nhom6.railway.client.SeatsRefreshService srs = ClientFactory.getSeatsRefreshService();
+                        if (srs != null) {
+                            srs.refreshNow();
+                        }
                     } else if ("APPLIED_REJECTED".equals(state)) {
                         item.updateResolved("REJECTED");
                         statusMessage.set("Yêu cầu " + item.getRequestId() + " đã bị TỪ CHỐI (REJECTED): " + response.getReasonCode());
+                        vn.nhom6.railway.client.SeatsRefreshService srs = ClientFactory.getSeatsRefreshService();
+                        if (srs != null) {
+                            srs.refreshNow();
+                        }
                     } else {
                         statusMessage.set("Yêu cầu " + item.getRequestId() + " chưa có kết quả (" + state + "), giữ CHƯA XÁC NHẬN.");
                     }
@@ -147,9 +156,17 @@ public class PendingRequestsViewModel {
                     if ("CONFIRMED".equals(outcome)) {
                         item.updateResolved("CONFIRMED");
                         statusMessage.set("Gửi lại thành công: Vé đã được XÁC NHẬN (CONFIRMED)!");
+                        vn.nhom6.railway.client.SeatsRefreshService srs = ClientFactory.getSeatsRefreshService();
+                        if (srs != null) {
+                            srs.refreshNow();
+                        }
                     } else if ("REJECTED".equals(outcome)) {
                         item.updateResolved("REJECTED");
                         statusMessage.set("Gửi lại có kết quả: Yêu cầu bị TỪ CHỐI (REJECTED): " + response.getReasonCode());
+                        vn.nhom6.railway.client.SeatsRefreshService srs = ClientFactory.getSeatsRefreshService();
+                        if (srs != null) {
+                            srs.refreshNow();
+                        }
                     } else {
                         statusMessage.set("Gửi lại chưa nhận được kết quả cuối (" + outcome + "), tiếp tục giữ CHƯA XÁC NHẬN.");
                         journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);

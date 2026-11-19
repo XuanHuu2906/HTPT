@@ -1,0 +1,192 @@
+================================================================================
+NHÓM 6 — HỆ THỐNG PHÂN TÁN BÁN VÉ TÀU CAO TỐC
+LOG THỰC HIỆN TASK TV1-D19: KIỂM THỬ VÀ SỬA UI KHI ĐẶT TRÙNG, TIMEOUT, MẤT QUORUM
+================================================================================
+Thời gian bắt đầu: 2026-11-19 09:50:00 +07:00
+Thời gian hoàn tất: 2026-11-19 10:41:00 +07:00
+Thực hiện: TV1 (Khoa - Desktop Client JavaFX, package vn.nhom6.railway.client)
+Môi trường hệ thống:
+  - OS: Windows 11 amd64 (Version 10.0.26300.9974)
+  - JDK: Eclipse Adoptium OpenJDK 21.0.13.9-hotspot (LTS)
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+
+--------------------------------------------------------------------------------
+BƯỚC 0: KẾT QUẢ PREFLIGHT (KIỂM TRA TRƯỚC KHI CODE)
+--------------------------------------------------------------------------------
+
+1. Đối chiếu tài liệu đặc tả SPEC-03 và SPEC-05:
+   - Các phản hồi BOOK_TICKET:
+     + CONFIRMED: Raft commit + DB apply bền vững. Vé được cấp hợp lệ.
+     + REJECTED: Raft commit + DB apply quyết định từ chối nghiệp vụ (SEAT_ALREADY_BOOKED hoặc INVALID_REQUEST).
+     + UNKNOWN: Server hết hạn chờ kết quả apply (TIMEOUT_UNKNOWN) hoặc kết nối mạng bị gián đoạn sau khi gửi.
+     + Không có trạng thái trung gian "đang xử lý/đã nhận" được coi là hoàn tất.
+   - Các mã lỗi chính thức theo SPEC-03 Section 7:
+     + SEAT_ALREADY_BOOKED (reasonCode của REJECTED)
+     + TIMEOUT_UNKNOWN (reasonCode của UNKNOWN)
+     + NO_QUORUM (errorCode trong ERROR_RESPONSE)
+     + NOT_LEADER (errorCode trong ERROR_RESPONSE kèm leaderHint, term)
+     + READ_UNAVAILABLE (errorCode trong ERROR_RESPONSE khi đọc không qua read barrier)
+     + REQUEST_ID_CONFLICT (errorCode trong ERROR_RESPONSE)
+     + INVALID_REQUEST (errorCode hoặc reasonCode)
+     + INTERNAL_ERROR (errorCode trong ERROR_RESPONSE)
+     + UNSUPPORTED_VERSION (errorCode trong ERROR_RESPONSE)
+     + TICKET_NOT_ACTIVE (reasonCode của CANCEL_TICKET_RESPONSE)
+   - Đánh giá khả năng commit sau mã lỗi:
+     + SEAT_ALREADY_BOOKED: ĐÃ COMMIT + APPLY quyết định từ chối. Không bao giờ commit vé mới cho requestId này.
+     + TIMEOUT_UNKNOWN: Lệnh CÓ THỂ đã hoặc đang được apply tại Leader. Tuyệt đối không coi là thành công hay thất bại.
+     + NO_QUORUM: Leader không đạt đa số voter 3/5 nên chưa thể cam kết ghi an toàn. Lệnh có thể sẽ được commit sau khi cụm phục hồi hoặc timeout. Không báo thành công hay thất bại dứt khoát.
+     + NOT_LEADER: Follower từ chối; lệnh chưa append trên node này. Nhưng nếu là sau thay đổi vai trò (Leader cũ bị demote), lệnh có thể đã append.
+     + REQUEST_ID_CONFLICT: Lệnh ban đầu đã commit/đang xử lý; payload mới bị từ chối trước append.
+     + INVALID_REQUEST: Lệnh sai định dạng, chắc chắn chưa append vào Raft log.
+     + INTERNAL_ERROR: Lỗi chưa phân loại; không chứng minh lệnh chưa commit.
+
+2. Ma trận đối chiếu SPEC-03 ↔ shared ↔ ErrorPresentationMapper ↔ BookingViewModel:
+   - Đã lập ma trận chi tiết lưu tại: artifacts/evidence/D19/TV1-D19-errorcode-matrix.md
+   - Điểm lệch phát hiện và xử lý:
+     + Phân biệt mất mạng trước vs sau khi gửi: ConnectException (offline trước khi gửi byte nào) -> FAILED_NOT_SENT, ghế giữ nguyên AVAILABLE, UI báo lỗi kết nối.
+     + Mất mạng hoặc timeout sau khi đã gửi byte -> UNKNOWN (TIMEOUT_UNKNOWN), ghế chuyển sang UNKNOWN (viền nét đứt), pending journal bảo lưu SENT_UNRESOLVED, hiển thị nút Tra cứu và Gửi lại cùng requestId.
+     + Tuyệt đối không dùng chuỗi tự chế SEAT_SOLD; nếu gặp SEAT_SOLD rơi vào nhánh lỗi không nhận diện mã.
+
+3. Thu thập và phân loại mẫu phản hồi (REAL vs FIXTURE):
+   - Mẫu FIXTURE: Đã có sẵn trong test harness (FakeNodeServer, FakeClusterMain, MockBookingClient, ProtocolContractTest).
+   - Mẫu REAL từ cụm 5 Node thật: NOT_RUN / BLOCKED (do cụm dev 5 Node hiện tại đang không chạy, ports 9101-9105 đóng).
+   - Danh sách mẫu response thật cần xin từ TV2/TV3/TV4/TV5:
+     [1] BOOK_TICKET_RESPONSE(outcome=REJECTED, reasonCode=SEAT_ALREADY_BOOKED) từ Node Leader khi ghế đã có vé ACTIVE.
+     [2] ERROR_RESPONSE(errorCode=NO_QUORUM) từ Node khi cụm bị cô lập mạng chỉ còn 2 Node (không đạt 3/5).
+     [3] ERROR_RESPONSE(errorCode=NOT_LEADER, leaderHint="node-X") từ Follower Node.
+     [4] GET_REQUEST_RESULT_RESPONSE(state=APPLIED_SUCCESS / APPLIED_REJECTED) từ Node Leader sau khi commit.
+
+4. Kiểm tra SocketBookingClient.getRequestResult và DTO GET_REQUEST_RESULT:
+   - Module `shared` (TV3) hiện tại CHƯA có DTO GetRequestResultRequestDto / GetRequestResultResponseDto.
+   - Phía Node: Có interface ResultLookup trong `backend-node`, nhưng chưa có DTO chung trong `shared`.
+   - Vì vậy: `SocketBookingClient.getRequestResult` trong `src/main` giữ nguyên BLOCKED theo SPEC-03 để không vi phạm contract.
+   - Kiểm thử UI và pending lookup trong harness D19 sử dụng mock/fake response adapter theo wire protocol SPEC-03 Section 4.4.
+
+5. Kiểm tra kết nối cụm dev 5 Node:
+   - Port 9101 (node-1): DOWN
+   - Port 9102 (node-2): DOWN
+   - Port 9103 (node-3): DOWN
+   - Port 9104 (node-4): DOWN
+   - Port 9105 (node-5): DOWN
+   - Kết luận: Cụm máy chủ chưa chạy. Các ca test cụm thật sẽ ghi NOT_RUN / SKIPPED.
+
+--------------------------------------------------------------------------------
+BƯỚC 1: KHÓA BẢNG ERRORCODE VÀ MA TRẬN ĐỐI CHIẾU
+--------------------------------------------------------------------------------
+- File tài liệu: `artifacts/evidence/D19/TV1-D19-errorcode-matrix.md`
+- Đối chiếu toàn diện 10 mã lỗi SPEC-03 với shared và UI.
+- Quy định rõ hành vi UI cho từng mã lỗi:
+  + SEAT_ALREADY_BOOKED: UiState.REJECTED, ghế BOOKED, refresh sơ đồ ghế, resolve journal, không cho retry cùng ghế.
+  + TIMEOUT_UNKNOWN / UNKNOWN: UiState.UNKNOWN, ghế UNKNOWN (viền cam nét đứt), bảo toàn journal SENT_UNRESOLVED, hiển thị requestId, số lần kiểm tra, nút Tra cứu & Gửi lại.
+  + NO_QUORUM: UiState.ERROR, giữ backoff kết nối, không spam request, hướng dẫn người dùng kiểm tra lại hoặc đợi cụm khôi phục quorum.
+  + FAILED_NOT_SENT: UiState.DISCONNECTED, ghế giữ nguyên trạng thái cũ (AVAILABLE), cho phép thử lại ngay cùng requestId.
+
+--------------------------------------------------------------------------------
+BƯỚC 2: ĐỐI CHIẾU VÀ SỬA ERRORPRESENTATIONMAPPER
+--------------------------------------------------------------------------------
+- Bổ sung `ClientErrorKind.FAILED_NOT_SENT` và `FailedNotSentException`.
+- Sửa mapping:
+  + `NO_QUORUM`: PresentationKind.ERROR, banner cảnh báo lỗi cụm không đủ đa số 3/5.
+  + `READ_UNAVAILABLE`: PresentationKind.UNKNOWN, needsSeatRefresh=true (do rào chắn đọc không thành công, cụm chưa chứng minh được trạng thái hiện tại).
+  + `REQUEST_ID_CONFLICT`: PresentationKind.ERROR, cảnh báo xung đột payload cho cùng requestId.
+  + `NOT_LEADER`: PresentationKind.INFO / REDIRECT, hiển thị leaderHint.
+  + `SEAT_ALREADY_BOOKED`: PresentationKind.REJECTED, thông báo rõ ghế đã được đặt, không dùng mã tự chế.
+- Cập nhật bộ unit test `ErrorPresentationMapperTest`: 15/15 tests PASS.
+
+--------------------------------------------------------------------------------
+BƯỚC 3: PHÂN BIỆT FAILED_NOT_SENT VỚI UNKNOWN TRONG CLIENT VÀ VIEWMODEL
+--------------------------------------------------------------------------------
+- Trong `SocketBookingClient`:
+  + Kiểm tra kết nối trước khi gửi byte (`ensureConnected()` ném IOException) -> bọc trong `FailedNotSentException` với `ClientErrorKind.FAILED_NOT_SENT`.
+  + Sau khi đã gửi byte hoặc socket timeout / read timeout / EOF -> trả về UNKNOWN (TIMEOUT_UNKNOWN).
+- Trong `BookingViewModel`:
+  + Nhận `FailedNotSentException` / `FAILED_NOT_SENT`: UiState chuyển `DISCONNECTED`, ghế giữ nguyên trạng thái (`AVAILABLE`), không đổi sang `UNKNOWN`.
+  + Nhận `UNKNOWN` (do timeout hoặc đứt kết nối sau gửi): UiState chuyển `UNKNOWN`, ghế chuyển sang `UNKNOWN` (viền cam nét đứt), bảo lưu pending journal `SENT_UNRESOLVED`.
+
+--------------------------------------------------------------------------------
+BƯỚC 4: HOÀN THIỆN HIỂN THỊ TRA CỨU VÀ GỬI LẠI THEO REQUESTID KHI UNKNOWN
+--------------------------------------------------------------------------------
+- Trong `BookingViewModel`:
+  + Bổ sung `activeRequestIdProperty`, `checkCountProperty`, `lastCheckedTimeProperty`.
+  + Bổ sung phương thức `checkRequestResult()` gọi tra cứu kết quả theo requestId:
+    * `APPLIED_SUCCESS`: chuyển `UiState.CONFIRMED`, ghế `BOOKED`, giải quyết journal `RESOLVED`, refresh ghế.
+    * `APPLIED_REJECTED`: chuyển `UiState.REJECTED`, giải quyết journal `RESOLVED`, refresh ghế.
+    * `PENDING` / `UNKNOWN`: tiếp tục giữ `UiState.UNKNOWN`, tăng `checkCount`, hiển thị thông điệp tiếp tục tra cứu hoặc gửi lại.
+  + Bổ sung phương thức `retryCurrentRequest()`: gửi lại với cùng requestId và nguyên văn payload từ journal.
+- Trong `PendingRequestsViewModel`:
+  + Hỗ trợ tra cứu và gửi lại các yêu cầu UNKNOWN / pending từ journal.
+  + Tự động kích hoạt refresh sơ đồ ghế khi kết quả tra cứu hoặc gửi lại thành công/từ chối.
+
+--------------------------------------------------------------------------------
+BƯỚC 5: XÂY DỰNG BỘ KIỂM THỬ TỰ ĐỘNG BOOKINGERRORFLOWTEST (13 KỊCH BẢN)
+--------------------------------------------------------------------------------
+File: `desktop-client/src/test/java/vn/nhom6/railway/client/BookingErrorFlowTest.java`
+Gồm 13 kịch bản toàn diện kiểm tra đúng mọi bất biến:
+  1. test01_RejectedSeatAlreadyBooked_TransitionsSeatToBookedAndRefreshes: Ghế chuyển BOOKED, refresh trigger, journal RESOLVED. (PASS)
+  2. test02_RejectedSeatAlreadyBooked_CannotRetrySameSeat: Ngăn chặn gửi lại cùng ghế đã bị từ chối. (PASS)
+  3. test03_FailedNotSent_PreservesSeatStatusAndAllowsRetry: Mất kết nối trước gửi, ghế giữ AVAILABLE, cho thử lại. (PASS)
+  4. test04_TimeoutUnknown_TransitionsSeatToUnknownAndPreservesJournal: Timeout sau gửi, ghế sang UNKNOWN, pending giữ SENT_UNRESOLVED. (PASS)
+  5. test05_TimeoutUnknown_MessageNeverClaimsSuccessOrFail: Thông báo tuyệt đối không chứa chữ 'thành công', 'thất bại', 'đã đặt'. (PASS)
+  6. test06_LookupResult_AppliedSuccess_TransitionsToConfirmed: Tra cứu thành công -> UiState.CONFIRMED, ghế BOOKED. (PASS)
+  7. test07_LookupResult_AppliedRejected_TransitionsToRejected: Tra cứu bị từ chối -> UiState.REJECTED, ghế BOOKED. (PASS)
+  8. test08_LookupResult_PendingOrTimeout_RemainsUnknownAndIncrementsCheckCount: Tra cứu pending -> giữ UNKNOWN, tăng checkCount. (PASS)
+  9. test09_RetryWithSameRequestId_PreservesRequestIdAndPayload: Gửi lại giữ nguyên 100% requestId và JSON payload. (PASS)
+  10. test10_NoQuorum_TransitionsToErrorAndShowsClusterWarning: Thiếu đa số 3/5 -> UiState.ERROR, cảnh báo không thể cam kết an toàn. (PASS)
+  11. test11_RequestIdConflict_ShowsConflictError: Xung đột requestId -> UiState.ERROR, báo xung đột payload. (PASS)
+  12. test12_ReadUnavailable_DisplaysUnknownStateWithRefreshPrompt: Read barrier thất bại -> PresentationKind.UNKNOWN, needsRefresh=true. (PASS)
+  13. test13_RealCluster5Nodes_MarkedNotRunIfOffline: Kiểm thử cụm thật 5 Node được đánh dấu SKIPPED / NOT_RUN khi cụm offline. (SKIPPED)
+
+--------------------------------------------------------------------------------
+BƯỚC 6: CHỤP ẢNH BẰNG CHỨNG GIAO DIỆN (UI EVIDENCE SNAPSHOTS)
+--------------------------------------------------------------------------------
+Lớp kiểm thử: `vn.nhom6.railway.client.BookingErrorUiEvidenceTest`
+Lệnh chạy: `mvn -B -ntp -pl desktop-client -am test -Dtest=BookingErrorUiEvidenceTest -Dui.evidence=true -Dsurefire.failIfNoSpecifiedTests=false -Dmaven.compiler.release=21`
+Kết quả: 1 test run, 0 failures, 0 errors, 0 skipped (PASS).
+Đã sinh thành công 4 ảnh tại `artifacts/evidence/D19/`:
+  1. `TV1-D19-rejected-seat.png` (1040x720, 55,165 bytes):
+     - Kịch bản: REJECTED (SEAT_ALREADY_BOOKED).
+     - Chi tiết: Ghế G02 màu đỏ (Đã đặt / BOOKED). Banner hiển thị rõ thông báo từ chối nghiệp vụ "✗ Ghế G02 đã có người đặt trước (SEAT_ALREADY_BOOKED). Vui lòng chọn ghế khác."
+  2. `TV1-D19-network-not-sent.png` (1040x720, 56,564 bytes):
+     - Kịch bản: FAILED_NOT_SENT (ConnectException trước khi gửi bất kỳ byte nào).
+     - Chi tiết: Ghế G01 giữ nguyên màu xanh ngọc (Trống / AVAILABLE). Banner trạng thái hiển thị "⚠ Mất kết nối trước khi gửi (FAILED_NOT_SENT): ConnectException: Connection refused (127.0.0.1:9101). Lệnh chưa từng rời máy khách."
+  3. `TV1-D19-unknown-lookup.png` (1040x720, 58,590 bytes):
+     - Kịch bản: TIMEOUT_UNKNOWN và Tra cứu / Gửi lại theo requestId.
+     - Chi tiết: Ghế G08 viền nét đứt cam (Chưa xác định / UNKNOWN). Banner trạng thái hiển thị "⏳ Chưa xác định kết quả (TIMEOUT_UNKNOWN): Đã lưu vào Sổ lệnh Pending. Vui lòng bấm 'Tra cứu kết quả' theo requestId: 34f3aaba-5662-4f76-88bf-7729837190d1".
+  4. `TV1-D19-no-quorum.png` (1040x720, 57,226 bytes):
+     - Kịch bản: NO_QUORUM (Cụm máy chủ thiếu đa số voter 3/5).
+     - Chi tiết: Banner trạng thái cảnh báo "⚡ Lỗi cụm: Không đủ đa số (Quorum 3/5) để cam kết an toàn! (NO_QUORUM - Leader chưa thể xác nhận ghi bền vững)."
+
+--------------------------------------------------------------------------------
+BƯỚC 7: KIỂM TRA BẤT BIẾN KIẾN TRÚC VÀ CLEAN ARCHITECTURE
+--------------------------------------------------------------------------------
+1. Kiểm tra import java.net và java.sql trong Controller và ViewModel:
+   - Command: Get-ChildItem -Recurse desktop-client/src/main/java/vn/nhom6/railway/client/controller, desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel | Select-String 'import\s+(java\.net|java\.sql)'
+   - Kết quả: PASS (0 import vi phạm). Chỉ có trong comment ghi chú bất biến.
+2. Kiểm tra thư viện HTTP / REST / WebSocket bị cấm:
+   - Command: Get-ChildItem -Recurse desktop-client/src/main/java | Select-String 'HttpClient|HttpURLConnection|okhttp|retrofit|WebSocket'
+   - Kết quả: PASS (0 thư viện vi phạm). Ứng dụng Desktop chạy thuần TCP Socket.
+3. Kiểm tra chuỗi tự chế SEAT_SOLD:
+   - Command: Get-ChildItem -Recurse desktop-client/src/main | Select-String 'SEAT_SOLD'
+   - Kết quả: PASS. Chỉ có trong comment ghi chú của ErrorPresentationMapper: "Không dùng chuỗi tự chế SEAT_SOLD".
+4. Kiểm tra mã hóa UTF-8 và LF/CRLF:
+   - Toàn bộ source code Java và FXML sử dụng UTF-8 chuẩn.
+
+--------------------------------------------------------------------------------
+KẾT QUẢ KIỂM THỬ TOÀN BỘ HỆ THỐNG TRƯỚC KHI BÀN GIAO
+--------------------------------------------------------------------------------
+Lệnh chạy: `mvn -B -ntp -pl desktop-client -am clean test -Dmaven.compiler.release=21`
+Thời gian chạy: 19.688 s
+Kết quả: BUILD SUCCESS
+Thống kê chi tiết:
+  - Module `railway-distributed-system`: SUCCESS [0.321 s]
+  - Module `shared`: SUCCESS [4.163 s] (33 tests run, 0 failures, 0 errors, 0 skipped - PASS)
+  - Module `desktop-client`: SUCCESS [15.097 s] (222 tests run, 0 failures, 0 errors, 11 skipped - PASS)
+Tổng cộng: 255 tests (244 tests PASS, 11 tests SKIPPED vì cụm dev 5 Node offline).
+
+================================================================================
+KẾT LUẬN VÀ TRẠNG THÁI NGHIỆM THU
+================================================================================
+- Nhiệm vụ TV1-D19: ĐẠT TOÀN BỘ TIÊU CHÍ (PASS trên fixture/fake, cụm thật ghi rõ NOT_RUN).
+- Sẵn sàng bàn giao cho các thành viên TV2/TV3/TV4/TV5 để tích hợp tại mốc G5.
+================================================================================

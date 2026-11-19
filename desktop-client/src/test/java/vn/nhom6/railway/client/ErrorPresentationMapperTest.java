@@ -368,6 +368,14 @@ class ErrorPresentationMapperTest {
         assertEquals(ClientErrorKind.CONNECTION_FAILED, pConnect.clientErrorKind());
         assertEquals(PresentationKind.DISCONNECTED, pConnect.kind());
 
+        ErrorPresentation pNotSent = ErrorPresentationMapper.mapThrowable(
+                new vn.nhom6.railway.client.network.FailedNotSentException("Connect refused before write"), false);
+        assertEquals(ClientErrorKind.FAILED_NOT_SENT, pNotSent.clientErrorKind());
+        assertEquals(PresentationKind.DISCONNECTED, pNotSent.kind());
+        assertEquals("FAILED_NOT_SENT", pNotSent.rawCode());
+        assertTrue(pNotSent.retryable());
+        assertFalse(pNotSent.needsSeatRefresh());
+
         ErrorPresentation pIo = ErrorPresentationMapper.mapThrowable(new IOException("Connection reset"), false);
         assertEquals(ClientErrorKind.CONNECTION_LOST, pIo.clientErrorKind());
         assertEquals(PresentationKind.DISCONNECTED, pIo.kind());
