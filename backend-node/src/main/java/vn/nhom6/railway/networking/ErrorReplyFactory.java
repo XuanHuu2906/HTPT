@@ -82,7 +82,31 @@ public final class ErrorReplyFactory {
             String message,
             Long term,
             String leaderHint) {
-        return createError(correlationId, "READ_UNAVAILABLE", message, leaderHint, term, null, localNodeId);
+        return createReadUnavailable(correlationId, null, localNodeId, message, term, leaderHint);
+    }
+
+    /**
+     * Builds a standard {@code READ_UNAVAILABLE} error envelope preserving business requestId per SPEC-03 Section 7.
+     */
+    public static MessageEnvelope<ErrorResponseDto> createReadUnavailable(
+            String correlationId,
+            String requestId,
+            String localNodeId,
+            String message,
+            Long term,
+            String leaderHint) {
+        return createError(correlationId, "READ_UNAVAILABLE", message, leaderHint, term, requestId, localNodeId);
+    }
+
+    /**
+     * Builds a standard {@code REQUEST_ID_CONFLICT} error envelope per SPEC-03 Section 7.
+     */
+    public static MessageEnvelope<ErrorResponseDto> createRequestIdConflict(
+            String correlationId,
+            String requestId,
+            String localNodeId,
+            String message) {
+        return createError(correlationId, "REQUEST_ID_CONFLICT", message, null, null, requestId, localNodeId);
     }
 
     /**

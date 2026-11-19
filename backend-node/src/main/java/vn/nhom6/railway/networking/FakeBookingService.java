@@ -2,6 +2,7 @@ package vn.nhom6.railway.networking;
 
 import vn.nhom6.railway.booking.ApplyResult;
 import vn.nhom6.railway.booking.BookingCommand;
+import vn.nhom6.railway.booking.BookingRequestHandler;
 import vn.nhom6.railway.booking.BookingStateMachine;
 import vn.nhom6.railway.protocol.dto.SeatDto;
 
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Operates deterministically according to SPEC-05 Section 3 without requiring PostgreSQL
  * or multi-node Raft consensus. Can be configured for simulated leader failover or timeouts.
  */
-public class FakeBookingService implements BookingService {
+public class FakeBookingService implements BookingService, ResultLookup {
 
     private final String nodeId;
     private final BookingStateMachine stateMachine;
@@ -112,5 +113,23 @@ public class FakeBookingService implements BookingService {
 
     public BookingStateMachine getStateMachine() {
         return stateMachine;
+    }
+
+    @Override
+    public LookupResult lookup(String requestId) throws Exception {
+        if (!isLeader()) {
+            throw new BookingRequestHandler.NotLeaderException(getLeaderHint());
+        }
+        return stateMachine.storedResult(requestId)
+                .map(res -> {
+                    if (res.outcome() == ApplyResult.Outcome.CONFIRMED) {
+                        return LookupResult.appliedSuccess(requestId, "BOOK_TICKET", res.ticketId(), res.appliedLogIndex());
+                    } else if (res.outcome() == ApplyResult.Outcome.REJECTED) {
+                        return LookupResult.appliedRejected(requestId, "BOOK_TICKET", res.reasonCode(), res.appliedLogIndex());
+                    } else {
+                        return LookupResult.unknown(requestId);
+                    }
+                })
+                .orElseGet(() -> LookupResult.unknown(requestId));
     }
 }

@@ -9,6 +9,8 @@ import vn.nhom6.railway.booking.BookingRequestHandler;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
+import vn.nhom6.railway.protocol.dto.GetRequestResultRequestDto;
+import vn.nhom6.railway.protocol.dto.GetRequestResultResponseDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 import vn.nhom6.railway.protocol.dto.RequestVoteRequestDto;
@@ -763,6 +765,153 @@ public class MessageDispatcherTest {
         assertEquals(MessageType.BOOK_TICKET_RESPONSE, resp1.getType());
 
         assertEquals(0, dispatcher.getActiveInFlightCount());
+    }
+
+    @Test
+    @DisplayName("TV3-D19: Dispatcher maps NoQuorumException to NO_QUORUM errorCode with term")
+    public void testDispatcherMapsNoQuorumExceptionToNoQuorumErrorCode() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        registry.register(MessageType.BOOK_TICKET, req -> {
+            throw new BookingRequestHandler.NoQuorumException();
+        });
+
+        LeaderRouter leaderRouter = new LeaderRouter(
+                "node-1", LeaderRouter.RoleProvider.fixed(Role.LEADER, 7L, "node-1")
+        );
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1", leaderRouter);
+
+        String reqId = UUID.randomUUID().toString();
+        BookTicketRequestDto dto = new BookTicketRequestDto(reqId, "SE-001", "G05", "Passenger No Quorum");
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.BOOK_TICKET, "client-app", dto);
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(MessageType.ERROR_RESPONSE, resp.getType());
+        assertEquals(req.getMessageId(), resp.getCorrelationId());
+
+        ErrorResponseDto err = (ErrorResponseDto) resp.getPayload();
+        err.validate();
+        assertEquals("NO_QUORUM", err.getErrorCode());
+        assertEquals(7L, err.getTerm());
+        assertEquals(reqId, err.getRequestId(), "requestId must be preserved on NO_QUORUM");
+    }
+
+    @Test
+    @DisplayName("TV3-D19: Dispatcher maps ReadUnavailableException to READ_UNAVAILABLE errorCode with term")
+    public void testDispatcherMapsReadUnavailableExceptionToReadUnavailableErrorCode() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        registry.register(MessageType.GET_SEATS, req -> {
+            throw new BookingRequestHandler.ReadUnavailableException("Log barrier failed to commit");
+        });
+
+        LeaderRouter leaderRouter = new LeaderRouter(
+                "node-1", LeaderRouter.RoleProvider.fixed(Role.LEADER, 8L, "node-1")
+        );
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1", leaderRouter);
+
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.GET_SEATS, "client-app", Map.of("tripId", "SE-001"));
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(MessageType.ERROR_RESPONSE, resp.getType());
+        assertEquals(req.getMessageId(), resp.getCorrelationId());
+
+        ErrorResponseDto err = (ErrorResponseDto) resp.getPayload();
+        err.validate();
+        assertEquals("READ_UNAVAILABLE", err.getErrorCode());
+        assertEquals(8L, err.getTerm());
+    }
+
+    @Test
+    @DisplayName("TV3-D19: Dispatcher maps RequestIdConflictException to REQUEST_ID_CONFLICT errorCode")
+    public void testDispatcherMapsRequestIdConflictExceptionToRequestIdConflictErrorCode() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        registry.register(MessageType.BOOK_TICKET, req -> {
+            throw new BookingRequestHandler.RequestIdConflictException();
+        });
+
+        LeaderRouter leaderRouter = new LeaderRouter(
+                "node-1", LeaderRouter.RoleProvider.fixed(Role.LEADER, 9L, "node-1")
+        );
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1", leaderRouter);
+
+        String reqId = UUID.randomUUID().toString();
+        BookTicketRequestDto dto = new BookTicketRequestDto(reqId, "SE-001", "G06", "Passenger Conflict");
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.BOOK_TICKET, "client-app", dto);
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(MessageType.ERROR_RESPONSE, resp.getType());
+        assertEquals(req.getMessageId(), resp.getCorrelationId());
+
+        ErrorResponseDto err = (ErrorResponseDto) resp.getPayload();
+        err.validate();
+        assertEquals("REQUEST_ID_CONFLICT", err.getErrorCode());
+        assertEquals(reqId, err.getRequestId());
+    }
+
+    @Test
+    @DisplayName("TV3-D19: Follower redirects GET_REQUEST_RESULT with NOT_LEADER and leaderHint per SPEC-03 §4.4")
+    public void testFollowerRedirectsGetRequestResultWithNotLeader() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        LeaderRouter leaderRouter = new LeaderRouter(
+                "node-2", LeaderRouter.RoleProvider.fixed(Role.FOLLOWER, 3L, "node-1")
+        );
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-2", leaderRouter);
+
+        String reqId = UUID.randomUUID().toString();
+        GetRequestResultRequestDto queryDto = new GetRequestResultRequestDto(reqId);
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.GET_REQUEST_RESULT, "client-app", queryDto);
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(MessageType.ERROR_RESPONSE, resp.getType());
+        assertEquals(req.getMessageId(), resp.getCorrelationId());
+
+        ErrorResponseDto err = (ErrorResponseDto) resp.getPayload();
+        err.validate();
+        assertEquals("NOT_LEADER", err.getErrorCode());
+        assertEquals("node-1", err.getLeaderHint());
+        assertEquals(3L, err.getTerm());
+        assertEquals(reqId, err.getRequestId());
+    }
+
+    @Test
+    @DisplayName("TV3-D19: Leader dispatches GET_REQUEST_RESULT successfully returning typed response")
+    public void testLeaderDispatchesGetRequestResultSuccessfully() throws Exception {
+        HandlerRegistry registry = new HandlerRegistry();
+        String targetRequestId = UUID.randomUUID().toString();
+
+        ResultLookup lookup = reqId -> {
+            if (targetRequestId.equals(reqId)) {
+                return ResultLookup.LookupResult.appliedSuccess(reqId, "BOOK_TICKET", "TKT-D19-SUCCESS", 77L);
+            }
+            return ResultLookup.LookupResult.unknown(reqId);
+        };
+
+        GetRequestResultHandler handler = new GetRequestResultHandler(lookup, "node-1");
+        registry.register(MessageType.GET_REQUEST_RESULT, handler);
+
+        LeaderRouter leaderRouter = new LeaderRouter(
+                "node-1", LeaderRouter.RoleProvider.fixed(Role.LEADER, 5L, "node-1")
+        );
+        MessageDispatcher dispatcher = new MessageDispatcher(registry, MessageDispatcher.ChannelType.CLIENT, "node-1", leaderRouter);
+
+        GetRequestResultRequestDto queryDto = new GetRequestResultRequestDto(targetRequestId);
+        MessageEnvelope<JsonNode> req = createRawEnvelope(MessageType.GET_REQUEST_RESULT, "client-app", queryDto);
+
+        MessageEnvelope<?> resp = dispatcher.dispatch(req);
+        assertNotNull(resp);
+        assertEquals(MessageType.GET_REQUEST_RESULT_RESPONSE, resp.getType());
+        assertEquals(req.getMessageId(), resp.getCorrelationId());
+
+        GetRequestResultResponseDto resultDto = (GetRequestResultResponseDto) resp.getPayload();
+        resultDto.validate();
+        assertEquals(GetRequestResultResponseDto.STATE_APPLIED_SUCCESS, resultDto.getState());
+        assertEquals(targetRequestId, resultDto.getRequestId());
+        assertEquals("BOOK_TICKET", resultDto.getCommandType());
+        assertEquals("TKT-D19-SUCCESS", resultDto.getTicketId());
+        assertEquals(77L, resultDto.getAppliedLogIndex());
     }
 
     public static void main(String[] args) {

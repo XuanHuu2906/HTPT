@@ -34,11 +34,12 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
     /**
-     * Message types requiring Raft Leader authority (write commands modifying distributed state).
+     * Message types requiring Raft Leader authority (write commands and authoritative state queries).
      */
     public static final Set<MessageType> LEADER_ONLY_MESSAGE_TYPES = Set.of(
             MessageType.BOOK_TICKET,
-            MessageType.CANCEL_TICKET
+            MessageType.CANCEL_TICKET,
+            MessageType.GET_REQUEST_RESULT
     );
 
     /**
@@ -227,20 +228,11 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             try {
                 MessageEnvelope<?> response = handler.handle(request);
                 return ensureStrictCorrelation(response, messageId, requestId);
-            } catch (IllegalArgumentException ex) {
-                LOGGER.log(Level.WARNING, "Handler validation failed for type " + type + ": " + ex.getMessage(), ex);
-                return createErrorResponse(messageId, "INVALID_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Invalid request parameter", requestId);
-            } catch (BookingRequestHandler.NotLeaderException ex) {
-                LOGGER.log(Level.INFO, "Handler signaled NOT_LEADER for type " + type + ": hint=" + ex.leaderHint());
-                return handleNotLeaderException(messageId, requestId, ex.leaderHint());
             } catch (Throwable t) {
-                BookingRequestHandler.NotLeaderException notLeaderEx = findNotLeaderException(t);
-                if (notLeaderEx != null) {
-                    LOGGER.log(Level.INFO, "Handler cause signaled NOT_LEADER for type " + type + ": hint=" + notLeaderEx.leaderHint());
-                    return handleNotLeaderException(messageId, requestId, notLeaderEx.leaderHint());
-                }
-                LOGGER.log(Level.SEVERE, "Handler threw unhandled exception for type " + type + ": " + t.getMessage(), t);
-                return createErrorResponse(messageId, "INTERNAL_ERROR", "Internal server error: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()), requestId);
+                MessageEnvelope<ErrorResponseDto> errorResponse = ResponseMapper.mapThrowable(
+                        messageId, nodeId, requestId, t, leaderRouter
+                );
+                return ensureStrictCorrelation(errorResponse, messageId, requestId);
             }
         } finally {
             activeInFlight.remove(messageId);

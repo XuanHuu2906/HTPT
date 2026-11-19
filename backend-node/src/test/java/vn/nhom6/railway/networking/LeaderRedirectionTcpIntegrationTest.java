@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.BookTicketResponseDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
+import vn.nhom6.railway.protocol.dto.GetRequestResultRequestDto;
+import vn.nhom6.railway.protocol.dto.GetRequestResultResponseDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
 import vn.nhom6.railway.raft.core.Role;
@@ -480,5 +482,72 @@ public class LeaderRedirectionTcpIntegrationTest {
         assertEquals("CONFIRMED", book2.getOutcome());
         assertEquals(businessRequestId, book2.getRequestId());
         assertEquals(initialTicketId, book2.getTicketId(), "Must return identical ticketId; no double-booking occurred");
+    }
+
+    @Test
+    @DisplayName("TV3-D19: GET_REQUEST_RESULT over TCP: Follower redirects NOT_LEADER, Leader returns APPLIED_SUCCESS")
+    public void testGetRequestResultOverTcpFollowerRedirectAndLeaderQuery() throws Exception {
+        // 1. Leader Node
+        NodeConfig config1 = new NodeConfig("node-1", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        FakeBookingService leaderService = new FakeBookingService("node-1");
+        leaderService.setLeader(true, "node-1");
+        NodeMain leaderNode = new NodeMain(config1, leaderService);
+        resources.add(leaderNode);
+        leaderNode.start();
+
+        // 2. Follower Node
+        NodeConfig config2 = new NodeConfig("node-2", "cluster-1", "127.0.0.1", 0, "127.0.0.1", 0, null, 4, 3000);
+        FakeBookingService followerService = new FakeBookingService("node-2");
+        followerService.setLeader(false, "node-1");
+        NodeMain followerNode = new NodeMain(config2, followerService);
+        resources.add(followerNode);
+        followerNode.start();
+
+        String reqId = UUID.randomUUID().toString();
+
+        // Client books ticket on Leader
+        TcpClient leaderClient = new TcpClient("127.0.0.1", leaderNode.getClientPort(), 3000, 3000);
+        resources.add(leaderClient);
+        leaderClient.connect();
+
+        BookTicketRequestDto bookPayload = new BookTicketRequestDto(reqId, "SE-001", "G10", "Passenger D19 TCP");
+        MessageEnvelope<BookTicketRequestDto> bookReq = MessageEnvelope.createRequest(
+                MessageType.BOOK_TICKET, "client-app", bookPayload
+        );
+        MessageEnvelope<BookTicketResponseDto> bookResp = leaderClient.sendAndReceive(bookReq, BookTicketResponseDto.class);
+        assertNotNull(bookResp);
+        assertEquals("CONFIRMED", bookResp.getPayload().getOutcome());
+        String ticketId = bookResp.getPayload().getTicketId();
+
+        // Query GET_REQUEST_RESULT on Follower -> Follower must return NOT_LEADER per SPEC-03 §4.4
+        TcpClient followerClient = new TcpClient("127.0.0.1", followerNode.getClientPort(), 3000, 3000);
+        resources.add(followerClient);
+        followerClient.connect();
+
+        GetRequestResultRequestDto queryPayload = new GetRequestResultRequestDto(reqId);
+        MessageEnvelope<GetRequestResultRequestDto> followerQuery = MessageEnvelope.createRequest(
+                MessageType.GET_REQUEST_RESULT, "client-app", queryPayload
+        );
+        MessageEnvelope<ErrorResponseDto> followerErrResp = followerClient.sendAndReceive(followerQuery, ErrorResponseDto.class);
+        assertNotNull(followerErrResp);
+        assertEquals(MessageType.ERROR_RESPONSE, followerErrResp.getType());
+        assertEquals("NOT_LEADER", followerErrResp.getPayload().getErrorCode());
+        assertEquals("node-1", followerErrResp.getPayload().getLeaderHint());
+        assertEquals(reqId, followerErrResp.getPayload().getRequestId());
+
+        // Query GET_REQUEST_RESULT on Leader -> Leader returns APPLIED_SUCCESS with same ticketId
+        MessageEnvelope<GetRequestResultRequestDto> leaderQuery = MessageEnvelope.createRequest(
+                MessageType.GET_REQUEST_RESULT, "client-app", queryPayload
+        );
+        MessageEnvelope<GetRequestResultResponseDto> leaderQueryResp = leaderClient.sendAndReceive(leaderQuery, GetRequestResultResponseDto.class);
+        assertNotNull(leaderQueryResp);
+        assertEquals(MessageType.GET_REQUEST_RESULT_RESPONSE, leaderQueryResp.getType());
+        assertEquals(leaderQuery.getMessageId(), leaderQueryResp.getCorrelationId());
+        GetRequestResultResponseDto resultDto = leaderQueryResp.getPayload();
+        resultDto.validate();
+        assertEquals("APPLIED_SUCCESS", resultDto.getState());
+        assertEquals("BOOK_TICKET", resultDto.getCommandType());
+        assertEquals(ticketId, resultDto.getTicketId());
+        assertEquals(reqId, resultDto.getRequestId());
     }
 }
