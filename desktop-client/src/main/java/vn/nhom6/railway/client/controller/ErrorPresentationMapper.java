@@ -36,6 +36,7 @@ public final class ErrorPresentationMapper {
     public static final String CODE_REQUEST_ID_CONFLICT = "REQUEST_ID_CONFLICT";
     public static final String CODE_INTERNAL_ERROR = "INTERNAL_ERROR";
     public static final String CODE_TICKET_NOT_ACTIVE = "TICKET_NOT_ACTIVE";
+    public static final String CODE_FAILED_NOT_SENT = "FAILED_NOT_SENT";
 
     // CSS style classes đã có từ railway.css (D04/D07)
     public static final String STYLE_CONFIRMED = "booking-status-confirmed";
@@ -215,6 +216,7 @@ public final class ErrorPresentationMapper {
             case CODE_REQUEST_ID_CONFLICT -> mapKnownErrorCode(CODE_REQUEST_ID_CONFLICT, serverMessage, mock);
             case CODE_INTERNAL_ERROR -> mapKnownErrorCode(CODE_INTERNAL_ERROR, serverMessage, mock);
             case CODE_TICKET_NOT_ACTIVE -> mapKnownErrorCode(CODE_TICKET_NOT_ACTIVE, serverMessage, mock);
+            case CODE_FAILED_NOT_SENT -> mapClientError(ClientErrorKind.FAILED_NOT_SENT, serverMessage, mock);
             default -> mapUnrecognizedCode(rawCode, serverMessage, mock);
         };
     }
@@ -236,6 +238,9 @@ public final class ErrorPresentationMapper {
             }
             if ("SocketTimeoutException".equals(simpleName)) {
                 return mapClientError(ClientErrorKind.READ_TIMEOUT, current.getMessage(), mock);
+            }
+            if (current instanceof vn.nhom6.railway.client.network.FailedNotSentException) {
+                return mapClientError(ClientErrorKind.FAILED_NOT_SENT, current.getMessage(), mock);
             }
             if ("ConnectException".equals(simpleName)) {
                 return mapClientError(ClientErrorKind.CONNECTION_FAILED, current.getMessage(), mock);
@@ -259,7 +264,8 @@ public final class ErrorPresentationMapper {
         }
 
         PresentationKind kind = (clientError == ClientErrorKind.CONNECTION_LOST
-                || clientError == ClientErrorKind.CONNECTION_FAILED)
+                || clientError == ClientErrorKind.CONNECTION_FAILED
+                || clientError == ClientErrorKind.FAILED_NOT_SENT)
                         ? PresentationKind.DISCONNECTED
                         : (clientError == ClientErrorKind.READ_TIMEOUT ? PresentationKind.UNKNOWN
                                 : PresentationKind.CLIENT_ERROR);
@@ -277,8 +283,10 @@ public final class ErrorPresentationMapper {
                 clientError.getStyleClass(),
                 clientError.isRetryable(),
                 false,
-                clientError == ClientErrorKind.READ_TIMEOUT,
-                "Kiểm tra kết nối mạng và thử lại sau ít phút",
+                clientError == ClientErrorKind.READ_TIMEOUT || clientError == ClientErrorKind.FAILED_NOT_SENT,
+                (clientError == ClientErrorKind.FAILED_NOT_SENT)
+                        ? "Kiểm tra kết nối mạng và thử gửi lại với cùng Request ID"
+                        : "Kiểm tra kết nối mạng và thử lại sau ít phút",
                 clientError.name(),
                 detailMessage,
                 mock,
@@ -363,7 +371,7 @@ public final class ErrorPresentationMapper {
                     PresentationKind.UNKNOWN,
                     "Chưa xác định kết quả (TIMEOUT_UNKNOWN)",
                     "⚠ Chưa xác định kết quả giao dịch (" + CODE_TIMEOUT_UNKNOWN
-                            + ")! Vui lòng tra cứu lại với requestId. Tuyệt đối không tự ý đặt lại bằng yêu cầu mới."
+                            + ")! Vui lòng tra cứu lại với Request ID. Không gửi yêu cầu mới cho cùng ý định."
                             + (mock ? " [MOCK]" : ""),
                     STYLE_UNKNOWN,
                     true, // tra cứu hoặc retry cùng requestId

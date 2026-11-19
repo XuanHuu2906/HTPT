@@ -9,6 +9,7 @@ package vn.nhom6.railway.client.controller;
 public enum ClientErrorKind {
     CONNECTION_LOST("Mất kết nối tới cụm máy chủ", "status-disconnected", true),
     CONNECTION_FAILED("Không thể kết nối tới cụm máy chủ", "status-disconnected", true),
+    FAILED_NOT_SENT("Không thể kết nối tới cụm máy chủ trước khi gửi lệnh", "status-disconnected", true),
     READ_TIMEOUT("Hết thời gian chờ phản hồi từ máy chủ", "booking-status-unknown", true),
     NOT_LEADER_UNRESOLVED("Không tìm thấy Node Leader sau số lần thử lại tối đa", "status-error", true),
     CORRUPTED_FRAME("Khung dữ liệu phản hồi bị lỗi hoặc sai định dạng", "status-error", false),
