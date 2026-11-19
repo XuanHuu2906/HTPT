@@ -45,6 +45,7 @@ public class FakeBookingClient implements BookingClient, Closeable {
     private volatile long simulatedDelayMs = 0;
 
     private volatile GetRequestResultResponseDto configuredResultResponse = null;
+    private volatile Throwable configuredResultException = null;
 
     public FakeBookingClient() {
     }
@@ -164,9 +165,18 @@ public class FakeBookingClient implements BookingClient, Closeable {
         ));
     }
 
+    public void setConfiguredResultException(Throwable configuredResultException) {
+        this.configuredResultException = configuredResultException;
+    }
+
     @Override
     public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
         getRequestResultCallCount.incrementAndGet();
+        if (configuredResultException != null) {
+            CompletableFuture<GetRequestResultResponseDto> f = new CompletableFuture<>();
+            f.completeExceptionally(configuredResultException);
+            return f;
+        }
         if (configuredResultResponse != null) {
             return CompletableFuture.completedFuture(configuredResultResponse);
         }

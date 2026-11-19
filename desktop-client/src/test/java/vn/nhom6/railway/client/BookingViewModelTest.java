@@ -391,6 +391,71 @@ class BookingViewModelTest {
     }
 
     @Test
+    @DisplayName("Kịch bản 10b: Tra cứu trả về APPLIED_REJECTED (SEAT_ALREADY_BOOKED) chuyển UiState=REJECTED và ghế BOOKED; PENDING giữ UNKNOWN")
+    void test10b_CheckResultAppliedRejectedAndPendingUnknown() throws Exception {
+        fakeClient.setConfiguredBookException(new java.net.SocketTimeoutException("Timeout"));
+        BookTicketRequestDto req = new BookTicketRequestDto("REQ-010B", "SE-001", "G07", "Khách 10B");
+        viewModel.submit(req);
+        assertEquals(BookingViewModel.UiState.UNKNOWN, viewModel.getUiState());
+
+        // 1. PENDING từ Node -> Giữ nguyên UiState.UNKNOWN, tăng checkCount
+        fakeClient.setConfiguredResultResponse(new GetRequestResultResponseDto("REQ-010B", "PENDING", "BOOK_TICKET", null, null, null, true));
+        CompletableFuture<GetRequestResultResponseDto> pendingFuture = viewModel.checkCurrentResult();
+        pendingFuture.get(2, TimeUnit.SECONDS);
+        assertEquals(BookingViewModel.UiState.UNKNOWN, viewModel.getUiState(), "PENDING phải giữ nguyên UiState UNKNOWN");
+        assertEquals(1, viewModel.getCheckCount());
+        assertTrue(viewModel.getMessage().contains("PENDING"));
+
+        // 2. APPLIED_REJECTED từ Node -> Chuyển sang REJECTED, ghế đổi sang BOOKED
+        fakeClient.setConfiguredResultResponse(new GetRequestResultResponseDto("REQ-010B", "APPLIED_REJECTED", "BOOK_TICKET", null, "SEAT_ALREADY_BOOKED", 115L, true));
+        CompletableFuture<GetRequestResultResponseDto> rejectedFuture = viewModel.checkCurrentResult();
+        rejectedFuture.get(2, TimeUnit.SECONDS);
+        assertEquals(BookingViewModel.UiState.REJECTED, viewModel.getUiState(), "APPLIED_REJECTED phải chuyển UiState sang REJECTED");
+        assertEquals(2, viewModel.getCheckCount());
+        SeatViewModel seatG07 = seatsList.stream().filter(s -> "G07".equals(s.getSeatId())).findFirst().orElse(null);
+        assertNotNull(seatG07);
+        assertEquals(SeatViewModel.SeatStatus.BOOKED, seatG07.getStatus(), "Ghế phải đổi sang BOOKED khi bị từ chối SEAT_ALREADY_BOOKED");
+    }
+
+    @Test
+    @DisplayName("Kịch bản 10c: retryCurrent() gửi lại đúng requestId và payload của request hiện tại")
+    void test10c_RetryCurrent() throws Exception {
+        fakeClient.setConfiguredBookException(new java.net.SocketTimeoutException("Timeout"));
+        BookTicketRequestDto req = new BookTicketRequestDto("REQ-010C", "SE-001", "G08", "Khách 10C");
+        viewModel.submit(req);
+        assertEquals(BookingViewModel.UiState.UNKNOWN, viewModel.getUiState());
+        assertEquals("REQ-010C", viewModel.getCurrentRequestId());
+
+        fakeClient.setConfiguredBookException(null);
+        fakeClient.setConfiguredBookResponse(new BookTicketResponseDto("REQ-010C", "CONFIRMED", "TCK-10C", "SE-001", "G08", null, 120L, true, "node-1", "Xác nhận"));
+
+        CompletableFuture<BookTicketResponseDto> retryFuture = viewModel.retryCurrent();
+        BookTicketResponseDto res = retryFuture.get(2, TimeUnit.SECONDS);
+        assertNotNull(res);
+        assertEquals("REQ-010C", res.getRequestId());
+        assertEquals(BookingViewModel.UiState.CONFIRMED, viewModel.getUiState());
+    }
+
+    @Test
+    @DisplayName("Kịch bản 10d: Lỗi mạng khi tra cứu (exception) giữ nguyên UNKNOWN, tăng checkCount, không xóa pending")
+    void test10d_CheckResultFailurePreservesUnknown() throws Exception {
+        fakeClient.setConfiguredBookException(new java.net.SocketTimeoutException("Timeout ban đầu"));
+        BookTicketRequestDto req = new BookTicketRequestDto("REQ-010D", "SE-001", "G09", "Khách 10D");
+        viewModel.submit(req);
+        assertEquals(BookingViewModel.UiState.UNKNOWN, viewModel.getUiState());
+
+        fakeClient.setConfiguredResultException(new java.io.IOException("Mất mạng khi tra cứu"));
+        CompletableFuture<GetRequestResultResponseDto> checkFuture = viewModel.checkCurrentResult();
+        try {
+            checkFuture.get(2, TimeUnit.SECONDS);
+        } catch (Exception ignored) {}
+
+        assertEquals(BookingViewModel.UiState.UNKNOWN, viewModel.getUiState(), "Lỗi tra cứu phải giữ nguyên UiState UNKNOWN");
+        assertEquals(1, viewModel.getCheckCount());
+        assertTrue(viewModel.getMessage().contains("Lỗi khi tra cứu"));
+    }
+
+    @Test
     @DisplayName("Kịch bản 11: Mọi cập nhật property đi qua UiDispatcher (kiểm bằng dispatcher đếm lệnh)")
     void test11_UiDispatcherCount() {
         int initialDispatches = uiDispatchCount.get();

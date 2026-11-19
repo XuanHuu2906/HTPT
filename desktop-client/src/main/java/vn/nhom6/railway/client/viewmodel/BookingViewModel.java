@@ -30,8 +30,10 @@ import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.storage.PendingEntry;
 import vn.nhom6.railway.client.storage.PendingState;
 import vn.nhom6.railway.client.storage.PersistentPendingJournal;
+import vn.nhom6.railway.protocol.codec.MessageCodec;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.NoSuchElementException;
@@ -139,6 +141,8 @@ public class BookingViewModel {
     private final StringProperty currentRequestId = new SimpleStringProperty("");
     private final IntegerProperty waitingDurationSeconds = new SimpleIntegerProperty(0);
     private final StringProperty lateArrivalNote = new SimpleStringProperty("");
+    private final IntegerProperty checkCount = new SimpleIntegerProperty(0);
+    private final StringProperty sentTimestamp = new SimpleStringProperty("");
 
     public BookingViewModel(BookingClient bookingClient) {
         this(bookingClient, null, null, null, resolveDefaultTimeoutMs());
@@ -299,6 +303,8 @@ public class BookingViewModel {
             lateArrivalNote.set("");
             errorCode.set("");
             leaderHint.set("");
+            checkCount.set(0);
+            sentTimestamp.set(Instant.now().toString());
             message.set("Đang chờ Node xác nhận ghế " + normalizedRequest.getSeatId() + "... (requestId: " + reqId + ")");
         });
 
@@ -688,23 +694,39 @@ public class BookingViewModel {
     public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
         Objects.requireNonNull(requestId, "requestId không được null");
         return bookingClient.getRequestResult(requestId).whenComplete((res, ex) -> runOnUi(() -> {
+            checkCount.set(checkCount.get() + 1);
+            if (ex != null) {
+                Throwable cause = (ex instanceof java.util.concurrent.CompletionException && ex.getCause() != null)
+                        ? ex.getCause() : ex;
+                message.set("Lỗi khi tra cứu kết quả cho requestId=" + requestId + ": " + cause.getMessage()
+                        + " (Lần kiểm tra: " + checkCount.get() + ")");
+                return;
+            }
             if (res != null) {
                 String state = res.getState();
                 if ("APPLIED_SUCCESS".equals(state)) {
                     uiState.set(UiState.CONFIRMED);
                     message.set("Tra cứu thành công: Vé đã được xác nhận (Mã vé: " +
                             (res.getTicketId() != null ? res.getTicketId() : "N/A") + ")");
-                    updateSeatStatus((activeRequest != null) ? activeRequest.getSeatId() : null, SeatViewModel.SeatStatus.BOOKED);
+                    String seat = resolveSeatId(requestId);
+                    updateSeatStatus(seat, SeatViewModel.SeatStatus.BOOKED);
                     triggerSeatsRefresh();
                     markJournalResolved(requestId, "CONFIRMED");
                 } else if ("APPLIED_REJECTED".equals(state)) {
                     uiState.set(UiState.REJECTED);
                     message.set("Tra cứu thành công: Yêu cầu bị từ chối (" + res.getReasonCode() + ")");
                     if ("SEAT_ALREADY_BOOKED".equals(res.getReasonCode())) {
-                        updateSeatStatus((activeRequest != null) ? activeRequest.getSeatId() : null, SeatViewModel.SeatStatus.BOOKED);
+                        String seat = resolveSeatId(requestId);
+                        updateSeatStatus(seat, SeatViewModel.SeatStatus.BOOKED);
                         triggerSeatsRefresh();
                     }
                     markJournalResolved(requestId, "REJECTED");
+                } else {
+                    // PENDING hoặc UNKNOWN từ Node (chưa ghi nhận hoặc đang xử lý)
+                    // Theo SPEC-03: giữ nguyên UiState.UNKNOWN, cho phép gửi lại hoặc tra cứu tiếp
+                    uiState.set(UiState.UNKNOWN);
+                    message.set("Node chưa ghi nhận kết quả cuối cho requestId=" + requestId + " (trạng thái: " + state
+                            + "). Bạn có thể tiếp tục tra cứu hoặc bấm 'Gửi lại'. (Lần kiểm tra: " + checkCount.get() + ")");
                 }
             }
         }));
@@ -718,6 +740,36 @@ public class BookingViewModel {
             return f;
         }
         return getRequestResult(reqId);
+    }
+
+    public CompletableFuture<BookTicketResponseDto> retryCurrent() {
+        String reqId = currentRequestId.get();
+        if (reqId == null || reqId.isBlank()) {
+            CompletableFuture<BookTicketResponseDto> f = new CompletableFuture<>();
+            f.completeExceptionally(new IllegalStateException("Không có requestId hiện tại để retry"));
+            return f;
+        }
+        return retry(reqId);
+    }
+
+    private String resolveSeatId(String reqId) {
+        if (activeRequest != null && activeRequest.getSeatId() != null) {
+            return activeRequest.getSeatId();
+        }
+        PersistentPendingJournal j = getJournal();
+        if (j != null && reqId != null) {
+            try {
+                Optional<PendingEntry> opt = j.get(reqId);
+                if (opt.isPresent() && opt.get().getPayload() != null) {
+                    JsonNode node = MessageCodec.getMapper().readTree(opt.get().getPayload());
+                    if (node.has("seatId")) {
+                        return node.get("seatId").asText();
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
 
     // =========================================================================
@@ -876,6 +928,22 @@ public class BookingViewModel {
 
     public ReadOnlyStringProperty lateArrivalNoteProperty() {
         return lateArrivalNote;
+    }
+
+    public int getCheckCount() {
+        return checkCount.get();
+    }
+
+    public ReadOnlyIntegerProperty checkCountProperty() {
+        return checkCount;
+    }
+
+    public String getSentTimestamp() {
+        return sentTimestamp.get();
+    }
+
+    public ReadOnlyStringProperty sentTimestampProperty() {
+        return sentTimestamp;
     }
 
     public BookingClient getBookingClient() {
