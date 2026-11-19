@@ -1,0 +1,106 @@
+TV5-D19 validation evidence
+===========================
+
+Task: TV5-D19 Định nghĩa cách phát hiện NO_QUORUM (Write Availability & Quorum Commit Capability)
+Date: 2026-11-19
+Scope: backend-node election package; write availability policy, commit capability tracking, and timeout resolution.
+
+Deliverables:
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/WriteAvailabilityPolicy.java (new)
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/FakeReplicationTracker.java (new test double)
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/WriteAvailabilityPolicyTest.java (new unit/invariant test suite)
+
+Dependencies & Integration:
+- TV4-D16: CommitAdvancer (evaluates majority commit index under current-term rule).
+- FakeReplicationTracker: Test double simulating peer replication ACKs, lag, and partitions without real sockets.
+- TV5-D16: LeadershipGuard (validates leader term and protects against stale callbacks).
+- Không chờ TV4-D19: Không phụ thuộc vào ReadBarrier của TV4-D19 (chuyên biệt cho Write Availability & commit safety).
+- Real 3/5–2/5 cluster test gated at G5 per project schedule.
+
+Implemented & Verified Rules:
+1. Theo dõi khả năng cam kết chứ không dựa vào ping đơn:
+   - Trong cụm 5 voter ("node-1".."node-5"), quorum là 3/5.
+   - Ping đơn từ Leader (node-1) tới 1 Follower (node-2) chỉ chứng minh 2 node tồn tại (Leader + 1 peer = 2/5).
+   - 2/5 là thiểu số (minority), KHÔNG THỂ commit writes.
+   - WriteAvailabilityPolicy chỉ xác nhận AVAILABLE khi có ít nhất 3 voter (Leader + >= 2 peers) gửi verified commit ACKs trong currentTerm.
+2. Timeout ghi trả UNKNOWN/NO_QUORUM theo tình huống xác minh:
+   - Tình huống VERIFIED_NO_QUORUM (xác minh mất quorum, phân vùng 2/5, hoặc từ chối trước append):
+     + Trả về errorCode="NO_QUORUM", outcome=NO_QUORUM, message="The command could not be committed by a quorum".
+   - Tình huống INDETERMINATE (mất phản hồi, mạng trễ, chưa rõ peer có nhận/commit không):
+     + Trả về errorCode="TIMEOUT_UNKNOWN", outcome=UNKNOWN, message="Write timed out with indeterminate consensus outcome; query or retry with same requestId".
+     + Client giữ nguyên requestId khi retry hoặc tra cứu.
+   - Tình huống VERIFIED_COMMITTED (entry đã kịp commit qua quorum trước hoặc trong lúc xử lý timeout):
+     + Trả về outcome=COMMITTED, errorCode=null, cho phép áp dụng nghiệp vụ và trả kết quả.
+3. Tránh kết luận rollback entry chưa commit:
+   - Trong Raft, một entry chưa commit trên Leader KHÔNG BAO GIỜ bị rollback, hủy bỏ hay xóa khỏi log cục bộ khi timeout!
+   - canRollbackUncommitted(index) luôn trả về false.
+   - canReportRejectedOnTimeout() luôn trả về false (không bao giờ báo REJECTED như SEAT_ALREADY_BOOKED cho consensus timeout).
+   - assertUncommittedEntryNotRolledBack(index) kiểm chứng entry chưa commit vẫn được lưu giữ an toàn.
+   - Entry chỉ có 2 kịch bản hợp lệ theo Raft:
+     (a) Được commit khi mạng hàn gắn và Leader duy trì quyền lực; hoặc
+     (b) Bị ghi đè bởi Leader mới có term cao hơn qua AppendEntries consistency check.
+4. An toàn Figure 8:
+   - Leader tại term hiện tại không được commit trực tiếp entry từ term cũ dù có >= 3 node nắm giữ.
+   - canCommitIndex trả về false nếu state.termAt(candidate) != state.currentTerm().
+
+Environment:
+- OS: Linux 6.17.7-200.fc42.x86_64
+- Java: OpenJDK 25.0.1
+- Maven: 3.9.9
+
+--- Targeted D19 Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="WriteAvailabilityPolicyTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.374 s]
+[INFO] backend-node ....................................... SUCCESS [  3.991 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+Test Methods (14):
+1. clusterTopology_fiveVotersRequiresThreeForQuorum: PASS
+2. singlePingToPeer_doesNotEstablishWriteQuorum: PASS
+3. verifiedAcksFromTwoPeers_establishesWriteQuorum: PASS
+4. minorityPartition_cannotCommitWrites_majorityCommits: PASS
+5. timeoutWithVerifiedNoQuorum_returnsNoQuorumResolution: PASS
+6. timeoutIndeterminate_returnsUnknownResolution: PASS
+7. timeoutWhenEntryActuallyCommitted_returnsCommittedResolution: PASS
+8. writeRejectedPreAppend_returnsNoQuorum: PASS
+9. uncommittedEntriesMustNeverBeRolledBackOnTimeout: PASS
+10. assertUncommittedEntryNotRolledBack_throwsOnIllegalTruncation: PASS
+11. nonLeaderRole_returnsNotLeaderWithHint: PASS
+12. staleAcksBeyondFreshnessWindow_causeQuorumLoss: PASS
+13. oldTermEntry_cannotBeCommittedDirectlyEvenWithQuorum: PASS
+14. afterTimeout_healingAllowsUncommittedEntryToCommitSafely: PASS
+
+--- Combined Election & Replication Suites ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="WriteAvailabilityPolicyTest,MinorityWriteSafetyTest,CommitSafetyTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Running vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.093 s -- in vn.nhom6.railway.raft.replication.CommitSafetyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
