@@ -1,0 +1,197 @@
+================================================================================
+NHÓM 6 — HỆ THỐNG PHÂN TÁN BÁN VÉ TÀU CAO TỐC
+LOG THỰC HIỆN TASK TV1-D20: XÂY DỰNG UI ACCEPTANCE CASE SUITE ĐỘC LẬP TRƯỚC MỐC G5
+================================================================================
+Thời gian bắt đầu: 2026-11-20 10:45:00 +07:00
+Thời gian hoàn tất: 2026-11-20 11:20:00 +07:00
+Thực hiện: TV1 (Khoa - Desktop Client JavaFX, package vn.nhom6.railway.client)
+Môi trường hệ thống:
+  - OS: Windows 11 amd64 (Version 10.0.26300.9974)
+  - JDK: Eclipse Adoptium OpenJDK 21.0.13.9-hotspot (LTS)
+  - Maven: Apache Maven 3.10.0
+  - Git Branch: feature/UI
+  - Commit SHA cơ sở: de3def815ad098379a9590d2ed43a3c45689790a
+
+--------------------------------------------------------------------------------
+BƯỚC 0: KẾT QUẢ PREFLIGHT (KIỂM TRA TRƯỚC KHI CODE)
+--------------------------------------------------------------------------------
+
+1. Đối chiếu tài liệu đặc tả SPEC-06, SPEC-07, SPEC-03 và SPEC-04:
+   - Mục tiêu: Chuẩn bị UI Acceptance Case Suite độc lập trước mốc nghiệm thu G5.
+   - Nguyên tắc bất biến bắt buộc:
+     + Quorum 3/5, 2/5, commit/apply trong D20 hoàn toàn do FIXTURE/FAKE giả lập, KHÔNG PHẢI Raft thật.
+     + Không được tuyên bố AC nào "PASS thật trên cụm" từ kết quả D20. Nghiệm thu AC cụm thật thuộc mốc G5 sau PR D20.
+     + Chỉ hiển thị CONFIRMED khi Node trả kết quả cuối (đã commit + apply).
+     + Phản hồi NO_QUORUM: Không được coi là thành công hay thất bại dứt khoát, không đổi ghế sang BOOKED, hiển thị cảnh báo lỗi cụm thiếu quorum 3/5.
+     + Lỗi mạng/timeout SAU khi gửi byte (TIMEOUT_UNKNOWN): Chuyển sang UiState.UNKNOWN, ghế chuyển UNKNOWN (viền cam nét đứt), pending journal bảo lưu SENT_UNRESOLVED, hiển thị nút Tra cứu (GET_REQUEST_RESULT) và Gửi lại cùng requestId và payload gốc.
+     + Lỗi mạng TRƯỚC khi gửi byte (FAILED_NOT_SENT): Chuyển sang UiState.DISCONNECTED, ghế giữ nguyên trạng thái cũ (AVAILABLE), cho phép thử lại ngay.
+     + Lỗi từ chối nghiệp vụ REJECTED (SEAT_ALREADY_BOOKED): Chuyển sang UiState.REJECTED, ghế chuyển BOOKED, journal đánh dấu RESOLVED, ngăn đặt lại cùng ghế.
+     + Chuyển hướng Follower NOT_LEADER: Tự động chuyển hướng sang leaderHint với cùng requestId và JSON payload.
+     + Ngăn chặn double-click (chống spam request): Vô hiệu hóa nút và ném lỗi nếu đang trong trạng thái SUBMITTING.
+
+2. Kiểm tra tính sẵn sàng của các thành phần D09–D19:
+   - SocketBookingClient (D09): Đã có, xử lý framing TCP, timeout, exception mapping.
+   - FakeNodeServer (D10): Đã có, hỗ trợ đa luồng socket, giả lập delay, timeout, NOT_LEADER, REJECTED.
+   - LeaderAwareBookingClient (D12): Đã có, hỗ trợ redirect policy khi gặp NOT_LEADER.
+   - ErrorPresentationMapper (D13/D19): Đã có, mapping toàn diện 10 mã lỗi SPEC-03 sang thông điệp tiếng Việt thân thiện.
+   - PersistentPendingJournal / JournalingBookingClient (D14): Đã có, ghi log bền vững JSON Lines, bảo lưu SENT_UNRESOLVED.
+   - SeatsRefreshService (D15): Đã có, polling và cập nhật sơ đồ ghế tự động.
+   - ClusterNodeSelector / ClusterEndpoints (D16): Đã có, cấu hình danh sách 5 Node cụm.
+   - BookingViewModel (D17/D19): Đã có, quản lý trạng thái SUBMITTING, UNKNOWN, CONFIRMED, REJECTED, DISCONNECTED, ERROR.
+   - SixClientContentionTest (D18): Đã có, mô phỏng tranh chấp ghế với 6 client trên fixture.
+   - BookingErrorFlowTest / Evidence Test (D19): Đã có, 13 kịch bản lỗi chi tiết và 4 ảnh bằng chứng D19.
+   - Kết luận: Đầy đủ 100% thành phần, không thiếu phụ thuộc nào từ D09-D19.
+
+3. Kiểm tra trạng thái cổng cụm 5 Node thật (localhost:9101-9105):
+   - Port 9101 (node-1): CLOSED / DOWN
+   - Port 9102 (node-2): CLOSED / DOWN
+   - Port 9103 (node-3): CLOSED / DOWN
+   - Port 9104 (node-4): CLOSED / DOWN
+   - Port 9105 (node-5): CLOSED / DOWN
+   - Kết luận: Cụm máy chủ phân tán 5 Node chưa được bật. Toàn bộ các ca kiểm thử tích hợp cụm thật trong D20 bắt buộc phải được guard bằng `Assumptions.assumeTrue(...)` và ghi nhận `NOT_RUN / SKIPPED` chờ nghiệm thu tại G5.
+
+--------------------------------------------------------------------------------
+BƯỚC 1: XÂY DỰNG BỘ KIỂM THỬ CHẤP NHẬN GIAO DIỆN ĐỘC LẬP (BOOKING UI ACCEPTANCE)
+--------------------------------------------------------------------------------
+File kiểm thử: `desktop-client/src/test/java/vn/nhom6/railway/client/BookingUiAcceptanceTest.java`
+
+Ma trận đối chiếu 9 ca kiểm thử nghiệm thu UI acceptance:
+
+[TC_ACC_01] ServerConfirmed_BookingConfirmed:
+  - Bối cảnh: Đặt ghế hợp lệ trên fixture mô phỏng cụm đạt đa số 3/5.
+  - Phản hồi: BOOK_TICKET_RESPONSE(outcome=CONFIRMED, ticketId="TCK-...").
+  - Kỳ vọng UI: UiState.CONFIRMED, ghế chuyển BOOKED (màu đỏ), thông báo thành công có ticketId, pending journal chuyển RESOLVED.
+  - Đối chiếu SPEC / AC: AC02 (Đặt vé thành công khi cụm có đa số).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_02] NoQuorumResponse_NotSuccess:
+  - Bối cảnh: Giả lập tình huống cụm chỉ còn 2/5 Node sống (thiếu quorum voter).
+  - Phản hồi: ERROR_RESPONSE(errorCode=NO_QUORUM, errorMessage="Quorum unavailable").
+  - Kỳ vọng UI: UiState.ERROR, ghế giữ AVAILABLE (xanh ngọc), KHÔNG BAO GIỜ báo CONFIRMED hay chuyển BOOKED, hiển thị banner cảnh báo cụm thiếu đa số 3/5.
+  - Đối chiếu SPEC / AC: AC06 (Bảo toàn dữ liệu khi mất quorum).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_03] TimeoutPostSend_UnknownAndPending:
+  - Bối cảnh: Client gửi thành công frame BOOK_TICKET qua socket, nhưng server giả lập timeout (delay 3000ms vượt quá socket timeout 1000ms).
+  - Phản hồi: SocketTimeoutException -> ánh xạ outcome="UNKNOWN", reasonCode="TIMEOUT_UNKNOWN".
+  - Kỳ vọng UI: UiState.UNKNOWN, ghế chuyển UNKNOWN (viền cam nét đứt), pending journal bảo lưu SENT_UNRESOLVED, thông điệp tuyệt đối KHÔNG chứa từ 'thành công', 'thất bại', 'đã đặt', kích hoạt hiển thị requestId và nút Tra cứu / Gửi lại.
+  - Đối chiếu SPEC / AC: AC10 (Xử lý an toàn khi mất kết nối / timeout).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_04] ConnectFailPreSend_KeepsAvailable:
+  - Bối cảnh: Mất kết nối mạng trước khi client gửi được byte nào (kết nối tới cổng đóng).
+  - Phản hồi: ConnectException -> ánh xạ FailedNotSentException (ClientErrorKind.FAILED_NOT_SENT).
+  - Kỳ vọng UI: UiState.DISCONNECTED, ghế giữ nguyên trạng thái cũ AVAILABLE (xanh ngọc), KHÔNG chuyển sang UNKNOWN, hiển thị thông báo lỗi mất kết nối và cho phép thử lại ngay.
+  - Đối chiếu SPEC / AC: AC10 / SPEC-06 §5.
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_05] NotLeader_RedirectsWithSameRequestId:
+  - Bối cảnh: Client kết nối tới Follower node.
+  - Phản hồi: ERROR_RESPONSE(errorCode=NOT_LEADER, leaderHint="127.0.0.1:portLeader").
+  - Kỳ vọng UI: LeaderAwareBookingClient tự động chuyển hướng sang cổng Leader được chỉ định trong leaderHint, tái sử dụng 100% requestId ban đầu và JSON payload, nhận CONFIRMED và cập nhật UI.
+  - Đối chiếu SPEC / AC: AC07 (Chuyển tiếp yêu cầu khi không phải Leader).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_06] SeatAlreadyBooked_Rejected:
+  - Bối cảnh: Ghế đã có vé ACTIVE từ trước, client khác cố tình đặt lại cùng ghế đó.
+  - Phản hồi: BOOK_TICKET_RESPONSE(outcome=REJECTED, reasonCode=SEAT_ALREADY_BOOKED).
+  - Kỳ vọng UI: UiState.REJECTED, ghế chuyển BOOKED (màu đỏ), pending journal đánh dấu RESOLVED, ngăn chặn người dùng bấm đặt lại cùng ghế đó.
+  - Đối chiếu SPEC / AC: AC03 / AC04 (Chống bán trùng vé).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_07] UnknownThenLookup_ResolvesByRequestId:
+  - Bối cảnh: Yêu cầu rơi vào UNKNOWN do timeout, sau đó người dùng bấm "Tra cứu kết quả" theo requestId qua giao thức GET_REQUEST_RESULT.
+  - Phản hồi: Server trả APPLIED_SUCCESS kèm ticketId và seatId.
+  - Kỳ vọng UI: UiState chuyển từ UNKNOWN sang CONFIRMED, ghế cập nhật BOOKED, pending journal chuyển RESOLVED.
+  - Đối chiếu SPEC / AC: AC10 / SPEC-03 §4.4 (Tra cứu trạng thái đơn hàng theo requestId).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+[TC_ACC_08] RealCluster_GuardedByEnvironment:
+  - Bối cảnh: Kiểm thử tích hợp trực tiếp trên cụm phân tán 5 Node thật (ports 9101–9105).
+  - Thực tế: Cụm máy chủ chưa chạy trong giai đoạn D20.
+  - Xử lý: Guard bằng `Assumptions.assumeTrue(ClusterConnectivityCheck.isAnyNodeAvailable(...))`.
+  - Kết quả kiểm thử: SKIPPED / NOT_RUN (Đúng theo kế hoạch nghiệm thu cụm thật tại mốc G5 sau PR D20).
+  - Đối chiếu SPEC / AC: AC05–AC09 (Nghiệm thu cụm thật tại G5).
+
+[TC_ACC_09] UiDispatcherAndAntiDoubleClick:
+  - Bối cảnh: Người dùng click đúp hoặc spam nút Đặt vé liên tiếp trong khi request đang gửi (isSubmitting đang true).
+  - Kỳ vọng UI: Nút Đặt vé bị vô hiệu hóa, ViewModel từ chối request thứ 2 ngay lập tức (ném IllegalStateException qua CompletableFuture exceptionally), đảm bảo không gửi request rác lên server. Đồng thời kiểm tra UiDispatcher chuyển thread an toàn về JavaFX Application Thread.
+  - Đối chiếu SPEC / AC: SPEC-06 §4.2 (Ngăn chặn double-click / Client Threading Safety).
+  - Kết quả kiểm thử: PASS (Chạy trên FAULT FIXTURE / FAKE, không phải Raft thật).
+
+Thống kê thực thi lớp `BookingUiAcceptanceTest`:
+- Tests run: 9
+- Failures: 0
+- Errors: 0
+- Skipped: 1 (TC_ACC_08: Guarded by environment)
+- Thời gian chạy: 1.845 s
+- Kết luận: 8/8 testcases trên fixture PASS, 1 testcase cụm thật SKIPPED đúng chuẩn.
+
+--------------------------------------------------------------------------------
+BƯỚC 2: CHỤP ẢNH BẰNG CHỨNG GIAO DIỆN (UI EVIDENCE SNAPSHOT)
+--------------------------------------------------------------------------------
+Lớp kiểm thử: `vn.nhom6.railway.client.BookingUiAcceptanceEvidenceTest`
+Lệnh chạy: `mvn -B -ntp -pl desktop-client -am test -Dtest=BookingUiAcceptanceEvidenceTest -Dui.evidence=true -Dsurefire.failIfNoSpecifiedTests=false -Dmaven.compiler.release=21`
+
+Kết quả:
+- Ảnh được sinh thành công tại: `artifacts/evidence/D20/TV1-D20-ui.png`
+- Kích thước ảnh: 1040 x 720 pixels
+- Dung lượng file: 58,884 bytes
+- Tiêu đề cửa sổ ứng dụng: "FAKE FAULT FIXTURE — không phải cụm thật | TASK TV1-D20 UI ACCEPTANCE"
+- Nội dung hiển thị trên giao diện:
+  + Header & Tiêu đề: Đánh dấu rõ ràng đây là môi trường FAKE FAULT FIXTURE (không gây nhầm lẫn với cụm 5 Node thật).
+  + Banner cảnh báo trạng thái: Hiển thị trạng thái UNKNOWN (TIMEOUT_UNKNOWN) kèm requestId: 34f3aaba-5662-4f76-88bf-7729837190d1.
+  + Khu vực sơ đồ 10 ghế:
+    * Ghế G02: Màu đỏ (ĐÃ ĐẶT / BOOKED - kết quả từ kịch bản REJECTED / SEAT_ALREADY_BOOKED).
+    * Ghế G08: Màu vàng viền cam nét đứt (CHƯA XÁC MINH / UNKNOWN - kết quả từ kịch bản TIMEOUT_UNKNOWN).
+    * Các ghế G01, G03, G04, G05, G06, G07, G09, G10: Màu xanh ngọc (TRỐNG / AVAILABLE).
+  + Bảng điều khiển tra cứu & gửi lại: Hiển thị đầy đủ nút "Tra cứu kết quả" và nút "Gửi lại" với cùng requestId, số lần kiểm tra (checkCount = 2).
+  + Sổ lệnh chờ xử lý (Pending Requests Journal): Hiển thị danh sách các lệnh đang lưu trữ bền vững với trạng thái SENT_UNRESOLVED.
+
+--------------------------------------------------------------------------------
+BƯỚC 3: KIỂM TRA BẤT BIẾN KIẾN TRÚC VÀ BẢO TOÀN AGENTS.MD
+--------------------------------------------------------------------------------
+1. Kiểm tra import cấm `java.net` và `java.sql` trong Controller và ViewModel:
+   - Command: Get-ChildItem -Recurse desktop-client/src/main/java/vn/nhom6/railway/client/controller, desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel | Select-String 'import\s+(java\.net|java\.sql)'
+   - Kết quả: PASS (0 import vi phạm). Clean Architecture được bảo toàn tuyệt đối; controller và viewmodel hoàn toàn độc lập với socket và database.
+
+2. Kiểm tra các thư viện Web / HTTP / REST / WebSocket bị cấm theo Rule 0:
+   - Command: Get-ChildItem -Recurse desktop-client/src/main/java | Select-String 'HttpClient|HttpURLConnection|okhttp|retrofit|WebSocket'
+   - Kết quả: PASS (0 thư viện vi phạm). Ứng dụng Desktop chạy thuần TCP Socket.
+
+3. Kiểm tra mã lỗi tự chế không có trong SPEC-03 (`SEAT_SOLD`):
+   - Command: Get-ChildItem -Recurse desktop-client/src/main | Select-String 'SEAT_SOLD'
+   - Kết quả: PASS. Chỉ xuất hiện trong tài liệu và comment ghi chú nhắc nhở không được dùng `SEAT_SOLD`.
+
+4. Kiểm tra an toàn luồng và xử lý luồng giao diện:
+   - Toàn bộ thao tác cập nhật UI State, Property Binding đều được điều hướng qua `UiDispatcher` (JavaFX Application Thread).
+   - Cơ chế AtomicBoolean ngăn chặn spam thao tác và double-click đã được chứng minh qua kiểm thử TC_ACC_09.
+
+--------------------------------------------------------------------------------
+BƯỚC 4: KẾT QUẢ KIỂM THỬ TOÀN DIỆN MAVEN TRƯỚC KHI BÀN GIAO
+--------------------------------------------------------------------------------
+Lệnh chạy: `mvn -B -ntp -pl desktop-client -am clean test -Dmaven.compiler.release=21`
+Thời gian chạy: 43.823 s
+Kết quả tổng thể: BUILD SUCCESS
+
+Thống kê theo module:
+1. `railway-distributed-system`: SUCCESS [0.905 s]
+2. `shared`: SUCCESS [11.976 s]
+   - Tests run: 38
+   - Failures: 0, Errors: 0, Skipped: 0 (100% PASS)
+3. `desktop-client`: SUCCESS [30.622 s]
+   - Tests run: 232
+   - Failures: 0, Errors: 0
+   - Skipped: 13 (Toàn bộ 13 ca test cụm thật 5 Node được guard bằng assumeTrue khi cụm offline)
+   - Passed: 219 tests (100% PASS các bài kiểm thử client và fixture)
+
+Tổng cộng toàn bộ dự án đã test: 270 tests (257 PASS, 13 SKIPPED do môi trường cụm dev tắt).
+
+--------------------------------------------------------------------------------
+BƯỚC 5: KẾT LUẬN VÀ TRẠNG THÁI NGHIỆM THU
+--------------------------------------------------------------------------------
+- Nhiệm vụ TV1-D20: ĐÃ HOÀN THÀNH TOÀN DIỆN VÀ ĐẠT TẤT CẢ TIÊU CHÍ (PASS trên fixture/fake độc lập).
+- Bộ UI Acceptance Suite (`BookingUiAcceptanceTest`) đã sẵn sàng, độc lập với backend, không phụ thuộc tiến độ của TV2/TV4/TV5 D20.
+- Bằng chứng ảnh giao diện (`TV1-D20-ui.png`) đã được tạo rõ ràng, minh bạch với nhãn FAKE FIXTURE.
+- Toàn bộ các ca kiểm thử cụm thật đã được guard chặt chẽ, ghi nhận NOT_RUN / SKIPPED để bàn giao cho mốc G5 nghiệm thu cụm 5 Node thật.
+================================================================================

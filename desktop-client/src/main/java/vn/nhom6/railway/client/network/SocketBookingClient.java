@@ -351,6 +351,9 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     }
 
     /**
+     * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT) theo SPEC-03 Section 4.4.
+     */
+    /**
      * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT):
      * Do TV3 chưa cung cấp DTO GetRequestResultRequestDto trong module
      * {@code shared},
