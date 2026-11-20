@@ -3,7 +3,9 @@ package vn.nhom6.railway.tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,13 +15,24 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
+import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
+import vn.nhom6.railway.protocol.dto.BookTicketResponseDto;
 import vn.nhom6.railway.protocol.dto.FrameCodec;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
@@ -31,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * cluster.smoke=true runs the real D14 lifecycle; cluster.g4.leader=true runs
  * strict SPEC-03 Leader checks after D15 integration. Neither certifies full G4.
  * Uses only the existing isolated compose.election-test.yml, never dev volumes.
+ * TV6-D18 adds fake TCP booking evidence using the unchanged D17 runner.
+ * Default CSV is target/AC03-results.csv; set -Dac03.csv=<absolute-path> to export.
+ * Rows are explicitly FAKE_TCP, not Raft commit/SQL evidence. Real booking remains G5.
  */
 class ClusterSmokeTest {
     private static final Set<String> NODE_IDS = Set.of("node-1", "node-2", "node-3", "node-4", "node-5");
@@ -114,6 +130,160 @@ class ClusterSmokeTest {
         List<JsonNode> lag = fixture("node-5", true);
         ((ObjectNode) lag.get(0)).put("lastApplied", 99);
         assertThrows(IllegalStateException.class, () -> identifyLeader(lag, true));
+    }
+
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    void ac03SixBookingRunnerFixtureExportsExplicitFakeEvidence() throws Exception {
+        runBookingFixture(false);
+    }
+
+    @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
+    void ac03LostResponsesRemainUnknownInFixtureEvidence() throws Exception {
+        runBookingFixture(true);
+    }
+
+    private static void runBookingFixture(boolean dropResponses) throws Exception {
+        String scenario = dropResponses ? "RESPONSE_DROP" : "NORMAL";
+        System.out.println("TV6-D18 mode=FAKE_TCP scenario=" + scenario + "; real Raft and five DBs=NOT_RUN_G5");
+        List<ConcurrentBookingRunner.Result> results;
+        try (FakeTcpBookingServer server = new FakeTcpBookingServer(dropResponses)) {
+            results = ConcurrentBookingRunner.run(InetAddress.getLoopbackAddress().getHostAddress(),
+                    server.port(), "node-3", 3000);
+            server.awaitHandled();
+            assertEquals(6, results.size());
+            assertEquals(6, results.stream().map(ConcurrentBookingRunner.Result::requestId).distinct().count());
+            assertEquals(6, results.stream().map(ConcurrentBookingRunner.Result::messageId).distinct().count());
+            assertEquals(server.requestIds, new HashSet<>(results.stream()
+                    .map(ConcurrentBookingRunner.Result::requestId).toList()));
+            assertEquals(server.messageIds, new HashSet<>(results.stream()
+                    .map(ConcurrentBookingRunner.Result::messageId).toList()));
+            assertTrue(results.stream().allMatch(result -> result.latencyNanos() >= 0));
+            if (dropResponses) {
+                assertTrue(results.stream().allMatch(result -> result.outcome().equals("UNKNOWN")
+                        && result.reasonCode().equals("TIMEOUT_UNKNOWN") && result.appliedLogIndex() == null));
+            } else {
+                assertEquals(1, results.stream().filter(result -> result.outcome().equals("CONFIRMED")).count());
+                assertEquals(5, results.stream().filter(result -> result.outcome().equals("REJECTED")
+                        && "SEAT_ALREADY_BOOKED".equals(result.reasonCode())).count());
+                assertTrue(results.stream().allMatch(result -> result.appliedLogIndex() != null && result.appliedLogIndex() > 0));
+            }
+        }
+        // Export PASS only after response assertions AND socket/thread cleanup succeeded.
+        exportBookingFixture(scenario, results);
+    }
+
+    private static synchronized void exportBookingFixture(String scenario,
+            List<ConcurrentBookingRunner.Result> results) throws IOException {
+        Path csv = Path.of(System.getProperty("ac03.csv", "target/AC03-results.csv"));
+        if (csv.toAbsolutePath().getParent() != null) { Files.createDirectories(csv.toAbsolutePath().getParent()); }
+        String header = "testId,runId,observedAtUtc,sourceRevision,testSourceSha256,runnerSourceSha256,sourceState,javaVersion,mode,fixture,scenario,client,tripId,seatId,requestId,messageId,latencyMs,outcome,reasonCode,fixtureAppliedLogIndex,detail,fixtureAssertion,realRaftG5,fiveDbConclusion,bookingRaftBridge\n";
+        if (Files.exists(csv) && Files.size(csv) > 0) {
+            try (var reader = Files.newBufferedReader(csv)) {
+                if (!header.stripTrailing().equals(reader.readLine())) {
+                    throw new IOException("Refusing to append fixture rows to an incompatible evidence CSV: " + csv);
+                }
+            }
+        } else { Files.writeString(csv, header, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING); }
+        String runId = UUID.randomUUID().toString();
+        String at = Instant.now().toString();
+        StringBuilder data = new StringBuilder();
+        for (ConcurrentBookingRunner.Result result : results) {
+            List<Object> values = java.util.Arrays.asList(
+                    "TV6-D18-AC03-FIXTURE", runId, at,
+                    System.getProperty("ac03.sourceRevision", "UNSPECIFIED"),
+                    System.getProperty("ac03.testSourceSha256", "UNSPECIFIED"),
+                    System.getProperty("ac03.runnerSourceSha256", "UNSPECIFIED"),
+                    "WORKTREE_WITH_D18_TEST", System.getProperty("java.version"),
+                    "FAKE_TCP", "FakeTcpBookingServer", scenario, result.client(), "SE-001", "G05",
+                    result.requestId(), result.messageId(),
+                    String.format(Locale.ROOT, "%.3f", result.latencyNanos() / 1_000_000.0),
+                    result.outcome(), result.reasonCode(), result.appliedLogIndex(), result.detail(),
+                    "PASS", "NOT_RUN_G5", "NOT_RUN_G5", "NOT_EXERCISED_FIXTURE_ONLY");
+            data.append(values.stream().map(ClusterSmokeTest::csvCell)
+                    .collect(java.util.stream.Collectors.joining(","))).append('\n');
+        }
+        Files.writeString(csv, data, StandardOpenOption.APPEND);
+        System.out.println("TV6-D18 FIXTURE PASS scenario=" + scenario + " rows=6 runId=" + runId + "; CSV=" + csv.toAbsolutePath());
+    }
+
+    private static String csvCell(Object value) {
+        return "\"" + (value == null ? "" : value.toString().replace("\"", "\"\"")) + "\"";
+    }
+
+    /** Loopback fixture only: one in-memory winner is not BookingRaftBridge or Raft. */
+    private static final class FakeTcpBookingServer implements AutoCloseable {
+        final boolean dropResponses;
+        final ServerSocket listener;
+        final ExecutorService acceptor = Executors.newSingleThreadExecutor();
+        final ExecutorService handlers = Executors.newFixedThreadPool(6);
+        final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
+        final Set<String> requestIds = ConcurrentHashMap.newKeySet();
+        final Set<String> messageIds = ConcurrentHashMap.newKeySet();
+        final CountDownLatch received = new CountDownLatch(6);
+        final AtomicBoolean winner = new AtomicBoolean();
+        final AtomicLong indexes = new AtomicLong();
+        final List<Future<?>> tasks = new CopyOnWriteArrayList<>();
+        final Future<?> accepting;
+
+        FakeTcpBookingServer(boolean dropResponses) throws IOException {
+            this.dropResponses = dropResponses;
+            listener = new ServerSocket(0, 6, InetAddress.getLoopbackAddress());
+            listener.setSoTimeout(5000);
+            accepting = acceptor.submit(() -> {
+                for (int n = 0; n < 6; n++) {
+                    Socket socket = listener.accept();
+                    socket.setSoTimeout(3000);
+                    sockets.add(socket);
+                    tasks.add(handlers.submit(() -> { handle(socket); return null; }));
+                }
+                return null;
+            });
+        }
+
+        int port() { return listener.getLocalPort(); }
+
+        void handle(Socket socket) throws Exception {
+            try (socket) {
+                MessageEnvelope<BookTicketRequestDto> request = FrameCodec.readMessage(socket.getInputStream(), BookTicketRequestDto.class);
+                BookTicketRequestDto book = request.getPayload();
+                book.validate();
+                assertEquals(MessageType.BOOK_TICKET, request.getType());
+                assertNull(request.getCorrelationId());
+                assertEquals("SE-001", book.getTripId());
+                assertEquals("G05", book.getSeatId());
+                assertTrue(requestIds.add(book.getRequestId()), "Duplicate business intention");
+                assertTrue(messageIds.add(request.getMessageId()), "Duplicate message ID");
+                received.countDown();
+                assertTrue(received.await(3, TimeUnit.SECONDS), "Did not receive six concurrent BOOK requests");
+                if (dropResponses) { return; }
+                long index = indexes.incrementAndGet();
+                BookTicketResponseDto response = winner.compareAndSet(false, true)
+                        ? BookTicketResponseDto.confirmed(book.getRequestId(), "SE-001", "G05", "fixture-D18-G05", index)
+                        : BookTicketResponseDto.rejected(book.getRequestId(), "SE-001", "G05", "SEAT_ALREADY_BOOKED", index);
+                response.validate();
+                FrameCodec.writeMessage(socket.getOutputStream(), MessageEnvelope.createResponse(
+                        request.getMessageId(), MessageType.BOOK_TICKET_RESPONSE, "node-3", response));
+            } finally { sockets.remove(socket); }
+        }
+
+        void awaitHandled() throws Exception {
+            accepting.get(5, TimeUnit.SECONDS);
+            assertEquals(6, tasks.size());
+            for (Future<?> task : tasks) { task.get(5, TimeUnit.SECONDS); }
+        }
+
+        @Override public void close() throws Exception {
+            listener.close();
+            for (Socket socket : sockets) {
+                try { socket.close(); } catch (IOException ignored) { }
+            }
+            acceptor.shutdownNow();
+            handlers.shutdownNow();
+            assertTrue(acceptor.awaitTermination(3, TimeUnit.SECONDS), "Fixture acceptor leaked");
+            assertTrue(handlers.awaitTermination(3, TimeUnit.SECONDS), "Fixture workers leaked");
+        }
     }
 
     @Test

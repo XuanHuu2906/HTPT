@@ -1,0 +1,317 @@
+TV6-D19 | FAKE READ BARRIER / LOOKUP / RETRY CONTRACT TESTS
+Execution date: 2026-11-20 Asia/Saigon; supplemental task evidence, not historical day-D19 execution.
+Base revision: ae6ac0d4a61edaf79114858d0cc3b4039c3f3e8f plus worktree ReadBarrierAndRetryTest.java.
+Task scope: exactly integration-tests/.../ReadBarrierAndRetryTest.java and this result log.
+MODE=FAKE_BARRIER_STORAGE_AND_LOOPBACK_FAULTS. REAL_RAFT=NOT_RUN; FIVE_DB=NOT_RUN; AC10_REAL_G5=NOT_RUN.
+Environment: Windows 11 amd64, IDE Eclipse Adoptium JDK 25.0.4.1, Maven 3.9.11 in TEMP, unchanged Maven parent release 25.
+Actual components exercised: BookingRequestHandler; ConnectionManager timeout/ResultLookup recovery; RetryPolicy; shared MessageEnvelope/FrameCodec/MessageCodec and typed BookTicket/GetSeats/Error response DTOs.
+Fake components only: read NO_OP completion, repository/apply bookkeeping, ResultLookup fixtures and loopback delayed/lost replies. No SQL or genuine Raft majority/commit proof.
+GET_REQUEST_RESULT production handler is absent from this baseline BookingRequestHandler registration. Fixture uses canonical SPEC-03 six-field payload and existing ResultLookup.LookupResult; no second wire DTO or API modification.
+ACTUAL COMMAND: mvn -B -ntp -pl integration-tests -am -Dtest=ReadBarrierAndRetryTest -Dsurefire.failIfNoSpecifiedTests=false -Dcluster.smoke=false -Dcluster.g4.leader=false test
+FINAL EXIT=0; tests=14; failures=0; errors=0; skipped=0; RESULT=PASS (fake contract tests only).
+Initial compile attempt failed because the local GET_SEATS request helper was missing. Corrected before the successful final run; initial output retained in TEMP/railway-tv6-d19/initial-compile-failure.log.
+Existing scripts/collect-node-status.ps1 user edit preserved. No changes to backend, shared, POM, previous runner/tests or prior evidence.
+
+VERIFIED CASES (JUnit actual completed testcases; no skipped test counted as PASS):
+PASS staleFollowerLookupReturnsNotLeaderRatherThanUnknownOrCachedSuccess timeSeconds=0.28
+PASS barrierCommittedButNotAppliedCannotReadSnapshot timeSeconds=0.014
+PASS pendingNoOpMustCompleteAndApplyBeforeSnapshotIsRead timeSeconds=0.022
+PASS lookupFixturePreservesPendingUnknownAndAppliedRejectedFieldCombinations timeSeconds=0.012
+PASS lostResponseThenRetryKeepsRequestIdAndSingleFixtureEffect timeSeconds=0.347
+PASS noQuorumReadReturnsReadUnavailableWithoutSnapshot timeSeconds=0.003
+PASS noQuorumWriteAndRetryPreserveIntentAndRequestId timeSeconds=0.004
+PASS staleFollowerCannotExposeCachedSeats timeSeconds=0.003
+PASS eachAuthoritativeReadUsesAFreshNoOp timeSeconds=0.005
+PASS changedLeaderDuringBarrierRejectsRead timeSeconds=0.001
+PASS retryWithChangedPayloadCannotOverwriteOriginalResult timeSeconds=0.004
+PASS lookupUnknownDoesNotPermitANewIdWhenRetryingLostBeforeApply timeSeconds=0.311
+PASS lookupBarrierFailureCannotLeakCachedAppliedResultAfterResponseLoss timeSeconds=0.307
+PASS lostResponseCanResolveTypedLookupAfterFreshBarrierWithoutResubmit timeSeconds=0.305
+
+READ/RETRY ASSERTIONS:
+- Stale follower and role change reject with NOT_LEADER/leaderHint, without reading cached snapshot/results.
+- Read barrier NO_QUORUM maps to READ_UNAVAILABLE; write NO_QUORUM remains ERROR_RESPONSE and keeps requestId.
+- Pending NO_OP must finish and locally apply before snapshot; committed-but-not-applied fake barrier cannot return seats.
+- Each successful GET_SEATS and lookup obtains a fresh fake NO_OP; no business result is added by NO_OP.
+- Lost response closes actual ConnectionManager socket; retry changes messageId but keeps identical requestId/payload.
+- Successful typed lookup recovers the first fixture result index/ticket without resubmitting; failed lookup barrier returns UNKNOWN even if an applied fixture result exists.
+- Lookup UNKNOWN does not cause a new business requestId on retry; PENDING/UNKNOWN/APPLIED_REJECTED field/null combinations conform to SPEC-03.
+- Reusing requestId with a changed payload yields REQUEST_ID_CONFLICT and cannot overwrite the first fixture result.
+
+SHA256 integration-tests/src/test/java/vn/nhom6/railway/tests/ReadBarrierAndRetryTest.java 6FB4462D2DF78FC4F35C897125FF9CC410C22DD92DF4CBC23791D9F4BC5ECDCA
+SHA256 backend-node/src/main/java/vn/nhom6/railway/booking/BookingRequestHandler.java 13554C59FE278D6775A83479658E143C4CF2AF93F340495FD01165DAC7AF28C8
+SHA256 backend-node/src/main/java/vn/nhom6/railway/networking/ConnectionManager.java 75FB0A8826FC6C801434E112B79A785A9533BB390CCB0703D2B517002AEDF95F
+SHA256 backend-node/src/main/java/vn/nhom6/railway/networking/ResultLookup.java B68F53A8D4BBC1956F958ABF685979DB4505BE56C07711C7E6616E532F5747BB
+SHA256 docs/specs/03-CONTRACTS.md F05A0B050065EE21FD5BB15ADC291EAFB1B6B2A00B533DD77DC5AA3832EC579B
+SHA256 docs/specs/04-RAFT.md DE20AD2D1638A4859778752F4AD18C928CB6E6D3A8AB00081732028B159F764C
+
+===== ACTUAL TOOL ENVIRONMENT =====
+Apache Maven 3.9.11 (3e54c93a704957b63ee3494413a2b544fd3d825b)
+Maven home: C:\Users\dattr\AppData\Local\Temp\railway-monitor-tools\apache-maven-3.9.11
+Java version: 25.0.4.1, vendor: Eclipse Adoptium, runtime: C:\Users\dattr\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64
+Default locale: vi_VN, platform encoding: UTF-8
+OS name: "windows 11", version: "10.0", arch: "amd64", family: "windows"
+
+===== FINAL MAVEN / FAKE EXCHANGE / TIMEOUT LOG OUTPUT =====
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:2 char:387
++ ... lure.log'); & $maven -B -ntp -pl integration-tests -am '-Dtest=ReadBa ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner 
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\backend-node\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=13bdf25c-1ba9-436b-895f-31a409935e3d messageId=d7b36055-4819-4298-afc0-ff08a1d56e01 correlationId=d7b36055-4819-4298-afc0-ff08a1d56e01 response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"Fake follower lookup blocked","leaderHint":"node-4","term":null,"requestId":"13bdf25c-1ba9-436b-895f-31a409935e3d"}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=42c14747-41c1-4651-ae9f-edab09de459b correlationId=42c14747-41c1-4651-ae9f-edab09de459b response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"A current read barrier is unavailable","leaderHint":null,"term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=e5a07011-d779-4701-8cfa-09b1d173a309 messageId=d3e47e26-8893-4610-9575-b2b11e36829b correlationId=d3e47e26-8893-4610-9575-b2b11e36829b response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"e5a07011-d779-4701-8cfa-09b1d173a309","state":"PENDING","commandType":"BOOK_TICKET","ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=7a6cb567-a4e3-4c74-b46e-413761b10b4e messageId=af31e75a-dfef-426d-bc69-2bdf5e63d7fc correlationId=af31e75a-dfef-426d-bc69-2bdf5e63d7fc response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"7a6cb567-a4e3-4c74-b46e-413761b10b4e","state":"UNKNOWN","commandType":null,"ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=2c048c3b-b142-4427-a618-a1dc99637e7c messageId=95860cf4-65c7-440f-8b66-9a99371629bb correlationId=95860cf4-65c7-440f-8b66-9a99371629bb response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"2c048c3b-b142-4427-a618-a1dc99637e7c","state":"APPLIED_REJECTED","commandType":"BOOK_TICKET","ticketId":null,"reasonCode":"SEAT_ALREADY_BOOKED","appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=ee88fa59-324f-4752-98d2-0ff0cf68ca70 messageId=709bd1ad-f491-4079-99c2-153655765aa3 correlationId=709bd1ad-f491-4079-99c2-153655765aa3 response=BOOK_TICKET_RESPONSE payload={"requestId":"ee88fa59-324f-4752-98d2-0ff0cf68ca70","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=709bd1ad-f491-4079-99c2-153655765aa3, 
+requestId=ee88fa59-324f-4752-98d2-0ff0cf68ca70: Read timed out
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: ee88fa59-324f-4752-98d2-0ff0cf68ca70
+FAKE_EXCHANGE type=BOOK_TICKET requestId=ee88fa59-324f-4752-98d2-0ff0cf68ca70 messageId=53ee2b90-05e8-460a-aa16-bdf8a49d6705 correlationId=53ee2b90-05e8-460a-aa16-bdf8a49d6705 response=BOOK_TICKET_RESPONSE payload={"requestId":"ee88fa59-324f-4752-98d2-0ff0cf68ca70","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.booking.BookingRequestHandler handleGetSeats
+SEVERE: GET_SEATS read barrier failed
+vn.nhom6.railway.booking.BookingRequestHandler$NoQuorumException
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest$Fixture.barrier(ReadBarrierAndRetryTest.java:358)
+	at vn.nhom6.railway.booking.BookingRequestHandler.awaitReadBarrier(BookingRequestHandler.java:263)
+	at vn.nhom6.railway.booking.BookingRequestHandler.handleGetSeats(BookingRequestHandler.java:219)
+	at vn.nhom6.railway.booking.BookingRequestHandler.handleBooking(BookingRequestHandler.java:128)
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest$Fixture.exchange(ReadBarrierAndRetryTest.java:368)
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest.noQuorumReadReturnsReadUnavailableWithoutSnapshot(ReadBarrierAndRetr
+yTest.java:76)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorCha
+in.java:131)
+	at org.junit.jupiter.engine.extension.SameThreadTimeoutInvocation.proceed(SameThreadTimeoutInvocation.java:45)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(In
+terceptingExecutableInvoker.java:103)
+	at 
+org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorCh
+ain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.jav
+a:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchi
+calTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.jav
+a:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=88174ede-f3ca-4030-a849-c65bc5f7f1f2 correlationId=88174ede-f3ca-4030-a849-c65bc5f7f1f2 response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"A current read barrier is unavailable","leaderHint":null,"term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=ce91d3af-61b0-4f8b-82fc-f866d990c22d messageId=2c582fde-4d5a-4eae-9677-7c147e736403 correlationId=2c582fde-4d5a-4eae-9677-7c147e736403 response=ERROR_RESPONSE payload={"errorCode":"NO_QUORUM","message":"The command could not be committed by a quorum","leaderHint":null,"term":null,"requestId":"ce91d3af-61b0-4f8b-82fc-f866d990c22d"}
+FAKE_EXCHANGE type=BOOK_TICKET requestId=ce91d3af-61b0-4f8b-82fc-f866d990c22d messageId=ea22b53e-b73c-4bac-a398-89bde911f40b correlationId=ea22b53e-b73c-4bac-a398-89bde911f40b response=BOOK_TICKET_RESPONSE payload={"requestId":"ce91d3af-61b0-4f8b-82fc-f866d990c22d","outcome":"CONFIRMED","ticketId":"fixture-ticket-2","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=ce22e50a-95f8-4caa-812d-b49cb84dbb48 correlationId=ce22e50a-95f8-4caa-812d-b49cb84dbb48 response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"This node is not the current leader","leaderHint":"node-4","term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=aca5e2d6-cf1d-4ae5-a0f4-7c542d2ad981 correlationId=aca5e2d6-cf1d-4ae5-a0f4-7c542d2ad981 response=GET_SEATS_RESPONSE payload={"tripId":"SE-001","seats":[{"seatId":"G01","status":"AVAILABLE","ticketId":null},{"seatId":"G02","status":"AVAILABLE","ticketId":null},{"seatId":"G03","status":"AVAILABLE","ticketId":null},{"seatId":"G04","status":"AVAILABLE","ticketId":null},{"seatId":"G05","status":"AVAILABLE","ticketId":null},{"seatId":"G06","status":"AVAILABLE","ticketId":null},{"seatId":"G07","status":"AVAILABLE","ticketId":null},{"seatId":"G08","status":"AVAILABLE","ticketId":null},{"seatId":"G09","status":"AVAILABLE","ticketId":null},{"seatId":"G10","status":"AVAILABLE","ticketId":null}],"readIndex":41,"leaderId":"node-3"}
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=f6e58ab0-5af7-4b9f-96bc-69a424d85370 correlationId=f6e58ab0-5af7-4b9f-96bc-69a424d85370 response=GET_SEATS_RESPONSE payload={"tripId":"SE-001","seats":[{"seatId":"G01","status":"AVAILABLE","ticketId":null},{"seatId":"G02","status":"AVAILABLE","ticketId":null},{"seatId":"G03","status":"AVAILABLE","ticketId":null},{"seatId":"G04","status":"AVAILABLE","ticketId":null},{"seatId":"G05","status":"AVAILABLE","ticketId":null},{"seatId":"G06","status":"AVAILABLE","ticketId":null},{"seatId":"G07","status":"AVAILABLE","ticketId":null},{"seatId":"G08","status":"AVAILABLE","ticketId":null},{"seatId":"G09","status":"AVAILABLE","ticketId":null},{"seatId":"G10","status":"AVAILABLE","ticketId":null}],"readIndex":42,"leaderId":"node-3"}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=dd7a5bee-86f6-4214-b68b-0c9a643d2914 correlationId=dd7a5bee-86f6-4214-b68b-0c9a643d2914 response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"This node is not the current leader","leaderHint":"node-4","term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=8f16c5d3-524e-480c-91d5-33f9eb4643b1 messageId=63d3bf22-ef05-433e-ac1d-50e0e06974c1 correlationId=63d3bf22-ef05-433e-ac1d-50e0e06974c1 response=BOOK_TICKET_RESPONSE payload={"requestId":"8f16c5d3-524e-480c-91d5-33f9eb4643b1","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+FAKE_EXCHANGE type=BOOK_TICKET requestId=8f16c5d3-524e-480c-91d5-33f9eb4643b1 messageId=5a70ea39-9fa7-4a8c-bfb8-9e4f2dc61297 correlationId=5a70ea39-9fa7-4a8c-bfb8-9e4f2dc61297 response=ERROR_RESPONSE payload={"errorCode":"REQUEST_ID_CONFLICT","message":"requestId was already used for a different booking intent","leaderHint":null,"term":null,"requestId":"8f16c5d3-524e-480c-91d5-33f9eb4643b1"}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=8f16c5d3-524e-480c-91d5-33f9eb4643b1 messageId=a2014997-15e2-43f7-a6b1-1fe02e8e867d correlationId=a2014997-15e2-43f7-a6b1-1fe02e8e867d response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"8f16c5d3-524e-480c-91d5-33f9eb4643b1","state":"APPLIED_SUCCESS","commandType":"BOOK_TICKET","ticketId":"fixture-ticket-1","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=53b1acf9-be91-47fc-979a-83f2da66bfde, 
+requestId=bfa04155-9284-4a00-93a5-1a27660859f2: Read timed out
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: bfa04155-9284-4a00-93a5-1a27660859f2
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=bfa04155-9284-4a00-93a5-1a27660859f2 messageId=25553f6e-5483-4024-8122-4b9741fdc65e correlationId=25553f6e-5483-4024-8122-4b9741fdc65e response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"bfa04155-9284-4a00-93a5-1a27660859f2","state":"UNKNOWN","commandType":null,"ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+thg 11 20, 2026 12:31:58 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: bfa04155-9284-4a00-93a5-1a27660859f2
+FAKE_EXCHANGE type=BOOK_TICKET requestId=bfa04155-9284-4a00-93a5-1a27660859f2 messageId=35876e93-a557-4bdf-ac7d-8b56b210acf5 correlationId=35876e93-a557-4bdf-ac7d-8b56b210acf5 response=BOOK_TICKET_RESPONSE payload={"requestId":"bfa04155-9284-4a00-93a5-1a27660859f2","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":42}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=f5c23cbb-a70b-4fc2-ab74-a12405a9c28d messageId=7b87e765-becb-4d39-bfae-c763dda2d4d3 correlationId=7b87e765-becb-4d39-bfae-c763dda2d4d3 response=BOOK_TICKET_RESPONSE payload={"requestId":"f5c23cbb-a70b-4fc2-ab74-a12405a9c28d","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=7b87e765-becb-4d39-bfae-c763dda2d4d3, 
+requestId=f5c23cbb-a70b-4fc2-ab74-a12405a9c28d: Read timed out
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: f5c23cbb-a70b-4fc2-ab74-a12405a9c28d
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=f5c23cbb-a70b-4fc2-ab74-a12405a9c28d messageId=5c2e1e64-bbea-4e9f-a694-ffaa254f3d38 correlationId=5c2e1e64-bbea-4e9f-a694-ffaa254f3d38 response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"Fake lookup barrier unavailable","leaderHint":null,"term":null,"requestId":"f5c23cbb-a70b-4fc2-ab74-a12405a9c28d"}
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+WARNING: ResultLookup query failed for requestId: f5c23cbb-a70b-4fc2-ab74-a12405a9c28d: READ_UNAVAILABLE
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: f5c23cbb-a70b-4fc2-ab74-a12405a9c28d
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=5735b3f5-87b7-4457-9b2e-0ff501a88388 messageId=3d732705-dcbc-42bf-8456-58c8bec3bbbb correlationId=3d732705-dcbc-42bf-8456-58c8bec3bbbb response=BOOK_TICKET_RESPONSE payload={"requestId":"5735b3f5-87b7-4457-9b2e-0ff501a88388","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=3d732705-dcbc-42bf-8456-58c8bec3bbbb, 
+requestId=5735b3f5-87b7-4457-9b2e-0ff501a88388: Read timed out
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: 5735b3f5-87b7-4457-9b2e-0ff501a88388
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=5735b3f5-87b7-4457-9b2e-0ff501a88388 messageId=0201c335-12b9-443c-b133-707c6319c6e6 correlationId=0201c335-12b9-443c-b133-707c6319c6e6 response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"5735b3f5-87b7-4457-9b2e-0ff501a88388","state":"APPLIED_SUCCESS","commandType":"BOOK_TICKET","ticketId":"fixture-ticket-1","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:31:59 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Lookup recovered CONFIRMED state for requestId: 5735b3f5-87b7-4457-9b2e-0ff501a88388
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.643 s -- in vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.564 s]
+[INFO] backend-node ....................................... SUCCESS [  0.081 s]
+[INFO] integration-tests .................................. SUCCESS [  2.541 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.290 s
+[INFO] Finished at: 2026-11-20T12:31:59+07:00
+[INFO] ------------------------------------------------------------------------
+
