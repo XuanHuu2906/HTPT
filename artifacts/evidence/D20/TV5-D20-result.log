@@ -1,0 +1,148 @@
+TV5-D20 validation evidence
+===========================
+
+Task: TV5-D20 Nghiệm thu quorum 3/5 và 2/5 (Raft Election, Recovery & Quorum Write Availability)
+Date: 2026-11-20
+Scope: backend-node election package; 5-peer cluster over FakeNetwork; split vote retry, minority 2/5 no-commit, majority 3/5 leader re-election, higher-term step-down, write availability timeout resolution, and live fault scenario preparation for Gate G5.
+
+Deliverables:
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionService.java (new high-level election & recovery service)
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/RaftElectionServiceTest.java (new 5-peer fake network test suite)
+- artifacts/evidence/D20/TV5-D20-result.log (this evidence file)
+
+Dependencies & Integration:
+- WriteAvailabilityPolicy (TV5-D19): Quorum write readiness, timeout resolution, and uncommitted entry rollback protection.
+- RaftCore (D19): PersistentRaftNode, RaftState, and durable term/vote storage.
+- LeadershipGuard (TV5-D16): Term validation preventing stale callbacks from deposed leaders.
+- FakeNetwork / FakeClusterNetwork: Deterministic 5-node partition simulator without live sockets.
+- Không chờ TV4-D20 (Distributed Booking) hoặc TV2-D20 (DB consistency check).
+- Fake quorum tests PASS 100%; live Docker multi-container cluster test gated separately for Gate G5.
+
+Implemented & Verified Rules:
+1. Quorum 3/5 vs 2/5 Minority:
+   - Trong cụm 5 voter ("node-1".."node-5"), đa số tuyệt đối là 3 (3/5).
+   - Phân vùng thiểu số 2/5 {node-1, node-2} KHÔNG THỂ commit writes dù leader cũ còn giữ role LEADER trong RAM.
+   - WriteAvailabilityPolicy trả về status=NO_QUORUM; commitIndex giữ nguyên ở 0; không có sự kiện CONFIRMED.
+2. Split Vote Retry & Leader Re-election:
+   - Các candidate khởi động chiến dịch đồng thời ở term 1 chia phiếu (2 vs 2 vs 1) -> Không ai đạt 3/5.
+   - Hệ thống phát hiện chia phiếu, không tạo ra hai leader trong cùng term.
+   - Cơ chế retry bầu cử (ElectionRetryCoordinator / retryElection) kích hoạt term 2, node-1 đạt 3/5 phiếu và đắc cử LEADER.
+3. Bầu Leader mới phía Đa số 3/5 khi mạng phân vùng:
+   - Trong phân vùng 3-2, nhóm 3/5 {node-3, node-4, node-5} phát hiện mất heartbeat, node-3 ứng cử term 2.
+   - Nhận 2 phiếu từ node-4 và node-5 (+ self vote = 3/5) -> node-3 đắc cử LEADER term 2.
+   - Nhóm 3/5 đạt Write Quorum AVAILABLE, tiếp nhận lệnh ghi và commit thành công (commitIndex tiến lên 1).
+4. Hàn gắn mạng, Giáng chức Leader cũ và Triệt tiêu Split-Brain:
+   - Khi mạng hàn gắn, Leader mới (node-3 term 2) phát thông điệp tới Leader cũ (node-1 term 1).
+   - Node-1 phát hiện term 2 > term 1 -> ngay lập tức giáng chức thành FOLLOWER, xóa role LEADER và cập nhật currentTerm=2.
+   - LeadershipGuard của node-1 vô hiệu hóa toàn bộ callback thuộc term 1 cũ (runIfCurrent trả về false).
+   - Entry chưa commit của term 1 trên node-1 bị ghi đè hoàn toàn bởi log term 2 của node-3.
+   - Cụm hội tụ về 1 Leader duy nhất (node-3) với log đồng nhất.
+5. Phân giải Timeout ghi chuẩn xác & Không Rollback Entry chưa commit:
+   - Tình huống VERIFIED_NO_QUORUM: trả về errorCode="NO_QUORUM", outcome=NO_QUORUM.
+   - Tình huống INDETERMINATE: trả về errorCode="TIMEOUT_UNKNOWN", outcome=UNKNOWN (client retry với cùng requestId).
+   - Tình huống VERIFIED_COMMITTED: trả về outcome=COMMITTED, errorCode=null.
+   - Invariant: Entry chưa commit KHÔNG BAO GIỜ bị rollback, hủy bỏ hay xóa khỏi log cục bộ khi timeout (canRollbackUncommitted=false).
+6. Chuẩn bị Kịch bản Live Fault cho Gate G5 (Docker G5 pre-validation):
+   - Kịch bản 1: Leader chết -> 4 node còn lại bầu Leader mới đạt quorum.
+   - Kịch bản 2: 2 Follower chết -> Cụm còn 3/5 node sống vẫn duy trì quorum ghi (AVAILABLE).
+   - Kịch bản 3: 3 Follower chết -> Cụm còn 2/5 node sống -> Mất quorum (NO_QUORUM), dừng commit an toàn.
+   - Kịch bản 4: Follower hồi phục -> Cụm từ 2/5 lên 3/5 -> Khôi phục quorum ghi (AVAILABLE), tiếp tục commit.
+   - Kịch bản 5: Phục hồi bền vững từ storage -> Term đơn điệu tăng, không vote 2 lần trong cùng term.
+
+Environment:
+- OS: Linux 6.17.7-200.fc42.x86_64
+- Java: OpenJDK 25.0.1
+- Maven: 3.9.9
+
+--- Targeted D20 Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="RaftElectionServiceTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.393 s]
+[INFO] backend-node ....................................... SUCCESS [  0.568 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+Test Methods (12):
+1. clusterTopology_andVoterMembership: PASS
+2. splitVote_retriesInNewTerm_andElectsLeader: PASS
+3. minorityPartition2of5_cannotCommitWrites_writeAvailabilityReportsNoQuorum: PASS
+4. majorityPartition3of5_electsNewLeader_andCommitsWrites: PASS
+5. networkHeal_stepsDownOldLeader_andOverwritesMinorityUncommittedEntry: PASS
+6. writeTimeoutResolution_verifiedNoQuorumVsUnknownVsCommitted: PASS
+7. pingOnly_doesNotEstablishCommitQuorum: PASS
+8. storageRecovery_restoresTermAndVote_ensuresMonotonicTerm: PASS
+9. g5FaultScenario1_leaderFailure_majorityReelectsNewLeader: PASS
+10. g5FaultScenario2_twoFollowersDown_leaderRetainsQuorumAndCommits: PASS
+11. g5FaultScenario3_threeFollowersDown_losesQuorum_writesPause: PASS
+12. g5FaultScenario4_recoveredFollower_restoresWriteQuorum: PASS
+
+--- Combined TV5 D18-D20 Fake Network & Quorum Suites ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="RaftElectionServiceTest,MinorityWriteSafetyTest,WriteAvailabilityPolicyTest,RaftElectionFivePeerFakeNetworkTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.202 s -- in vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Running vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.397 s]
+[INFO] backend-node ....................................... SUCCESS [  0.741 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+--- Full Election Package Regression Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Tests run: 260, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+
+--- Full Reactor Suite (All 6 Modules) ---
+
+Command:
+mvn -B -ntp test
+
+Results:
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  1.290 s]
+[INFO] backend-node ....................................... SUCCESS [  8.035 s]
+[INFO] desktop-client ..................................... SUCCESS [ 10.244 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.028 s]
+[INFO] integration-tests .................................. SUCCESS [  0.539 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
