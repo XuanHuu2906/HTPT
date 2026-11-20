@@ -31,8 +31,6 @@ import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -441,6 +439,7 @@ class BookingErrorFlowTest {
 
         // Kiểm tra payload không bị thay đổi dù chỉ 1 byte
         assertEquals(originalHash, entry.get().getPayloadHash(), "Payload hash phải giữ nguyên sau retry");
+        assertEquals(originalPayload, entry.get().getPayload(), "Payload phải giữ nguyên sau retry");
     }
 
     // =========================================================================

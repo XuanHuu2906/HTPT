@@ -603,6 +603,10 @@ class SixClientContentionTest {
             } catch (Exception ignored) {
             }
             try {
+                journalingClient.close();
+            } catch (Exception ignored) {
+            }
+            try {
                 rawBookingClient.close();
             } catch (Exception ignored) {
             }
