@@ -1,0 +1,515 @@
+TV6-D20 - G5 acceptance runner / baseline D19 separate dry-run
+TASK_SCOPE=script + dry-run + exit-code verification; G5_REAL=NOT_RUN
+RESULT: SCRIPT_SELFTEST=PASS (11); CONTRACT_FIXTURES=PASS (22); FAKE_FAULT_3_OF_5_AND_2_OF_5=PASS; EXIT_CODE_CONTRACT=PASS
+SQL_AND_NODE_LOG_COLLECTORS=FAKE_FIXTURE_CHECK_ONLY; live SQL/Docker execution NOT_RUN.
+Live AC03/AC05B/AC06 is prepared for post-D20 integrated candidate; full G5 remains a separate team milestone.
+No Docker command or live TCP request was executed in this dry-run. No node volumes were deleted.
+UTC=2026-11-20T05:48:55.5810596Z
+BaselineHEAD=7f6f6d568644816352ba0273b56ba5c6ac8a6e37
+ScriptSHA256=F7DF0F5085D765A4AEA53A5A32BFA8E2296C5F4A410493022EC82DBE2BBA50F9
+OS=Microsoft Windows NT 10.0.26200.0; PowerShell=5.1.26100.9818
+JAVA_HOME=C:\Users\dattr\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64 (JDK 25)
+MAVEN=C:\Users\dattr\AppData\Local\Temp\railway-monitor-tools\apache-maven-3.9.11\bin\mvn.cmd (3.9.11)
+Temporary collector output=C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\dryrun
+DEPENDENCY_SHA256 scripts/cluster-fault.ps1 = F71CE261EA3BFFBDD327D0F3D6EB9892285379391535DC9850F737702FEAB438
+DEPENDENCY_SHA256 integration-tests/src/test/java/vn/nhom6/railway/tests/ConcurrentBookingRunner.java = 2E24898BEA0D8DA73DF81CC67102B3AADE4494BE4BB84B47DAC03C4FD034E7D0
+DEPENDENCY_SHA256 integration-tests/src/test/java/vn/nhom6/railway/tests/ReadBarrierAndRetryTest.java = 6FB4462D2DF78FC4F35C897125FF9CC410C22DD92DF4CBC23791D9F4BC5ECDCA
+
+=== EXECUTED CASE: selftest ===
+COMMAND: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/g5-acceptance.ps1 -Mode SelfTest -OutputDirectory <TEMP>/railway-tv6-d20/selftest; EXPECTED=0 ACTUAL=0 PASS
+2026-11-20T05:47:47.5447085Z TV6-D20 mode=SelfTest revision=7f6f6d568644816352ba0273b56ba5c6ac8a6e37; G5_REAL=NOT_RUN until explicit post-D20 Live gate.
+2026-11-20T05:47:47.6308595Z ScriptSHA256=F7DF0F5085D765A4AEA53A5A32BFA8E2296C5F4A410493022EC82DBE2BBA50F9
+2026-11-20T05:47:47.6559090Z SELFTEST PASS six-client normal shape
+2026-11-20T05:47:47.7175887Z SELFTEST PASS count=11; injected fixtures only; G5_REAL=NOT_RUN
+2026-11-20T05:47:47.7185942Z FINAL mode=SelfTest exit=0; DryRun/SelfTest PASS never means G5 real PASS.
+
+
+=== EXECUTED CASE: dryrun ===
+COMMAND: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/g5-acceptance.ps1 -Mode DryRun -MavenPath <MAVEN>/bin/mvn.cmd -OutputDirectory <TEMP>/railway-tv6-d20/dryrun; EXPECTED=0 ACTUAL=0 PASS
+2026-11-20T05:47:47.5061313Z TV6-D20 mode=DryRun revision=7f6f6d568644816352ba0273b56ba5c6ac8a6e37; G5_REAL=NOT_RUN until explicit post-D20 Live gate.
+2026-11-20T05:47:47.5943111Z ScriptSHA256=F7DF0F5085D765A4AEA53A5A32BFA8E2296C5F4A410493022EC82DBE2BBA50F9
+2026-11-20T05:47:47.6043080Z COMMAND contract-fixtures : C:\Users\dattr\AppData\Local\Temp\railway-monitor-tools\apache-maven-3.9.11\bin\mvn.cmd -B -ntp -pl integration-tests -am -Dtest=ConcurrentBookingRunner,ReadBarrierAndRetryTest -Dsurefire.failIfNoSpecifiedTests=false -Dcluster.smoke=false -Dcluster.g4.leader=false test
+2026-11-20T05:47:52.5267716Z EXIT contract-fixtures=0
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At D:\HTPT\scripts\g5-acceptance.ps1:64 char:11
++     try { & $Exe @Arguments *> $path; $code = $LASTEXITCODE }
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory D:\HTPT\backend-node\src\test\resources
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO]
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.ConcurrentBookingRunner
+MODE=FAKE_TCP scenario=NORMAL; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=ef9a8240-3f20-425c-ba90-d8152a39d4a8 messageId=cf4c43f9-3797-4e55-b9dd-6841c13d916c trip=SE-001 seat=G05 latencyMs=71.196 outcome=REJECTED reasonCode=SEAT_ALREADY_BOOKED appliedLogIndex=5 detail=BOOK_TICKET_RESPONSE
+client=2 requestId=fd01a53a-7029-44af-9686-f1ca9736be17 messageId=2a31f8bb-e50b-4422-a040-c041bf1785fa trip=SE-001 seat=G05 latencyMs=71.085 outcome=REJECTED reasonCode=SEAT_ALREADY_BOOKED appliedLogIndex=4 detail=BOOK_TICKET_RESPONSE
+client=3 requestId=b8bdb47d-c30d-4a22-a00b-d31ef6310180 messageId=b956020b-9a4d-4c00-a7eb-36f5a52280e4 trip=SE-001 seat=G05 latencyMs=70.963 outcome=REJECTED reasonCode=SEAT_ALREADY_BOOKED appliedLogIndex=6 detail=BOOK_TICKET_RESPONSE
+client=4 requestId=9fe7a2c0-515c-4e33-bf05-7437b6f81cad messageId=38b1ebb6-cf25-4fe2-88ea-dac268ee2070 trip=SE-001 seat=G05 latencyMs=71.043 outcome=CONFIRMED reasonCode=null appliedLogIndex=1 detail=BOOK_TICKET_RESPONSE
+client=5 requestId=29f33ea8-4f80-40ea-a531-9d8a98d387c0 messageId=ca49e34d-bd04-4a33-bf08-9a43c20175d3 trip=SE-001 seat=G05 latencyMs=71.019 outcome=REJECTED reasonCode=SEAT_ALREADY_BOOKED appliedLogIndex=2 detail=BOOK_TICKET_RESPONSE
+client=6 requestId=b6753568-519b-4bbe-9778-d544c7cbe742 messageId=55dffe8d-fcc0-4e93-84ad-f1c8f637a1e7 trip=SE-001 seat=G05 latencyMs=70.872 outcome=REJECTED reasonCode=SEAT_ALREADY_BOOKED appliedLogIndex=3 detail=BOOK_TICKET_RESPONSE
+MODE=FAKE_TCP scenario=UNKNOWN; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=bc67a06a-b4d4-41e9-894b-9e9fe7632d67 messageId=e1e6fb5f-b6f4-49df-853f-1ff7a067e701 trip=SE-001 seat=G05 latencyMs=2.587 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+client=2 requestId=ece73c4e-6d28-495c-8772-60f6f60fcc16 messageId=dc0a15ba-4971-4f32-818e-4591f7643b47 trip=SE-001 seat=G05 latencyMs=2.587 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+client=3 requestId=176b19f5-cd62-4b72-9ae4-449c8939e071 messageId=87f6d2c5-7a80-4b1e-ba91-9090b0b5598b trip=SE-001 seat=G05 latencyMs=2.554 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+client=4 requestId=3501f051-a8e9-4b8f-a95f-ea2f148870fe messageId=f164a79e-441d-4430-8597-c892cd6e5f0d trip=SE-001 seat=G05 latencyMs=2.236 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+client=5 requestId=3bdf14fa-6493-413b-82d7-314a1960c428 messageId=7b6ed3d6-dabe-445c-88e3-309eda6a2dd6 trip=SE-001 seat=G05 latencyMs=2.227 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+client=6 requestId=6be3f698-132e-4c5b-9ec2-4dbfae1ca6b8 messageId=3d62ed65-77f3-4bb0-b1b9-19b9a588df63 trip=SE-001 seat=G05 latencyMs=2.512 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=BOOK_TICKET_RESPONSE
+MODE=FAKE_TCP scenario=NOT_LEADER; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=ab699de7-b96a-41d2-93e1-2122546dc32a messageId=84d241ca-9e8e-4a3b-86fc-921a33a7fac4 trip=SE-001 seat=G05 latencyMs=6.865 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+client=2 requestId=642373b4-bffd-4311-bfed-585e8b0df431 messageId=eb516fc6-3a5a-4ea3-a731-670165b53fef trip=SE-001 seat=G05 latencyMs=6.852 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+client=3 requestId=aa287273-8f19-4b11-9463-4aee71a5cebe messageId=ed907cb7-a637-4cc4-aa86-dbea6867d928 trip=SE-001 seat=G05 latencyMs=6.858 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+client=4 requestId=38302e6a-4c9b-44ee-a845-1ef83543b14f messageId=e23723f1-97d3-43d1-a32e-41e81a8d4ce1 trip=SE-001 seat=G05 latencyMs=6.797 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+client=5 requestId=cb770868-1ca8-47f9-ac5e-acf8ba98813c messageId=babb6ead-46cf-4eb6-8594-f3c7588ab0e5 trip=SE-001 seat=G05 latencyMs=6.926 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+client=6 requestId=c1f4c41a-dce2-4ad2-9aa2-e8b5cafaf4d1 messageId=ab128088-6316-4121-8112-28ce4bcf7d21 trip=SE-001 seat=G05 latencyMs=6.772 outcome=UNKNOWN reasonCode=NOT_LEADER appliedLogIndex=null detail=ERROR_RESPONSE leaderHint=node-2
+MODE=FAKE_TCP scenario=DROP; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=8f70858c-b9a8-4417-a3d8-e29542f19507 messageId=2ee1af6e-4ece-422e-b2f3-62af7e06d1e4 trip=SE-001 seat=G05 latencyMs=2.164 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+client=2 requestId=b3d52eeb-5691-4f34-a51d-55166673d7e1 messageId=19fc64a5-84d2-4328-bf87-c553ba6897f9 trip=SE-001 seat=G05 latencyMs=2.222 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+client=3 requestId=feea0389-99a5-464d-8c5d-e90b3b1965b1 messageId=9180a53c-119a-4851-89f5-881b55f584d2 trip=SE-001 seat=G05 latencyMs=2.127 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+client=4 requestId=9f008e3b-d896-4968-8ff8-12105c58d3d5 messageId=109d3fc2-4d80-4ba0-aa07-ad16e1acb20d trip=SE-001 seat=G05 latencyMs=2.122 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+client=5 requestId=28b3d169-54b3-4fb4-9df1-c55306ea486d messageId=4976df85-b79f-4a27-a8de-00a8c5b24ece trip=SE-001 seat=G05 latencyMs=2.087 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+client=6 requestId=5742fee5-00b2-4643-9e8b-bbeee656bad6 messageId=f2e341b8-2d8a-473c-a12e-05e83a71f2d8 trip=SE-001 seat=G05 latencyMs=2.090 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=EOFException
+MODE=FAKE_TCP scenario=WRONG_CORRELATION; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=60ec256e-e573-47aa-b8dd-1d999f7b81e9 messageId=82ea7d98-be23-4288-9fc9-66f85b720ec3 trip=SE-001 seat=G05 latencyMs=4.439 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=2 requestId=940e535c-269b-4123-80e1-1ad654d070c7 messageId=947ba239-92f7-451f-b3f3-4f34a5a94dd6 trip=SE-001 seat=G05 latencyMs=4.789 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=3 requestId=a61f8e19-240d-47d4-8d02-bde4a758edb5 messageId=acdafb42-8a37-4976-9d8e-dba3e2819a0b trip=SE-001 seat=G05 latencyMs=4.364 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=4 requestId=e93c0f10-aa81-4642-a64d-52c6cfb36b44 messageId=bd1f21a6-dc09-4660-9dee-29a808a4e933 trip=SE-001 seat=G05 latencyMs=4.637 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=5 requestId=3df0e274-bb5e-415e-b05c-9ce052d4783d messageId=47030cab-3271-44a7-853c-a9048a9f4751 trip=SE-001 seat=G05 latencyMs=4.456 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=6 requestId=1439bac9-460b-4caa-8b19-3c16117ce4e2 messageId=b83bb71f-58de-4add-8e9b-0a309c886f14 trip=SE-001 seat=G05 latencyMs=4.818 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+MODE=FAKE_TCP scenario=DELAY; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=3ae05bc2-da58-4d96-9ab3-36729ae059c3 messageId=cb54da8d-a3c8-446d-8a48-df9446f5d2a0 trip=SE-001 seat=G05 latencyMs=250.130 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+client=2 requestId=40d9d5d5-98ee-42fc-9b86-2f74e9b1173a messageId=1be86d8f-7e49-4ba3-91e4-29786110233d trip=SE-001 seat=G05 latencyMs=251.962 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+client=3 requestId=10d73bc0-6f05-4307-bbf1-0c5fe90a9ebc messageId=c7bd0d18-024c-478c-b9d8-d15a701d10ba trip=SE-001 seat=G05 latencyMs=250.426 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+client=4 requestId=77e715c0-952e-4d70-8055-2020039c51c4 messageId=4c226837-fda4-4eec-9ff2-4ffe4fbcef75 trip=SE-001 seat=G05 latencyMs=250.048 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+client=5 requestId=8290c219-cf1e-48bc-aadd-d8e1323078fd messageId=0f137cae-4006-483d-848c-36acb5bd229e trip=SE-001 seat=G05 latencyMs=251.930 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+client=6 requestId=76af6e82-4dcf-43fc-b226-502665cb0f4a messageId=7e3f6350-d104-4150-b360-2089b0715b37 trip=SE-001 seat=G05 latencyMs=249.952 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=SocketTimeoutException
+MODE=FAKE_TCP scenario=WRONG_REQUEST_ID; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=647d81f5-f0d2-416f-a155-4a2d29b62fe1 messageId=d6f995af-5fb2-4a1d-b869-b1b25fd77594 trip=SE-001 seat=G05 latencyMs=6.855 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=2 requestId=60184aae-3c85-4d06-b02e-28cf868b0416 messageId=c0f99ff9-1884-44a3-82a4-868204964aba trip=SE-001 seat=G05 latencyMs=7.351 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=3 requestId=1a1266e0-ad50-4be7-8122-448da91dc02f messageId=d8aa215c-9605-44e2-89f7-92a329728ba7 trip=SE-001 seat=G05 latencyMs=6.852 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=4 requestId=512ac918-4a1f-4426-81ef-60f97e54dc63 messageId=05ce2613-f2b7-4e67-8c9f-b63b7afa5f57 trip=SE-001 seat=G05 latencyMs=6.631 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=5 requestId=3cf7ceb6-39f4-4810-aac6-eba6db6a7d77 messageId=548774d4-e571-4145-a740-ac28609f56fb trip=SE-001 seat=G05 latencyMs=5.438 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=6 requestId=b581eabd-ef8d-46d3-be97-2780caf8232d messageId=1fd0819e-cf8b-4742-8376-22f9f52c65e7 trip=SE-001 seat=G05 latencyMs=4.522 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+MODE=FAKE_TCP scenario=WRONG_SENDER; real_Raft_G5=NOT_RUN
+LOAD_READY clients=6 seat=G05 startLatch=shared; releasing
+client=1 requestId=ff07c555-23ad-44f9-ae1b-126c5fd48176 messageId=5df83731-917a-41c5-a54c-25178812b159 trip=SE-001 seat=G05 latencyMs=3.091 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=2 requestId=c8e75b89-ff6a-4753-8acd-668247988efd messageId=1197ca0d-8297-42ab-bf3a-8906c53dbe27 trip=SE-001 seat=G05 latencyMs=2.554 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=3 requestId=036234d4-06f7-4767-9963-4d8bb6c1c17c messageId=4294ace9-627c-41e1-b68c-71dc9dad474c trip=SE-001 seat=G05 latencyMs=3.256 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=4 requestId=e70e6cad-60f4-4705-8751-79d1feb58a82 messageId=2d5a1553-0c2e-43d0-b835-2391ebdc68a6 trip=SE-001 seat=G05 latencyMs=2.415 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=5 requestId=bdf66ce7-387f-444e-93bf-230d26a246eb messageId=b6644afd-dd1f-4c23-8c3d-9727fa6883b1 trip=SE-001 seat=G05 latencyMs=2.469 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+client=6 requestId=015b7b56-ace7-4d95-88a6-30240cf9be10 messageId=8d28b181-63dc-486d-a496-d8a36ff26417 trip=SE-001 seat=G05 latencyMs=2.190 outcome=UNKNOWN reasonCode=TIMEOUT_UNKNOWN appliedLogIndex=null detail=ProtocolException
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.860 s -- in vn.nhom6.railway.tests.ConcurrentBookingRunner
+[INFO] Running vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=4e74a846-5c28-46ad-8573-457a40255d34 messageId=b36c8f96-b9f1-43ea-81f4-b6c987742584 correlationId=b36c8f96-b9f1-43ea-81f4-b6c987742584 response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"Fake follower lookup blocked","leaderHint":"node-4","term":null,"requestId":"4e74a846-5c28-46ad-8573-457a40255d34"}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=26878416-dc21-4a3d-bc4f-23a73a4bcf98 correlationId=26878416-dc21-4a3d-bc4f-23a73a4bcf98 response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"A current read barrier is unavailable","leaderHint":null,"term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=fdac369a-1101-4ed9-a8bd-d27ba9a6f7af messageId=96514792-f0b8-4c6b-b414-e1f01dea2231 correlationId=96514792-f0b8-4c6b-b414-e1f01dea2231 response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"fdac369a-1101-4ed9-a8bd-d27ba9a6f7af","state":"PENDING","commandType":"BOOK_TICKET","ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=34f88611-f95c-4792-b0aa-6d971c0ed424 messageId=4337c23e-e3fe-450b-b9f1-5f1faf4dca3d correlationId=4337c23e-e3fe-450b-b9f1-5f1faf4dca3d response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"34f88611-f95c-4792-b0aa-6d971c0ed424","state":"UNKNOWN","commandType":null,"ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=ba7ec316-d3cb-4030-a8e6-fa08eeb15808 messageId=1e46e70e-93b1-4662-8fc5-ee217a03e243 correlationId=1e46e70e-93b1-4662-8fc5-ee217a03e243 response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"ba7ec316-d3cb-4030-a8e6-fa08eeb15808","state":"APPLIED_REJECTED","commandType":"BOOK_TICKET","ticketId":null,"reasonCode":"SEAT_ALREADY_BOOKED","appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=2328bca0-eadb-45f2-9dad-0b6d2a73a6dc messageId=a6735419-8f14-4f0b-8365-d1d5aba12dc5 correlationId=a6735419-8f14-4f0b-8365-d1d5aba12dc5 response=BOOK_TICKET_RESPONSE payload={"requestId":"2328bca0-eadb-45f2-9dad-0b6d2a73a6dc","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=a6735419-8f14-4f0b-8365-d1d5aba12dc5,
+requestId=2328bca0-eadb-45f2-9dad-0b6d2a73a6dc: Read timed out
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: 2328bca0-eadb-45f2-9dad-0b6d2a73a6dc
+FAKE_EXCHANGE type=BOOK_TICKET requestId=2328bca0-eadb-45f2-9dad-0b6d2a73a6dc messageId=a0a19dea-d68a-4dbd-9db1-f1b3d5015564 correlationId=a0a19dea-d68a-4dbd-9db1-f1b3d5015564 response=BOOK_TICKET_RESPONSE payload={"requestId":"2328bca0-eadb-45f2-9dad-0b6d2a73a6dc","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.booking.BookingRequestHandler handleGetSeats
+SEVERE: GET_SEATS read barrier failed
+vn.nhom6.railway.booking.BookingRequestHandler$NoQuorumException
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest$Fixture.barrier(ReadBarrierAndRetryTest.java:358)
+	at vn.nhom6.railway.booking.BookingRequestHandler.awaitReadBarrier(BookingRequestHandler.java:263)
+	at vn.nhom6.railway.booking.BookingRequestHandler.handleGetSeats(BookingRequestHandler.java:219)
+	at vn.nhom6.railway.booking.BookingRequestHandler.handleBooking(BookingRequestHandler.java:128)
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest$Fixture.exchange(ReadBarrierAndRetryTest.java:368)
+	at vn.nhom6.railway.tests.ReadBarrierAndRetryTest.noQuorumReadReturnsReadUnavailableWithoutSnapshot(ReadBarrierAndRetr
+yTest.java:76)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorCha
+in.java:131)
+	at org.junit.jupiter.engine.extension.SameThreadTimeoutInvocation.proceed(SameThreadTimeoutInvocation.java:45)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(In
+terceptingExecutableInvoker.java:103)
+	at
+org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorCh
+ain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.jav
+a:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierar
+chicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchi
+calTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.jav
+a:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=8d8c485e-8ea9-4015-8b0e-a04d97045e14 correlationId=8d8c485e-8ea9-4015-8b0e-a04d97045e14 response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"A current read barrier is unavailable","leaderHint":null,"term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=7774deda-fed0-4619-a92f-518fecf8c629 messageId=ad2fe375-25fd-4135-ba61-5fb8b0cae9f4 correlationId=ad2fe375-25fd-4135-ba61-5fb8b0cae9f4 response=ERROR_RESPONSE payload={"errorCode":"NO_QUORUM","message":"The command could not be committed by a quorum","leaderHint":null,"term":null,"requestId":"7774deda-fed0-4619-a92f-518fecf8c629"}
+FAKE_EXCHANGE type=BOOK_TICKET requestId=7774deda-fed0-4619-a92f-518fecf8c629 messageId=e1b86a09-6072-4bfe-80f8-338aa8c5b911 correlationId=e1b86a09-6072-4bfe-80f8-338aa8c5b911 response=BOOK_TICKET_RESPONSE payload={"requestId":"7774deda-fed0-4619-a92f-518fecf8c629","outcome":"CONFIRMED","ticketId":"fixture-ticket-2","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=1585b753-cb85-46ba-8905-f069d18363e0 correlationId=1585b753-cb85-46ba-8905-f069d18363e0 response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"This node is not the current leader","leaderHint":"node-4","term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=1a89511a-fedb-4552-8366-1171c5d506e1 correlationId=1a89511a-fedb-4552-8366-1171c5d506e1 response=GET_SEATS_RESPONSE payload={"tripId":"SE-001","seats":[{"seatId":"G01","status":"AVAILABLE","ticketId":null},{"seatId":"G02","status":"AVAILABLE","ticketId":null},{"seatId":"G03","status":"AVAILABLE","ticketId":null},{"seatId":"G04","status":"AVAILABLE","ticketId":null},{"seatId":"G05","status":"AVAILABLE","ticketId":null},{"seatId":"G06","status":"AVAILABLE","ticketId":null},{"seatId":"G07","status":"AVAILABLE","ticketId":null},{"seatId":"G08","status":"AVAILABLE","ticketId":null},{"seatId":"G09","status":"AVAILABLE","ticketId":null},{"seatId":"G10","status":"AVAILABLE","ticketId":null}],"readIndex":41,"leaderId":"node-3"}
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=715c9713-ad02-4fea-8600-c0965190d4f5 correlationId=715c9713-ad02-4fea-8600-c0965190d4f5 response=GET_SEATS_RESPONSE payload={"tripId":"SE-001","seats":[{"seatId":"G01","status":"AVAILABLE","ticketId":null},{"seatId":"G02","status":"AVAILABLE","ticketId":null},{"seatId":"G03","status":"AVAILABLE","ticketId":null},{"seatId":"G04","status":"AVAILABLE","ticketId":null},{"seatId":"G05","status":"AVAILABLE","ticketId":null},{"seatId":"G06","status":"AVAILABLE","ticketId":null},{"seatId":"G07","status":"AVAILABLE","ticketId":null},{"seatId":"G08","status":"AVAILABLE","ticketId":null},{"seatId":"G09","status":"AVAILABLE","ticketId":null},{"seatId":"G10","status":"AVAILABLE","ticketId":null}],"readIndex":42,"leaderId":"node-3"}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=GET_SEATS requestId=- messageId=941e545d-86a0-4057-925a-a7b3631807cb correlationId=941e545d-86a0-4057-925a-a7b3631807cb response=ERROR_RESPONSE payload={"errorCode":"NOT_LEADER","message":"This node is not the current leader","leaderHint":"node-4","term":null,"requestId":null}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=f62daeb2-073d-4432-819a-16d5ce6971da messageId=05c65d75-ecd0-4c36-a644-d10b9e9f98c8 correlationId=05c65d75-ecd0-4c36-a644-d10b9e9f98c8 response=BOOK_TICKET_RESPONSE payload={"requestId":"f62daeb2-073d-4432-819a-16d5ce6971da","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+FAKE_EXCHANGE type=BOOK_TICKET requestId=f62daeb2-073d-4432-819a-16d5ce6971da messageId=38e8f9c0-74c2-4868-ac1a-43a1ba71d3c4 correlationId=38e8f9c0-74c2-4868-ac1a-43a1ba71d3c4 response=ERROR_RESPONSE payload={"errorCode":"REQUEST_ID_CONFLICT","message":"requestId was already used for a different booking intent","leaderHint":null,"term":null,"requestId":"f62daeb2-073d-4432-819a-16d5ce6971da"}
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=f62daeb2-073d-4432-819a-16d5ce6971da messageId=2f076401-af3d-4699-a097-148ebb4fec91 correlationId=2f076401-af3d-4699-a097-148ebb4fec91 response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"f62daeb2-073d-4432-819a-16d5ce6971da","state":"APPLIED_SUCCESS","commandType":"BOOK_TICKET","ticketId":"fixture-ticket-1","reasonCode":null,"appliedLogIndex":41}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=b6de387b-1335-4d60-b2a6-0c6615dd975d,
+requestId=e47aa2af-39cb-4c6a-a9e8-bfad08b5158a: Read timed out
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: e47aa2af-39cb-4c6a-a9e8-bfad08b5158a
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=e47aa2af-39cb-4c6a-a9e8-bfad08b5158a messageId=4a114533-c1a5-4576-8e38-a5f9c736a13f correlationId=4a114533-c1a5-4576-8e38-a5f9c736a13f response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"e47aa2af-39cb-4c6a-a9e8-bfad08b5158a","state":"UNKNOWN","commandType":null,"ticketId":null,"reasonCode":null,"appliedLogIndex":null}
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: e47aa2af-39cb-4c6a-a9e8-bfad08b5158a
+FAKE_EXCHANGE type=BOOK_TICKET requestId=e47aa2af-39cb-4c6a-a9e8-bfad08b5158a messageId=b06e0f6e-4ab5-4ff7-9573-f4d701fbe6ab correlationId=b06e0f6e-4ab5-4ff7-9573-f4d701fbe6ab response=BOOK_TICKET_RESPONSE payload={"requestId":"e47aa2af-39cb-4c6a-a9e8-bfad08b5158a","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":42}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=695e2960-9f66-4c48-85b0-e6512c0e8da1 messageId=1fda9b11-2b9f-4877-a0db-1ddd78f4b80f correlationId=1fda9b11-2b9f-4877-a0db-1ddd78f4b80f response=BOOK_TICKET_RESPONSE payload={"requestId":"695e2960-9f66-4c48-85b0-e6512c0e8da1","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=1fda9b11-2b9f-4877-a0db-1ddd78f4b80f,
+requestId=695e2960-9f66-4c48-85b0-e6512c0e8da1: Read timed out
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: 695e2960-9f66-4c48-85b0-e6512c0e8da1
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+WARNING: ResultLookup query failed for requestId: 695e2960-9f66-4c48-85b0-e6512c0e8da1: READ_UNAVAILABLE
+thg 11 20, 2026 12:47:51 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Returning UNKNOWN (TIMEOUT_UNKNOWN) for requestId: 695e2960-9f66-4c48-85b0-e6512c0e8da1
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=695e2960-9f66-4c48-85b0-e6512c0e8da1 messageId=fd7ec579-d378-41e5-9426-2a3b15cd1ec8 correlationId=fd7ec579-d378-41e5-9426-2a3b15cd1ec8 response=ERROR_RESPONSE payload={"errorCode":"READ_UNAVAILABLE","message":"Fake lookup barrier unavailable","leaderHint":null,"term":null,"requestId":"695e2960-9f66-4c48-85b0-e6512c0e8da1"}
+MODE=FAKE_BARRIER_STORAGE; production lookup handler not exercised; AC10_REAL_G5=NOT_RUN
+FAKE_EXCHANGE type=BOOK_TICKET requestId=f5e2614d-9c88-44a1-b0d4-d48bf21ace98 messageId=36641ee1-9975-406e-9f91-e57b920dffcf correlationId=36641ee1-9975-406e-9f91-e57b920dffcf response=BOOK_TICKET_RESPONSE payload={"requestId":"f5e2614d-9c88-44a1-b0d4-d48bf21ace98","outcome":"CONFIRMED","ticketId":"fixture-ticket-1","tripId":"SE-001","seatId":"G05","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:47:52 CH vn.nhom6.railway.networking.ConnectionManager sendAndReceive
+WARNING: Read/write timeout for messageId=36641ee1-9975-406e-9f91-e57b920dffcf,
+requestId=f5e2614d-9c88-44a1-b0d4-d48bf21ace98: Read timed out
+thg 11 20, 2026 12:47:52 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Querying ResultLookup for timed-out requestId: f5e2614d-9c88-44a1-b0d4-d48bf21ace98
+FAKE_EXCHANGE type=GET_REQUEST_RESULT requestId=f5e2614d-9c88-44a1-b0d4-d48bf21ace98 messageId=05c4ed2b-fccc-4b31-96e4-6a49e226f6e3 correlationId=05c4ed2b-fccc-4b31-96e4-6a49e226f6e3 response=GET_REQUEST_RESULT_RESPONSE payload={"requestId":"f5e2614d-9c88-44a1-b0d4-d48bf21ace98","state":"APPLIED_SUCCESS","commandType":"BOOK_TICKET","ticketId":"fixture-ticket-1","reasonCode":null,"appliedLogIndex":41}
+thg 11 20, 2026 12:47:52 CH vn.nhom6.railway.networking.ConnectionManager resolveTimeoutOutcome
+INFO: Lookup recovered CONFIRMED state for requestId: f5e2614d-9c88-44a1-b0d4-d48bf21ace98
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.304 s -- in vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.577 s]
+[INFO] backend-node ....................................... SUCCESS [  0.075 s]
+[INFO] integration-tests .................................. SUCCESS [  2.972 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.722 s
+[INFO] Finished at: 2026-11-20T12:47:52+07:00
+[INFO] ------------------------------------------------------------------------
+
+2026-11-20T05:47:52.6206705Z CONTRACT_FIXTURES PASS; actual loopback fixture tests, not a real Raft cluster.
+2026-11-20T05:47:52.6317464Z COMMAND fake-fault-2 : powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\HTPT\scripts\cluster-fault.ps1 -Action Run -NodeCount 2 -LogPath C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\dryrun\fake-fault-2-fault.log -Mode Fake -PollIntervalMs 20
+2026-11-20T05:47:53.3064686Z EXIT fake-fault-2=0
+2026-11-20T05:47:52.8241889Z TV6-D16 mode=Fake action=Run; G5_live_safety=NOT_RUN; volumes preserved
+2026-11-20T05:47:52.9210041Z SourceSHA256=F71CE261EA3BFFBDD327D0F3D6EB9892285379391535DC9850F737702FEAB438
+2026-11-20T05:47:53.0298229Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.0724319Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.1014913Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.1050064Z OBSERVED stable=3 reachable=5/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.1140165Z FAULT mode=Fake action=stop nodes=node-1,node-2
+2026-11-20T05:47:53.1250768Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.1656737Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.1972529Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.2007495Z OBSERVED stable=3 reachable=3/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.2027542Z FAULT mode=Fake action=start nodes=node-1,node-2
+2026-11-20T05:47:53.2077802Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.2433541Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.2749132Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.2774123Z OBSERVED stable=3 reachable=5/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.2794138Z RUNNER PASS mode=Fake action=Run nodes=node-1,node-2; G5_live_safety=NOT_RUN
+Evidence=C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\dryrun\fake-fault-2-fault.log; Exit=0
+
+2026-11-20T05:47:53.3114679Z COMMAND fake-fault-3 : powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\HTPT\scripts\cluster-fault.ps1 -Action Run -NodeCount 3 -LogPath C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\dryrun\fake-fault-3-fault.log -Mode Fake -PollIntervalMs 20
+2026-11-20T05:47:53.9808106Z EXIT fake-fault-3=0
+2026-11-20T05:47:53.5158313Z TV6-D16 mode=Fake action=Run; G5_live_safety=NOT_RUN; volumes preserved
+2026-11-20T05:47:53.6113083Z SourceSHA256=F71CE261EA3BFFBDD327D0F3D6EB9892285379391535DC9850F737702FEAB438
+2026-11-20T05:47:53.6952324Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.7408848Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.7714658Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.7749787Z OBSERVED stable=3 reachable=5/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.7839899Z FAULT mode=Fake action=stop nodes=node-1,node-2,node-3
+2026-11-20T05:47:53.7950223Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.8342299Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.8672185Z STATUS [{"nodeId":"node-1","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-2","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-3","online":false,"role":null,"term":null,"commitIndex":null,"lastApplied":null,"termField":null,"error":"FAKE unavailable"},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.8692221Z OBSERVED stable=3 reachable=2/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.8697226Z FAULT mode=Fake action=start nodes=node-1,node-2,node-3
+2026-11-20T05:47:53.8737455Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.9116892Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.9417990Z STATUS [{"nodeId":"node-1","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-2","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-3","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-4","online":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null},{"nodeId":"node-5","online":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43,"termField":"term","error":null}]
+2026-11-20T05:47:53.9443133Z OBSERVED stable=3 reachable=5/5; quorum fixed=3/5; safety=NOT_RUN_G5
+2026-11-20T05:47:53.9488129Z RUNNER PASS mode=Fake action=Run nodes=node-1,node-2,node-3; G5_live_safety=NOT_RUN
+Evidence=C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\dryrun\fake-fault-3-fault.log; Exit=0
+
+2026-11-20T05:47:54.0106844Z SQL_COLLECTOR mode=DryRun label=FAKE-collector-check DBs=5 (read-only; DryRun rows are FAKE)
+2026-11-20T05:47:54.0239232Z LOG_COLLECTOR mode=DryRun label=FAKE-collector-check nodes=5
+2026-11-20T05:47:54.0254426Z DRY_RUN PASS: actual contract fixtures + fake fault runner + FAKE SQL/log collectors. G5_REAL=NOT_RUN; do not copy these artifacts as real SQL/log evidence.
+2026-11-20T05:47:54.0264429Z FINAL mode=DryRun exit=0; DryRun/SelfTest PASS never means G5 real PASS.
+
+
+=== EXECUTED CASE: blocked ===
+COMMAND: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/g5-acceptance.ps1 -Mode Live -OutputDirectory <TEMP>/railway-tv6-d20/blocked; EXPECTED=2 ACTUAL=2 PASS. Missing Project/CandidateRevision blocks before external operations.
+2026-11-20T05:47:47.9933367Z TV6-D20 mode=Live revision=7f6f6d568644816352ba0273b56ba5c6ac8a6e37; G5_REAL=NOT_RUN until explicit post-D20 Live gate.
+2026-11-20T05:47:48.1025658Z ScriptSHA256=F7DF0F5085D765A4AEA53A5A32BFA8E2296C5F4A410493022EC82DBE2BBA50F9
+2026-11-20T05:47:48.1176269Z BLOCKED: Live requires explicit Project and frozen CandidateRevision after D20 PR integration.
+2026-11-20T05:47:48.1181270Z FINAL mode=Live exit=2; DryRun/SelfTest PASS never means G5 real PASS.
+
+
+=== EXECUTED CASE: failure ===
+SETUP: temporary fail-maven.cmd contains @exit /b 7; no real Maven used in this case.
+COMMAND: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/g5-acceptance.ps1 -Mode DryRun -MavenPath <TEMP>/railway-tv6-d20/fail-maven.cmd -OutputDirectory <TEMP>/railway-tv6-d20/failure; EXPECTED=1 ACTUAL=1 PASS. FAIL below is the intentionally injected command failure.
+2026-11-20T05:47:48.4190036Z TV6-D20 mode=DryRun revision=7f6f6d568644816352ba0273b56ba5c6ac8a6e37; G5_REAL=NOT_RUN until explicit post-D20 Live gate.
+2026-11-20T05:47:48.5238269Z ScriptSHA256=F7DF0F5085D765A4AEA53A5A32BFA8E2296C5F4A410493022EC82DBE2BBA50F9
+2026-11-20T05:47:48.5383519Z COMMAND contract-fixtures : C:\Users\dattr\AppData\Local\Temp\railway-tv6-d20\fail-maven.cmd -B -ntp -pl integration-tests -am -Dtest=ConcurrentBookingRunner,ReadBarrierAndRetryTest -Dsurefire.failIfNoSpecifiedTests=false -Dcluster.smoke=false -Dcluster.g4.leader=false test
+2026-11-20T05:47:48.5804768Z EXIT contract-fixtures=7
+
+2026-11-20T05:47:48.5894888Z FAIL: System.Management.Automation.RuntimeException: Command contract-fixtures failed: exit=7
+2026-11-20T05:47:48.5904886Z FINAL mode=DryRun exit=1; DryRun/SelfTest PASS never means G5 real PASS.
+
+=== SUREFIRE REPORTS: ACTUALLY EXECUTED ===
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.tests.ConcurrentBookingRunner
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.860 s -- in vn.nhom6.railway.tests.ConcurrentBookingRunner
+
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.304 s -- in vn.nhom6.railway.tests.ReadBarrierAndRetryTest
+
+=== FAKE SQL/LOG COLLECTOR OUTPUTS (NOT REAL G5 EVIDENCE) ===
+[
+    {
+        "nodeId":  "node-1",
+        "seats":  10,
+        "duplicates":  0,
+        "g05":  1,
+        "g06":  0,
+        "g07":  0,
+        "lastApplied":  100,
+        "results":  [
+
+                    ],
+        "evidenceMode":  "FAKE_SQL_ONLY"
+    },
+    {
+        "nodeId":  "node-2",
+        "seats":  10,
+        "duplicates":  0,
+        "g05":  1,
+        "g06":  0,
+        "g07":  0,
+        "lastApplied":  100,
+        "results":  [
+
+                    ],
+        "evidenceMode":  "FAKE_SQL_ONLY"
+    },
+    {
+        "nodeId":  "node-3",
+        "seats":  10,
+        "duplicates":  0,
+        "g05":  1,
+        "g06":  0,
+        "g07":  0,
+        "lastApplied":  100,
+        "results":  [
+
+                    ],
+        "evidenceMode":  "FAKE_SQL_ONLY"
+    },
+    {
+        "nodeId":  "node-4",
+        "seats":  10,
+        "duplicates":  0,
+        "g05":  1,
+        "g06":  0,
+        "g07":  0,
+        "lastApplied":  100,
+        "results":  [
+
+                    ],
+        "evidenceMode":  "FAKE_SQL_ONLY"
+    },
+    {
+        "nodeId":  "node-5",
+        "seats":  10,
+        "duplicates":  0,
+        "g05":  1,
+        "g06":  0,
+        "g07":  0,
+        "lastApplied":  100,
+        "results":  [
+
+                    ],
+        "evidenceMode":  "FAKE_SQL_ONLY"
+    }
+]
+FAKE_LOG_ONLY node=node-1; collector self-check, not Docker output.
+FAKE_LOG_ONLY node=node-2; collector self-check, not Docker output.
+FAKE_LOG_ONLY node=node-3; collector self-check, not Docker output.
+FAKE_LOG_ONLY node=node-4; collector self-check, not Docker output.
+FAKE_LOG_ONLY node=node-5; collector self-check, not Docker output.
+SQL template actually emitted by dry-run (execution on PostgreSQL NOT_RUN):
+BEGIN TRANSACTION READ ONLY; SELECT json_build_object('nodeId','node-1','seats',(SELECT count(*) FROM seats WHERE trip_id='SE-001'),'duplicates',(SELECT count(*) FROM (SELECT seat_id FROM tickets WHERE trip_id='SE-001' AND status='ACTIVE' GROUP BY seat_id HAVING count(*)>1) d),'g05',(SELECT count(*) FROM tickets WHERE trip_id='SE-001' AND seat_id='G05' AND status='ACTIVE'),'g06',(SELECT count(*) FROM tickets WHERE trip_id='SE-001' AND seat_id='G06' AND status='ACTIVE'),'g07',(SELECT count(*) FROM tickets WHERE trip_id='SE-001' AND seat_id='G07' AND status='ACTIVE'),'lastApplied',(SELECT last_applied FROM raft_apply_progress WHERE singleton=1),'results',COALESCE((SELECT json_agg(r ORDER BY request_id) FROM (SELECT request_id,state,reason_code,ticket_id,applied_log_index FROM request_results WHERE request_id IN (NULL::uuid)) r),'[]'::json)); COMMIT;
+FINAL: TV6-D20 separate script/dry-run/exit-code gates PASS. G5 real 5-node / real SQL / real safety NOT_RUN; execute after integrated D20 PRs with explicit frozen candidate, isolated cluster and fresh seats.
