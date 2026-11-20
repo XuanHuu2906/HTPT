@@ -1,0 +1,275 @@
+================================================================================
+TV4-D19 - RaftReadBarrier NO_OP read barrier - evidence
+================================================================================
+Date: 2026-11-20
+Branch: nguyen
+Repository: D:\HOCTAP\HTPT
+
+--------------------------------------------------------------------------------
+1. GIT
+--------------------------------------------------------------------------------
+Base after merge origin/main: de3def815ad098379a9590d2ed43a3c45689790a
+Code commit (D19):            dd3b8037bde1d2781bfb004272c690c3145e7cc9
+HEAD when this log was written: dd3b8037bde1d2781bfb004272c690c3145e7cc9
+
+Command: git status --porcelain
+Output: (empty; clean working tree after the code commit)
+
+Command: git diff --name-only de3def8..HEAD
+Output:
+backend-node/src/main/java/vn/nhom6/railway/raft/replication/RaftReadBarrier.java
+backend-node/src/test/java/vn/nhom6/railway/raft/replication/RaftReadBarrierTest.java
+
+The diff proves only the two D19 files changed. RaftReplicationService.java,
+BookingRaftBridge, RaftApplyAdapter, BookingRequestHandler, the TV3 handlers,
+PersistentRaftNode, RaftState, CommitAdvancer, RaftStateMachineApplier and
+AppendEntriesHandler were NOT modified.
+
+--------------------------------------------------------------------------------
+2. ENVIRONMENT
+--------------------------------------------------------------------------------
+- OS: Microsoft Windows 11 Home Single Language (amd64)
+- JDK: OpenJDK 25.0.2 (Microsoft-13053607, build 25.0.2+10-LTS)
+       C:\Users\Nguyen\.jdk\jdk-25.0.2
+- Maven: Apache Maven 3.9.15 (98b2cdbfdb5f1ac8781f537ea9acccaed7922349)
+         C:\Users\Nguyen\.maven\maven-3.9.15
+- PostgreSQL: docker image postgres:16-alpine, container railway-postgres-1,
+              host port 5433 -> 5432, database railway_node1, user railway
+              password: <REDACTED>
+- Docker Desktop was running; `docker ps` showed railway-postgres-1 as healthy.
+- This run used the locally installed JDK 25 / Maven 3.9.15 (allowed by plan
+  section 4.5 as the alternative to the maven:3.9-eclipse-temurin-25 image).
+
+--------------------------------------------------------------------------------
+3. COMMANDS (verbatim)
+--------------------------------------------------------------------------------
+Targeted D19 build:
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2';
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH";
+cd D:\HOCTAP\HTPT;
+& 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp -pl backend-node -am
+  "-Dtest=RaftReadBarrierTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Full suite with real PostgreSQL:
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2';
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH";
+$env:RAILWAY_TEST_JDBC_URL='jdbc:postgresql://localhost:5433/railway_node1';
+$env:RAILWAY_TEST_DB_USER='railway';
+$env:RAILWAY_TEST_DB_PASSWORD='<REDACTED>';
+cd D:\HOCTAP\HTPT;
+& 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp clean verify
+
+Full raw Maven output (unedited): artifacts/evidence/D19/TV4-D19-full-raw.log
+
+--------------------------------------------------------------------------------
+4. RAW MAVEN RESULTS
+--------------------------------------------------------------------------------
+Targeted run:
+[INFO] Running vn.nhom6.railway.raft.replication.RaftReadBarrierTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.555 s -- in vn.nhom6.railway.raft.replication.RaftReadBarrierTest
+[INFO] Results:
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+Full suite:
+[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0          (shared)
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in vn.nhom6.railway.raft.replication.RaftReadBarrierTest
+[INFO] Tests run: 1082, Failures: 0, Errors: 0, Skipped: 0        (backend-node)
+[WARNING] Tests run: 222, Failures: 0, Errors: 0, Skipped: 11     (desktop-client)
+[INFO] Tests run: 0 (no test sources)                             (desktop-monitor)
+[WARNING] Tests run: 8, Failures: 0, Errors: 0, Skipped: 2        (integration-tests)
+
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.440 s]
+[INFO] shared ............................................. SUCCESS [  4.652 s]
+[INFO] backend-node ....................................... SUCCESS [01:07 min]
+[INFO] desktop-client ..................................... SUCCESS [ 16.448 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.412 s]
+[INFO] integration-tests .................................. SUCCESS [  1.289 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  01:30 min
+[INFO] Finished at: 2026-11-20T12:12:05+07:00
+
+Totals: 38 + 1082 + 222 + 8 = 1350 tests, 0 failures, 0 errors, 13 skipped.
+
+JDBC GAP STATUS (required line):
+RaftStateMachineApplierJdbcTest RAN FOR REAL in this run:
+[INFO] Running vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.361 s -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+The D18 log did not have JDBC credentials and skipped these 3 tests. With
+RAILWAY_TEST_JDBC_URL/RAILWAY_TEST_DB_USER/RAILWAY_TEST_DB_PASSWORD pointing at
+the local PostgreSQL 16 container, all 3 executed against a temporary schema and
+passed. This does NOT change the D19 conclusion: the barrier tests themselves
+are in-memory/FakeNetwork.
+
+--------------------------------------------------------------------------------
+5. D19 TEST INVENTORY (RaftReadBarrierTest, 15 tests)
+--------------------------------------------------------------------------------
+Plan 1.5 item 1  leaderBarrierCompletesAfterMajorityCommitAndApply
+Plan 1.5 item 2  eachReadAppendsAFreshNoOp
+Plan 1.5 item 3  minorityNeverCompletesAndEndsWithTimeout
+Plan 1.5 item 4  majorityCommittedButNotAppliedStaysPending
+Plan 1.5 item 5  nonLeaderFailsWithoutAppending
+Plan 1.5 item 6  leadershipLostFailsEveryPendingBarrier
+Plan 1.5 item 7  overwrittenEntryNeverCompletesSuccessfully
+Plan 1.5 item 8  appendFailuresAreNotBarriers
+Plan 1.5 item 9  lateCompletionAfterTimeoutIsIgnored
+Plan 1.5 item 10 concurrentReadersGetTheirOwnNoOp
+Plan 1.5 item 11 nonPositiveTimeoutIsRejected
+Plan 1.5 item 12 handlerCompatibleErrorMapping
+Plan 1.5 item 13 confirmedOnlyAfterCommitAndApply
+Extra integration  leaderHarnessBarrierCompletesOnlyAfterCommitAndApply
+Extra integration  leaderHarnessMinorityTimesOutWithoutBarrier
+
+`confirmedOnlyAfterCommitAndApply` builds a real BookingRaftBridge +
+RaftApplyAdapter over an in-memory repository and proves the business result
+stays unconfirmed until the command is committed and durably applied. It does
+not merely cite TV2's test.
+
+The two "leaderHarness..." tests wire Leader RaftState + RaftReplicationService +
+ReplicationTracker + CommitAdvancer (through the existing onMatchIndexAdvanced
+hook) + RaftStateMachineApplier and real PersistentRaftNode followers. Calling
+advance()/applyCommitted() from that hook is TEST HARNESS code; production
+runtime still does not call them (see section 7).
+
+--------------------------------------------------------------------------------
+6. WHAT THE BARRIER DOES (implementation summary)
+--------------------------------------------------------------------------------
+- One fresh NO_OP per read, appended in the term read before append; no
+  coalescing and no reuse of another read's NO_OP.
+- Non-leader: failed future with NotLeaderException(leaderHint); no append.
+- Append NotLeader -> NotLeaderException; StorageFailure/runtime error ->
+  ReadUnavailableException; never a barrier.
+- After Accepted(index, term): awaitIndex(index), then re-verify isLeader(),
+  currentTerm()==term, termAt(index)==term, commitIndex()>=index. Any mismatch
+  fails the read; no ReadBarrierResult is produced.
+- Finite timeout > 0 required; timeout<=0 throws IllegalArgumentException.
+  Late completion is ignored because each pending read settles exactly once
+  (AtomicBoolean CAS).
+- onLeadershipLost() fails all pending reads with NotLeaderException.
+- No DB access, no commit/apply computation, no RaftState mutation. Pending set
+  is concurrent and no lock is held while calling Port/AppliedAwaiter.
+- Deliberate deviation from the sheet's output file: the implementation lives in
+  the new RaftReadBarrier.java instead of RaftReplicationService.java, exactly as
+  allowed by plan 1.3. RaftReplicationService.java is unchanged.
+
+--------------------------------------------------------------------------------
+7. REAL GREP RESULTS FOR PLAN 1.6 ("Chua lam")
+--------------------------------------------------------------------------------
+A) RaftReadBarrier is not wired to NodeMain/handlers:
+   grep -rn "RaftReadBarrier" backend-node/src/main/java
+   -> only RaftReadBarrier.java itself (class declaration + constructor).
+   NodeMain only declares parameters of type BookingRequestHandler.ReadBarrier
+   (NodeMain.java lines 83, 116); it never constructs RaftReadBarrier.
+
+B) NodeMain explicitly refuses reads/writes that are not wired:
+   NodeMain.java lines 61-65:
+     "Raft read barrier is not wired"
+   NodeMain.java lines 100-104:
+     "Leader majority commit/apply is not wired"
+
+C) No runtime caller advances commit or applies committed entries on the Leader:
+   grep -rn "\.advance\(\)|applyCommitted\(" backend-node/src/main/java
+   -> WriteAvailabilityPolicy.tryAdvanceCommit() calls commitAdvancer.advance()
+      (definition only); grep for "tryAdvanceCommit" finds no caller in main.
+   -> RaftStateMachineApplier.applyCommitted() is only called inside its own
+      class; grep for "RaftStateMachineApplier" in main finds only its own file.
+   -> RaftStateMachineApplier is therefore not registered as a CommitListener in
+      production NodeMain/ElectionRuntime.
+
+D) No Leader NO_OP on becomeLeader:
+   grep -rn "noOp|NO_OP|becomeLeader" backend-node/src/main/java
+   -> RaftLogEntry.noOp factory exists; BookingCommand.NoOp / NO_OP handling
+      exists in state machine and bridge; CandidateElection/ RaftState only
+      perform becomeLeader(peers). No append of a Leader no-op entry on election.
+
+E) Production RaftLogEntry -> BookingCommand codec DOES exist now:
+   RaftApplyAdapter.decodeCommand(RaftLogEntry) at RaftApplyAdapter.java:381
+   handles BOOK_TICKET, CANCEL_TICKET and NO_OP (line 404). This corrects the
+   plan's earlier assumption. What is still missing is wiring: RaftApplyAdapter
+   is not constructed by NodeMain/ElectionRuntime, so the codec is not on the
+   runtime path.
+
+F) Authoritative read handlers do not use the barrier:
+   GetSeatsHandler.java routes the request to the Leader and then reads
+   BookingService directly; it never calls ReadBarrier.appendAndAwaitNoOp.
+   grep -rn "ReadBarrier|appendAndAwaitNoOp" backend-node/src/main/java/vn/nhom6/railway/networking
+   -> only NodeMain parameter declarations, no handler usage.
+   GetRequestResultHandler (booking) also does not take a ReadBarrier.
+
+G) End-to-end read over TCP through TV3 handlers is therefore BLOCKED, not
+   silently skipped: the handler does not invoke the barrier and NodeMain
+   supplies a barrier that throws ReadUnavailableException("... not wired").
+
+--------------------------------------------------------------------------------
+8. SKIPPED TESTS AND REASONS (13)
+--------------------------------------------------------------------------------
+desktop-client (11):
+- BookingErrorFlowTest.test13b_RealRaftClusterSkippedWithoutEnv
+    CLUSTER_PROFILE is not set
+- BookingViewModelTest.test13_RealRaftClusterSkippedWithoutEnv
+    CLUSTER_PROFILE is not set
+- ClusterNodeSelectorTest.testWithRealClusterWhenAvailable
+    CLUSTER_PROFILE is not set
+- SixClientContentionTest.testRealRaftClusterAC03_SkippedUntilG5
+    CLUSTER_PROFILE is not set
+- LeaderAwareBookingClientTest.testRealClusterIntegration
+    NODE_ENDPOINTS is not set
+- PersistentPendingJournalTest.testRealNodeLookupPostD19
+    NODE_HOST is not set
+- SocketBookingClientTest.testIntegrationWithRealNode
+    NODE_HOST is not set
+- BookingErrorUiEvidenceTest.testCaptureAllEvidenceSnapshots
+    UI snapshot capture disabled / headless
+- ClusterStatusUiEvidenceTest.testCaptureAllEvidenceSnapshots
+    UI snapshot capture disabled / headless
+- ClusterConnectionViewModelTest.testRealNodeClusterModeConditional
+    NODE_HOST/NODE_PORT are not set
+- UiSmokeTest.testJavaFxUiSmokeWithFakeTcpServer
+    UI smoke disabled / headless
+
+integration-tests (2):
+- ClusterSmokeTest.realD14LifecycleAndLeaderGate
+    system property cluster.smoke is not set
+- ClusterSmokeTest.strictG4LeaderGateAfterD15Integration
+    system property cluster.g4.leader is not set
+
+These skips are pre-existing environment gates, not new D19 skips. The new
+RaftReadBarrierTest has 0 skips.
+
+--------------------------------------------------------------------------------
+9. HONESTY LIMITS
+--------------------------------------------------------------------------------
+- The 2 integration tests use FakeNetwork/real in-JVM PersistentRaftNode and a
+  manual scheduler. They do NOT prove 5 real nodes, real sockets, real crash or
+  real election. G5 is not run here.
+- The Leader commit/apply bridge used by those tests is harness-only. Production
+  NodeMain still cannot produce CONFIRMED or a barrier result (section 7).
+- `confirmedOnlyAfterCommitAndApply` proves the bridge/apply ordering in memory;
+  it does not prove PostgreSQL durability of a booking (the JDBC applier tests
+  are separate).
+- Full suite includes 13 pre-existing environment-gated skips; 0 failures/errors.
+- No claim is made that GET_SEATS/GET_REQUEST_RESULT/GET_TICKET_HISTORY now use
+  the barrier end-to-end.
+
+--------------------------------------------------------------------------------
+10. CHUA LAM / BAN GIAO
+--------------------------------------------------------------------------------
+- TV1/TV3: wire RaftReadBarrier into NodeMain/MessageDispatcher and have
+  GET_SEATS / GET_REQUEST_RESULT / GET_TICKET_HISTORY call appendAndAwaitNoOp
+  before reading, then enforce repository.lastApplied() >= readIndex. The
+  handler already maps NotLeaderException -> NOT_LEADER and
+  TimeoutException/ReadUnavailableException -> READ_UNAVAILABLE.
+- TV4/TV2: wire Leader-side CommitAdvancer.advance() and
+  RaftStateMachineApplier.applyCommitted(); register RaftApplyAdapter/
+  RaftStateMachineApplier as the runtime CommitListener; add a current-term
+  Leader NO_OP on becomeLeader if required by SPEC-04 section 7.
+- TV4: own the Port adapter (isLeader/currentTerm/leaderId/appendNoOp/
+  commitIndex/termAt) over RaftState + RaftNode and pass
+  RaftApplyAdapter::awaitIndex as AppliedAwaiter; call onLeadershipLost() from
+  step-down/term-change handling.
+- TV6: cover the wired path under G5 (5 processes, TCP, real crash/election,
+  PostgreSQL commit->apply) because D19/D20 tests cannot.
+- End-to-end read through TCP + TV3 handler remains BLOCKED until the above
+  wiring exists.
+================================================================================
