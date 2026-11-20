@@ -61,11 +61,11 @@
 [INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running vn.nhom6.railway.networking.TcpLoadTest
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 45657 (maxThreads=8, soTimeout=5000ms)
-TV3-D20 LEAK_CHECK: cycles=50 baselineThreads=10 currentThreads=18 activeSockets=0
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 45657 stopped.
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43737 (maxThreads=8, soTimeout=5000ms)
+TV3-D20 LEAK_CHECK: cycles=50 serverWorkerThreads=8 (max=8) serverAcceptorThreads=1 activeSockets=0
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43737 stopped.
 ================================================================================
  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
 ================================================================================
@@ -75,39 +75,39 @@ INFO: TcpServer on port 45657 stopped.
   Raft Peer Port   : 0 (Host: 127.0.0.1)
   Database Target  : None (In-Memory / Test Mode)
 ================================================================================
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.NodeMain start
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.NodeMain start
 WARNING: Election disabled: durable core and peer transport adapters were not supplied.
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 37491 (maxThreads=16, soTimeout=15000ms)
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 40715 (maxThreads=16, soTimeout=15000ms)
-[READY] node-1 client=37491 raft=40715
-Nov 20, 2026 7:12:17 PM vn.nhom6.railway.networking.NodeMain start
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 37291 (maxThreads=16, soTimeout=15000ms)
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 42609 (maxThreads=16, soTimeout=15000ms)
+[READY] node-1 client=37291 raft=42609
+Nov 20, 2026 7:29:28 PM vn.nhom6.railway.networking.NodeMain start
 INFO: Backend Node [node-1] initialized and ready for traffic.
-TV3-D20 LOAD_RESULT: clients=6 totalRequests=120 completed=120 confirmed=7 rejected=35 elapsedMs=460
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.NodeMain stop
+TV3-D20 LOAD_RESULT: clients=6 totalRequests=120 completed=120 confirmed=7 rejected=35 elapsedMs=623
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Shutting down Backend Node [node-1]...
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 37491 stopped.
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 40715 stopped.
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.NodeMain stop
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 37291 stopped.
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 42609 stopped.
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.NodeMain stop
 INFO: Backend Node [node-1] shutdown cleanly completed.
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 38865 (maxThreads=8, soTimeout=3000ms)
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 38865 stopped.
-Nov 20, 2026 7:12:18 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 45591 (maxThreads=2, soTimeout=5000ms)
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 41831 (maxThreads=8, soTimeout=3000ms)
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 41831 stopped.
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 43425 (maxThreads=2, soTimeout=5000ms)
 TV3-D20 BACKPRESSURE: totalRequests=30 validResponses=30 inFlightRejections=0
-Nov 20, 2026 7:12:19 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 45591 stopped.
-Nov 20, 2026 7:12:19 PM vn.nhom6.railway.networking.TcpServer start
-INFO: TcpServer started on port 40809 (maxThreads=4, soTimeout=5000ms)
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 43425 stopped.
+Nov 20, 2026 7:29:29 PM vn.nhom6.railway.networking.TcpServer start
+INFO: TcpServer started on port 33889 (maxThreads=4, soTimeout=5000ms)
 TV3-D20 SLOW_CLIENT_TEST: fastRequests=50 fastElapsedMs=3
-Nov 20, 2026 7:12:19 PM vn.nhom6.railway.networking.TcpServer stop
-INFO: TcpServer on port 40809 stopped.
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.004 s -- in vn.nhom6.railway.networking.TcpLoadTest
+Nov 20, 2026 7:29:30 PM vn.nhom6.railway.networking.TcpServer stop
+INFO: TcpServer on port 33889 stopped.
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.370 s -- in vn.nhom6.railway.networking.TcpLoadTest
 [INFO] 
 [INFO] Results:
 [INFO] 
@@ -118,8 +118,8 @@ INFO: TcpServer on port 40809 stopped.
 [INFO] Building desktop-client 1.0.0-SNAPSHOT                             [4/6]
 [INFO]   from desktop-client/pom.xml
 [INFO] --------------------------------[ jar ]---------------------------------
-[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
 [WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-fxml:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
 [INFO] 
 [INFO] --- resources:3.4.0:resources (default-resources) @ desktop-client ---
 [INFO] Copying 13 resources from src/main/resources to target/classes
@@ -175,15 +175,15 @@ INFO: TcpServer on port 40809 stopped.
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
 [INFO] 
-[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
-[INFO] shared ............................................. SUCCESS [  1.254 s]
-[INFO] backend-node ....................................... SUCCESS [  2.846 s]
-[INFO] desktop-client ..................................... SUCCESS [  0.092 s]
-[INFO] desktop-monitor .................................... SUCCESS [  0.048 s]
-[INFO] integration-tests .................................. SUCCESS [  0.038 s]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.005 s]
+[INFO] shared ............................................. SUCCESS [  1.611 s]
+[INFO] backend-node ....................................... SUCCESS [  3.330 s]
+[INFO] desktop-client ..................................... SUCCESS [  0.078 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.077 s]
+[INFO] integration-tests .................................. SUCCESS [  0.043 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  4.416 s
-[INFO] Finished at: 2026-11-20T19:12:19+07:00
+[INFO] Total time:  5.346 s
+[INFO] Finished at: 2026-11-20T19:29:30+07:00
 [INFO] ------------------------------------------------------------------------

@@ -203,18 +203,18 @@ public class TcpLoadTest {
     @Test
     @DisplayName("Kịch bản 2: Vòng đời kết nối và phòng chống rò rỉ Socket/Thread qua 50 chu kỳ kết nối")
     public void testSocketConnectionLifecycleAndLeakDetection() throws Exception {
-        TcpServer server = new TcpServer("127.0.0.1", 0, 8, 5000);
+        int maxThreads = 8;
+        TcpServer server = new TcpServer("127.0.0.1", 0, maxThreads, 5000);
         resources.add(server::stop);
         server.setFrameHandler(payload -> payload); // Echo frame handler
         server.start();
 
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        int baselineThreads = threadBean.getThreadCount();
+        int port = server.getPort();
 
         // 1. Sequential connections (25 cycles)
         int sequentialCount = 25;
         for (int i = 0; i < sequentialCount; i++) {
-            try (TcpClient client = new TcpClient("127.0.0.1", server.getPort(), 2000, 2000)) {
+            try (TcpClient client = new TcpClient("127.0.0.1", port, 2000, 2000)) {
                 client.connect();
                 byte[] echoData = ("test-data-" + i).getBytes(StandardCharsets.UTF_8);
                 byte[] reply = client.sendAndReceive(echoData);
@@ -231,7 +231,7 @@ public class TcpLoadTest {
         for (int i = 0; i < concurrentCount; i++) {
             final int idx = i;
             futures.add(pool.submit(() -> {
-                try (TcpClient client = new TcpClient("127.0.0.1", server.getPort(), 3000, 3000)) {
+                try (TcpClient client = new TcpClient("127.0.0.1", port, 3000, 3000)) {
                     client.connect();
                     byte[] echoData = ("concurrent-data-" + idx).getBytes(StandardCharsets.UTF_8);
                     byte[] reply = client.sendAndReceive(echoData);
@@ -250,12 +250,29 @@ public class TcpLoadTest {
         awaitConnectionCountZero(server, 2000);
         assertEquals(0, server.getActiveConnectionCount(), "All active sockets must be closed");
 
-        int currentThreads = threadBean.getThreadCount();
-        int threadIncrease = currentThreads - baselineThreads;
-        assertTrue(threadIncrease <= 10,
-                "Thread count must remain bounded by server pool size (8 workers + 1 acceptor), observed increase: " + threadIncrease);
-        System.out.printf("TV3-D20 LEAK_CHECK: cycles=50 baselineThreads=%d currentThreads=%d activeSockets=%d%n",
-                baselineThreads, currentThreads, server.getActiveConnectionCount());
+        // Verify active threads specifically belonging to this TcpServer instance
+        long serverWorkerThreads = Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.isAlive() && t.getName().startsWith("tcp-worker-" + port))
+                .count();
+        long serverAcceptorThreads = Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.isAlive() && t.getName().startsWith("tcp-acceptor-" + port))
+                .count();
+
+        assertTrue(serverWorkerThreads <= maxThreads,
+                "Worker threads must not exceed maxThreads (" + maxThreads + "), observed: " + serverWorkerThreads);
+        assertTrue(serverAcceptorThreads <= 1,
+                "Acceptor thread must be at most 1, observed: " + serverAcceptorThreads);
+
+        System.out.printf("TV3-D20 LEAK_CHECK: cycles=50 serverWorkerThreads=%d (max=%d) serverAcceptorThreads=%d activeSockets=%d%n",
+                serverWorkerThreads, maxThreads, serverAcceptorThreads, server.getActiveConnectionCount());
+
+        // Stop server and verify its worker and acceptor threads are cleanly released
+        server.stop();
+        Thread.sleep(100);
+        long remainingServerThreads = Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.isAlive() && (t.getName().startsWith("tcp-worker-" + port) || t.getName().startsWith("tcp-acceptor-" + port)))
+                .count();
+        assertEquals(0, remainingServerThreads, "All server threads must terminate after stop()");
     }
 
     @Test

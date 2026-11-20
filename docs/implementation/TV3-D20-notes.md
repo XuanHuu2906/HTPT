@@ -33,7 +33,7 @@
 - [`backend-node/src/test/java/vn/nhom6/railway/networking/TcpLoadTest.java`](file:///home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/src/test/java/vn/nhom6/railway/networking/TcpLoadTest.java):
   - Bộ kiểm thử mới với 5 kịch bản:
     1. `testSixClientsConcurrentContentionAndThroughput`: 6 clients, 120 requests, 100% correlation match, zero deadlock.
-    2. `testSocketConnectionLifecycleAndLeakDetection`: 50 kết nối tuần tự/song song, active sockets = 0, thread count bounded.
+    2. `testSocketConnectionLifecycleAndLeakDetection`: 50 kết nối tuần tự/song song, active sockets = 0; kiểm tra thread leak chính xác theo named threads của TcpServer (`tcp-worker-<port>` <= maxThreads, `tcp-acceptor-<port>` <= 1, và giải phóng về 0 sau khi `server.stop()`), cách ly hoàn toàn khỏi các luồng JVM nền (PostgreSQL driver, GC, JIT compiler).
     3. `testSlowClientDoesNotStarveFastClients`: 1 slow client + 5 fast clients, fast clients hoàn thành < 2.5s.
     4. `testAbruptClientDisconnectionAndEofHandling`: 5 trường hợp ngắt kết nối đột ngột/frame dị dạng, dọn dẹp sạch.
     5. `testQueueOverloadAndInFlightBackpressure`: 30 requests dồn dập trên pool 2 threads, phản hồi có kiểm soát.
