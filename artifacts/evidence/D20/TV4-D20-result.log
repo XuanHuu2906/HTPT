@@ -1,0 +1,125 @@
+================================================================================
+TV4-D20 - Replication/commit invariant suite - evidence
+================================================================================
+Date: 2026-11-20
+Branch: nguyen
+Repository: D:\HOCTAP\HTPT
+
+--------------------------------------------------------------------------------
+1. GIT
+--------------------------------------------------------------------------------
+Base after merge origin/main: de3def815ad098379a9590d2ed43a3c45689790a
+Code commit (D20):            469163f
+
+The D20 code commit adds only:
+- backend-node/src/test/java/vn/nhom6/railway/raft/replication/ReplicationCommitInvariantSuiteTest.java
+
+No production Java file was changed by this task.
+
+--------------------------------------------------------------------------------
+2. ENVIRONMENT
+--------------------------------------------------------------------------------
+- OS: Microsoft Windows 11 amd64
+- JDK: OpenJDK 25.0.2 (Microsoft-13053607)
+- Maven: 3.9.15
+- Docker Desktop: running
+- PostgreSQL: docker container railway-postgres-1, host port 5433
+- RAILWAY_TEST_JDBC_URL=jdbc:postgresql://localhost:5433/railway_node1
+- RAILWAY_TEST_DB_USER=railway
+- RAILWAY_TEST_DB_PASSWORD=<REDACTED>
+
+--------------------------------------------------------------------------------
+3. COMMANDS
+--------------------------------------------------------------------------------
+Targeted D20 suite:
+$env:JAVA_HOME='C:\Users\Nguyen\.jdk\jdk-25.0.2';
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH";
+& 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp -pl backend-node -am
+  "-Dtest=ReplicationCommitInvariantSuiteTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+
+Full suite with real PostgreSQL:
+& 'C:\Users\Nguyen\.maven\maven-3.9.15\bin\mvn.cmd' -B -ntp clean verify
+
+Raw full Maven output: artifacts/evidence/D20/TV4-D20-full-raw.log
+
+--------------------------------------------------------------------------------
+4. RAW MAVEN RESULTS
+--------------------------------------------------------------------------------
+Targeted suite:
+[INFO] Running vn.nhom6.railway.raft.replication.ReplicationCommitInvariantSuiteTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+Full suite:
+ReplicationCommitInvariantSuiteTest:
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+
+RaftStateMachineApplierJdbcTest ran with PostgreSQL:
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+
+Module totals:
+- shared: 38 tests, 0 failures, 0 errors, 0 skipped
+- backend-node: 1090 tests, 0 failures, 0 errors, 0 skipped
+- desktop-client: 222 tests, 0 failures, 0 errors, 11 skipped
+- integration-tests: 8 tests, 0 failures, 0 errors, 2 skipped
+- desktop-monitor: 0 tests
+
+Reactor: 1358 tests, 0 failures, 0 errors, 13 skipped.
+
+[INFO] BUILD SUCCESS
+[INFO] Total time: 01:33 min
+
+--------------------------------------------------------------------------------
+5. D20 SCOPE
+--------------------------------------------------------------------------------
+- 8 scenario tests ran across 20 hard-coded seeds.
+- FakeNetwork only: no TCP, socket, thread, real sleep, Docker runtime, PostgreSQL,
+  real crash/restart, real election or five real processes.
+- Every scenario uses assertInvariants after each step.
+- 9 invariant groups are covered in TV4-D20-notes.md.
+- G5 remains outside this suite and is assigned to TV6.
+
+--------------------------------------------------------------------------------
+6. SKIPPED TESTS AND REASONS
+--------------------------------------------------------------------------------
+desktop-client (11):
+- Real Raft cluster tests without CLUSTER_PROFILE/NODE_ENDPOINTS/NODE_HOST.
+- Tests labeled skip-until-G5 or unavailable real-cluster smoke.
+
+integration-tests (2):
+- Tests requiring external real-cluster/environment settings.
+
+No D20 suite test was skipped.
+No PostgreSQL JDBC test was skipped.
+
+--------------------------------------------------------------------------------
+7. REAL GAP GREP
+--------------------------------------------------------------------------------
+RaftReadBarrier is not wired:
+- grep backend-node/src/main/java for RaftReadBarrier: only RaftReadBarrier.java.
+- NodeMain supplies no production barrier wiring.
+
+Leader advance/apply runtime:
+- No production caller invokes CommitAdvancer.advance(); grep only shows the
+  WriteAvailabilityPolicy method and no caller in main.
+- RaftStateMachineApplier.applyCommitted is not registered/called by NodeMain.
+
+Leader NO_OP:
+- No Leader NO_OP append in CandidateElection/RaftState.becomeLeader.
+
+Codec:
+- RaftApplyAdapter.decodeCommand supports NO_OP/BOOK/CANCEL.
+- It is not wired into NodeMain/ElectionRuntime.
+
+Authoritative reads:
+- TCP handlers do not yet use appendAndAwaitNoOp in production.
+
+--------------------------------------------------------------------------------
+8. HONEST LIMITS / SAFETY
+--------------------------------------------------------------------------------
+PASS status here means only the FakeNetwork invariant suite and repository build
+passed. It does not mean G5, 5-process failover, real TCP, real election or
+PostgreSQL end-to-end 5-node behavior passed.
+
+Data safety remains fail-closed; runtime commit/apply/barrier wiring is still
+BLOCKED or incomplete and must not be represented as distributed AC PASS.
