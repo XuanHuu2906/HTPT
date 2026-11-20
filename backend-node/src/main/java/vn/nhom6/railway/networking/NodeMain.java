@@ -351,6 +351,14 @@ public class NodeMain implements AutoCloseable {
         return raftDispatcher;
     }
 
+    public TcpServer getClientServer() {
+        return clientServer;
+    }
+
+    public TcpServer getRaftServer() {
+        return raftServer;
+    }
+
     private static LeaderRouter resolveLeaderRouter(
             String nodeId,
             RaftElectionComponent election,
