@@ -271,6 +271,16 @@ public class FakeNodeServer implements AutoCloseable {
         return (requestId != null) ? storedBookings.get(requestId) : null;
     }
 
+    /**
+     * Thêm kết quả đặt vé đã lưu từ trước (phục vụ kiểm thử kịch bản D: Leader cũ đã lưu kết quả trước khi sập).
+     */
+    public void savePreExistingBooking(String requestId, String tripId, String seatId, String passengerName, BookTicketResponseDto responseDto) {
+        storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, responseDto, false));
+        if (responseDto != null && responseDto.isConfirmed()) {
+            setSeatStatus(seatId, "BOOKED", responseDto.getTicketId());
+        }
+    }
+
     private int nextJitterMs() {
         int bound = maxJitterMs;
         if (bound <= 0) {

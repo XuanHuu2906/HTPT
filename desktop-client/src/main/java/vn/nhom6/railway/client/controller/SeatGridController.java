@@ -558,6 +558,25 @@ public class SeatGridController {
             }
         });
 
+        // Liên kết ReconnectController để cập nhật banner khi mất Leader / tìm Leader (TASK TV1-D21)
+        ReconnectController rc = ClientFactory.getReconnectController();
+        if (rc != null) {
+            rc.bannerMessageProperty().addListener((obs, oldVal, newVal) -> {
+                if (rc.isBannerVisible() && newVal != null && !newVal.isBlank()) {
+                    screenStateModel.setMessage(newVal);
+                }
+            });
+            rc.stateProperty().addListener((obs, oldState, newState) -> {
+                if (newState == ReconnectController.ReconnectState.SEARCHING_LEADER) {
+                    screenStateModel.setState(ScreenState.LOADING, rc.getBannerMessage());
+                } else if (newState == ReconnectController.ReconnectState.NO_LEADER) {
+                    screenStateModel.setState(ScreenState.DISCONNECTED, rc.getBannerMessage());
+                } else if (newState == ReconnectController.ReconnectState.CONNECTED && oldState != ReconnectController.ReconnectState.CONNECTED) {
+                    screenStateModel.setState(ScreenState.IDLE, rc.getBannerMessage());
+                }
+            });
+        }
+
         updateScreenStateUI(screenStateModel.getState());
     }
 
