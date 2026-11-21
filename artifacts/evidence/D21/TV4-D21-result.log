@@ -1,0 +1,98 @@
+TV4-D21 Follower Catch-up Evidence
+
+Task: Catch-up Follower bị mất log
+Owner: TV4
+Base branch: nguyen
+Base SHA after merge: 479d6b43fec7051a07e878392a58e59622729aaa
+Code commit SHA: 16e201d
+Test file: backend-node/src/test/java/vn/nhom6/railway/raft/replication/FollowerCatchupTest.java
+
+Environment
+- OS: Windows
+- Docker Desktop: 29.8.0 / Engine 29.8.0
+- Maven image: maven:3.9-eclipse-temurin-25
+- Java in image: Eclipse Temurin 25
+- Test transport: FakeNetwork
+- Test storage: FakeRaftStorage
+- Real sockets: NOT USED
+- Real threads: NOT USED
+- PostgreSQL: NOT USED by FollowerCatchupTest
+- Docker real catch-up: NOT RUN
+
+Commands
+- docker run --rm --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am '-Dtest=FollowerCatchupTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+- docker run --rm --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+
+Targeted result
+- Tests run: 13
+- Failures: 0
+- Errors: 0
+- Skipped: 0
+- Result: PASS
+- Targeted raw summary:
+  Running vn.nhom6.railway.raft.replication.FollowerCatchupTest
+  Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.124 s
+
+Full reactor result
+- BUILD SUCCESS
+- shared SUCCESS
+- backend-node SUCCESS
+- desktop-client SUCCESS
+- desktop-monitor SUCCESS
+- integration-tests SUCCESS
+- Full-suite totals from Surefire reports: 1425 tests, 0 failures, 0 errors, 107 skipped
+- The targeted class is included in 1425 total reports.
+- Skipped reasons include:
+  - no cluster.smoke/cluster.g4.leader flag
+  - no real cluster profile and no NODE_ENDPOINTS/NODE_HOST/NODE_HOSTS setup
+  - no PostgreSQL at 127.0.0.1:5433
+  - UI evidence/smoke flags not enabled
+  - Docker real test flags not enabled
+  - real G5 Docker/LAN cluster not activated
+
+13 scenarios implemented
+1. stoppedFollowerCatchesUpMissingTail
+2. largeCatchupUsesBoundedBatches
+3. twoStoppedFollowersRejoinTogether
+4. threeStoppedFollowersPreserveQuorumSafety
+5. restartedFollowerRestoresDurableState
+6. restartBetweenCatchupBatchesDoesNotDuplicate
+7. divergentUncommittedTailBacktracksSafely
+8. committedConflictFailsClosed
+9. timeoutAndMalformedRepliesNeverCountAsAck
+10. higherTermLeaderReplacesOldUncommittedSuffix
+11. oldLeaderAppendIsRejectedAtHigherTermFollower
+12. lostDiskLogDoesNotReduceTrackedProgressOrCommit
+13. finalRejoinConvergesAllNodes
+
+Scenario 12 real observed behavior
+- This is a characterization-only scenario, not a claim of lost-disk recovery.
+- Before disk-loss injection, the follower had matchIndex=8 and Leader commitIndex=8.
+- After the follower storage/log was reduced to an empty log, the test observed:
+  - matchIndex did not decrease: remained 8
+  - commitIndex did not decrease: remained 8
+  - nextIndex remained >= matchIndex+1
+  - retry activity remained bounded (<=200 RPC observations in the scenario)
+- Observed behavior: the peer is not converged and remains characterized as stuck/backtrack-limited.
+- Design gap: need a real re-seed/reset decision for a peer that lost acknowledged durable log, or treat it as replacement node; production was not modified.
+
+Docker real catch-up
+- NOT RUN - TV6-D21 real fault tool/real 5-process fault setup was not found in scripts/, docker/, integration-tests/ or docs/ as an executable D21 check.
+- No Docker cluster is asserted running.
+- No 5-Node TCP/PG evidence is claimed.
+
+Runtime grep
+- CommitAdvancer.advance(): implemented in WriteAvailabilityPolicy.java; no direct caller was found in NodeMain or RaftElectionService runtime wiring.
+- RaftStateMachineApplier.applyCommitted(): implementation exists, but no caller was found in NodeMain or RaftElectionService main wiring.
+- RaftReadBarrier exists and is constructed in test/runtime components, but no production wiring evidence for D21 was found in NodeMain.
+- Grep result: no evidence that D21 alone wired CommitAdvancer/StateMachineApplier/ReadBarrier into NodeMain.
+
+Honesty boundary
+- This task proves fake-network/fake-storage component behavior only.
+- It does not prove real TCP catch-up, Docker 5-Node replication, PostgreSQL durability, or G5 5-process fault tolerance.
+- No production Java file was changed.
+
+Not completed / handoff
+- TV6: run real 5-Node Docker/LAN fault tool only after TV6-D21 fault tool is present.
+- TV4/TV5: decide lost-disk follower behavior (re-seed node vs replacement).
+- TV2/TV4/TV5: complete runtime wiring and runtime evidence for commit/apply.
