@@ -38,6 +38,22 @@ public class RaftRpcClient implements AutoCloseable {
     public static final int DEFAULT_CONNECT_TIMEOUT_MS = 5_000;
     public static final Duration DEFAULT_RPC_TIMEOUT = Duration.ofSeconds(3);
 
+    /**
+     * Hook interface for filtering or dropping outgoing RPC requests in test environments (e.g. simulated network partitions).
+     */
+    @FunctionalInterface
+    public interface RpcFilterHook {
+        /**
+         * Evaluates whether an outgoing RPC message should be sent to the peer.
+         *
+         * @param localNodeId Local sender node ID
+         * @param peerId Target recipient peer ID
+         * @param message Message envelope to be transmitted
+         * @return true to allow transmission, false to drop
+         */
+        boolean shouldDeliver(String localNodeId, String peerId, MessageEnvelope<?> message);
+    }
+
     private final String localNodeId;
     private final ConcurrentMap<String, InetSocketAddress> peerEndpoints = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, PeerConnection> connections = new ConcurrentHashMap<>();
@@ -55,6 +71,7 @@ public class RaftRpcClient implements AutoCloseable {
             });
 
     private volatile boolean closed = false;
+    private volatile RpcFilterHook filterHook;
 
     public RaftRpcClient(String localNodeId, Map<String, InetSocketAddress> peerEndpoints) {
         this(localNodeId, peerEndpoints, RpcCorrelationRegistry.DEFAULT_MAX_IN_FLIGHT_PER_PEER,
@@ -115,6 +132,14 @@ public class RaftRpcClient implements AutoCloseable {
      */
     public void setPeerEndpoint(String peerId, String host, int port) {
         setPeerEndpoint(peerId, new InetSocketAddress(host, port));
+    }
+
+    public RpcFilterHook getFilterHook() {
+        return filterHook;
+    }
+
+    public void setFilterHook(RpcFilterHook filterHook) {
+        this.filterHook = filterHook;
     }
 
     /**
@@ -209,6 +234,12 @@ public class RaftRpcClient implements AutoCloseable {
         }
         Objects.requireNonNull(peerId, "peerId must not be null");
         Objects.requireNonNull(envelope, "envelope must not be null");
+
+        if (filterHook != null && !filterHook.shouldDeliver(localNodeId, peerId, envelope)) {
+            return CompletableFuture.failedFuture(
+                    new java.net.SocketTimeoutException("Simulated network drop by RpcFilterHook: "
+                            + localNodeId + " -> " + peerId));
+        }
 
         // 1. Register with correlation registry (checks backpressure)
         CompletableFuture<MessageEnvelope<T>> future;
