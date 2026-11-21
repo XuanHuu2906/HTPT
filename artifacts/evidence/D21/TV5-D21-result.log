@@ -1,0 +1,157 @@
+TV5-D21 validation evidence
+===========================
+
+Task: TV5-D21 Dừng Leader và failover (Raft Election + Recovery — Leader Failover over FakeNetwork)
+Date: 2026-11-21
+Scope: backend-node election package; 5-peer cluster over FakeNetwork; kill simulated leader, election timeout, majority 3/5 re-election in higher term, durable term/votes recording, booking operations via fake interface, follower rejection & redirection, idempotency across failover, business validation (SEAT_ALREADY_BOOKED rejection), recovered old leader log reconciliation, minority ghost write overwriting, cascading failovers, quorum loss safety.
+
+Deliverables:
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/LeaderFailoverTest.java (new comprehensive 12-scenario failover suite)
+- artifacts/evidence/D21/TV5-D21-result.log (this evidence file)
+- docs/implementation/TV5-D21-notes.md (detailed architectural and implementation documentation)
+
+Dependencies & Integration:
+- Election/heartbeat/term logic từ D20: RaftElectionService, PersistentElectionState, CandidateElection, LeadershipGuard, WriteAvailabilityPolicy.
+- Booking fake interface: BookingService, BookingStateMachine, BookingCommand, ApplyResult, BookingRequestHandler.NotLeaderException.
+- FakeNetwork: deterministic 5-node partition, link failure, node crash/recovery, and RPC delivery simulator without live sockets.
+- Không cần fault runner TV6-D21; real multi-container Docker Leader failover diễn tập tại Gate G6.
+- Fake network tests đạt PASS 100% (12/12 test methods).
+
+Implemented & Verified Rules:
+1. Initial Leader Election & First Booking:
+   - Cụm 5 voter ("node-1".."node-5") bầu node-1 làm Leader ở term 1 với đa số 3/5 phiếu.
+   - Storage ghi nhận term=1, votedFor="node-1" trên các node tham gia bầu cử.
+   - Lệnh BOOK qua fake interface của Leader thành công (CONFIRMED, ticketId sinh hợp lệ, ghế G01 BOOKED).
+   - Replicate và commitIndex đồng bộ sang các follower (commitIndex=1).
+2. Simulated Leader Crash / Stop:
+   - Node-1 bị kill mô phỏng (network.killNode("node-1")), ngừng phát sinh heartbeat và không thể gửi/nhận RPC.
+   - Thử gửi lệnh BOOK tới Leader đã chết bị từ chối fail-closed (IllegalStateException).
+3. Follower Election Timeout & Re-election:
+   - Follower (node-2) phát hiện mất heartbeat, kích hoạt election timeout và chuyển sang CANDIDATE ở term 2.
+   - Node-2 phát động bầu cử, xin phiếu từ các node còn sống (node-3, node-4, node-5).
+   - Nhận 3/5 phiếu (self-vote + node-3 + node-4) -> Đắc cử LEADER mới ở term 2.
+4. Durable Term & Votes Persistence Invariants:
+   - Tất cả các node tham gia bầu cử cập nhật bền vững vào storage: term=2, votedFor="node-2".
+   - Term strictly monotonic: storage từ chối ghi term thoái lui (RaftStorageException).
+   - Vote safety invariant: Mỗi node chỉ vote tối đa 1 lần trong 1 term; ứng viên cạnh tranh ở cùng term 2 bị từ chối.
+5. BOOK via Fake Interface on New Leader:
+   - Client gửi lệnh BOOK ghế G02 tới Leader mới node-2.
+   - Node-2 tiếp nhận, ghi log tại index 2 (term 2), sao chép tới các follower còn sống (node-3, node-4, node-5).
+   - Đạt commit quorum (3/5 active matchIndex >= 2), commitIndex tiến lên 2, StateMachine apply trả CONFIRMED.
+   - Followers đồng bộ commitIndex và apply G02 vào StateMachine cục bộ.
+6. Follower Rejection & Redirection:
+   - Client gửi lệnh BOOK vào Follower node-3 -> Bị từ chối với NotLeaderException kèm leaderHint="node-2".
+   - Client chuyển tiếp lệnh theo leaderHint tới node-2 -> Thành công.
+7. Idempotency across Failover:
+   - Client gửi lại đúng requestId đã đặt ở term 1 (trước failover) tới Leader mới node-2.
+   - Node-2 kiểm tra log/StateMachine đã có kết quả -> Trả về kết quả cũ (cùng ticketId, CONFIRMED) mà không sinh vé trùng.
+   - Gửi cùng requestId nhưng đổi ý định (ghế khác) -> Ném REQUEST_ID_CONFLICT.
+8. Business Rule Validation on New Leader:
+   - Đặt lại ghế G01 (đã có Alice đặt ở term 1) trên Leader mới -> Trả về REJECTED với reasonCode="SEAT_ALREADY_BOOKED" và ticketId==null.
+   - Ghế G01 vẫn thuộc về Alice.
+9. Recovered Old Leader Restoration & Log Reconciliation:
+   - Node-1 hồi phục sau khi crash: nạp lại trạng thái từ storage (term 1, log cũ).
+   - Kết nối lại mạng, nhận AppendEntries từ Leader mới node-2 với term 2.
+   - Node-1 nhận biết term 2 > term 1 -> Giáng chức thành FOLLOWER, cập nhật currentTerm=2 và leaderId="node-2".
+   - LeadershipGuard của node-1 vô hiệu hóa term 1 cũ, ngăn chặn mọi callback rò rỉ.
+   - Log và StateMachine của node-1 đồng bộ bắt kịp Leader mới (lastLogIndex=2, commitIndex=2, ghế G02 BOOKED).
+10. Minority Partition Failover & Ghost Write Overwriting:
+    - Phân vùng 3-2: {node-1, node-2} vs {node-3, node-4, node-5}.
+    - Leader cũ node-1 tiếp nhận lệnh ghi ở 2/5 (ghost write chưa commit tại index 2 term 1).
+    - Phía 3/5 bầu Leader mới node-3 term 2 và commit lệnh ghi hợp lệ tại index 2 term 2.
+    - Khi hàn gắn mạng, node-3 phát AppendEntries term 2 tới node-1 và node-2 -> Entry mồ côi term 1 bị ghi đè hoàn toàn bởi log term 2.
+    - Cụm hội tụ về 1 Leader duy nhất và log đồng nhất 100%, triệt tiêu split-brain.
+11. Cascading Leader Failover:
+    - Kiểm chứng failover liên tiếp qua 3 đời Leader (node-1 term 1 -> node-2 term 2 -> node-3 term 3).
+    - Log index và vé được tích lũy tuần tự (G01, G02, G03) không bị thất thoát.
+12. Loss of Quorum Safety:
+    - Khi 3/5 node chết (chỉ còn 2/5 sống): không node nào đạt đa số 3/5 phiếu để thành Leader.
+    - Toàn bộ lệnh ghi bị chặn an toàn (NotLeaderException), bảo vệ tính nhất quán của hệ thống.
+
+Environment:
+- OS: Linux 7.3.3-300.fc45.x86_64
+- Java: OpenJDK 25.0.4.1
+- Maven: 3.9.11
+
+--- Targeted TV5-D21 Suite (LeaderFailoverTest) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="LeaderFailoverTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.227 s -- in vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.448 s]
+[INFO] backend-node ....................................... SUCCESS [  0.745 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+Test Methods (12):
+1. initialLeaderElected_persistsTermAndVotes_andBooksTicketSuccessfully: PASS
+2. killSimulatedLeader_rejectsBookOnKilledLeader_andStopsHeartbeats: PASS
+3. failoverReelection_candidateGathersMajorityVotesInNewTerm_becomesNewLeader: PASS
+4. termAndVotesPersistence_strictlyMonotonic_andRejectsDoubleVotingInSameTerm: PASS
+5. newLeaderAcceptsAndCommitsBooking_replicatesToAliveFollowers: PASS
+6. followerRejectsBooking_returnsNotLeaderWithLeaderHint: PASS
+7. idempotentBookingAcrossFailover_sameRequestIdReturnsCachedResult: PASS
+8. businessRuleValidation_rejectsDoubleBookingOnNewLeader: PASS
+9. recoveredOldLeader_restoresStorage_stepsDownToFollower_andSyncsWithNewLeader: PASS
+10. minorityPartitionFailover_ghostWriteOverwrittenSafelyUponHealing: PASS
+11. cascadingLeaderFailover_multipleConsecutiveLeaderKillsAndReelections: PASS
+12. lossOfQuorum_whenMajorityDead_pausesWritesAndPreventsElection: PASS
+
+--- Combined TV5 Fake Network & Quorum Suites (D18 - D21) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="LeaderFailoverTest,RaftElectionServiceTest,MinorityWriteSafetyTest,WriteAvailabilityPolicyTest,RaftElectionFivePeerFakeNetworkTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.242 s -- in vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Running vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Running vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.586 s]
+[INFO] backend-node ....................................... SUCCESS [  0.858 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+
+--- Full Election Package Regression Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[WARNING] Tests run: 272, Failures: 0, Errors: 0, Skipped: 1
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.462 s]
+[INFO] backend-node ....................................... SUCCESS [  4.246 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS

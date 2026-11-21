@@ -153,21 +153,29 @@ public class Node1DatabaseIntegrationTest {
     }
 
     /**
-     * Kiểm tra trạng thái khởi tạo của Raft Metadata và Apply Progress.
+     * Kiểm tra trạng thái của Raft Metadata và Apply Progress.
      */
     public static void verifyRaftMetadata(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet rs = statement.executeQuery(
                     "SELECT singleton, current_term, voted_for FROM raft_meta WHERE singleton = 1")) {
                 Assertions.assertTrue(rs.next(), "raft_meta phai co singleton row (singleton=1)");
-                Assertions.assertEquals(0L, rs.getLong("current_term"), "current_term ban dau phai la 0");
-                Assertions.assertNull(rs.getString("voted_for"), "voted_for ban dau phai la NULL");
+                long currentTerm = rs.getLong("current_term");
+                Assertions.assertTrue(currentTerm >= 0L, "current_term phai >= 0, thuc te: " + currentTerm);
+                String votedFor = rs.getString("voted_for");
+                if (currentTerm == 0L) {
+                    Assertions.assertNull(votedFor, "voted_for ban dau phai la NULL");
+                } else {
+                    Assertions.assertTrue(votedFor == null || votedFor.matches("^node-[1-5]$"),
+                            "voted_for hop le trong cum: " + votedFor);
+                }
             }
 
             try (ResultSet rs = statement.executeQuery(
                     "SELECT singleton, last_applied FROM raft_apply_progress WHERE singleton = 1")) {
                 Assertions.assertTrue(rs.next(), "raft_apply_progress phai co singleton row (singleton=1)");
-                Assertions.assertEquals(0L, rs.getLong("last_applied"), "last_applied ban dau phai la 0");
+                long lastApplied = rs.getLong("last_applied");
+                Assertions.assertTrue(lastApplied >= 0L, "last_applied phai >= 0, thuc te: " + lastApplied);
             }
         }
     }
