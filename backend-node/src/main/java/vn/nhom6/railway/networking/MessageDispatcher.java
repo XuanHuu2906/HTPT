@@ -72,11 +72,28 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             long startTimeNanos
     ) {}
 
+    /**
+     * Hook interface for filtering or dropping messages in test environments (e.g. simulated network partitions).
+     */
+    @FunctionalInterface
+    public interface MessageFilterHook {
+        /**
+         * Evaluates whether an incoming message should be delivered or dropped.
+         *
+         * @param senderId Sender ID from message envelope
+         * @param recipientNodeId Local node ID receiving the message
+         * @param message Decoded message envelope
+         * @return true to allow message delivery, false to drop silently
+         */
+        boolean shouldDeliver(String senderId, String recipientNodeId, MessageEnvelope<?> message);
+    }
+
     private final HandlerRegistry registry;
     private final ChannelType channelType;
     private final String nodeId;
     private final int maxInFlightRequests;
     private volatile LeaderRouter leaderRouter;
+    private volatile MessageFilterHook filterHook;
 
     private final ConcurrentMap<String, InFlightContext> activeInFlight = new ConcurrentHashMap<>();
 
@@ -185,6 +202,13 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         if (channelType == ChannelType.MONITOR && type != MessageType.NODE_STATUS) {
             LOGGER.warning(() -> "Non-monitor message rejected on MONITOR channel: " + type + " from sender=" + request.getSenderId());
             return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
+        }
+
+        // 8a. Test Network Filter Hook (Network Partition & Fault Simulation - TV3-D21)
+        if (filterHook != null && !filterHook.shouldDeliver(request.getSenderId(), this.nodeId, request)) {
+            LOGGER.info(() -> "[" + this.nodeId + "] Message dropped by TestNetworkFilter: from=" 
+                    + request.getSenderId() + " to=" + this.nodeId + " type=" + type + ", messageId=" + messageId);
+            return null; // Silently drop, simulating network partition packet loss
         }
 
         // 8b. Enforce In-Flight Tracking and Limits (SPEC-03 §1, §3.0 & TV3-D18)
@@ -324,6 +348,14 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public void setLeaderRouter(LeaderRouter leaderRouter) {
         this.leaderRouter = leaderRouter;
+    }
+
+    public MessageFilterHook getFilterHook() {
+        return filterHook;
+    }
+
+    public void setFilterHook(MessageFilterHook filterHook) {
+        this.filterHook = filterHook;
     }
 
     public boolean isLeaderOnlyRequest(MessageType type) {
