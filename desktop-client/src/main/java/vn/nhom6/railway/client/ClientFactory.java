@@ -63,6 +63,7 @@ public final class ClientFactory {
             journalingBookingClient);
     private static volatile ReadAdapter readAdapter = createDefaultReadAdapter();
     private static volatile SeatsRefreshService seatsRefreshService = null;
+    private static volatile vn.nhom6.railway.client.controller.ReconnectController reconnectController = null;
 
     private ClientFactory() {
     }
@@ -377,5 +378,29 @@ public final class ClientFactory {
             seatsRefreshService.close();
         }
         seatsRefreshService = service;
+    }
+
+    /**
+     * Lấy ReconnectController dùng chung cho ứng dụng (TASK TV1-D21).
+     */
+    public static synchronized vn.nhom6.railway.client.controller.ReconnectController getReconnectController() {
+        if (reconnectController == null) {
+            LeaderAwareBookingClient leaderClient = (rawBookingClient instanceof LeaderAwareBookingClient labc)
+                    ? labc : null;
+            reconnectController = new vn.nhom6.railway.client.controller.ReconnectController(
+                    leaderClient,
+                    getBookingViewModel(),
+                    getClusterConnectionViewModel(),
+                    getJournal()
+            );
+        }
+        return reconnectController;
+    }
+
+    /**
+     * Đặt ReconnectController tùy biến (dùng trong test hoặc cấu hình lại).
+     */
+    public static synchronized void setReconnectController(vn.nhom6.railway.client.controller.ReconnectController controller) {
+        reconnectController = controller;
     }
 }

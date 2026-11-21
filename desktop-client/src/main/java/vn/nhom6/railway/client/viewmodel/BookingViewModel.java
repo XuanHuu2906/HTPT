@@ -228,6 +228,16 @@ public class BookingViewModel {
         return submitTimeoutMs;
     }
 
+    private volatile java.util.function.Predicate<String> requestAllowedPredicate;
+
+    public void setRequestAllowedPredicate(java.util.function.Predicate<String> predicate) {
+        this.requestAllowedPredicate = predicate;
+    }
+
+    public java.util.function.Predicate<String> getRequestAllowedPredicate() {
+        return requestAllowedPredicate;
+    }
+
     public void setJournal(PersistentPendingJournal journal) {
         this.journal = journal;
     }
@@ -272,6 +282,13 @@ public class BookingViewModel {
      */
     public CompletableFuture<BookTicketResponseDto> submit(BookTicketRequestDto request) {
         Objects.requireNonNull(request, "BookTicketRequestDto không được null");
+
+        // Kiểm tra ReconnectController / Failover Filter (TASK TV1-D21)
+        if (requestAllowedPredicate != null && !requestAllowedPredicate.test(request.getRequestId())) {
+            CompletableFuture<BookTicketResponseDto> rejected = new CompletableFuture<>();
+            rejected.completeExceptionally(new IllegalStateException("Không thể tạo yêu cầu đặt vé mới: Cụm đang tìm Leader / đang trong quá trình bầu cử!"));
+            return rejected;
+        }
 
         // Kiểm tra nguyên tử chống double-click
         if (!isSubmittingAtomic.compareAndSet(false, true)) {

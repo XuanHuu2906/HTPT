@@ -1,0 +1,100 @@
+================================================================================
+BÁO CÁO NGHIỆM THU KIỂM THỬ GIAO DIỆN TASK TV1-D21
+TÊN TASK: Reconnect khi Leader lỗi và bảo toàn Pending Request trên Desktop Client
+================================================================================
+Người thực hiện: TV1 (Khoa - Desktop Client JavaFX, vn.nhom6.railway.client)
+Thời điểm kiểm thử: 2026-11-21T10:26:05+07:00
+Môi trường thực tế:
+  - Hệ điều hành: Windows 11 Home Single Language (10.0.26300 amd64)
+  - Java runtime: OpenJDK 64-Bit Server VM (Adoptium 21.0.13+11-LTS)
+  - Apache Maven: 3.10.0
+  - Git Branch: feature/UI
+  - Trạng thái cụm thật (9101–9105): TẤT CẢ CỔNG ĐỀU DOWN (kiểm tra bằng Test-NetConnection)
+
+TUYÊN BỐ NGUỒN DỮ LIỆU & RANH GIỚI:
+  - FAKE LEADER PROVIDER — KHÔNG PHẢI RAFT THẬT, KHÔNG PHẢI CỤM THẬT.
+  - Quorum, Leader, Election, Commit/Apply đều do fixture FakeNodeServer giả lập.
+  - Chưa nghiệm thu trên cụm 5 Node thật (chờ kịch bản TV6 và mốc nghiệm thu G6).
+
+================================================================================
+BẢNG ĐỐI CHIẾU 10 CA KIỂM THỬ BẮT BUỘC (TV1-D21 ↔ SPEC / FR / AC)
+================================================================================
+Mã Test Case                                           | FR/AC Liên Quan | Kết Quả  | Chi Tiết Kiểm Thử & Assertion
+-------------------------------------------------------+-----------------+----------+-------------------------------------------------------------
+TC_REC_01_LeaderCrash_TriggersSearchingState           | AC06, FR01      | PASS     | Node-1 (Leader) sập -> state chuyển SEARCHING_LEADER,
+                                                       |                 |          | banner hiển thị "Đang tìm Leader trong cụm...", canBookNew=false,
+                                                       |                 |          | canRetryOrLookup=true, UI non-blocking không treo thread.
+TC_REC_02_PendingPreservedAcrossFailover               | AC10, FR04      | PASS     | Pending request SENT_UNRESOLVED giữ nguyên requestId,
+                                                       |                 |          | payload nguyên văn byte-for-byte và chuỗi, hash SHA-256 khớp 100%.
+TC_REC_03_NewLeaderFound_ThenLookupByOriginalRequestId | AC06, AC10      | PASS     | Node-2 lên Leader mới -> triggerReconnect phát hiện "node-2",
+                                                       |                 |          | state chuyển CONNECTED, banner ẩn, tra cứu/retry mang đúng
+                                                       |                 |          | requestId gốc tới Node-2 nhận kết quả có cấu trúc.
+TC_REC_04_OldLeaderAppliedBeforeCrash_NoDuplicate      | AC01, AC02      | PASS     | Leader cũ đã apply trước crash, Leader mới trả lại đúng kết quả
+                                                       |                 |          | CONFIRMED đã lưu theo requestId (idempotent), ticketId cũ,
+                                                       |                 |          | đúng 1 vé ACTIVE trên ghế G04, không nhân bản vé.
+TC_REC_05_NoLeaderAvailable_BacksOffWithoutSpam        | AC05, AC06      | PASS     | Cửa sổ bầu cử tất cả Node NOT_LEADER hint null -> probe bằng
+                                                       |                 |          | GET_SEATS (read-only), TUYỆT ĐỐI KHÔNG gửi BOOK/CANCEL,
+                                                       |                 |          | backoff có chặn trên không spam socket, state NO_LEADER.
+TC_REC_06_NoNewBookingWhileSearching                   | AC06, FR01      | PASS     | Đang tìm Leader -> submit() đặt vé MỚI bị chặn ngay lập tức
+                                                       |                 |          | (IllegalStateException), không gửi ra mạng; pending request cũ
+                                                       |                 |          | có trong journal vẫn cho phép tiếp tục tra cứu / retry.
+TC_REC_07_FailedNotSentVsUnknown                       | AC03, AC10      | PASS     | Lỗi trước gửi: FAILED_NOT_SENT, ghế giữ nguyên AVAILABLE;
+                                                       |                 |          | Lỗi sau gửi: TIMEOUT_UNKNOWN, ghế chuyển UNKNOWN (viền cam),
+                                                       |                 |          | journal ghi nhận SENT_UNRESOLVED, hiển thị nút Tra cứu & Gửi lại.
+TC_REC_08_RestartDuringFailover                        | AC10, FR04      | PASS     | Đóng app giữa chừng failover, mở lại journal từ cùng thư mục
+                                                       |                 |          | phục hồi 100% pending request, ReconnectController sẵn sàng.
+TC_REC_09_HintFromNodeIsOnlyAHint                      | AC06, SPEC-03   | PASS     | leaderHint lạ ("malicious-node-999") ngoài ClusterEndpoints
+                                                       |                 |          | bị bỏ qua, không crash, không mặc định Node 1 là Leader;
+                                                       |                 |          | nhãn dữ liệu hiển thị đúng MOCK.
+TC_REC_10_RealDockerKill_GuardedByEnvironment          | AC06 (Docker)   | SKIPPED  | Guard bằng Assumptions.assumeTrue(-Ddocker.real.test=true),
+                                                       |                 |          | tự động SKIPPED ở môi trường D21, NOT_RUN chờ mốc G6.
+
+Tổng số ca kiểm thử: 10
+  - PASS: 9
+  - SKIPPED: 1 (TC_REC_10_RealDockerKill_GuardedByEnvironment - chờ nghiệm thu cụm Docker thật tại G6)
+  - FAIL: 0
+  - ERROR: 0
+
+================================================================================
+KIỂM TRA BẤT BIẾN KIẾN TRÚC & CLEAN ARCHITECTURE (AGENTS.md)
+================================================================================
+1. Kiểm tra import java.net / java.sql trong controller & viewmodel:
+   Lệnh: git grep -E "import java\.(net|sql)" desktop-client/src/main/java/vn/nhom6/railway/client/controller/ desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/
+   Kết quả: 0 dòng mã thực thi vi phạm (chỉ có javadoc giải thích quy tắc Clean Architecture).
+
+2. Kiểm tra cấm HTTP / REST / WebSocket trong desktop-client:
+   Lệnh: git grep -iE "(httpclient|okhttp|retrofit|websocket|resttemplate|webmvc)" desktop-client/src/main/
+   Kết quả: 0 dòng vi phạm. Giao tiếp 100% qua Java TCP Socket và protocol DTO của module shared.
+
+3. Kiểm tra cấm chuỗi tự chế SEAT_SOLD:
+   Lệnh: git grep -i "SEAT_SOLD" desktop-client/src/main/
+   Kết quả: 0 dòng mã thực thi vi phạm. Sử dụng chuẩn SEAT_ALREADY_BOOKED theo SPEC-03 / SPEC-05.
+
+================================================================================
+KẾT QUẢ CHẠY TOÀN BỘ TEST SUITE DỰ ÁN
+================================================================================
+Lệnh thực thi:
+  mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+
+Kết quả:
+  [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+  [INFO] railway-distributed-system ......................... SUCCESS [  0.913 s]
+  [INFO] shared ............................................. SUCCESS [ 12.025 s] (38 tests PASS)
+  [INFO] desktop-client ..................................... SUCCESS [ 27.798 s] (243 tests: 228 PASS, 15 SKIPPED)
+  [INFO] BUILD SUCCESS
+
+================================================================================
+SẢN PHẨM BẰNG CHỨNG HÌNH ẢNH (ARTIFACTS)
+================================================================================
+Ảnh chụp bằng chứng giao diện:
+  - Đường dẫn: artifacts/evidence/D21/TV1-D21-ui.png
+  - Kích thước file: 57,265 bytes (1040 x 720 pixel)
+  - Mô tả hình ảnh:
+    * Tiêu đề Stage: "FAKE LEADER PROVIDER — không phải cụm thật | TASK TV1-D21 RECONNECT & PRESERVE PENDING"
+    * Banner trạng thái: "⚠ Đang tìm Leader trong cụm (Reconnecting)... [FAKE LEADER PROVIDER — không phải cụm thật]"
+    * Ghế G08: Trạng thái UNKNOWN (viền cam nét đứt) do timeout sau gửi
+    * Bảng Pending Journal: Hiển thị 1 dòng pending requestId: 91ab28d1-7299-4a7b-a160-c3d9a1f28b7e,
+      ghế G08, trạng thái SENT_UNRESOLVED, nút Tra cứu và Gửi lại ở trạng thái sẵn sàng.
+================================================================================
+KẾT LUẬN: TASK TV1-D21 ĐẠT MỤC TIÊU NGHIỆM THU ĐỘC LẬP TRÊN FIXTURE GIẢ LẬP.
+================================================================================

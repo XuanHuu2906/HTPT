@@ -141,6 +141,10 @@ public class ClusterConnectionViewModel implements AutoCloseable {
         return t;
     };
 
+    public ClusterConnectionViewModel() {
+        this(vn.nhom6.railway.client.network.MockClusterStatusClient.getInstance());
+    }
+
     public ClusterConnectionViewModel(ClusterStatusClient statusClient) {
         this.statusClient = Objects.requireNonNull(statusClient, "ClusterStatusClient không được null");
         this.pollScheduler = Executors.newSingleThreadScheduledExecutor(DAEMON_THREAD_FACTORY);
