@@ -5,7 +5,7 @@ Owner: TV4
 Base branch: nguyen
 Base SHA: 479d6b43fec7051a07e878392a58e59622729aaa
 origin/main SHA checked: 479d6b43fec7051a07e878392a58e59622729aaa
-Code SHA: adad247
+Code SHA: b379094
 Test file: backend-node/src/test/java/vn/nhom6/railway/raft/replication/FollowerCatchupTest.java
 
 Environment
@@ -18,45 +18,38 @@ Environment
 - PostgreSQL health: healthy
 - Test transport: FakeNetwork
 - Test storage: FakeRaftStorage plus real PostgreSQL JDBC tests
-- Real TCP/Docker 5-Node cluster: NOT USED in FollowerCatchupTest
+- Real TCP/Docker 5-Node cluster: NOT USED
 
 Commands
 Targeted:
 docker run --rm --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am '-Dtest=FollowerCatchupTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
 
-PostgreSQL JDBC targeted:
-docker run --rm --network railway-dev-network -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='railway_secret_local_only' --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am '-Dtest=JdbcRaftStorageIntegrationTest,RaftStateMachineApplierJdbcTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
-
-Full:
-docker run --rm --network railway-dev-network -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='railway_secret_local_only' --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+PostgreSQL full:
+docker run --rm --network railway-dev-network -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='<REDACTED>' --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
 
 Targeted result
 [INFO] Running vn.nhom6.railway.raft.replication.FollowerCatchupTest
 D21-12 seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=25 followerLog=0 rpc=28
-[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.853 s -- in vn.nhom6.railway.raft.replication.FollowerCatchupTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.28 s -- in vn.nhom6.railway.raft.replication.FollowerCatchupTest
 [INFO] BUILD SUCCESS
 
 PostgreSQL JDBC result
 [INFO] Running vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.820 s -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
-[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.154 s -- in vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
-[INFO] BUILD SUCCESS
-PostgreSQL tests ran 10/10 without skip.
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+Raft JDBC/applier PostgreSQL tests ran 10/10 without skip.
 
 Full reactor result
-[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
-[INFO] Running vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
-[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.raft.election.ElectionTest
 [INFO] Running vn.nhom6.railway.raft.replication.FollowerCatchupTest
 D21-12 seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=25 followerLog=0 rpc=28
-[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.28 s -- in vn.nhom6.railway.raft.replication.FollowerCatchupTest
 [INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
 [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Tests run: 243, Failures: 0, Errors: 0, Skipped: 15
 [INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 3
 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
-[INFO] railway-distributed-system ... SUCCESS
 [INFO] shared ........................ SUCCESS
 [INFO] backend-node .................. SUCCESS
 [INFO] desktop-client ................ SUCCESS
@@ -64,51 +57,59 @@ D21-12 seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=2
 [INFO] integration-tests ............. SUCCESS
 [INFO] BUILD SUCCESS
 
-Full-suite totals from Surefire reports
+Full-suite totals
 - 1425 tests
 - 0 failures
 - 0 errors
 - 18 skipped
-- 1407 tests executed; 18 environment/evidence-gated skipped
-- Skipped reasons include UI evidence/smoke flags, real cluster profile, Docker real test flag, real G5/G6 cluster, and single-node/database environment gates.
-- PostgreSQL JDBC tests no longer skipped.
+- 1407 tests executed
+- 10 real PostgreSQL Raft JDBC/applier tests executed
+- Skips remain environment/evidence-gated: UI smoke/evidence flags, real cluster profile, Docker real test flag, G5/G6 cluster and single-node environment gates.
+- Baseline main 479d6b4 was not run as a separate baseline in this pass.
 
-Harness and invariants
-- FollowerCatchupTest uses ReplicationCommitInvariantSuiteTest.Harness.
-- Leader commit is produced through real ReplicationTracker + CommitAdvancer in onMatchIndexAdvanced.
-- Followers are real PersistentRaftNode instances with FakeRaftStorage.
-- Harness has real RaftStateMachineApplier and in-memory repositories.
-- Harness runRound/runRounds call assertInvariants after each round.
-- No call to advanceCommitIndex exists in FollowerCatchupTest.
-- Random seed set: 1,2,3,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71.
+13 scenarios
+1. stoppedFollowerCatchesUpMissingTail
+2. largeCatchupIsBounded
+3. threeOfFiveCommitsWithTwoStopped
+4. twoOfFiveDoesNotCommitThenOneRejoinCommits
+5. restartedFollowerRestoresDurableState
+6. restartDuringCatchupDoesNotDuplicate
+7. divergentUncommittedTailPreservesCommittedPrefix
+8. committedConflictFailsClosed
+9. randomFaultRepliesNeverBecomeAck
+10. higherTermLeaderReplacesOldSuffix
+11. oldTermLeaderAppendIsRejected
+12. lostDiskLogIsCharacterized
+13. finalRejoinConvergesAllNodes
+
+Fix2 assertions
+- Test 2: 200 entries after blocking node-2; rejoin observed via FakeNetwork. Every node-2 request batch is <= real RaftReplicationService.batchMax, maxActive<=1, matchIndex equals Leader lastLogIndex, log and commit converge, RPC count bounded.
+- Test 8: creates an entry conflict at a follower's committed index and sends it through AppendEntries wire DTO. Conflicting write throws fail-closed, log/commit/original entry stay unchanged, Leader matchIndex stays unchanged, and later AppendEntries is refused.
+- Test 9: 20 fixed seeds use Random(seed) drop/delay; timeout, invalid matchIndex, PEER_ERROR and transport failure synthetic replies do not advance matchIndex; network heals and all peers catch up to Leader lastLogIndex.
+- Test 11: follower is persisted at a higher term, then a lower-term old-Leader request with a new entry and large leaderCommit is rejected success=false; log, commit, apply and vote stay unchanged, and the higher-term response steps the old Leader down without adding a successful match.
+- Test 13: node-2 and node-3 are stopped while 30 entries are issued, then all rejoin. Each Node must have the Leader commitIndex/lastLogIndex/log, lastApplied==commitIndex, repo checkpoint=commitIndex and identical in-memory seat snapshot.
 
 Scenario 12 - actual observation
-- Seed: 53
-- Before lost-disk characterization: Leader matchIndex[node-2]=24, Leader commitIndex=24
-- After follower storage/state was reset to an empty log:
-  - follower lastLogIndex=0
-  - Leader final matchIndex[node-2]=24
-  - Leader final commitIndex=24
-  - Leader nextIndex[node-2]=25
-  - matched RPC count for node-2 across 200 rounds=28
-- The follower remains non-convergent/stuck in this characterization.
-- Leader matchIndex and commitIndex did not decrease.
-- Majority committed prefix remained held on the remaining nodes.
-- No crash and no unbounded loop: 200 rounds and 28 RPCs measured.
-- Production was not modified.
+- seed=53
+- before disk loss: matchIndex[node-2]=24, commitIndex=24
+- after follower storage reset: follower lastLogIndex=0
+- final: matchIndex[node-2]=24, Leader commitIndex=24, nextIndex[node-2]=25, RPC count=28 over 200 rounds
+- follower remains non-convergent/stuck.
+- Leader commit/match did not decrease; majority prefix remained; no crash/unbounded loop.
 
 Docker real catch-up
 - NOT RUN
-- origin/main 479d6b4 does not expose a TV6-D21 fault-tool entry or D21 real-cluster runner in scripts/, docker/, integration-tests/ or docs/.
-- No 5-process/5-PostgreSQL real catch-up or G5 LAN result is claimed.
+- origin/main 479d6b4 has no TV6-D21 real fault tool or 5-process D21 runner in scripts/, docker/, integration-tests/ or docs/.
 
-Runtime/production boundary
-- CommitAdvancer is real in the harness and advanced by onMatchIndexAdvanced.
-- State-machine applier and listeners are real in the existing harness.
-- No production Java file was changed.
-- Direct runtime wiring to NodeMain remains outside the evidence of this test.
+Removed test weaknesses
+- FollowerCatchupTest contains no advanceCommitIndex call.
+- Test 2 observes real request batches and batchMax.
+- Test 8 uses a real committed conflict.
+- Test 9 has exact bad-reply and healed convergence assertions.
+- Test 11 has stale-term wire/follower/Leader step-down assertions.
+- Test 13 removes the leader-commit tautology and compares 5-node logs/state.
 
 Not completed / handoff
-- TV6: add or run a real 5-Node D21 fault tool for Docker/LAN evidence.
-- TV4/TV5: decide lost-disk node re-seed versus replacement.
-- TV2/TV4/TV5: retain runtime wiring evidence as a separate task.
+- TV6: real Docker/LAN D21 fault tool and 5-Node evidence.
+- TV4/TV5: lost-disk re-seed versus node replacement policy.
+- Runtime wiring remains outside this test-only change.
