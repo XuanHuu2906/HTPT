@@ -103,10 +103,14 @@ public class FakeNodeServer implements AutoCloseable {
     private Random jitterRandom = new Random(42L);
     private final Object randomLock = new Object();
     private final Set<String> dropResponseForSenders = ConcurrentHashMap.newKeySet();
+    private final Set<String> dropResponseForRequestIds = ConcurrentHashMap.newKeySet();
     private final Set<String> droppedRequestIds = ConcurrentHashMap.newKeySet();
+    private final Set<String> pendingRequestIds = ConcurrentHashMap.newKeySet();
     private volatile long dropResponseHoldMs = 15000L;
     private final AtomicLong bookingArrivalSequence = new AtomicLong(0);
     private final List<BookingAuditEntry> bookingAuditLog = new CopyOnWriteArrayList<>();
+    private final List<RequestTraceEntry> requestTraceLog = new CopyOnWriteArrayList<>();
+    private volatile String currentTestCase = "DEFAULT";
     private volatile Consumer<String> auditLogListener = null;
 
     // Sentinel nội bộ đánh dấu đã lưu kết quả nhưng giả lập rơi phản hồi (hold socket ngoài lock)
@@ -123,6 +127,23 @@ public class FakeNodeServer implements AutoCloseable {
             String passengerName,
             BookTicketResponseDto responseDto,
             boolean isConflict
+    ) {}
+
+    /**
+     * Bản ghi truy vết chi tiết phục vụ xuất CSV kiểm thử Idempotency (TASK TV1-D22).
+     */
+    public static record RequestTraceEntry(
+            String testCase,
+            int attempt,
+            String step,
+            String requestId,
+            String messageId,
+            String tripId,
+            String seatId,
+            String passengerName,
+            String expectedOutcome,
+            String actualStatus,
+            String comment
     ) {}
 
     /**
@@ -220,13 +241,80 @@ public class FakeNodeServer implements AutoCloseable {
     }
 
     /**
-     * Đặt lại toàn bộ trạng thái ghế, kết quả đã lưu và audit cho vòng kiểm thử mới (TASK TV1-D18).
+     * Đặt lại toàn bộ trạng thái ghế, kết quả đã lưu và audit cho vòng kiểm thử mới (TASK TV1-D18 / TV1-D22).
      */
     public synchronized void resetForNewRound() {
         initDefaultSeats();
         storedBookings.clear();
         droppedRequestIds.clear();
+        dropResponseForRequestIds.clear();
+        pendingRequestIds.clear();
+        requestTraceLog.clear();
         resetAudit();
+    }
+
+    public void setCurrentTestCase(String testCase) {
+        this.currentTestCase = testCase != null ? testCase : "DEFAULT";
+    }
+
+    public String getCurrentTestCase() {
+        return currentTestCase;
+    }
+
+    public void addTraceEntry(RequestTraceEntry entry) {
+        if (entry != null) {
+            requestTraceLog.add(entry);
+        }
+    }
+
+    public List<RequestTraceEntry> getRequestTraceLog() {
+        return Collections.unmodifiableList(requestTraceLog);
+    }
+
+    public void dropResponseForRequestId(String requestId) {
+        if (requestId != null && !requestId.isBlank()) {
+            dropResponseForRequestIds.add(requestId.trim());
+        }
+    }
+
+    public void clearDropResponseForRequestIds() {
+        dropResponseForRequestIds.clear();
+    }
+
+    public void markRequestPending(String requestId) {
+        if (requestId != null && !requestId.isBlank()) {
+            pendingRequestIds.add(requestId.trim());
+        }
+    }
+
+    public void unmarkRequestPending(String requestId) {
+        if (requestId != null) {
+            pendingRequestIds.remove(requestId.trim());
+        }
+    }
+
+    public static void writeTraceCsv(java.nio.file.Path csvPath, List<RequestTraceEntry> entries) throws IOException {
+        if (csvPath.getParent() != null) {
+            java.nio.file.Files.createDirectories(csvPath.getParent());
+        }
+        try (java.io.BufferedWriter writer = java.nio.file.Files.newBufferedWriter(csvPath, java.nio.charset.StandardCharsets.UTF_8)) {
+            writer.write("test_case,attempt,step,request_id,message_id,trip_id,seat_id,passenger_name,expected_outcome,actual_status,comment\n");
+            for (RequestTraceEntry e : entries) {
+                writer.write(String.format("%s,%d,%s,%s,%s,%s,%s,\"%s\",%s,%s,\"%s\"\n",
+                        e.testCase() != null ? e.testCase() : "",
+                        e.attempt(),
+                        e.step() != null ? e.step() : "",
+                        e.requestId() != null ? e.requestId() : "",
+                        e.messageId() != null ? e.messageId() : "",
+                        e.tripId() != null ? e.tripId() : "",
+                        e.seatId() != null ? e.seatId() : "",
+                        e.passengerName() != null ? e.passengerName() : "",
+                        e.expectedOutcome() != null ? e.expectedOutcome() : "",
+                        e.actualStatus() != null ? e.actualStatus() : "",
+                        e.comment() != null ? e.comment().replace("\"", "\"\"") : ""
+                ));
+            }
+        }
     }
 
     /**
@@ -600,6 +688,19 @@ public class FakeNodeServer implements AutoCloseable {
                 // CÙNG requestId + CÙNG payload: Trả về ĐÚNG kết quả cũ đã lưu, KHÔNG cấp vé thứ hai
                 BookTicketResponseDto dto = stored.responseDto();
                 recordBookingAudit(requestId, senderId, seatId, dto.getOutcome() + "(REPLAY)", dto.getReasonCode(), dto.getTicketId(), false);
+                requestTraceLog.add(new RequestTraceEntry(
+                        currentTestCase,
+                        requestAttempts.getOrDefault(requestId, 1),
+                        "RETRY_BOOK_TICKET",
+                        requestId,
+                        correlationId,
+                        tripId,
+                        seatId,
+                        passengerName,
+                        "CONFIRMED(IDEMPOTENT)",
+                        dto.getOutcome(),
+                        "Replayed stored response with same requestId"
+                ));
                 return MessageEnvelope.createResponse(
                         correlationId,
                         MessageType.BOOK_TICKET_RESPONSE,
@@ -609,6 +710,19 @@ public class FakeNodeServer implements AutoCloseable {
             } else {
                 // CÙNG requestId + KHÁC payload: Xung đột REQUEST_ID_CONFLICT
                 recordBookingAudit(requestId, senderId, seatId, "ERROR", "REQUEST_ID_CONFLICT", null, false);
+                requestTraceLog.add(new RequestTraceEntry(
+                        currentTestCase,
+                        requestAttempts.getOrDefault(requestId, 1),
+                        "RETRY_BOOK_TICKET",
+                        requestId,
+                        correlationId,
+                        tripId,
+                        seatId,
+                        passengerName,
+                        "REQUEST_ID_CONFLICT",
+                        "REQUEST_ID_CONFLICT",
+                        "Mismatched payload for same requestId"
+                ));
                 return createErrorResponse(
                         correlationId,
                         "REQUEST_ID_CONFLICT",
@@ -626,9 +740,8 @@ public class FakeNodeServer implements AutoCloseable {
         }
 
         long appliedIndex = logIndexSequence.incrementAndGet();
-        boolean shouldDropResponse = senderId != null
-                && dropResponseForSenders.contains(senderId)
-                && droppedRequestIds.add(requestId);
+        boolean shouldDropResponse = (senderId != null && dropResponseForSenders.contains(senderId) && droppedRequestIds.add(requestId))
+                || (requestId != null && dropResponseForRequestIds.contains(requestId) && droppedRequestIds.add(requestId));
 
         if ("BOOKED".equalsIgnoreCase(currentSeat.status())) {
             // Ghế đã có người đặt -> REJECTED SEAT_ALREADY_BOOKED
@@ -642,6 +755,19 @@ public class FakeNodeServer implements AutoCloseable {
 
             storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, rejectedDto, false));
             recordBookingAudit(requestId, senderId, seatId, "REJECTED", "SEAT_ALREADY_BOOKED", null, shouldDropResponse);
+            requestTraceLog.add(new RequestTraceEntry(
+                    currentTestCase,
+                    requestAttempts.getOrDefault(requestId, 1),
+                    "INITIAL_BOOK_TICKET",
+                    requestId,
+                    correlationId,
+                    tripId,
+                    seatId,
+                    passengerName,
+                    "REJECTED",
+                    shouldDropResponse ? "DROPPED" : "REJECTED",
+                    shouldDropResponse ? "Seat booked, response dropped" : "Seat already booked"
+            ));
 
             if (shouldDropResponse) {
                 return DROP_RESPONSE_SENTINEL;
@@ -669,6 +795,19 @@ public class FakeNodeServer implements AutoCloseable {
 
         storedBookings.put(requestId, new StoredBooking(requestId, tripId, seatId, passengerName, confirmedDto, false));
         recordBookingAudit(requestId, senderId, seatId, "CONFIRMED", null, ticketId, shouldDropResponse);
+        requestTraceLog.add(new RequestTraceEntry(
+                currentTestCase,
+                requestAttempts.getOrDefault(requestId, 1),
+                "INITIAL_BOOK_TICKET",
+                requestId,
+                correlationId,
+                tripId,
+                seatId,
+                passengerName,
+                "CONFIRMED",
+                shouldDropResponse ? "DROPPED" : "CONFIRMED",
+                shouldDropResponse ? "Committed, response dropped" : "Confirmed normally"
+        ));
 
         if (shouldDropResponse) {
             return DROP_RESPONSE_SENTINEL;
@@ -687,7 +826,27 @@ public class FakeNodeServer implements AutoCloseable {
         ObjectNode resultPayload = MessageCodec.getMapper().createObjectNode();
         resultPayload.put("requestId", requestId != null ? requestId : "");
 
-        if (requestId != null && storedBookings.containsKey(requestId)) {
+        if (requestId != null && pendingRequestIds.contains(requestId)) {
+            resultPayload.put("state", "PENDING");
+            resultPayload.put("commandType", "BOOK_TICKET");
+            resultPayload.putNull("ticketId");
+            resultPayload.putNull("reasonCode");
+            resultPayload.putNull("appliedLogIndex");
+
+            requestTraceLog.add(new RequestTraceEntry(
+                    currentTestCase,
+                    1,
+                    "GET_REQUEST_RESULT",
+                    requestId,
+                    correlationId,
+                    "-",
+                    "-",
+                    "-",
+                    "PENDING",
+                    "PENDING",
+                    "Request marked PENDING on server"
+            ));
+        } else if (requestId != null && storedBookings.containsKey(requestId)) {
             StoredBooking stored = storedBookings.get(requestId);
             BookTicketResponseDto dto = stored.responseDto();
 
@@ -704,12 +863,40 @@ public class FakeNodeServer implements AutoCloseable {
                 resultPayload.put("reasonCode", dto.getReasonCode());
                 resultPayload.put("appliedLogIndex", dto.getAppliedLogIndex());
             }
+
+            requestTraceLog.add(new RequestTraceEntry(
+                    currentTestCase,
+                    1,
+                    "GET_REQUEST_RESULT",
+                    requestId,
+                    correlationId,
+                    stored.tripId(),
+                    stored.seatId(),
+                    stored.passengerName(),
+                    "CONFIRMED".equalsIgnoreCase(dto.getOutcome()) ? "APPLIED_SUCCESS" : "APPLIED_REJECTED",
+                    resultPayload.get("state").asText(),
+                    "Lookup resolved from server storage"
+            ));
         } else {
             resultPayload.put("state", "UNKNOWN");
             resultPayload.putNull("commandType");
             resultPayload.putNull("ticketId");
             resultPayload.putNull("reasonCode");
             resultPayload.putNull("appliedLogIndex");
+
+            requestTraceLog.add(new RequestTraceEntry(
+                    currentTestCase,
+                    1,
+                    "GET_REQUEST_RESULT",
+                    requestId != null ? requestId : "",
+                    correlationId,
+                    "-",
+                    "-",
+                    "-",
+                    "UNKNOWN",
+                    "UNKNOWN",
+                    "No booking found for requestId"
+            ));
         }
 
         return MessageEnvelope.createResponse(

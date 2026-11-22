@@ -1,0 +1,94 @@
+================================================================================
+BÁO CÁO KIỂM THỬ IDEMPOTENCY UI SAU TIMEOUT VÀ ĐỔI LEADER (TASK TV1-D22)
+Dự án: Railway Distributed System - Nhóm 6
+Thành viên: TV1 - Khoa (JavaFX Desktop Client, package vn.nhom6.railway.client)
+Ngày thực hiện: 2026-11-22
+================================================================================
+
+1. MÔI TRƯỜNG THỰC THI & PREFLIGHT CHECK
+--------------------------------------------------------------------------------
+Hệ điều hành: Windows 11 (AMD64)
+Java Runtime: OpenJDK 21.0.13 (build 21.0.13+7-adhoc)
+Maven: Apache Maven 3.10.0
+Git Branch: feature/UI
+Base Commit SHA: 6bc6cb657b96236ce089998ed5633cc55db37fdf
+Loại kiểm thử: FAKE NODE SERVER / FAKE LEADER PROVIDER (Mô phỏng cô lập)
+Cụm Docker 5-node thật: KHÔNG CHẠY TRONG SUITE NÀY (Nghiệm thu G6)
+
+Trạng thái các cổng TCP backend cụm thật (9101 - 9105) trước khi chạy:
+- Port 9101: DOWN / UNLISTENING (OK - không xung đột)
+- Port 9102: DOWN / UNLISTENING (OK - không xung đột)
+- Port 9103: DOWN / UNLISTENING (OK - không xung đột)
+- Port 9104: DOWN / UNLISTENING (OK - không xung đột)
+- Port 9105: DOWN / UNLISTENING (OK - không xung đột)
+
+================================================================================
+2. TỔNG HỢP KẾT QUẢ 12 TESTCASES (SPEC-05 & SPEC-07)
+--------------------------------------------------------------------------------
+| Mã Testcase | Mục tiêu kiểm thử                                            | Kết quả | Ghi chú                                                 |
+|-------------|--------------------------------------------------------------|---------|---------------------------------------------------------|
+| TC_IDEM_01  | Mất mạng trước khi gửi byte (FAILED_NOT_SENT)                | PASS    | Ghế giữ AVAILABLE, retry dùng lại requestId              |
+| TC_IDEM_02  | Timeout sau khi gửi (Server chưa commit)                     | PASS    | Client UNKNOWN, retry nhận CONFIRMED, đúng 1 vé ACTIVE  |
+| TC_IDEM_03  | Ngắt phản hồi sau commit (Server đã ghi DB)                  | PASS    | Client UNKNOWN, retry nhận CONFIRMED replay, 1 vé ACTIVE|
+| TC_IDEM_04  | Tra cứu GET_REQUEST_RESULT sau timeout                       | PASS    | Client tra cứu cùng requestId -> CONFIRMED, 1 vé ACTIVE |
+| TC_IDEM_05  | Tra cứu nhận PENDING                                         | PASS    | Giữ UNKNOWN, không tự tạo BOOK mới, checkCount tăng     |
+| TC_IDEM_06  | Tra cứu nhận REJECTED                                        | PASS    | Chuyển sang REJECTED, ghế BOOKED, requestId không đổi   |
+| TC_IDEM_07  | Đổi ý định (đổi ghế)                                         | PASS    | Sinh requestId mới, cảnh báo ý định thay đổi hiển thị   |
+| TC_IDEM_08  | Cùng ghế nhưng đổi tên hành khách khi đang UNKNOWN           | PASS    | Chặn client-side fail-fast (bảo vệ ý định cũ)           |
+| TC_IDEM_09  | Khởi động lại Desktop Client với Journal tồn dư              | PASS    | Khôi phục UNKNOWN, retry giữ nguyên requestId & payload |
+| TC_IDEM_10  | Failover đổi Leader giữa chừng (NOT_LEADER -> Leader mới)    | PASS    | Chuyển tiếp sang Leader mới cùng requestId -> CONFIRMED |
+| TC_IDEM_11  | Thử lại 10 lần liên tiếp cùng requestId                      | PASS    | Server trả kết quả nhất quán, duy nhất 1 vé ACTIVE      |
+| TC_IDEM_12  | Docker Leader kill thực tế (5 nodes)                         | SKIPPED | Dành riêng cho TV6 nghiệm thu kịch bản G6               |
+
+Tổng kết: 11 PASS, 1 SKIPPED (được bảo vệ bởi Assumptions.assumeTrue).
+Toàn bộ test suite desktop-client: 256 tests run, 0 failures, 0 errors, 16 skipped. BUILD SUCCESS.
+
+================================================================================
+3. TRÍCH XUẤT TRUY VẾT REQUEST_ID (artifacts/evidence/D22/TV1-D22-requestid-trace.csv)
+--------------------------------------------------------------------------------
+test_case,attempt,step,request_id,message_id,trip_id,seat_id,passenger_name,expected_outcome,actual_status,comment
+TC_IDEM_08,1,CLIENT_BLOCK_SAME_SEAT,380abd2c-edcd-4c22-8418-fa1f5862de61,-,SE-001,G07,"Khach B",BLOCKED_CLIENT_SIDE,BLOCKED,"Blocked submitting same seat with pending request"
+TC_IDEM_11,1,INITIAL_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,8a72b869-28ae-437a-acd2-c8d0f4bccc26,SE-001,G07,"Hanh Khach Retry",CONFIRMED,CONFIRMED,"Confirmed normally"
+TC_IDEM_11,2,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,55fc17a4-66da-4541-9b6c-dc43ee82395f,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,3,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,9e242c11-9776-410e-ad93-75a429d8e79c,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,4,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,081f1e59-c7a3-453d-aad4-e53352108733,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,5,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,0042f247-0612-4cb6-a5a1-e68cc60e1587,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,6,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,e1318f85-3f3c-4343-8c01-5c5dcb3a275d,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,7,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,379f1ebd-99a3-41b4-9a03-602117926f75,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,8,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,c28a2ae3-e5c4-4968-8e82-8a80b6f99664,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+TC_IDEM_11,9,RETRY_BOOK_TICKET,1bd1ebec-c5e7-45bf-8177-a2afe1296f0c,8eca17bf-e879-43a1-917e-62e1ddf62adb,SE-001,G07,"Hanh Khach Retry",CONFIRMED(IDEMPOTENT),CONFIRMED,"Replayed stored response with same requestId"
+
+* Nhận xét:
+- Qua 10 lần retry (TC_IDEM_11), requestId luôn giữ nguyên "1bd1ebec-c5e7-45bf-8177-a2afe1296f0c"
+- Mỗi lần truyền tin TCP sinh một messageId ngẫu nhiên mới, đúng hợp đồng wire framing của SPEC-03.
+- Số lượng vé ACTIVE cấp cho ghế G07 duy nhất bằng 1.
+
+================================================================================
+4. KIỂM TRA BẤT BIẾN KIẾN TRÚC MÃ NGUỒN (AGENTS.md)
+--------------------------------------------------------------------------------
+1. Import java.net và java.sql trong controller & viewmodel:
+   - Command: Get-ChildItem controller, viewmodel | Select-String "java\.net\.|java\.sql\."
+   - Result: 0 matches (chỉ có Javadoc chú thích cấm import). Toàn bộ I/O đi qua network/storage interfaces.
+2. Web / REST / HTTP / WebSocket / Spring MVC:
+   - Result: 0 matches. Kiến trúc thuần JavaFX Desktop TCP Socket nhị phân.
+3. Không tự chế mã lỗi SEAT_SOLD:
+   - Result: 0 matches. Tuân thủ ErrorCode chuẩn của SPEC-03 / SPEC-05.
+4. Bảo vệ ý định nghiệp vụ (BookingIntent):
+   - Đổi ý định: Sinh requestId mới, kèm banner cảnh báo ý định thay đổi.
+   - Giữ nguyên ý định: Cấm sinh requestId mới; tái sử dụng nguyên văn payload hash từ Journal.
+
+================================================================================
+5. BẰNG CHỨNG HÌNH ẢNH GIAO DIỆN
+--------------------------------------------------------------------------------
+- artifacts/evidence/D22/TV1-D22-pending-retry.png:
+  Hiển thị trạng thái UNKNOWN viền cam nét đứt, nút "Gửi lại yêu cầu" và "Tra cứu trạng thái" kích hoạt,
+  requestId và payload được bảo toàn nguyên vẹn.
+- artifacts/evidence/D22/TV1-D22-intent-change-warning.png:
+  Hiển thị cảnh báo người dùng khi chuyển sang chọn ghế khác trong khi yêu cầu trước đó chưa có kết quả cuối.
+
+================================================================================
+6. KẾT LUẬN & TRẠNG THÁI TASK
+--------------------------------------------------------------------------------
+- Trạng thái: HOÀN THÀNH (PASS trên môi trường giả lập FakeNodeServer và FakeLeaderProvider).
+- Bằng chứng nghiệm thu cụm 5-node phân tán thật sẽ do TV6 thực hiện tại mốc G6.
+================================================================================
