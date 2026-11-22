@@ -1,0 +1,180 @@
+TV5-D22 validation evidence
+===========================
+
+Task: TV5-D22 Phân vùng mạng 3–2 (Raft Election + Recovery — 3–2 Network Partition Election & Safety over TestNetworkFilter + FakeNetwork)
+Date: 2026-11-22
+Scope: backend-node election package; 5-peer cluster over FakeNetwork integrated with TestNetworkFilter (TV3-D21); simulated 3–2 network partition without killing processes; leader in 2/5 minority partition prohibited from committing writes; no BOOK_CONFIRMED produced in minority; candidate in minority cannot gather quorum; majority 3/5 partition triggers election timeout, elects new leader in higher term, commits booking writes (reaches quorum 3/5); follower rejection with leaderHint; business rule validation (SEAT_ALREADY_BOOKED); network healing; immediate step-down of deposed leader upon receiving heartbeat/AppendEntries; uncommitted ghost writes overwritten; full cluster log and state machine convergence across all 5 nodes; follower redirection after heal; direct TestNetworkFilter telemetry & metrics verification (12 directed links blocked, drop counts); selective message dropping (drop only REQUEST_VOTE); asymmetric partition (isolated node with 4-node quorum); successive alternating partitions; durable term/vote storage persistence invariants.
+
+Deliverables:
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/NetworkPartitionElectionTest.java (comprehensive 16-scenario partition suite)
+- artifacts/evidence/D22/TV5-D22-result.log (this evidence file)
+- docs/implementation/TV5-D22-notes.md (detailed architectural and implementation documentation)
+
+Dependencies & Integration:
+- TV3-D21 TestNetworkFilter: In-memory network partition, link blocking, node isolation, and selective message dropping filter.
+- TV5-D21 FakeNetwork & Failover: Deterministic cluster harness without live TCP sockets or external container dependencies.
+- Booking fake interface: BookingService, BookingStateMachine, BookingCommand, ApplyResult, BookingRequestHandler.NotLeaderException.
+- Election / Core contracts: RaftElectionService, PersistentElectionState, CandidateElection, LeadershipGuard, WriteAvailabilityPolicy, ReplicationTracker, CommitAdvancer.
+- Độc lập hoàn toàn, không chờ TV6-D22 harness (integration-tests/PartitionHarness.java); kiểm thử phân vùng mạng vật lý trên 5 laptop diễn tập tại Gate G6.
+- Fake network tests đạt PASS 100% (16/16 test methods).
+
+Implemented & Verified Rules:
+1. Initial Cluster Election & First Booking:
+   - Cụm 5 voter ("node-1".."node-5") bầu node-1 làm Leader ở term 1 với đa số 3/5 phiếu.
+   - Storage ghi nhận term=1, votedFor="node-1" trên các node tham gia bầu cử.
+   - Lệnh BOOK qua fake interface của Leader thành công (CONFIRMED, ticketId sinh hợp lệ, ghế G01 BOOKED).
+   - Replicate và commitIndex đồng bộ sang các follower (commitIndex=1).
+2. Minority Partition Write Safety (2/5):
+   - Phân vùng 3–2 qua TestNetworkFilter: A={node-1, node-2} vs B={node-3, node-4, node-5}. Tiến trình vẫn sống (không kill process).
+   - Leader cũ node-1 ở phía thiểu số 2/5 nhận lệnh BOOK ghế G02 từ client.
+   - Node-1 sao chép: RPC sang node-2 thành công, RPC sang node-3, node-4, node-5 bị TestNetworkFilter chặn và drop.
+   - MatchIndex acks chỉ đạt 2/5 (thiếu quorum 3/5).
+   - commitIndex trên node-1 GIỮ NGUYÊN (1), future lệnh ghi KHÔNG hoàn thành, KHÔNG sinh sự kiện BOOK_CONFIRMED.
+   - StateMachine trên node-1 vẫn ghi nhận ghế G02 là AVAILABLE.
+3. Minority Partition Candidate Quorum Denial (2/5):
+   - Follower node-2 ở phía thiểu số timeout và phát động bầu cử term 2.
+   - Yêu cầu vote gửi sang node-3, node-4, node-5 bị TestNetworkFilter chặn.
+   - Node-2 chỉ nhận được tối đa 2/5 phiếu (self-vote + node-1) -> KHÔNG THỂ đắc cử, giữ nguyên vai trò CANDIDATE.
+   - Phía thiểu số 2/5 có 0 Leader.
+4. Majority Partition Leader Election (3/5):
+   - Node-3 ở phía đa số B phát hiện mất heartbeat, kích hoạt election timeout và chuyển sang CANDIDATE ở term 2.
+   - Node-3 xin phiếu: bản tin sang {node-1, node-2} bị TestNetworkFilter drop; bản tin tới {node-4, node-5} được chuyển giao.
+   - Nhận đủ 3/5 phiếu (node-3 + node-4 + node-5) -> Đắc cử LEADER mới ở term 2.
+   - Storage bền vững: node-3, node-4, node-5 ghi nhận term=2, votedFor="node-3".
+5. Majority Partition Write Commit (3/5):
+   - Client gửi lệnh BOOK ghế G02 cho Dave tới Leader mới node-3.
+   - Node-3 append log tại index 2 (term 2), sao chép tới node-4 và node-5.
+   - Đạt commit quorum (3/5 matchIndex >= 2), commitIndex tiến lên 2, StateMachine apply trả CONFIRMED kèm ticketId.
+   - Heartbeat tiếp theo đồng bộ commitIndex=2 sang node-4 và node-5, ghế G02 BOOKED trên toàn phía đa số.
+6. Follower Rejection with LeaderHint:
+   - Client gửi lệnh BOOK vào Follower node-4 ở phía đa số -> Bị từ chối với NotLeaderException kèm leaderHint="node-3".
+   - Client chuyển tiếp theo leaderHint tới node-3 và hoàn tất đặt vé.
+7. Business Rule Consistency across Partitions:
+   - Khách hàng cố đặt lại ghế G01 (đã có Alice đặt ở term 1) trên Leader mới node-3 -> Trả về REJECTED với reasonCode="SEAT_ALREADY_BOOKED".
+   - Quyền sở hữu ghế G01 không bị xâm phạm.
+8. Network Heal & Deposed Leader Step-Down:
+   - Hàn gắn mạng qua TestNetworkFilter.heal().
+   - Leader mới node-3 (term 2) phát heartbeat toàn cụm tới node-1 và node-2.
+   - Leader cũ node-1 thấy term 2 > term 1 -> Ngay lập tức giáng chức xuống FOLLOWER, cập nhật currentTerm=2, leaderId="node-3".
+   - Cụm hội tụ về đúng 1 Leader duy nhất (node-3).
+9. Ghost Write Overwriting upon Heal:
+   - Entry mồ côi term 1 tại index 2 trên node-1 bị AppendEntries từ node-3 ghi đè bằng entry term 2 (Dave).
+   - commitIndex trên node-1 tiến lên 2, StateMachine apply vé của Dave.
+   - Lệnh ghi mồ côi dở dang không bao giờ hoàn thành với CONFIRMED.
+10. Full Cluster Log & State Machine Convergence:
+    - Toàn bộ 5 node (node-1..node-5) đạt cùng currentTerm=2, commitIndex=2, lastApplied=2, lastLogIndex=2.
+    - Lịch sử log tại index 1 và index 2 hoàn toàn trùng khớp trên toàn bộ 5 node.
+    - Snapshot trạng thái ghế trên 5 node giống hệt nhau: G01 BOOKED (Alice), G02 BOOKED (Dave), các ghế còn lại AVAILABLE.
+11. Follower Redirection on Recovered Minority Nodes:
+    - Client gửi yêu cầu vào node-1 hoặc node-2 sau khi hàn gắn -> Bị từ chối kèm leaderHint="node-3".
+    - Gửi tới node-3 -> Thành công.
+12. TestNetworkFilter Telemetry & Topology Verification:
+    - Chặn chính xác 12 directed links giữa 2 phân vùng (2 node * 3 node * 2 chiều).
+    - Ghi nhận chính xác drop count xuyên phân vùng.
+    - Sau heal, blockedLinks được xóa sạch (0 links) và delivered count tiếp tục tăng.
+13. Selective Message Dropping (Drop Only REQUEST_VOTE):
+    - Đặt rule dropMessageType(REQUEST_VOTE) trong TestNetworkFilter.
+    - AppendEntries / heartbeats vẫn lưu thông; bầu cử bị chặn hoàn toàn.
+14. Asymmetric Partition Quorum Safety:
+    - Cô lập node-5 qua TestNetworkFilter.isolate("node-5"); 4 node còn lại duy trì quorum 3/5 hoạt động bình thường.
+    - Tái hòa nhập qua deisolate("node-5"), node-5 bắt kịp log.
+15. Successive Partitions with Alternating Roles:
+    - Phân vùng 3–2 chu kỳ 1 -> bầu node-3 (term 2) -> commit -> heal.
+    - Phân vùng 3–2 chu kỳ 2 ({node-3, node-4} vs {node-1, node-2, node-5}) -> leader cũ node-3 rơi vào thiểu số, đa số bầu node-1 (term 3) -> commit -> heal.
+    - Không chia não, không mất nhất quán qua nhiều chu kỳ phân vùng liên tiếp.
+16. Durable Persistence Invariants:
+    - RaftStorage đảm bảo tính đơn điệu của Term (chặn thoái lui term) và Vote Safety (chặn bầu 2 lần trong 1 term).
+
+Environment:
+- OS: Linux 7.3.3-300.fc45.x86_64
+- Java: OpenJDK 25.0.4.1
+- Maven: 3.9.11
+
+--- Targeted TV5-D22 Suite (NetworkPartitionElectionTest) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="NetworkPartitionElectionTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.380 s -- in vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.443 s]
+[INFO] backend-node ....................................... SUCCESS [  0.858 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+
+Test Methods (16):
+1. initialClusterElection_electsNode1AtTerm1_andBooksFirstTicket: PASS
+2. minorityPartition_isolatedLeaderCannotCommitWrites_producesNoConfirmedBookings: PASS
+3. minorityPartition_candidateCannotWinElection_withoutQuorum: PASS
+4. majorityPartition_electsNewLeaderInHigherTerm_withThreeVotes: PASS
+5. majorityPartition_commitsWritesSuccessfully_whilePartitioned: PASS
+6. majorityPartition_followerRejectsBooking_withLeaderHint: PASS
+7. businessRuleValidation_majorityLeaderRejectsDoubleBooking: PASS
+8. networkHeal_oldLeaderReceivesNewLeaderHeartbeat_stepsDownImmediately: PASS
+9. networkHeal_uncommittedGhostWritesOnOldLeader_safelyOverwritten: PASS
+10. networkHeal_fullClusterConvergenceAcrossAllFiveNodes: PASS
+11. followerRedirectionAcrossPartitionsAfterHeal: PASS
+12. testNetworkFilter_metricsAndDropVerification: PASS
+13. selectiveDropRule_withCustomPredicate_blocksOnlyRequestVote: PASS
+14. asymmetricPartition_isolatedNode_fourNodeQuorumRemainsFunctional: PASS
+15. successivePartitions_alternatingMinorityAndMajority: PASS
+16. durablePersistenceAcrossPartitions_termMonotonicityAndVoteSafety: PASS
+
+--- Combined TV5 Fake Network & Quorum Suites (D18 - D22) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="NetworkPartitionElectionTest,LeaderFailoverTest,RaftElectionServiceTest,MinorityWriteSafetyTest,WriteAvailabilityPolicyTest,RaftElectionFivePeerFakeNetworkTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.360 s -- in vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Running vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Running vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in vn.nhom6.railway.raft.election.MinorityWriteSafetyTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in vn.nhom6.railway.raft.election.RaftElectionFivePeerFakeNetworkTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Running vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.raft.election.WriteAvailabilityPolicyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 66, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.447 s]
+[INFO] backend-node ....................................... SUCCESS [  0.985 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+
+--- Full Election Package Regression Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Results:
+[WARNING] Tests run: 288, Failures: 0, Errors: 0, Skipped: 1
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.472 s]
+[INFO] backend-node ....................................... SUCCESS [  4.485 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
