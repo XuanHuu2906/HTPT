@@ -5,7 +5,6 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import vn.nhom6.railway.client.ClientFactory;
-import vn.nhom6.railway.client.network.BookTicketResponseDto;
 import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.storage.PendingEntry;
