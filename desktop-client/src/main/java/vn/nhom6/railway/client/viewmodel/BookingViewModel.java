@@ -143,6 +143,7 @@ public class BookingViewModel {
     private final StringProperty lateArrivalNote = new SimpleStringProperty("");
     private final IntegerProperty checkCount = new SimpleIntegerProperty(0);
     private final StringProperty sentTimestamp = new SimpleStringProperty("");
+    private final StringProperty intentChangeWarning = new SimpleStringProperty("");
 
     public BookingViewModel(BookingClient bookingClient) {
         this(bookingClient, null, null, null, resolveDefaultTimeoutMs());
@@ -154,7 +155,13 @@ public class BookingViewModel {
                             ScheduledExecutorService scheduler,
                             int submitTimeoutMs) {
         this.bookingClient = Objects.requireNonNull(bookingClient, "BookingClient không được null");
-        this.journal = journal;
+        if (journal != null) {
+            this.journal = journal;
+        } else if (bookingClient instanceof JournalingBookingClient jbc) {
+            this.journal = jbc.getJournal();
+        } else {
+            this.journal = null;
+        }
         this.seatsRefreshService = seatsRefreshService;
         this.scheduler = scheduler;
         this.submitTimeoutMs = (submitTimeoutMs > 0) ? submitTimeoutMs : DEFAULT_SUBMIT_TIMEOUT_MS;
@@ -243,7 +250,13 @@ public class BookingViewModel {
     }
 
     public PersistentPendingJournal getJournal() {
-        return (journal != null) ? journal : ClientFactory.getJournal();
+        if (journal != null) {
+            return journal;
+        }
+        if (bookingClient instanceof JournalingBookingClient jbc) {
+            return jbc.getJournal();
+        }
+        return null;
     }
 
     public void setSeatsRefreshService(SeatsRefreshService seatsRefreshService) {
@@ -296,6 +309,66 @@ public class BookingViewModel {
             CompletableFuture<BookTicketResponseDto> rejected = new CompletableFuture<>();
             rejected.completeExceptionally(new IllegalStateException("Hệ thống đang chờ Node xác nhận yêu cầu trước đó!"));
             return rejected;
+        }
+
+        PersistentPendingJournal j = getJournal();
+        // Client-side fail-fast: Kiểm tra xung đột requestId (cùng requestId nhưng khác payload) - TASK TV1-D22
+        if (j != null && request.getRequestId() != null && !request.getRequestId().isBlank()) {
+            Optional<PendingEntry> existingOpt = j.get(request.getRequestId());
+            if (existingOpt.isPresent()) {
+                PendingEntry existing = existingOpt.get();
+                String newPayload = String.format("{\"requestId\":\"%s\",\"tripId\":\"%s\",\"seatId\":\"%s\",\"passengerName\":\"%s\"}",
+                        request.getRequestId(),
+                        request.getTripId() != null ? request.getTripId() : "SE-001",
+                        request.getSeatId(),
+                        request.getPassengerName() != null ? request.getPassengerName() : "");
+                String newHash = PendingEntry.computePayloadHash(newPayload);
+                if (!Objects.equals(existing.getPayloadHash(), newHash)) {
+                    isSubmittingAtomic.set(false);
+                    throw new IllegalArgumentException("Xung đột requestId: Không được phép gửi cùng requestId với payload khác (REQUEST_ID_CONFLICT)!");
+                }
+            }
+        }
+
+        // Kiểm tra bất biến ý định với danh sách SENT_UNRESOLVED - TASK TV1-D22
+        vn.nhom6.railway.client.model.BookingIntent newIntent = vn.nhom6.railway.client.model.BookingIntent.fromBookRequest(request);
+        if (j != null) {
+            java.util.List<PendingEntry> unresolved = j.loadPending().stream()
+                    .filter(p -> p.getState() == PendingState.SENT_UNRESOLVED || p.getState() == PendingState.PREPARED)
+                    .toList();
+            for (PendingEntry pEntry : unresolved) {
+                // Bỏ qua nếu chính là request này đang được retry
+                if (pEntry.getRequestId().equals(request.getRequestId())) {
+                    continue;
+                }
+                vn.nhom6.railway.client.model.BookingIntent pIntent = vn.nhom6.railway.client.model.BookingIntent.fromJson(pEntry.getPayload());
+                if (pIntent != null) {
+                    if (newIntent.isSameIntent(pIntent)) {
+                        isSubmittingAtomic.set(false);
+                        throw new IllegalStateException("Yêu cầu này đang chờ kết quả xác nhận. Vui lòng sử dụng chức năng Tra cứu hoặc Gửi lại!");
+                    }
+                    if (newIntent.isSameSeat(pIntent)) {
+                        isSubmittingAtomic.set(false);
+                        throw new IllegalStateException("Ghế " + request.getSeatId() + " đang có yêu cầu chờ kết quả. Không thể đặt ghế này với ý định mới!");
+                    }
+                }
+            }
+
+            // Nếu có pending khác ghế chưa giải quyết xong, cảnh báo người dùng khi đổi ý định
+            Optional<PendingEntry> anyOtherUnresolved = unresolved.stream()
+                    .filter(p -> !p.getRequestId().equals(request.getRequestId()))
+                    .findFirst();
+            if (anyOtherUnresolved.isPresent()) {
+                PendingEntry pEntry = anyOtherUnresolved.get();
+                vn.nhom6.railway.client.model.BookingIntent pIntent = vn.nhom6.railway.client.model.BookingIntent.fromJson(pEntry.getPayload());
+                String prevSeat = (pIntent != null && pIntent.seatId() != null) ? pIntent.seatId() : "khác";
+                runOnUi(() -> intentChangeWarning.set(
+                        "Cảnh báo: Yêu cầu trước đó (requestId: " + pEntry.getRequestId() + ") cho ghế " + prevSeat
+                                + " chưa có kết quả cuối. Đang tạo requestId mới cho ý định mới."
+                ));
+            } else {
+                runOnUi(() -> intentChangeWarning.set(""));
+            }
         }
 
         final long gen = ++currentGeneration;
@@ -738,9 +811,14 @@ public class BookingViewModel {
                         triggerSeatsRefresh();
                     }
                     markJournalResolved(requestId, "REJECTED");
+                } else if ("PENDING".equals(state)) {
+                    // Theo SPEC-03 / TV1-D22: Node đã nhận yêu cầu, đang xử lý nhưng chưa commit/apply
+                    // Giữ nguyên UiState.UNKNOWN, KHÔNG chuyển sang CONFIRMED, không coi là thành công
+                    uiState.set(UiState.UNKNOWN);
+                    message.set("Node đã nhận, đang chờ xử lý... Chưa có kết quả cuối (PENDING) cho requestId=" + requestId
+                            + ". (Lần kiểm tra: " + checkCount.get() + ")");
                 } else {
-                    // PENDING hoặc UNKNOWN từ Node (chưa ghi nhận hoặc đang xử lý)
-                    // Theo SPEC-03: giữ nguyên UiState.UNKNOWN, cho phép gửi lại hoặc tra cứu tiếp
+                    // UNKNOWN từ Node (chưa ghi nhận hoặc không tìm thấy)
                     uiState.set(UiState.UNKNOWN);
                     message.set("Node chưa ghi nhận kết quả cuối cho requestId=" + requestId + " (trạng thái: " + state
                             + "). Bạn có thể tiếp tục tra cứu hoặc bấm 'Gửi lại'. (Lần kiểm tra: " + checkCount.get() + ")");
@@ -965,5 +1043,13 @@ public class BookingViewModel {
 
     public BookingClient getBookingClient() {
         return bookingClient;
+    }
+
+    public String getIntentChangeWarning() {
+        return intentChangeWarning.get();
+    }
+
+    public ReadOnlyStringProperty intentChangeWarningProperty() {
+        return intentChangeWarning;
     }
 }

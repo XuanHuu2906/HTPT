@@ -196,7 +196,7 @@ class BookingViewModelTest {
 
     @Test
     @DisplayName("Chứng minh thay nguồn dữ liệu qua interface: Tiêm stub AlwaysFailBookingClient mà không cần sửa Controller hay FXML")
-    void testSwapDataSourceWithStubClient() {
+    void testSwapDataSourceWithStubClient() throws Exception {
         vn.nhom6.railway.client.network.BookingClient alwaysFailClient = new vn.nhom6.railway.client.network.BookingClient() {
             @Override
             public CompletableFuture<vn.nhom6.railway.client.network.GetSeatsResponseDto> getSeats(vn.nhom6.railway.protocol.dto.GetSeatsRequestDto request) {
@@ -225,19 +225,27 @@ class BookingViewModelTest {
             }
         };
 
-        vn.nhom6.railway.client.ClientFactory.setBookingClient(alwaysFailClient);
-        BookingViewModel vm = vn.nhom6.railway.client.ClientFactory.getBookingViewModel();
-        vm.setSyncMode(true);
-
-        CompletableFuture<BookTicketResponseDto> future = vm.book("G05", "Khách Test");
+        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("test-journal-swap-");
+        vn.nhom6.railway.client.storage.PersistentPendingJournal tempJournal = new vn.nhom6.railway.client.storage.PersistentPendingJournal(tempDir);
+        vn.nhom6.railway.client.storage.PersistentPendingJournal oldJournal = vn.nhom6.railway.client.ClientFactory.getJournal();
+        vn.nhom6.railway.client.ClientFactory.setJournal(tempJournal);
         try {
-            future.get(2, TimeUnit.SECONDS);
-        } catch (Exception ignored) {}
+            vn.nhom6.railway.client.ClientFactory.setBookingClient(alwaysFailClient);
+            BookingViewModel vm = vn.nhom6.railway.client.ClientFactory.getBookingViewModel();
+            vm.setSyncMode(true);
 
-        assertEquals(BookingViewModel.UiState.DISCONNECTED, vm.getUiState());
-        assertTrue(vm.getMessage().contains("Mất kết nối"));
+            CompletableFuture<BookTicketResponseDto> future = vm.book("G05", "Khách Test");
+            try {
+                future.get(2, TimeUnit.SECONDS);
+            } catch (Exception ignored) {}
 
-        // Phục hồi lại mock client mặc định
-        vn.nhom6.railway.client.ClientFactory.setBookingClient(mockClient);
+            assertEquals(BookingViewModel.UiState.DISCONNECTED, vm.getUiState());
+            assertTrue(vm.getMessage().contains("Mất kết nối"));
+        } finally {
+            // Phục hồi lại mock client và journal mặc định
+            vn.nhom6.railway.client.ClientFactory.setBookingClient(mockClient);
+            vn.nhom6.railway.client.ClientFactory.setJournal(oldJournal);
+            tempJournal.close();
+        }
     }
 }
