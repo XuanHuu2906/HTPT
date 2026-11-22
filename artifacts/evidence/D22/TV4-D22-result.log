@@ -1,0 +1,48 @@
+TV4-D22 Result Log
+Date: 2026-11-22
+Task: Restart replay / LogReplayCoordinator
+Environment: Docker Desktop; image maven:3.9-eclipse-temurin-25; Linux container; mounted D:\HOCTAP\HTPT at /workspace
+Command: docker run --rm -v 'D:\HOCTAP\HTPT:/workspace' -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+Base SHA after merge: 12e618e
+Code SHA: e3f6c5d
+
+Honesty boundary:
+- FakeRaftStorage, in-memory BookingRepository, real RaftStateMachineApplier and FakeCommandApplier are used.
+- No real process/DB/container kill, no TCP socket, no real thread/sleep, no 5-node LAN/G6 failover.
+- PostgreSQL JDBC D22 test is present but SKIPPED unless RAILWAY_TEST_JDBC_URL, RAILWAY_TEST_DB_USER and RAILWAY_TEST_DB_PASSWORD are set.
+- The three RAILWAY_TEST_* variables were not set in this run.
+
+Targeted class result:
+- LogReplayCoordinatorTest: 12 tests, 0 failures, 0 errors, 0 skipped
+- Key crash points: k=0..N, plus crash after sink success before markApplied for k<N, against seed list 1,2,3,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71
+- Clean restart/committed floor/tail/no-tail-apply/fail-close/restoreAligned/transient-failure and idempotency assertions PASS.
+
+Crash point table:
+- k=0..N, Raft and repository in agreement: PASS
+- repository only ahead by index k+1: PASS
+- durable > lastLogIndex: FAILED_CLOSED
+- Raft lastApplied > durable checkpoint: FAILED_CLOSED; restoreAligned required
+- log empty (GENESIS): NOTHING_TO_REPLAY
+- transient checkpoint/applier failure: retryable path
+
+Redelivery and listener result:
+- When a redelivery is for an index already applied in the durable repository, JdbcCommittedCommandApplier returns the stored ApplyResult and does not call the result listener again.
+- The in-memory test confirms no duplicate business event for redelivery.
+- FakeCommandApplier is the sink used for crash scenarios; the production decoder and real CommittedCommandApplier/BookingStateMachine are also exercised by the in-memory fixture.
+
+JDBC:
+- LogReplayCoordinatorJdbcTest: SKIPPED (3 JDBC gate variables absent), 0 failures, 0 errors.
+- PostgreSQL live behavior is not claimed.
+
+Full clean verify:
+- shared: 38 tests, 0 failures, 0 errors, 0 skipped
+- backend-node: 1200 tests, 0 failures, 0 errors, 106 skipped
+- desktop-client: 256 tests, 0 failures, 0 errors, 16 skipped
+- desktop-monitor: 0 tests
+- integration-tests: 24 tests, 0 failures, 0 errors, 3 skipped
+- Reactor Summary: all modules SUCCESS
+- BUILD SUCCESS
+
+Maven D22 targeted command:
+- docker run --rm -v 'D:\HOCTAP\HTPT:/workspace' -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am '-Dtest=LogReplayCoordinatorTest,LogReplayCoordinatorJdbcTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+- Result: 12 D22 tests executed in LogReplayCoordinatorTest, 0 failures; JDBC class skipped through JUnit assumptions.
