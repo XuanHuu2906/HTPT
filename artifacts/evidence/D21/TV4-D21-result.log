@@ -1,0 +1,115 @@
+TV4-D21 Follower Catch-up Evidence
+
+Task: Catch-up Follower bị mất log
+Owner: TV4
+Base branch: nguyen
+Base SHA: 479d6b43fec7051a07e878392a58e59622729aaa
+origin/main SHA checked: 479d6b43fec7051a07e878392a58e59622729aaa
+Code SHA: b379094
+Test file: backend-node/src/test/java/vn/nhom6/railway/raft/replication/FollowerCatchupTest.java
+
+Environment
+- OS: Windows
+- Docker Desktop: 29.8.0 / Engine 29.8.0
+- Maven image: maven:3.9-eclipse-temurin-25
+- PostgreSQL image: postgres:16-alpine
+- PostgreSQL container: railway-postgres-1
+- Docker network: railway-dev-network
+- PostgreSQL health: healthy
+- Test transport: FakeNetwork
+- Test storage: FakeRaftStorage plus real PostgreSQL JDBC tests
+- Real TCP/Docker 5-Node cluster: NOT USED
+
+Commands
+Targeted:
+docker run --rm --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am '-Dtest=FollowerCatchupTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+
+PostgreSQL full:
+docker run --rm --network railway-dev-network -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='<REDACTED>' --mount type=bind,source="D:\HOCTAP\HTPT",target=/work -w /work maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+
+Targeted result
+[INFO] Running vn.nhom6.railway.raft.replication.FollowerCatchupTest
+D21-12 seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=25 followerLog=0 rpc=28
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.28 s -- in vn.nhom6.railway.raft.replication.FollowerCatchupTest
+[INFO] BUILD SUCCESS
+
+PostgreSQL JDBC result
+[INFO] Running vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+Raft JDBC/applier PostgreSQL tests ran 10/10 without skip.
+
+Full reactor result
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.028 s -- in vn.nhom6.railway.raft.election.ElectionTest
+[INFO] Running vn.nhom6.railway.raft.replication.FollowerCatchupTest
+D21-12 seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=25 followerLog=0 rpc=28
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.28 s -- in vn.nhom6.railway.raft.replication.FollowerCatchupTest
+[INFO] Running vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 243, Failures: 0, Errors: 0, Skipped: 15
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 3
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] shared ........................ SUCCESS
+[INFO] backend-node .................. SUCCESS
+[INFO] desktop-client ................ SUCCESS
+[INFO] desktop-monitor ............... SUCCESS
+[INFO] integration-tests ............. SUCCESS
+[INFO] BUILD SUCCESS
+
+Full-suite totals
+- 1425 tests
+- 0 failures
+- 0 errors
+- 18 skipped
+- 1407 tests executed
+- 10 real PostgreSQL Raft JDBC/applier tests executed
+- Skips remain environment/evidence-gated: UI smoke/evidence flags, real cluster profile, Docker real test flag, G5/G6 cluster and single-node environment gates.
+- Baseline main 479d6b4 was not run as a separate baseline in this pass.
+
+13 scenarios
+1. stoppedFollowerCatchesUpMissingTail
+2. largeCatchupIsBounded
+3. threeOfFiveCommitsWithTwoStopped
+4. twoOfFiveDoesNotCommitThenOneRejoinCommits
+5. restartedFollowerRestoresDurableState
+6. restartDuringCatchupDoesNotDuplicate
+7. divergentUncommittedTailPreservesCommittedPrefix
+8. committedConflictFailsClosed
+9. randomFaultRepliesNeverBecomeAck
+10. higherTermLeaderReplacesOldSuffix
+11. oldTermLeaderAppendIsRejected
+12. lostDiskLogIsCharacterized
+13. finalRejoinConvergesAllNodes
+
+Fix2 assertions
+- Test 2: 200 entries after blocking node-2; rejoin observed via FakeNetwork. Every node-2 request batch is <= real RaftReplicationService.batchMax, maxActive<=1, matchIndex equals Leader lastLogIndex, log and commit converge, RPC count bounded.
+- Test 8: creates an entry conflict at a follower's committed index and sends it through AppendEntries wire DTO. Conflicting write throws fail-closed, log/commit/original entry stay unchanged, Leader matchIndex stays unchanged, and later AppendEntries is refused.
+- Test 9: 20 fixed seeds use Random(seed) drop/delay; timeout, invalid matchIndex, PEER_ERROR and transport failure synthetic replies do not advance matchIndex; network heals and all peers catch up to Leader lastLogIndex.
+- Test 11: follower is persisted at a higher term, then a lower-term old-Leader request with a new entry and large leaderCommit is rejected success=false; log, commit, apply and vote stay unchanged, and the higher-term response steps the old Leader down without adding a successful match.
+- Test 13: node-2 and node-3 are stopped while 30 entries are issued, then all rejoin. Each Node must have the Leader commitIndex/lastLogIndex/log, lastApplied==commitIndex, repo checkpoint=commitIndex and identical in-memory seat snapshot.
+
+Scenario 12 - actual observation
+- seed=53
+- before disk loss: matchIndex[node-2]=24, commitIndex=24
+- after follower storage reset: follower lastLogIndex=0
+- final: matchIndex[node-2]=24, Leader commitIndex=24, nextIndex[node-2]=25, RPC count=28 over 200 rounds
+- follower remains non-convergent/stuck.
+- Leader commit/match did not decrease; majority prefix remained; no crash/unbounded loop.
+
+Docker real catch-up
+- NOT RUN
+- origin/main 479d6b4 has no TV6-D21 real fault tool or 5-process D21 runner in scripts/, docker/, integration-tests/ or docs/.
+
+Removed test weaknesses
+- FollowerCatchupTest contains no advanceCommitIndex call.
+- Test 2 observes real request batches and batchMax.
+- Test 8 uses a real committed conflict.
+- Test 9 has exact bad-reply and healed convergence assertions.
+- Test 11 has stale-term wire/follower/Leader step-down assertions.
+- Test 13 removes the leader-commit tautology and compares 5-node logs/state.
+
+Not completed / handoff
+- TV6: real Docker/LAN D21 fault tool and 5-Node evidence.
+- TV4/TV5: lost-disk re-seed versus node replacement policy.
+- Runtime wiring remains outside this test-only change.
