@@ -878,21 +878,84 @@ public class BookingViewModel {
     }
 
     public CompletableFuture<CancelTicketResponseDto> cancel(CancelTicketRequestDto request) {
-        if (busy.get()) {
+        if (request == null) {
             CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
-            rejected.completeExceptionally(new IllegalStateException("Hệ thống đang bận!"));
+            rejected.completeExceptionally(new IllegalArgumentException("request không được null"));
             return rejected;
+        }
+
+        if (request.getTicketId() == null || request.getTicketId().isBlank()) {
+            CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
+            rejected.completeExceptionally(new IllegalArgumentException("ticketId không được để trống khi hủy vé!"));
+            return rejected;
+        }
+
+        // Chống bấm trùng bằng AtomicBoolean (TASK TV1-D17 / TV1-D23)
+        if (!isSubmittingAtomic.compareAndSet(false, true)) {
+            CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
+            rejected.completeExceptionally(new IllegalStateException("Hệ thống đang chờ Node xác nhận yêu cầu trước đó!"));
+            return rejected;
+        }
+
+        PersistentPendingJournal j = getJournal();
+        if (j != null) {
+            java.util.List<PendingEntry> unresolved = j.loadPending().stream()
+                    .filter(p -> p.getState() == PendingState.SENT_UNRESOLVED || p.getState() == PendingState.PREPARED)
+                    .toList();
+
+            for (PendingEntry pEntry : unresolved) {
+                // Không hủy vé khi yêu cầu BOOK sinh ra vé đó còn UNKNOWN/chưa có ticketId
+                if ("BOOK_TICKET".equals(pEntry.getCommandType())) {
+                    if (pEntry.getPayload() != null && pEntry.getPayload().contains(request.getTicketId())) {
+                        isSubmittingAtomic.set(false);
+                        CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
+                        rejected.completeExceptionally(new IllegalStateException(
+                                "Không thể hủy vé: Yêu cầu đặt vé ban đầu chưa có kết quả cuối. Vui lòng tra cứu yêu cầu đặt vé trước!"));
+                        return rejected;
+                    }
+                }
+
+                // Không sinh requestId mới khi cùng ý định hủy vé đang UNKNOWN
+                if ("CANCEL_TICKET".equals(pEntry.getCommandType())) {
+                    if (pEntry.getRequestId().equals(request.getRequestId())) {
+                        continue;
+                    }
+                    if (pEntry.getPayload() != null && pEntry.getPayload().contains(request.getTicketId())) {
+                        isSubmittingAtomic.set(false);
+                        CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
+                        rejected.completeExceptionally(new IllegalStateException(
+                                "Yêu cầu hủy vé này đang chờ kết quả xác nhận. Vui lòng sử dụng chức năng Tra cứu hoặc Gửi lại!"));
+                        return rejected;
+                    }
+                }
+            }
+
+            // Kiểm tra xung đột requestId (cùng requestId nhưng khác payload)
+            if (request.getRequestId() != null && !request.getRequestId().isBlank()) {
+                Optional<PendingEntry> existingOpt = j.get(request.getRequestId());
+                if (existingOpt.isPresent()) {
+                    PendingEntry existing = existingOpt.get();
+                    String newPayload = String.format("{\"requestId\":\"%s\",\"ticketId\":\"%s\"}",
+                            request.getRequestId(), request.getTicketId());
+                    String newHash = PendingEntry.computePayloadHash(newPayload);
+                    if (!Objects.equals(existing.getPayloadHash(), newHash)) {
+                        isSubmittingAtomic.set(false);
+                        throw new IllegalArgumentException("Xung đột requestId: Không được phép gửi cùng requestId với payload khác (REQUEST_ID_CONFLICT)!");
+                    }
+                }
+            }
         }
 
         runOnUi(() -> {
             busy.set(true);
-            uiState.set(UiState.LOADING);
-            message.set("Đang gửi yêu cầu hủy vé " + request.getTicketId() + "... [MOCK]");
+            uiState.set(UiState.SUBMITTING);
+            message.set("Đang gửi yêu cầu hủy vé " + request.getTicketId() + "...");
         });
 
         CompletableFuture<CancelTicketResponseDto> completionFuture = new CompletableFuture<>();
 
         bookingClient.cancel(request).whenComplete((result, throwable) -> runOnUi(() -> {
+            isSubmittingAtomic.set(false);
             busy.set(false);
             if (throwable != null) {
                 handleException(throwable, request.getRequestId());
@@ -902,17 +965,31 @@ public class BookingViewModel {
 
             mock.set(result.isMock());
             ErrorPresentation presentation = ErrorPresentationMapper.mapCancelResponse(result);
-            message.set(presentation.message());
             errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
 
-            switch (presentation.kind()) {
-                case CONFIRMED -> uiState.set(UiState.SUCCESS);
-                case REJECTED -> uiState.set(UiState.REJECTED);
-                case UNKNOWN -> uiState.set(UiState.UNKNOWN);
-                case ERROR -> uiState.set(UiState.ERROR);
-                case DISCONNECTED -> uiState.set(UiState.DISCONNECTED);
-                case CLIENT_ERROR -> uiState.set(UiState.ERROR);
+            if (result.isConfirmed()) {
+                uiState.set(UiState.SUCCESS);
+                message.set(presentation.message());
+                triggerSeatsRefresh();
+                markJournalResolved(request.getRequestId(), "CONFIRMED");
+            } else if (result.isRejected()) {
+                uiState.set(UiState.REJECTED);
+                message.set(presentation.message());
+                markJournalResolved(request.getRequestId(), "REJECTED");
+            } else if (result.isUnknown()) {
+                uiState.set(UiState.UNKNOWN);
+                message.set("Chưa rõ kết quả hủy vé cho mã yêu cầu: " + request.getRequestId()
+                        + ". Vui lòng tra cứu hoặc bấm gửi lại.");
+                ensureJournalPending(request.getRequestId());
+            } else {
+                switch (presentation.kind()) {
+                    case ERROR, CLIENT_ERROR -> uiState.set(UiState.ERROR);
+                    case DISCONNECTED -> uiState.set(UiState.DISCONNECTED);
+                    default -> uiState.set(UiState.UNKNOWN);
+                }
+                message.set(presentation.message());
             }
+
             completionFuture.complete(result);
         }));
 

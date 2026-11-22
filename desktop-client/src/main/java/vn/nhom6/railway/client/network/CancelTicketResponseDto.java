@@ -1,5 +1,7 @@
 package vn.nhom6.railway.client.network;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
@@ -15,9 +17,16 @@ public class CancelTicketResponseDto {
     private final String leaderHint;
     private final String message;
 
-    public CancelTicketResponseDto(String requestId, String outcome, String ticketId,
-                                   String reasonCode, Long appliedLogIndex, boolean mock,
-                                   String leaderHint, String message) {
+    @JsonCreator
+    public CancelTicketResponseDto(
+            @JsonProperty("requestId") String requestId,
+            @JsonProperty("outcome") String outcome,
+            @JsonProperty("ticketId") String ticketId,
+            @JsonProperty("reasonCode") String reasonCode,
+            @JsonProperty("appliedLogIndex") Long appliedLogIndex,
+            @JsonProperty("mock") boolean mock,
+            @JsonProperty("leaderHint") String leaderHint,
+            @JsonProperty("message") String message) {
         this.requestId = requestId;
         this.outcome = outcome;
         this.ticketId = ticketId;

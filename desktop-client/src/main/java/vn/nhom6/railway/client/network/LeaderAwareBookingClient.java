@@ -718,13 +718,200 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
     }
 
     // =========================================================================
-    // CANCEL_TICKET VÀ GET_REQUEST_RESULT
+    // CANCEL_TICKET VÀ GET_REQUEST_RESULT (TASK TV1-D23)
     // =========================================================================
 
     @Override
     public CompletableFuture<CancelTicketResponseDto> cancel(CancelTicketRequestDto request) {
-        String target = (knownLeaderId.get() != null) ? knownLeaderId.get() : clusterEndpoints.getDefaultNodeId();
-        return getOrCreateClient(target).cancel(request);
+        if (request == null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("request không được null"));
+        }
+        String requestId = request.getRequestId();
+        if (requestId == null || requestId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("requestId không được null hoặc rỗng"));
+        }
+        return CompletableFuture.supplyAsync(() -> executeCancelWithRedirect(request), executor);
+    }
+
+    private CancelTicketResponseDto executeCancelWithRedirect(CancelTicketRequestDto request) {
+        long startTime = System.currentTimeMillis();
+        String requestId = request.getRequestId();
+        Set<String> visitedNodes = new LinkedHashSet<>();
+        int redirectCount = 0;
+
+        String targetNodeId = knownLeaderId.get();
+        if (targetNodeId == null || !clusterEndpoints.containsNode(targetNodeId)) {
+            if (nodeSelector != null) {
+                try {
+                    NodeEndpoint sel = nodeSelector.selectNode();
+                    targetNodeId = sel.nodeId();
+                } catch (Exception e) {
+                    targetNodeId = clusterEndpoints.getDefaultNodeId();
+                }
+            } else {
+                targetNodeId = clusterEndpoints.getDefaultNodeId();
+            }
+        }
+
+        while (true) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            if (elapsed >= redirectPolicy.totalTimeoutMs()) {
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "TOTAL_TIMEOUT_EXCEEDED", "TIMEOUT_UNKNOWN");
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "TIMEOUT_UNKNOWN",
+                        null,
+                        false,
+                        null,
+                        "Hết thời gian chờ tổng thể (" + redirectPolicy.totalTimeoutMs() + "ms) khi thực hiện chuyển hướng"
+                );
+            }
+
+            if (visitedNodes.contains(targetNodeId)) {
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "REDIRECT_LOOP_DETECTED", "TIMEOUT_UNKNOWN");
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "TIMEOUT_UNKNOWN",
+                        null,
+                        false,
+                        null,
+                        "Phát hiện vòng lặp chuyển hướng qua node " + targetNodeId
+                );
+            }
+            visitedNodes.add(targetNodeId);
+
+            if (redirectCount >= redirectPolicy.maxRedirects()) {
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "MAX_REDIRECTS_EXCEEDED", "TIMEOUT_UNKNOWN");
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "TIMEOUT_UNKNOWN",
+                        null,
+                        false,
+                        null,
+                        "Đã vượt quá số lần chuyển hướng tối đa (" + redirectPolicy.maxRedirects() + ")"
+                );
+            }
+
+            BookingClient client = getOrCreateClient(targetNodeId);
+            CancelTicketResponseDto res;
+            try {
+                long remainingMs = redirectPolicy.totalTimeoutMs() - (System.currentTimeMillis() - startTime);
+                long stepTimeout = Math.min(redirectPolicy.stepTimeoutMs(), Math.max(50, remainingMs));
+                res = client.cancel(request).get(stepTimeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException te) {
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "STEP_TIMEOUT", "TIMEOUT_UNKNOWN");
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "TIMEOUT_UNKNOWN",
+                        null,
+                        false,
+                        null,
+                        "Hết thời gian chờ tại node " + targetNodeId
+                );
+            } catch (Exception e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
+                Throwable cause = (e instanceof ExecutionException) && e.getCause() != null ? e.getCause() : e;
+                if (targetNodeId.equals(knownLeaderId.get())) {
+                    resetKnownLeader();
+                    notifySearchingLeader();
+                }
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "CONNECTION_ERROR: " + cause.getMessage(), ERROR_CONNECTION_FAILED);
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        ERROR_CONNECTION_FAILED,
+                        null,
+                        false,
+                        null,
+                        "Lỗi kết nối tới node " + targetNodeId + ": " + cause.getMessage()
+                );
+            }
+
+            if (res == null) {
+                return new CancelTicketResponseDto(requestId, "UNKNOWN", request.getTicketId(),
+                        "INTERNAL_ERROR", null, false, null, "Nhận phản hồi null từ node " + targetNodeId);
+            }
+
+            if (res.isConfirmed()) {
+                knownLeaderId.set(targetNodeId);
+                notifyLeaderDiscovered(targetNodeId, DataSource.REAL);
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "CONFIRMED_BY_LEADER", "CONFIRMED");
+                return res;
+            }
+
+            String reasonCode = res.getReasonCode();
+            if (res.isRejected()
+                    || "REQUEST_ID_CONFLICT".equalsIgnoreCase(reasonCode)
+                    || "NO_QUORUM".equalsIgnoreCase(reasonCode)) {
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, targetNodeId, redirectCount,
+                        "TERMINAL_STATUS: " + reasonCode, res.getOutcome());
+                return res;
+            }
+
+            if ("NOT_LEADER".equalsIgnoreCase(reasonCode)) {
+                String hint = res.getLeaderHint();
+                if (hint == null || hint.isBlank()) {
+                    if (targetNodeId.equals(knownLeaderId.get())) {
+                        resetKnownLeader();
+                        notifyLeaderLost(targetNodeId, "Node trả NOT_LEADER với hint rỗng");
+                    }
+                    notifySearchingLeader();
+                    logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, "NONE", redirectCount,
+                            "NOT_LEADER_HINT_NULL", ERROR_NOT_LEADER_UNRESOLVED);
+                    return new CancelTicketResponseDto(
+                            requestId,
+                            "UNKNOWN",
+                            request.getTicketId(),
+                            ERROR_NOT_LEADER_UNRESOLVED,
+                            null,
+                            false,
+                            null,
+                            "Node " + targetNodeId + " trả NOT_LEADER nhưng không kèm leaderHint"
+                    );
+                }
+
+                hint = hint.trim();
+                if (!clusterEndpoints.containsNode(hint)) {
+                    logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, hint, redirectCount,
+                            "UNTRUSTED_LEADER_HINT: " + hint, ERROR_NOT_LEADER_UNRESOLVED);
+                    return new CancelTicketResponseDto(
+                            requestId,
+                            "UNKNOWN",
+                            request.getTicketId(),
+                            ERROR_NOT_LEADER_UNRESOLVED,
+                            null,
+                            false,
+                            null,
+                            "leaderHint không tồn tại trong cluster: " + hint
+                    );
+                }
+
+                redirectCount++;
+                logStep(requestId, "N/A", "CANCEL_TICKET", targetNodeId, hint, redirectCount,
+                        "REDIRECT_TO_HINT", "REDIRECTING");
+                targetNodeId = hint;
+                continue;
+            }
+
+            return res;
+        }
     }
 
     @Override

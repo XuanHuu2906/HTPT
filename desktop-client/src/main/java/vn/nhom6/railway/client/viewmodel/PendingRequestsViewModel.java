@@ -129,7 +129,7 @@ public class PendingRequestsViewModel {
     /**
      * Gửi lại (retry) yêu cầu với cùng requestId và cùng payload nguyên văn.
      */
-    public CompletableFuture<BookTicketResponseDto> retry(PendingItem item) {
+    public CompletableFuture<?> retry(PendingItem item) {
         Objects.requireNonNull(item, "item không được null");
         if (!item.isCanRetry() || busy.get()) {
             return CompletableFuture.completedFuture(null);
@@ -138,6 +138,39 @@ public class PendingRequestsViewModel {
         item.setChecking(true);
         busy.set(true);
         statusMessage.set("Đang gửi lại yêu cầu " + item.getRequestId() + "...");
+
+        if ("CANCEL_TICKET".equals(item.getCommandType())) {
+            return journalingClient.retryCancel(item.getRequestId()).whenComplete((response, throwable) -> {
+                runOnFxThread(() -> {
+                    item.setChecking(false);
+                    busy.set(false);
+
+                    if (throwable != null) {
+                        statusMessage.set("Gửi lại hủy vé thất bại hoặc timeout: " + throwable.getMessage());
+                        journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
+                        return;
+                    }
+
+                    if (response != null) {
+                        String outcome = response.getOutcome();
+                        if ("CONFIRMED".equals(outcome)) {
+                            item.updateResolved("CONFIRMED");
+                            statusMessage.set("Gửi lại hủy vé THÀNH CÔNG (CONFIRMED) cho vé " + response.getTicketId() + "!");
+                            vn.nhom6.railway.client.SeatsRefreshService srs = ClientFactory.getSeatsRefreshService();
+                            if (srs != null) {
+                                srs.refreshNow();
+                            }
+                        } else if ("REJECTED".equals(outcome)) {
+                            item.updateResolved("REJECTED");
+                            statusMessage.set("Gửi lại hủy vé bị TỪ CHỐI (REJECTED): " + response.getReasonCode());
+                        } else {
+                            statusMessage.set("Gửi lại hủy vé chưa nhận được kết quả cuối (" + outcome + "), tiếp tục giữ CHƯA XÁC NHẬN.");
+                            journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
+                        }
+                    }
+                });
+            });
+        }
 
         return journalingClient.retry(item.getRequestId()).whenComplete((response, throwable) -> {
             runOnFxThread(() -> {
