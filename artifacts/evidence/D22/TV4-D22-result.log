@@ -36,11 +36,17 @@ JDBC:
 - PostgreSQL live behavior was exercised through the temporary schema.
 
 Full clean verify:
+- PostgreSQL-enabled command: docker run --rm --network railway-dev-network -v 'D:\HOCTAP\HTPT:/workspace' -w /workspace -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='<REDACTED>' maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
 - shared: 38 tests, 0 failures, 0 errors, 0 skipped
-- backend-node: 1200 tests, 0 failures, 0 errors, 106 skipped
+- backend-node: 1213 tests, 0 failures, 0 errors, 1 skipped (`CrashReplayTest` gate)
 - desktop-client: 256 tests, 0 failures, 0 errors, 16 skipped
 - desktop-monitor: 0 tests
 - integration-tests: 24 tests, 0 failures, 0 errors, 3 skipped
+- Raw PostgreSQL lines:
+  - [INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+  - [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+  - [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in vn.nhom6.railway.raft.replication.LogReplayCoordinatorJdbcTest
+- PostgreSQL live JDBC: 15 tests PASS (3 + 7 + 5).
 - Reactor Summary: all modules SUCCESS
 - BUILD SUCCESS
 
