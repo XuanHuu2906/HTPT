@@ -61,7 +61,8 @@ public class FakeBookingService implements BookingService, ResultLookup {
                 Instant.now().truncatedTo(ChronoUnit.MILLIS)
         );
 
-        long nextIndex = logIndexCounter.incrementAndGet();
+        long nextIndex = Math.max(logIndexCounter.incrementAndGet(), stateMachine.lastApplied() + 1);
+        logIndexCounter.set(nextIndex);
         BookingStateMachine.ApplyOutcome outcome = stateMachine.apply(nextIndex, command);
 
         if (outcome instanceof BookingStateMachine.ApplyOutcome.BusinessResult business) {
