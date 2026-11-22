@@ -1,0 +1,53 @@
+TV4-D23 Result Log
+Date: 2026-11-22
+Task: Stale old-Leader suffix correction
+Environment: Docker Desktop; image maven:3.9-eclipse-temurin-25; Linux container; mounted D:\HOCTAP\HTPT at /workspace
+Command: docker run --rm -v 'D:\HOCTAP\HTPT:/workspace' -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+Base SHA after merge: 12e618e
+Code SHA: 4fcf87e
+
+Honesty boundary:
+- Uses ReplicationCommitInvariantSuiteTest.Harness: five in-memory Nodes, FakeRaftStorage, FakeNetwork, manual scheduler and in-memory apply repository.
+- No TCP, PostgreSQL, Docker cluster, real process, real physical LAN, real election timer or G6 failover.
+- Leader-change helpers simulate election/step-down transitions; they are not evidence for real TV5 election under load.
+- No claim of physical failover, G6 PASS or 5-node LAN verification.
+
+Targeted class result:
+- StaleLeaderLogTest: 10 tests, 0 failures, 0 errors, 0 skipped
+- Targeted combined D22+D23 run: 22 tests, 0 failures, 0 errors, 0 skipped
+- Seed list: 1,2,3,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71
+
+Scenario status:
+1. Isolated old Leader suffix: PASS in harness; old suffix never reached repository.
+2. Minority-replicated suffix: PASS through divergent-tail harness; matching prefix preserved.
+3. Long/short/equal stale suffix variants: PASS.
+4. Figure-8 old-term entry: PASS by reusing the existing harness old-term workload.
+5. Old-Leader AppendEntries/step-down: harness step-down and RaftReadBarrier.onLeadershipLost tested.
+6. Truncated pending write: harness asserts the stale entry is absent after rejoin.
+7. Committed conflict: assertThrows fails closed; commit/log remain unchanged.
+8. Heartbeat/backtracking: PASS through divergent-tail follower catch-up.
+9. Repeated flip-flop: 4 flips per seed; invariants checked after every flip.
+10. Final convergence: commitIndex, lastApplied, log and applied prefix assertions checked.
+
+TV5 component usage:
+- Harness promotion uses RaftState.becomeFollower/becomeLeader and existing PersistentRaftNode harness plumbing.
+- Election service under real timers is not exercised.
+- onHigherTerm behavior is represented by higher-term step-down at leader-change helpers.
+- Scenario 5 calls RaftReadBarrier.onLeadershipLost; pending barriers are canceled.
+
+Full clean verify:
+- shared: 38 tests, 0 failures, 0 errors, 0 skipped
+- backend-node: 1200 tests, 0 failures, 0 errors, 106 skipped
+- desktop-client: 256 tests, 0 failures, 0 errors, 16 skipped
+- desktop-monitor: 0 tests
+- integration-tests: 24 tests, 0 failures, 0 errors, 3 skipped
+- Reactor Summary: all modules SUCCESS
+- BUILD SUCCESS
+
+Runtime wiring grep / unresolved handoff:
+- NodeMain grep: no call creates/wires LogReplayCoordinator.
+- NodeMain grep: no call wires RaftStateMachineApplier or LogReplayCoordinator into Node startup.
+- RaftReadBarrier exists with onLeadershipLost and is used in tests; production end-to-end wiring remains not proven by this task.
+- CommitAdvancer and RaftStateMachineApplier exist, but each caller/wiring point remains outside this test-only change.
+- Leader no-op at becomeLeader is not verified in this harness/run; grep did not establish a completed runtime auto-NO_OP on every becomeLeader path.
+- Physical LAN failover G6, real Leader election under load, and real old-termination process failover are TV5/TV6 work not done here.
