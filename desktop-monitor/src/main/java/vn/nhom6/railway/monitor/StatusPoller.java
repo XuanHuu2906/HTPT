@@ -76,7 +76,7 @@ public final class StatusPoller implements AutoCloseable {
                             return;
                         }
                         try {
-                            controller.nodeTable.getItems().setAll(rows);
+                            controller.applySnapshot(rows);
                             cycle.complete(rows);
                         } catch (RuntimeException exception) {
                             cycle.completeExceptionally(exception);
