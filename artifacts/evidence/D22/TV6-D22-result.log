@@ -1,0 +1,82 @@
+TV6-D22 validation evidence
+===========================
+
+Task: TV6-D22 Tạo test phân vùng 3–2 (PartitionHarness — Live 5-Node Loopback TCP Network Partition & Heal Harness, Processes Kept Alive)
+Date: 2026-11-23
+Base Commit: c80341d (branch Huu)
+Environment: Linux 7.3.3-300.fc45.x86_64 (amd64), OpenJDK 25.0.4.1, Apache Maven 3.9.11
+TASK_SCOPE=5-node live loopback TCP partition/heal harness with TV3-D21 filter hooks (MessageDispatcher.MessageFilterHook & RaftRpcClient.RpcFilterHook), keeping all 5 NodeMain processes alive (partition != crash) and collecting responses from BOTH majority (3/5) and minority (2/5) sides before and after heal; full Raft consensus + PostgreSQL AC09 safety belongs to Gate G6.
+
+Deliverables & SHA256:
+- integration-tests/src/test/java/vn/nhom6/railway/tests/PartitionHarness.java
+  SHA256=5cd90f953726701494cb6fb8c5e8ebe7f82968993ce55ab47ceed87ac1930eea
+- artifacts/evidence/D22/TV6-D22-result.log (this evidence file)
+- docs/implementation/TV6-D22-notes.md
+
+Dependencies & Scope Boundaries:
+- Uses TV3-D21 production filter hooks (MessageDispatcher.setFilterHook, RaftRpcClient.setFilterHook) and live NodeMain dual-port TCP servers (Client port + Raft Peer port), TcpClient, NodeStatusHandler (TV3-D15), RequestVoteRpcHandler, AppendEntriesRpcHandler, FakeBookingService, FakeRaftRequestHandler.
+- Verifies TV6-D21 fault scripts presence and volume-preservation contract (scripts/stop-node.ps1, scripts/restart-node.ps1, scripts/select-leader.ps1).
+- Built independently without waiting for TV5-D22.
+
+Verified Scenarios in PartitionHarness (8/8 PASS):
+1. baselineFullMesh_allFiveNodesAlive_peerRpcsAndClientResponsesSucceed: PASS (5/5 nodes alive, 20/20 directed TCP links, 5/5 NODE_STATUS)
+2. partition3vs2_blocksTwelveCrossLinks_whileIntraPartitionTrafficAndAllFiveProcessesStayAlive: PASS (12 blocked links, 5/5 processes alive & answering PING/NODE_STATUS, intra-A & intra-B TCP RPCs pass, cross-partition RPCs dropped & timed out)
+3. partition3vs2_collectsResponsesFromBothSidesSimultaneously_thenHealsAndRestoresFullMesh: PASS (collected NODE_STATUS + client responses from majority 3/5 [CONFIRMED + NOT_LEADER redirect] AND minority 2/5 [UNKNOWN + NOT_LEADER redirect] simultaneously; healed without restarting any process; restored cross-partition APPEND_ENTRIES & REQUEST_VOTE and 5/5 post-heal NODE_STATUS)
+4. partition3vs2_selectiveOutboundAndInboundFilterHooks_dropCrossPartitionWithoutKillingSockets: PASS (outbound RaftRpcClient + inbound MessageDispatcher hooks + drop/deliver telemetry)
+5. asymmetricPartition_unidirectionalLinkBlock_preservesReverseDirectionAndProcessLiveness: PASS
+6. selectiveMessageTypeDrop_blocksRequestVoteAcrossBoundary_whileAppendEntriesAndStatusContinue: PASS
+7. successivePartitions_rotate3vs2Boundaries_andHealCleanlyEveryCycle: PASS (2 rotating 3–2 partition/heal cycles restoring 20/20 directed TCP links)
+8. faultScriptsInventory_tv6D21ScriptsPresentAndExecutableContractVerified: PASS (3/3 TV6-D21 scripts present, zero destructive volume commands)
+
+--- CMD 1: PartitionHarness (integration-tests) ---
+
+Command:
+mvn -B -ntp -pl integration-tests -am test -Dtest="PartitionHarness" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Observed Harness Output:
+[INFO] Running vn.nhom6.railway.tests.PartitionHarness
+2026-11-23T04:16:48.833108947Z [PartitionHarness] PARTITION_3_2_LIVENESS_PASS blockedLinks=12 processesAlive=5/5 dropped=4
+2026-11-23T04:16:48.894667148Z [PartitionHarness] BASELINE_PASS nodes=5/5 peerLinks=20/20 statusProbes=5/5
+2026-11-23T04:16:50.308723875Z [PartitionHarness] ROTATING_PARTITIONS_PASS cycles=2 restoredLinks=20/20
+2026-11-23T04:16:50.773547787Z [PartitionHarness] ASYMMETRIC_LINK_PASS
+2026-11-23T04:16:51.248827532Z [PartitionHarness] SELECTIVE_TYPE_DROP_PASS
+2026-11-23T04:16:52.199649324Z [PartitionHarness] PARTITION_AND_HEAL_DUAL_SIDE_PASS majorityOutcome=CONFIRMED minorityOutcome=UNKNOWN postHealNodes=5/5 droppedBeforeHeal=2
+2026-11-23T04:16:52.215524132Z [PartitionHarness] DUAL_HOOK_TELEMETRY_PASS drops=1 deliveredAfterHeal=4
+2026-11-23T04:16:52.228106162Z [PartitionHarness] G6_FAULT_SCRIPTS_CONTRACT_PASS scripts=3/3
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.507 s -- in vn.nhom6.railway.tests.PartitionHarness
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.511 s]
+[INFO] backend-node ....................................... SUCCESS [  5.226 s]
+[INFO] integration-tests .................................. SUCCESS [  6.120 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  11.931 s
+
+--- CMD 2: TV3-D21 Dependency Cross-Check (TestNetworkFilterTest) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="TestNetworkFilterTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Running vn.nhom6.railway.networking.TestNetworkFilterTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.023 s -- in vn.nhom6.railway.networking.TestNetworkFilterTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.341 s]
+[INFO] backend-node ....................................... SUCCESS [  4.377 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  4.775 s

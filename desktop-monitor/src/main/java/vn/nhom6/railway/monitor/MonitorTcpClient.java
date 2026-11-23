@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import vn.nhom6.railway.monitor.MonitorController.NodeRow;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
+import vn.nhom6.railway.protocol.dto.NodeStatusDto;
 
 /**
  * TV6-D14 asynchronous status client. D14 uses FakeNodeStatusAdapter only;
@@ -126,6 +127,20 @@ public final class MonitorTcpClient implements AutoCloseable {
             throw new IllegalArgumentException("Invalid NODE_STATUS " + field);
         }
         return value.longValue();
+    }
+
+    /** Converts a TV3-D15 SPEC-03 {@link NodeStatusDto} directly into a {@link NodeRow}. */
+    public static NodeRow fromStatusDto(NodeStatusDto dto) {
+        Objects.requireNonNull(dto, "dto");
+        dto.validate();
+        String status = dto.isStorageHealthy() ? "ONLINE" : "STORAGE_ERROR";
+        return new NodeRow(
+                dto.getNodeId(),
+                dto.getRole(),
+                dto.getTerm(),
+                status,
+                dto.getCommitIndex(),
+                dto.getLastApplied());
     }
 
     static NodeRow unavailable(String nodeId, String status) {

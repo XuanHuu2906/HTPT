@@ -1,0 +1,108 @@
+TV5-D23 validation evidence
+===========================
+
+Task: TV5-D23 Leader cũ quay lại (Raft Election + Recovery — Old Leader Rejoin, Step-Down & Uncommitted Suffix Repair over FakeNetwork + TestNetworkFilter)
+Date: 2026-11-23
+Base Commit: c80341d (branch Huu)
+Environment: Linux 7.3.3-300.fc45.x86_64 (amd64), OpenJDK 25.0.4.1, Apache Maven 3.9.11
+Scope: backend-node election package; 5-peer cluster over deterministic FakeNetwork integrated with TestNetworkFilter (TV3-D21); partition 3–2 heal; old-term leader receiving higher-term heartbeat or AppendEntries (or higher-term AppendEntriesResponse) steps down immediately via TV5-D14 StepDownHandler (HigherTermHandler + PersistentElectionState + LeadershipGuard + PersistentRaftNode + RaftElectionComponent); coordinates directly with TV4 log-repair stack (AppendEntriesHandler + LogConflictResolver + PersistentLogAppender + LogConsistencyChecker + ReplicationTracker + CommitAdvancer) without waiting for TV4-D23; repairs single, long (Raft Fig. 7), and multi-term uncommitted suffixes durably while protecting committed prefix [1..commitIndex]; verifies TC-RAFT-03, TC-RAFT-06, TC-RAFT-07, TC-RAFT-08, TC-RAFT-09, AC08, AC09 invariants on FakeNetwork. Real 5-node TCP/PostgreSQL rejoin and log repair are scheduled for Gate G6.
+
+Deliverables:
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/RejoinTest.java (14-scenario rejoin, step-down & suffix-repair suite)
+- artifacts/evidence/D23/TV5-D23-result.log (this evidence file)
+- docs/implementation/TV5-D23-notes.md (technical notes & verification summary)
+
+Dependencies & Integration:
+- TV5-D14 StepDownHandler stack: HigherTermHandler, PersistentElectionState, LeadershipGuard, PersistentRaftNode, RaftElectionComponent, ElectionTimer, LeaderHeartbeatScheduler.
+- TV5-D22 Partition Tests & Network Filter: TestNetworkFilter (TV3-D21) + deterministic FakeNetwork 3–2 partition/heal and asymmetric isolation.
+- TV4 Log Repair & Replication stack (existing, not waiting for TV4-D23): AppendEntriesHandler, LogConflictResolver, PersistentLogAppender, LogConsistencyChecker, ReplicationTracker, CommitAdvancer.
+- TV2 Booking State Machine: BookingStateMachine, BookingCommand, ApplyResult, BookingRequestHandler.NotLeaderException.
+- Scope boundary: RejoinTest fake network PASS; real rejoin/log repair on 5 physical/Docker nodes + PostgreSQL verified at Gate G6.
+
+Verified Scenarios in RejoinTest (14/14 PASS):
+1.  rejoinAfterHeal_oldLeaderReceivesHigherTermHeartbeat_stepsDownPersistsAndArmsTimer: PASS
+2.  rejoinAfterHeal_oldLeaderSendsStaleAppendToMajority_stepsDownViaHigherTermHandlerOnResponse: PASS
+3.  rejoinAfterHeal_heartbeatAloneDoesNotTruncateUnmatchedSuffix_andDoesNotAdvanceCommitPastMatchedIndex: PASS
+4.  rejoinAfterHeal_singleUncommittedGhostWrite_truncatedDurablyAndReplacedByNewLeader: PASS
+5.  rejoinAfterHeal_longDivergentUncommittedSuffix_longerThanNewLeaderLog_truncatedAndRepaired: PASS
+6.  rejoinAfterHeal_multiTermCascadingDivergence_oldLeaderWithMultipleStaleTermsBacktracksAndRepairs: PASS
+7.  rejoinAfterHeal_bothMinorityNodesHaveDivergentSuffixes_allFiveNodesConvergeExactly: PASS
+8.  rejoinAfterHeal_oldLeaderRestartsFromDurableStorageWithUncommittedSuffix_repairsWithoutDoubleApply: PASS
+9.  rejoinAfterHeal_staleDelayedResponsesFromOldTerm_ignoredByLeadershipGuardAndNeverCommit: PASS
+10. rejoinAfterHeal_committedPrefixProtection_conflictAtCommittedIndexFailsClosed: PASS
+11. rejoinAfterHeal_storageFailureDuringHigherTermStepDown_stopsLeaderAndFailsClosed: PASS
+12. rejoinAfterHeal_realRaftElectionComponentLifecycle_stopsHeartbeatSchedulerAndRepairsSuffix: PASS
+13. rejoinAfterHeal_oldLeaderClientRedirectionAndIdempotentRetry_succeedsOnNewLeader: PASS
+14. rejoinAfterHeal_oldLeaderCanBeReelectedInLaterTermAfterCatchUp: PASS
+
+--- Targeted TV5-D23 Suite (RejoinTest) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="RejoinTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.RejoinTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.869 s -- in vn.nhom6.railway.raft.election.RejoinTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.374 s]
+[INFO] backend-node ....................................... SUCCESS [  1.258 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  1.697 s
+
+--- Combined TV5-D14/D21/D22/D23 + TV4 Log Repair Suites ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="RejoinTest,StepDownTest,NetworkPartitionElectionTest,LeaderFailoverTest,LogConflictResolverTest,AppendEntriesHandlerTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Running vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.298 s -- in vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Running vn.nhom6.railway.raft.election.RejoinTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.818 s -- in vn.nhom6.railway.raft.election.RejoinTest
+[INFO] Running vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in vn.nhom6.railway.raft.election.LeaderFailoverTest
+[INFO] Running vn.nhom6.railway.raft.election.StepDownTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.630 s -- in vn.nhom6.railway.raft.election.StepDownTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 56, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest$NetworkScenarioTests
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in vn.nhom6.railway.raft.replication.AppendEntriesHandlerTest
+[INFO] Running vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in vn.nhom6.railway.raft.replication.LogConflictResolverTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 130, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.358 s]
+[INFO] backend-node ....................................... SUCCESS [  2.326 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  2.743 s
+
+--- Full Election Package Regression Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[WARNING] Tests run: 302, Failures: 0, Errors: 0, Skipped: 1
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.394 s]
+[INFO] backend-node ....................................... SUCCESS [  5.053 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  5.513 s

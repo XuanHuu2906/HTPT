@@ -6,22 +6,39 @@
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.monitor.MonitorController"
-      prefWidth="980" prefHeight="440" spacing="14">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Desktop Monitor v1 — MOCK (D13)" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-    <Label text="Dữ liệu mock cố định • 5 Node • Chỉ quan sát • Chưa kết nối backend"
+      prefWidth="1120" prefHeight="660" spacing="12">
+    <padding><Insets top="18" right="18" bottom="18" left="18"/></padding>
+    <Label text="Desktop Monitor v1 — Cluster &amp; Recovery View (TV6-D13/D23)"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+    <Label fx:id="recoverySummaryLabel"
+           text="Chưa có dữ liệu quan sát • 5 Node • Chỉ quan sát (non-voter)"
            wrapText="true"/>
-    <TableView fx:id="nodeTable" editable="false" fixedCellSize="48" prefHeight="300"
-               VBox.vgrow="ALWAYS" accessibleText="Bảng mock giám sát năm Node">
+    <TableView fx:id="nodeTable" editable="false" fixedCellSize="44" prefHeight="265"
+               accessibleText="Bảng giám sát năm Node và tiến độ catch-up">
         <columns>
-            <TableColumn fx:id="nodeColumn" text="Node" prefWidth="130"/>
-            <TableColumn fx:id="roleColumn" text="role" prefWidth="150"/>
-            <TableColumn fx:id="termColumn" text="term" prefWidth="90"/>
-            <TableColumn fx:id="statusColumn" text="status" prefWidth="190"/>
-            <TableColumn fx:id="commitIndexColumn" text="commitIndex" prefWidth="145"/>
-            <TableColumn fx:id="lastAppliedColumn" text="lastApplied" prefWidth="145"/>
+            <TableColumn fx:id="nodeColumn" text="Node" prefWidth="95"/>
+            <TableColumn fx:id="roleColumn" text="role" prefWidth="115"/>
+            <TableColumn fx:id="termColumn" text="term" prefWidth="70"/>
+            <TableColumn fx:id="statusColumn" text="status" prefWidth="135"/>
+            <TableColumn fx:id="commitIndexColumn" text="commitIndex" prefWidth="110"/>
+            <TableColumn fx:id="lastAppliedColumn" text="lastApplied" prefWidth="110"/>
+            <TableColumn fx:id="applyProgressColumn" text="lastApplied / commitIndex" prefWidth="230"/>
+            <TableColumn fx:id="syncStateColumn" text="syncState" prefWidth="145"/>
         </columns>
     </TableView>
-    <Label text="— = chưa biết. Trạng thái mock không chứng minh quorum hoặc commit của cụm thật."
+    <Label text="Lịch sử sự kiện phục hồi (Leader Change / Node Offline / Node Online / Catch-up)"
+           style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+    <TableView fx:id="eventTable" editable="false" fixedCellSize="34" prefHeight="220"
+               VBox.vgrow="ALWAYS" accessibleText="Lịch sử sự kiện phục hồi cụm 5 Node">
+        <columns>
+            <TableColumn fx:id="eventTimeColumn" text="Thời điểm (UTC)" prefWidth="190"/>
+            <TableColumn fx:id="eventTypeColumn" text="Loại sự kiện" prefWidth="150"/>
+            <TableColumn fx:id="eventNodeColumn" text="Node" prefWidth="90"/>
+            <TableColumn fx:id="eventTermColumn" text="Term" prefWidth="65"/>
+            <TableColumn fx:id="eventProgressColumn" text="lastApplied / commit" prefWidth="145"/>
+            <TableColumn fx:id="eventDetailColumn" text="Chi tiết" prefWidth="440"/>
+        </columns>
+    </TableView>
+    <Label text="— = chưa biết. Chỉ gắn nhãn SYNCED khi node ONLINE, cùng term Leader và lastApplied == commitIndex >= Leader.commitIndex."
            wrapText="true"/>
 </VBox>

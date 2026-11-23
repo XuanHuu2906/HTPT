@@ -1,0 +1,119 @@
+TV6-D21 validation evidence
+===========================
+
+Task: TV6-D21 Tạo bộ mô phỏng dừng Node (Docker stop/start từng Node có log timestamp, không xóa volume, kèm script chọn Leader hiện tại từ NODE_STATUS)
+Date: 2026-11-23
+Base Commit: c80341d (branch Huu)
+Environment: Linux 7.3.3-300.fc45.x86_64 (amd64), Docker Server 29.9.2, PowerShell 7 LTS via mcr.microsoft.com/powershell:lts-alpine-3.20 + docker-cli + docker-cli-compose
+TASK_SCOPE=test-container Docker stop/start + volume preservation + SPEC-03 NODE_STATUS leader selector + exit-code contracts; G6_END_TO_END_REAL_CLUSTER=NOT_RUN (reuses these scripts at Gate G6)
+
+Deliverables & SHA256:
+- scripts/stop-node.ps1      SHA256=2e93bb473ad3c73d48ba1d4b5cdf1bdf7788a0d76cc28a3dac4012b5ee1cf6db
+- scripts/restart-node.ps1   SHA256=a4003eba2136e33e4b929169acd03c33f23521b5f7ef9118c970acf2fb16f55f
+- scripts/select-leader.ps1  SHA256=e48158b828cc649e753e5f48b2337f2958da9512e7a175e56db2e3e51e174a9f
+- artifacts/evidence/D21/TV6-D21-result.log (this evidence file)
+- docs/implementation/TV6-D21-notes.md
+
+Dependencies & Scope Boundaries:
+- Docker Compose/container model from TV6-D11 (docker/compose.dev.yml, docker/compose.election-test.yml) and NODE_STATUS contract from TV3-D15 (NodeStatusHandler / NodeStatusDto / SPEC-03 §5).
+- Independent of TV5-D21: tested against isolated ephemeral test containers (alpine:3.22 + dedicated named test volumes) and a loopback SPEC-03 NODE_STATUS TCP fixture; dev containers and railway_pgdata1..5 volumes were untouched.
+- Never calls rm, down, down -v, volume rm, or prune inside stop-node.ps1 / restart-node.ps1.
+
+Verification Matrix (11/11 PASS):
+- CASE 1 : Ephemeral test container + named volume sentinel created (SENTINEL_BEFORE=raft-term=4;commit=12;preserved) -> PASS
+- CASE 2 : scripts/stop-node.ps1 -ContainerName railway-tv6-d21-test-node (docker stop, volume intact) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 3 : scripts/restart-node.ps1 -ContainerName railway-tv6-d21-test-node (docker start, sentinel intact) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 4 : scripts/restart-node.ps1 -RestartIfRunning (stop+start, sentinel intact) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 5 : scripts/select-leader.ps1 (single leader node-3 @ term 4 via NODE_STATUS) -> EXPECTED=0 ACTUAL=0 LEADER=node-3 PASS
+- CASE 6 : scripts/select-leader.ps1 -AsJson (structured SPEC-03 observation JSON) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 7 : scripts/select-leader.ps1 (0 leaders; never hardcodes node-1) -> EXPECTED=2 ACTUAL=2 PASS
+- CASE 8 : scripts/select-leader.ps1 (2 leaders split-brain; fail-closed) -> EXPECTED=3 ACTUAL=3 PASS
+- CASE 9 : scripts/stop-node.ps1 -TargetLeader -UseCompose (selects node-3 & runs docker compose stop; volume intact) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 10: scripts/restart-node.ps1 -NodeId node-3 -UseCompose -WaitStatus (docker compose start + NODE_STATUS ready + volume marker intact) -> EXPECTED=0 ACTUAL=0 PASS
+- CASE 11: Negative exit-code contracts (missing container -> exit=1; -TargetLeader with 0 leaders -> exit=2) -> PASS
+
+--- Raw Execution Transcript (2026-11-23T04:12:10Z - 04:12:19Z) ---
+
+=== CASE 1: Create isolated test container + named volume with sentinel data ===
+SENTINEL_BEFORE=raft-term=4;commit=12;preserved
+
+=== CASE 2: scripts/stop-node.ps1 against test container (expect exit 0) ===
+2026-11-23T04:12:10.360Z [stop-node] START stop-node (volumes_preserved=true; timeout=5s)
+2026-11-23T04:12:10.408Z [stop-node] TARGET nodeId= service= container=railway-tv6-d21-test-node useCompose=False
+2026-11-23T04:12:10.416Z [stop-node] EXEC: docker inspect railway-tv6-d21-test-node
+2026-11-23T04:12:10.470Z [stop-node] EXIT: code=0 cmd="docker inspect railway-tv6-d21-test-node" outputBytes=6752
+2026-11-23T04:12:10.514Z [stop-node] BEFORE container=railway-tv6-d21-test-node status=running running=True mounts=1 [volume:railway_tv6_d21_test_vol:/var/lib/docker/volumes/railway_tv6_d21_test_vol/_data->/data]
+2026-11-23T04:12:10.515Z [stop-node] EXEC: docker stop --time 5 railway-tv6-d21-test-node
+2026-11-23T04:12:11.590Z [stop-node] EXIT: code=0 cmd="docker stop --time 5 railway-tv6-d21-test-node" output="railway-tv6-d21-test-node"
+2026-11-23T04:12:11.591Z [stop-node] EXEC: docker inspect railway-tv6-d21-test-node
+2026-11-23T04:12:11.637Z [stop-node] EXIT: code=0 cmd="docker inspect railway-tv6-d21-test-node" outputBytes=6558
+2026-11-23T04:12:11.643Z [stop-node] AFTER  container=railway-tv6-d21-test-node status=exited running=False containerExitCode=0 finishedAt=2026-11-23T04:12:11.473706702Z mounts=1 [volume:railway_tv6_d21_test_vol:/var/lib/docker/volumes/railway_tv6_d21_test_vol/_data->/data]
+2026-11-23T04:12:11.647Z [stop-node] EXEC: docker volume inspect railway_tv6_d21_test_vol --format {{.Name}}
+2026-11-23T04:12:11.690Z [stop-node] EXIT: code=0 cmd="docker volume inspect railway_tv6_d21_test_vol --format {{.Name}}" output="railway_tv6_d21_test_vol"
+2026-11-23T04:12:11.691Z [stop-node] VOLUME_VERIFIED intact name=railway_tv6_d21_test_vol destination=/data
+2026-11-23T04:12:11.691Z [stop-node] RESULT PASS action=stop-node container=railway-tv6-d21-test-node status=exited volumesIntact=true exit=0
+CASE_2_EXIT=0
+
+=== CASE 3: scripts/restart-node.ps1 against stopped test container (expect exit 0 & sentinel intact) ===
+2026-11-23T04:12:12.042Z [restart-node] START restart-node (volumes_preserved=true; restartIfRunning=False)
+2026-11-23T04:12:12.076Z [restart-node] TARGET nodeId= service= container=railway-tv6-d21-test-node useCompose=False
+2026-11-23T04:12:12.081Z [restart-node] EXEC: docker inspect railway-tv6-d21-test-node
+2026-11-23T04:12:12.123Z [restart-node] EXIT: code=0 cmd="docker inspect railway-tv6-d21-test-node" outputBytes=6558
+2026-11-23T04:12:12.145Z [restart-node] BEFORE container=railway-tv6-d21-test-node status=exited running=False startedAt=2026-11-23T04:12:09.32543553Z mounts=1 [volume:railway_tv6_d21_test_vol:/var/lib/docker/volumes/railway_tv6_d21_test_vol/_data->/data]
+2026-11-23T04:12:12.145Z [restart-node] EXEC: docker start railway-tv6-d21-test-node
+2026-11-23T04:12:12.307Z [restart-node] EXIT: code=0 cmd="docker start railway-tv6-d21-test-node" output="railway-tv6-d21-test-node"
+2026-11-23T04:12:12.313Z [restart-node] EXEC: docker inspect railway-tv6-d21-test-node
+2026-11-23T04:12:12.336Z [restart-node] EXIT: code=0 cmd="docker inspect railway-tv6-d21-test-node" outputBytes=6762
+2026-11-23T04:12:12.340Z [restart-node] AFTER  container=railway-tv6-d21-test-node status=running running=True startedAt=2026-11-23T04:12:12.19035843Z mounts=1 [volume:railway_tv6_d21_test_vol:/var/lib/docker/volumes/railway_tv6_d21_test_vol/_data->/data]
+2026-11-23T04:12:12.343Z [restart-node] EXEC: docker volume inspect railway_tv6_d21_test_vol --format {{.Name}}
+2026-11-23T04:12:12.370Z [restart-node] EXIT: code=0 cmd="docker volume inspect railway_tv6_d21_test_vol --format {{.Name}}" output="railway_tv6_d21_test_vol"
+2026-11-23T04:12:12.371Z [restart-node] VOLUME_VERIFIED intact name=railway_tv6_d21_test_vol destination=/data
+2026-11-23T04:12:12.371Z [restart-node] RESULT PASS action=restart-node container=railway-tv6-d21-test-node status=running volumesIntact=true exit=0
+CASE_3_EXIT=0
+SENTINEL_AFTER=raft-term=4;commit=12;preserved
+
+=== CASE 4: scripts/restart-node.ps1 -RestartIfRunning on running test container (expect exit 0) ===
+2026-11-23T04:12:12.768Z [restart-node] START restart-node (volumes_preserved=true; restartIfRunning=True)
+2026-11-23T04:12:12.859Z [restart-node] EXEC: docker stop --time 5 railway-tv6-d21-test-node -> EXIT code=0
+2026-11-23T04:12:13.396Z [restart-node] EXEC: docker start railway-tv6-d21-test-node -> EXIT code=0
+2026-11-23T04:12:13.647Z [restart-node] VOLUME_VERIFIED intact name=railway_tv6_d21_test_vol destination=/data
+2026-11-23T04:12:13.647Z [restart-node] RESULT PASS action=restart-node container=railway-tv6-d21-test-node status=running volumesIntact=true exit=0
+CASE_4_EXIT=0
+SENTINEL_AFTER_RESTART=raft-term=4;commit=12;preserved
+
+=== CASE 5 & 6: scripts/select-leader.ps1 (single leader node-3 @ term 4) ===
+CASE_5_EXIT=0 LEADER_OUT=node-3
+CASE_6_EXIT=0 (JSON: status=SINGLE_LEADER, leaderNodeId=node-3, leaderTerm=4, leaderCount=1, onlineCount=5/5)
+
+=== CASE 7: scripts/select-leader.ps1 (0 leaders) ===
+2026-11-23T04:12:15.067Z [select-leader] NO_LEADER_FOUND online=5/5; refusing to hardcode node-1
+CASE_7_EXIT=2
+
+=== CASE 8: scripts/select-leader.ps1 (2 leaders split-brain) ===
+2026-11-23T04:12:15.507Z [select-leader] ERROR multiple leaders observed (node-1@term4, node-3@term5); fail-closed exit=3
+CASE_8_EXIT=3
+
+=== CASE 9: Compose + -TargetLeader stop-node.ps1 ===
+2026-11-23T04:12:16.543Z [stop-node] select-leader.ps1 exit=0 leader="node-3"
+2026-11-23T04:12:16.673Z [stop-node] EXEC: docker compose -p tv6d21test -f /scratch/compose.tv6-d21-test.yml stop --timeout 5 node-3
+2026-11-23T04:12:17.060Z [stop-node] EXIT: code=0 cmd="docker compose -p tv6d21test -f /scratch/compose.tv6-d21-test.yml stop --timeout 5 node-3" output="Container tv6d21test-node-3-1  Stopping |  Container tv6d21test-node-3-1  Stopped"
+2026-11-23T04:12:17.119Z [stop-node] VOLUME_VERIFIED intact name=tv6_d21_node3_vol destination=/data
+2026-11-23T04:12:17.120Z [stop-node] RESULT PASS action=stop-node container=tv6d21test-node-3-1 status=exited volumesIntact=true exit=0
+CASE_9_EXIT=0
+
+=== CASE 10: Compose restart-node.ps1 -NodeId node-3 -WaitStatus ===
+2026-11-23T04:12:17.610Z [restart-node] EXEC: docker compose -p tv6d21test -f /scratch/compose.tv6-d21-test.yml start node-3
+2026-11-23T04:12:17.819Z [restart-node] EXIT: code=0 cmd="docker compose -p tv6d21test -f /scratch/compose.tv6-d21-test.yml start node-3" output="Container tv6d21test-node-3-1  Starting |  Container tv6d21test-node-3-1  Started"
+2026-11-23T04:12:17.889Z [restart-node] VOLUME_VERIFIED intact name=tv6_d21_node3_vol destination=/data
+2026-11-23T04:12:18.047Z [restart-node] STATUS_READY node=node-3 role=LEADER term=4 commitIndex=12 lastApplied=12 storageHealthy=True
+2026-11-23T04:12:18.048Z [restart-node] RESULT PASS action=restart-node container=tv6d21test-node-3-1 status=running volumesIntact=true exit=0
+CASE_10_EXIT=0
+COMPOSE_VOLUME_MARKER=compose-vol-intact
+
+=== CASE 11: Negative exit-code contracts ===
+CASE_11_MISSING_EXIT=1 CASE_11_NOLEADER_EXIT=2
+ALL_11_CASES_PASSED=TRUE
+
+Post-run Docker state verification:
+- Ephemeral tv6-d21 test containers/volumes removed cleanly (0 leftover).
+- Dev PostgreSQL volumes railway_pgdata1..5 verified intact.
