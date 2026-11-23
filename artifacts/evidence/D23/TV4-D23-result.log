@@ -1,0 +1,63 @@
+TV4-D23 Result Log
+Date: 2026-11-22
+Task: Stale old-Leader suffix correction
+Environment: Docker Desktop; image maven:3.9-eclipse-temurin-25; Linux container; mounted D:\HOCTAP\HTPT at /workspace
+Command: docker run --rm -v 'D:\HOCTAP\HTPT:/workspace' -w /workspace maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+Base SHA after merge: 5894082
+Merge commit: 5bee28e
+Test commit: 80283da
+
+Honesty boundary:
+- Uses ReplicationCommitInvariantSuiteTest.Harness: five in-memory Nodes, FakeRaftStorage, FakeNetwork, manual scheduler and in-memory apply repository.
+- No TCP, PostgreSQL, Docker cluster, real process, real physical LAN, real election timer or G6 failover.
+- Leader-change helpers simulate election/step-down transitions; they are not evidence for real TV5 election under load.
+- No claim of physical failover, G6 PASS or 5-node LAN verification.
+
+Targeted class result:
+- StaleLeaderLogTest: 10 tests, 0 failures, 0 errors, 0 skipped
+- Targeted combined D22+D23 run: 27 tests, 0 failures, 0 errors, 0 skipped
+- Seed list: 1,2,3,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71
+
+Scenario status:
+1. Isolated old Leader: stale `(index,term,payload/requestId)` is proved present; after rejoin it differs and the old request is absent from every repository/listener.
+2. Minority suffix: exactly one follower plus old Leader hold stale entry before rejoin; after rejoin both are corrected and no stale repository result exists.
+3. Controlled suffix lengths: pairs `(4,2)`, `(2,2)`, `(2,4)` prove first mismatch/prefix preservation and final log convergence.
+4. Figure 8: term-1 entry at index 2 is proved replicated but uncommitted; current-term entry at index 3 advances commit to 3, indirectly committing index 2.
+5. Step-down: a higher-term `Replied` is passed through real `RaftReplicationService.handleAppendResult`; the service Hook observes the term and steps the old Leader to FOLLOWER/calls `RaftReadBarrier.onLeadershipLost`; append after step-down is `NotLeader`.
+6. Pending barrier/write: stale NO_OP barrier is issued on a blocked old Leader and `onLeadershipLost` makes it complete exceptionally with pendingCount 0; no stale business result is claimed.
+7. Committed conflict: conflict inside committed prefix throws, matchIndex/commitIndex/original entry and harness invariants remain unchanged.
+8. Rejoin/backtrack: divergent-tail harness proves mismatch recovery, matching prefix retention, convergence, one in-flight RPC and bounded RPC progress.
+9. Repeated flip-flop: after each of 4 flips per seed, log/commit/applied state converge and stale request is absent.
+10. Final convergence: stale old-Leader suffix plus a new replacement is tested; all five logs, commitIndex and lastApplied converge.
+
+TV5 component usage:
+- Harness promotion uses RaftState.becomeFollower/becomeLeader and existing PersistentRaftNode harness plumbing.
+- Election service under real timers is not exercised.
+- onHigherTerm behavior is represented by higher-term step-down at leader-change helpers.
+- Scenario 5 calls RaftReadBarrier.onLeadershipLost; pending barriers are canceled.
+
+Full clean verify with PostgreSQL:
+- shared: 38 tests, 0 failures, 0 errors, 0 skipped
+- backend-node: 1213 tests, 0 failures, 0 errors, 1 skipped (`CrashReplayTest`, PostgreSQL/JDBC gate or environment reason)
+- desktop-client: 256 tests, 0 failures, 0 errors, 16 skipped
+- desktop-monitor: 0 tests
+- integration-tests: 24 tests, 0 failures, 0 errors, 3 skipped
+- Raw class lines:
+  - [INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.836 s -- in vn.nhom6.railway.raft.core.RaftStateMachineApplierJdbcTest
+  - [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.526 s -- in vn.nhom6.railway.raft.replication.JdbcRaftStorageIntegrationTest
+  - [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.764 s -- in vn.nhom6.railway.raft.replication.LogReplayCoordinatorJdbcTest
+  - [INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.159 s -- in vn.nhom6.railway.raft.replication.LogReplayCoordinatorTest
+  - [INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.463 s -- in vn.nhom6.railway.raft.replication.StaleLeaderLogTest
+- PostgreSQL live JDBC tests: 15/15 PASS (RaftStateMachineApplier 3 + JdbcStorage 7 + LogReplayCoordinator 5).
+- Password: <REDACTED>.
+- Reactor Summary: all modules SUCCESS
+- BUILD SUCCESS
+
+Runtime wiring grep / unresolved handoff:
+- NodeMain grep: no production call instantiates or wires `LogReplayCoordinator`.
+- NodeMain grep: no production call wires `RaftStateMachineApplier` or `LogReplayCoordinator` into `NodeMain` startup.
+- `RaftReadBarrier` exists and `onLeadershipLost` is verified in the harness; end-to-end production wiring is not proven.
+- `CommitAdvancer` and `RaftStateMachineApplier` exist with test callers, but runtime wiring is not completed in this task.
+- `RaftElectionService` contains election/step-down components; this test drives higher-term step-down via `RaftReplicationService` Hook and direct in-harness `Replied`, not a real election timer.
+- Leader NO_OP at `becomeLeader` runtime wiring is not established.
+- Physical LAN failover G6, real election under load and real process/DB restart are TV5/TV6 work not done here.
