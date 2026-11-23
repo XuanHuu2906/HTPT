@@ -1,5 +1,7 @@
 package vn.nhom6.railway.client.network;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
@@ -9,7 +11,10 @@ public class CancelTicketRequestDto {
     private final String requestId;
     private final String ticketId;
 
-    public CancelTicketRequestDto(String requestId, String ticketId) {
+    @JsonCreator
+    public CancelTicketRequestDto(
+            @JsonProperty("requestId") String requestId,
+            @JsonProperty("ticketId") String ticketId) {
         this.requestId = requestId;
         this.ticketId = ticketId;
     }

@@ -381,13 +381,28 @@ class SocketBookingClientTest {
     }
 
     @Test
-    @DisplayName("cancel đánh dấu ngoài phạm vi D09: ném UnsupportedOperationException")
-    void testCancelThrowsUnsupportedException() {
-        CancelTicketRequestDto cancelReq = new CancelTicketRequestDto(UUID.randomUUID().toString(), "TCK-123");
-        CompletableFuture<?> future = client.cancel(cancelReq);
-        ExecutionException ex = assertThrows(ExecutionException.class, () -> future.get(1, TimeUnit.SECONDS));
-        assertTrue(ex.getCause() instanceof UnsupportedOperationException);
-        assertTrue(ex.getCause().getMessage().contains("ngoài phạm vi D09"));
+    @DisplayName("cancel gửi CANCEL_TICKET theo chuẩn SPEC-03 và nhận phản hồi CONFIRMED (TASK TV1-D23)")
+    void testCancelTicketSuccess() throws Exception {
+        String reqId = UUID.randomUUID().toString();
+        fakeServer.setHandler(req -> {
+            assertEquals(MessageType.CANCEL_TICKET, req.getType());
+            com.fasterxml.jackson.databind.node.ObjectNode resPayload = MessageCodec.getMapper().createObjectNode();
+            resPayload.put("requestId", reqId);
+            resPayload.put("outcome", "CONFIRMED");
+            resPayload.put("ticketId", "TCK-123");
+            resPayload.putNull("reasonCode");
+            resPayload.put("appliedLogIndex", 42L);
+            return MessageEnvelope.createResponse(req.getMessageId(), MessageType.CANCEL_TICKET_RESPONSE, "node-1", resPayload);
+        });
+
+        CancelTicketRequestDto cancelReq = new CancelTicketRequestDto(reqId, "TCK-123");
+        var res = client.cancel(cancelReq).get(2, TimeUnit.SECONDS);
+        assertNotNull(res);
+        assertEquals("CONFIRMED", res.getOutcome());
+        assertEquals("TCK-123", res.getTicketId());
+        assertEquals(reqId, res.getRequestId());
+        assertEquals(42L, res.getAppliedLogIndex());
+        assertFalse(res.isMock());
     }
 
     @Test

@@ -23,14 +23,14 @@ import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
  * - Yêu cầu xác nhận (Checkbox) trước khi nút "Xác nhận hủy vé" được bật.
  * - Hỗ trợ bộ điều khiển MOCK giả lập 3 kết quả phản hồi:
  *   + CANCELLED_SUCCESS: Hủy thành công, cập nhật vé sang CANCELLED trong model.
- *   + REJECTED_NOT_CANCELLABLE: Bị từ chối (NOT_CANCELLABLE), vé giữ nguyên CONFIRMED.
+ *   + REJECTED_TICKET_NOT_ACTIVE: Bị từ chối (TICKET_NOT_ACTIVE theo SPEC-03), vé giữ nguyên CONFIRMED.
  *   + UNKNOWN_TIMEOUT: Mất kết nối/timeout, vé giữ nguyên CONFIRMED (không tự đổi sang CANCELLED theo SPEC-06).
  */
 public class CancelTicketController {
 
     public enum CancelMockOutcome {
         CANCELLED_SUCCESS("✓ CANCELLED — Thành công (Vé chuyển sang ĐÃ HỦY)"),
-        REJECTED_NOT_CANCELLABLE("⛔ REJECTED — Bị từ chối (Mã: NOT_CANCELLABLE - Quá hạn hủy)"),
+        REJECTED_TICKET_NOT_ACTIVE("⛔ REJECTED — Bị từ chối (Mã: TICKET_NOT_ACTIVE - Vé không còn hiệu lực)"),
         UNKNOWN_TIMEOUT("⚠ UNKNOWN — Timeout / Mất kết nối (Chưa rõ kết quả, vé GIỮ NGUYÊN)");
 
         private final String label;
@@ -164,7 +164,7 @@ public class CancelTicketController {
         // Cấu hình kịch bản tiếp theo cho MockBookingClient
         switch (outcome) {
             case CANCELLED_SUCCESS -> MockBookingClient.getInstance().setNextScenario(MockScenario.SUCCESS);
-            case REJECTED_NOT_CANCELLABLE -> MockBookingClient.getInstance().setNextScenario(MockScenario.SEAT_ALREADY_BOOKED);
+            case REJECTED_TICKET_NOT_ACTIVE -> MockBookingClient.getInstance().setNextScenario(MockScenario.SEAT_ALREADY_BOOKED);
             case UNKNOWN_TIMEOUT -> MockBookingClient.getInstance().setNextScenario(MockScenario.UNKNOWN);
         }
 
@@ -176,7 +176,7 @@ public class CancelTicketController {
                     } else if (res.isConfirmed()) {
                         applyCancelOutcome(CancelMockOutcome.CANCELLED_SUCCESS);
                     } else if (res.isRejected()) {
-                        applyCancelOutcome(CancelMockOutcome.REJECTED_NOT_CANCELLABLE);
+                        applyCancelOutcome(CancelMockOutcome.REJECTED_TICKET_NOT_ACTIVE);
                     } else {
                         applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT);
                     }
@@ -205,7 +205,7 @@ public class CancelTicketController {
                     setLabelStyle(resultDetailLabel, "cancel-detail-success");
                 }
             }
-            case REJECTED_NOT_CANCELLABLE -> {
+            case REJECTED_TICKET_NOT_ACTIVE -> {
                 // Từ chối hủy: vé giữ nguyên CONFIRMED
                 ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE, true);
                 setBoxStyle(resultBox, "cancel-box-rejected");

@@ -216,7 +216,125 @@ public class JournalingBookingClient implements BookingClient, Closeable {
 
     @Override
     public CompletableFuture<CancelTicketResponseDto> cancel(CancelTicketRequestDto request) {
-        return delegate.cancel(request);
+        if (request == null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("request không được null"));
+        }
+        String requestId = request.getRequestId();
+        if (requestId == null || requestId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("requestId không được null hoặc rỗng"));
+        }
+
+        String payload;
+        try {
+            payload = OBJECT_MAPPER.writeValueAsString(request);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Không thể serialize CancelTicketRequestDto: " + e.getMessage(), e));
+        }
+
+        String hash = PendingEntry.computePayloadHash(payload);
+        PendingEntry entry = new PendingEntry(
+                requestId,
+                "CANCEL_TICKET",
+                payload,
+                hash,
+                PendingState.PREPARED,
+                Instant.now(),
+                null,
+                0,
+                null,
+                null,
+                1
+        );
+
+        // BƯỚC 1: Ghi bền vững trước khi gửi (FAIL-CLOSED)
+        try {
+            journal.recordPrepared(entry);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "[JOURNAL-CLIENT] Ghi journal PREPARED thất bại cho requestId=" + requestId + ". Hủy gửi yêu cầu!", e);
+            return CompletableFuture.failedFuture(new IOException("Không thể ghi journal bền vững trước khi gửi: " + e.getMessage(), e));
+        }
+
+        // BƯỚC 2: Đánh dấu đã gửi (SENT_UNRESOLVED)
+        try {
+            journal.markSent(requestId);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Cảnh báo: không thể đánh dấu SENT_UNRESOLVED cho requestId=" + requestId, e);
+        }
+
+        // BƯỚC 3: Gửi qua delegate client
+        return delegate.cancel(request).whenComplete((response, throwable) -> {
+            if (throwable != null) {
+                LOGGER.info(String.format("[JOURNAL-CLIENT] Gửi hủy vé thất bại/timeout requestId=%s, giữ SENT_UNRESOLVED", requestId));
+                return;
+            }
+
+            if (response != null) {
+                String outcome = response.getOutcome();
+                if ("CONFIRMED".equals(outcome) || "REJECTED".equals(outcome)) {
+                    try {
+                        journal.markResolved(requestId, outcome);
+                        LOGGER.info(String.format("[JOURNAL-CLIENT] Đã nhận kết quả cuối hủy vé requestId=%s, outcome=%s -> markResolved",
+                                requestId, outcome));
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể cập nhật trạng thái RESOLVED vào journal: " + e.getMessage(), e);
+                    }
+                } else {
+                    LOGGER.info(String.format("[JOURNAL-CLIENT] Phản hồi hủy vé outcome=%s cho requestId=%s, giữ nguyên SENT_UNRESOLVED",
+                            outcome, requestId));
+                }
+            }
+        });
+    }
+
+    /**
+     * Gửi lại (retry) yêu cầu hủy vé với CÙNG requestId và CÙNG payload nguyên văn từ journal.
+     */
+    public CompletableFuture<CancelTicketResponseDto> retryCancel(String requestId) {
+        Objects.requireNonNull(requestId, "requestId không được null");
+
+        Optional<PendingEntry> optEntry = journal.get(requestId);
+        if (optEntry.isEmpty()) {
+            return CompletableFuture.failedFuture(new NoSuchElementException("Không tìm thấy pending entry cho requestId: " + requestId));
+        }
+
+        PendingEntry entry = optEntry.get();
+        if (entry.getState() == PendingState.CORRUPT || !entry.isPayloadValid()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Payload bị lỗi hoặc sai lệch SHA-256 hash, từ chối retry"));
+        }
+
+        if (entry.getState() == PendingState.RESOLVED) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Yêu cầu đã được xác nhận kết quả cuối (" +
+                    entry.getFinalOutcome() + "), không cần gửi lại!"));
+        }
+
+        CancelTicketRequestDto request;
+        try {
+            request = OBJECT_MAPPER.readValue(entry.getPayload(), CancelTicketRequestDto.class);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Không thể deserialize payload đã lưu trong journal: " + e.getMessage(), e));
+        }
+
+        try {
+            journal.markSent(requestId);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể cập nhật số lần thử vào journal cho requestId=" + requestId, e);
+        }
+
+        LOGGER.info(String.format("[JOURNAL-CLIENT] Bắt đầu retry cancel requestId=%s, lần thử thứ %d", requestId, entry.getAttemptCount() + 1));
+
+        return delegate.cancel(request).whenComplete((response, throwable) -> {
+            if (response != null) {
+                String outcome = response.getOutcome();
+                if ("CONFIRMED".equals(outcome) || "REJECTED".equals(outcome)) {
+                    try {
+                        journal.markResolved(requestId, outcome);
+                        LOGGER.info(String.format("[JOURNAL-CLIENT] Retry cancel thành công có kết quả cuối requestId=%s, outcome=%s", requestId, outcome));
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể cập nhật trạng thái RESOLVED vào journal: " + e.getMessage(), e);
+                    }
+                }
+            }
+        });
     }
 
     @Override

@@ -341,13 +341,127 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
     }
 
     /**
-     * Hủy vé (CANCEL_TICKET): Ngoài phạm vi D09 (chỉ yêu cầu BOOK_TICKET,
-     * GET_SEATS, GET_REQUEST_RESULT).
+     * Hủy vé (CANCEL_TICKET) theo hợp đồng SPEC-03 Section 4.3 (TASK TV1-D23).
      */
     @Override
     public CompletableFuture<CancelTicketResponseDto> cancel(CancelTicketRequestDto request) {
-        return CompletableFuture.failedFuture(
-                new UnsupportedOperationException("CANCEL chưa hỗ trợ ở SocketBookingClient (ngoài phạm vi D09)"));
+        if (request == null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("request không được null"));
+        }
+        String requestId = request.getRequestId();
+        if (requestId == null || requestId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("requestId không được null hoặc rỗng"));
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            long startTime = System.currentTimeMillis();
+            MessageEnvelope<CancelTicketRequestDto> reqEnvelope = MessageEnvelope.createRequest(
+                    MessageType.CANCEL_TICKET,
+                    senderId,
+                    request);
+            String messageId = reqEnvelope.getMessageId();
+
+            try {
+                MessageEnvelope<JsonNode> resEnvelope = sendAndReceive(reqEnvelope);
+                MessageType resType = resEnvelope.getType();
+                long elapsed = System.currentTimeMillis() - startTime;
+
+                if (resType == MessageType.CANCEL_TICKET_RESPONSE) {
+                    JsonNode payload = resEnvelope.getPayload();
+                    String outRequestId = (payload != null && payload.hasNonNull("requestId"))
+                            ? payload.get("requestId").asText()
+                            : requestId;
+                    String outcome = (payload != null && payload.hasNonNull("outcome"))
+                            ? payload.get("outcome").asText()
+                            : "UNKNOWN";
+                    String ticketId = (payload != null && payload.hasNonNull("ticketId"))
+                            ? payload.get("ticketId").asText()
+                            : request.getTicketId();
+                    String reasonCode = (payload != null && payload.hasNonNull("reasonCode"))
+                            ? payload.get("reasonCode").asText()
+                            : null;
+                    Long appliedLogIndex = (payload != null && payload.hasNonNull("appliedLogIndex"))
+                            ? payload.get("appliedLogIndex").asLong()
+                            : null;
+
+                    logCall(requestId, messageId, "CANCEL_TICKET", outcome, elapsed);
+                    return new CancelTicketResponseDto(
+                            outRequestId,
+                            outcome,
+                            ticketId,
+                            reasonCode,
+                            appliedLogIndex,
+                            false,
+                            null,
+                            "CONFIRMED".equalsIgnoreCase(outcome) ? "Hủy vé thành công" : "Bị từ chối");
+
+                } else if (resType == MessageType.ERROR_RESPONSE) {
+                    ErrorResponseDto err = MessageCodec.decodePayload(resEnvelope, ErrorResponseDto.class);
+                    String errorCode = err.getErrorCode();
+                    String leaderHint = err.getLeaderHint();
+                    String message = err.getMessage();
+
+                    logCall(requestId, messageId, "CANCEL_TICKET", errorCode, elapsed);
+
+                    if ("NOT_LEADER".equalsIgnoreCase(errorCode)) {
+                        return new CancelTicketResponseDto(requestId, "UNKNOWN", request.getTicketId(),
+                                "NOT_LEADER", null, false, leaderHint, message);
+                    } else if ("NO_QUORUM".equalsIgnoreCase(errorCode)) {
+                        return new CancelTicketResponseDto(requestId, "UNKNOWN", request.getTicketId(),
+                                "NO_QUORUM", null, false, null, message);
+                    } else if ("REQUEST_ID_CONFLICT".equalsIgnoreCase(errorCode)) {
+                        return new CancelTicketResponseDto(requestId, "REJECTED", request.getTicketId(),
+                                "REQUEST_ID_CONFLICT", null, false, null, message);
+                    } else if ("TICKET_NOT_ACTIVE".equalsIgnoreCase(errorCode)) {
+                        return new CancelTicketResponseDto(requestId, "REJECTED", request.getTicketId(),
+                                "TICKET_NOT_ACTIVE", null, false, null, message);
+                    } else if ("TIMEOUT_UNKNOWN".equalsIgnoreCase(errorCode)) {
+                        return new CancelTicketResponseDto(requestId, "UNKNOWN", request.getTicketId(),
+                                "TIMEOUT_UNKNOWN", null, false, null, message);
+                    } else {
+                        return new CancelTicketResponseDto(requestId, "REJECTED", request.getTicketId(),
+                                errorCode, null, false, leaderHint, message);
+                    }
+                } else {
+                    logCall(requestId, messageId, "CANCEL_TICKET", "UNKNOWN_TYPE_" + resType, elapsed);
+                    return new CancelTicketResponseDto(requestId, "UNKNOWN", request.getTicketId(),
+                            "UNEXPECTED_RESPONSE_TYPE", null, false, null,
+                            "Loại phản hồi không hợp lệ: " + resType);
+                }
+            } catch (SocketTimeoutException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "CANCEL_TICKET", "TIMEOUT_UNKNOWN", elapsed);
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "TIMEOUT_UNKNOWN",
+                        null,
+                        false,
+                        null,
+                        "Hết thời gian chờ phản hồi từ máy chủ (read timeout)");
+            } catch (FailedNotSentException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "CANCEL_TICKET", "FAILED_NOT_SENT", elapsed);
+                throw new CompletionException("Kết nối thất bại trước khi gửi: " + e.getMessage(), e);
+            } catch (IOException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "CANCEL_TICKET", "CONNECTION_LOST", elapsed);
+                throw new CompletionException("Mất kết nối tới cụm máy chủ: " + e.getMessage(), e);
+            } catch (Exception e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "CANCEL_TICKET", "INTERNAL_ERROR", elapsed);
+                return new CancelTicketResponseDto(
+                        requestId,
+                        "UNKNOWN",
+                        request.getTicketId(),
+                        "INTERNAL_ERROR",
+                        null,
+                        false,
+                        null,
+                        "Lỗi xử lý phản hồi: " + e.getMessage());
+            }
+        }, executor);
     }
 
     /**
