@@ -1,0 +1,105 @@
+================================================================================
+BÁO CÁO KẾT QUẢ KIỂM THỬ VÀ NGHIỆM THU HỢP ĐỒNG — TASK TV1-D24
+TRA CỨU KẾT QUẢ (GET_REQUEST_RESULT) & LỊCH SỬ NÂNG CAO (BLOCKED/P1)
+HỆ THỐNG ĐẶT VÉ PHÂN TÁN — NHÓM 6
+================================================================================
+Thời gian chạy: 2026-11-24 11:42:40 ICT
+Phụ trách: TV1 (Khoa - Desktop Client JavaFX, package vn.nhom6.railway.client)
+Môi trường: OpenJDK 21 (Temurin-21.0.8+9), Windows 11, Maven 3.9.x
+Commit SHA: db94824 + working tree (feature/UI)
+Nhãn kiểm thử bắt buộc: FAKE NODE SERVER / FAKE LEADER PROVIDER — KHÔNG PHẢI RAFT THẬT
+
+1. PREFLIGHT & KIỂM TRA HỢP ĐỒNG (CONTRACT CHECK)
+--------------------------------------------------------------------------------
+- SPEC-03 Section 4.4 (GET_REQUEST_RESULT):
+  + Request payload: requestId (String)
+  + Response payload: requestId, state (APPLIED_SUCCESS | APPLIED_REJECTED | PENDING | UNKNOWN),
+    commandType (BOOK_TICKET | CANCEL_TICKET), ticketId, reasonCode, appliedLogIndex.
+  + Đã tích hợp đầy đủ trong SocketBookingClient, LeaderAwareBookingClient, JournalingBookingClient.
+- SPEC-03 Section 4.5 (GET_TICKET_HISTORY):
+  + Module `shared` CHƯA CÓ wire DTO class cho GET_TICKET_HISTORY (chỉ có enum type).
+  + Tuân thủ AGENTS.md Rule 0 & Rule 2: ĐÁNH DẤU CHÍNH THỨC BLOCKED / P1.
+  + Tuyệt đối KHÔNG tự chế DTO, KHÔNG gọi socket giả định, KHÔNG giả dữ liệu ở chế độ socket.
+  + Giao diện khóa tính năng này và hiển thị nhãn cảnh báo rõ ràng.
+- Kiểm tra cổng cụm phân tán thật (9101 - 9105): TẤT CẢ ĐỀU ĐANG ĐÓNG (DOWN).
+  + Kiểm thử chạm cụm thật được bảo vệ bởi cờ `railway.integration.realCluster` (SKIPPED).
+
+2. KẾT QUẢ BỘ KIỂM THỬ HỢP ĐỒNG: TicketLookupFlowTest (16/16 TEST CASES)
+--------------------------------------------------------------------------------
+[PASS] TC_LKP_01_PendingState:
+       Node trả PENDING -> ViewModel hiển thị chờ xử lý, không kết luận, không thêm vé.
+[PASS] TC_LKP_02_AppliedSuccess:
+       Node trả APPLIED_SUCCESS (BOOK_TICKET) -> Vé CONFIRMED, nhãn REAL, nhãn 'chưa xác minh',
+       Journal markResolved(CONFIRMED), gọi callback làm mới sơ đồ ghế.
+[PASS] TC_LKP_03_AppliedRejected:
+       Node trả APPLIED_REJECTED -> Báo từ chối rõ ràng kèm reasonCode, Journal markResolved(REJECTED),
+       không tạo vé giả.
+[PASS] TC_LKP_04_UnknownAndInfraErrors:
+       Lỗi hạ tầng (READ_UNAVAILABLE, NO_QUORUM, timeout) -> Giữ nguyên UNKNOWN, bảo toàn trong Journal.
+[PASS] TC_LKP_05_NotFoundFromFollower_NotConclusive:
+       Follower chưa thấy hoặc trả NOT_LEADER không phân giải được -> Giữ nguyên CHƯA RÕ (UNKNOWN),
+       không kết luận lệnh chưa từng xảy ra.
+[PASS] TC_LKP_06_NotLeaderRedirect_KeepsRequestId:
+       Follower trả NOT_LEADER(hint=node-2) -> Chuyển hướng tới đúng Leader và GIỮ NGUYÊN requestId (AGENTS.md).
+[PASS] TC_LKP_07_MismatchedRequestId_Ignored:
+       Server trả response có requestId sai lệch -> ViewModel phát hiện và BỎ QUA, không ghi đè vé sai.
+[PASS] TC_LKP_08_InputValidation:
+       RequestId rỗng hoặc sai format regex -> Chặn ngay tại Client, không gọi mạng.
+[PASS] TC_LKP_09_SingleFlightAndCooldown:
+       Thao tác tra cứu liên tiếp quá nhanh -> Bị chặn bởi Cooldown (250ms) và Single-Flight AtomicBoolean.
+[PASS] TC_LKP_10_ResolvesPendingFromLookup:
+       Entry SENT_UNRESOLVED trong Journal được chuyển thành RESOLVED sau khi tra cứu nhận kết quả cuối.
+[PASS] TC_LKP_11_RestartThenLookup:
+       Khởi động lại Client -> ViewModel tự động nạp lại các vé đã xác nhận từ Journal bền vững (getAll()).
+[PASS] TC_LKP_12_ConfirmedListShowsOnlyConfirmed:
+       Danh sách vé xác nhận chỉ chứa vé CONFIRMED, không chứa vé PENDING hay REJECTED.
+[PASS] TC_LKP_13_HistoryBlockedWithoutContract:
+       Ở chế độ Socket: historyEnabled=false, nhãn BLOCKED/P1 hiển thị rõ ràng trên UI.
+[PASS] TC_LKP_14_HistoryFixtureOnlyWhenContractExists:
+       Tra cứu Ticket ID diễn ra cục bộ trong danh sách vé đã xác nhận của ứng dụng này, không gọi socket tự chế.
+[PASS] TC_LKP_15_MockModeLabelledDemo:
+       Khởi tạo với MockBookingClient -> mockMode=true, mở mô phỏng demo, vé mang nhãn "DEMO / MOCK".
+[SKIPPED] TC_LKP_16_RealNode_GuardedByEnvironment:
+       Guarded by railway.integration.realCluster=true. Chờ nghiệm thu cụm thật 5 Node tại mốc G6.
+
+3. TRÍCH XUẤT NHẬT KÝ TRUY VẾT TRA CỨU (TV1-D24-lookup-trace.csv)
+--------------------------------------------------------------------------------
+test_case,attempt,step,request_id,message_id,trip_id,seat_id,passenger_name,expected_outcome,actual_status,comment
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SENT-...,...,-,-,-,APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REJECT-...,...,-,-,-,APPLIED_REJECTED,APPLIED_REJECTED,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-RESOLVE-...,...,-,-,-,APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REDIRECT-...,...,-,-,-,APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SUCCESS-...,...,-,-,-,APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-PENDING-...,...,-,-,-,PENDING,PENDING,"Custom result resolved from test setup"
+
+4. BẢNG KIỂM TRA BẤT BIẾN KIẾN TRÚC & QUY TẮC AN TOÀN (AGENTS.md)
+--------------------------------------------------------------------------------
+[✓] Bất biến 1 (Desktop JavaFX TCP Socket LAN/localhost):
+    - 0 import java.net trong Controller và ViewModel (chỉ qua BookingClient/SocketBookingClient).
+    - 0 HTTP/REST, 0 Spring MVC/Web, 0 WebSocket, 0 JDBC từ Client.
+[✓] Bất biến 2 (Bảo toàn requestId):
+    - requestId do UI/Journal sinh ra là bất biến trong suốt quá trình tra cứu và redirect.
+    - Không sinh requestId mới khi tra cứu hoặc redirect.
+[✓] Bất biến 3 (Chỉ xác nhận khi có APPLIED_SUCCESS):
+    - Chỉ thêm vé CONFIRMED khi nhận APPLIED_SUCCESS khớp đúng requestId.
+    - Không tự suy diễn từ PENDING, UNKNOWN hay NOT_LEADER.
+[✓] Bất biến 4 (Dữ liệu chưa xác minh):
+    - Vé tra cứu được mang nhãn 'chưa xác minh' theo TV1-D15 cho đến khi có Read Barrier tại D19.
+[✓] Bất biến 5 (Minh bạch nguồn dữ liệu):
+    - Vé hiển thị nhãn rõ ràng: "REAL" khi ở chế độ Socket; "DEMO / MOCK" khi ở chế độ Mock.
+[✓] Bất biến 6 (Tuân thủ hợp đồng và ranh giới):
+    - Lịch sử nâng cao GET_TICKET_HISTORY đánh dấu BLOCKED/P1, không tự chế API.
+    - Không sửa shared, không sửa backend-node, không sửa configs hay docker.
+
+5. DANH SÁCH BẰNG CHỨNG ĐÃ SINH
+--------------------------------------------------------------------------------
+- artifacts/evidence/D24/TV1-D24-lookup-trace.csv (Bảng truy vết CSV các lượt tra cứu qua TCP)
+- artifacts/evidence/D24/TV1-D24-lookup-confirmed.png (Giao diện tra cứu thành công APPLIED_SUCCESS)
+- artifacts/evidence/D24/TV1-D24-lookup-pending.png (Giao diện khi Node trả về PENDING)
+- artifacts/evidence/D24/TV1-D24-lookup-unknown.png (Giao diện khi Node trả về UNKNOWN / lỗi hạ tầng)
+- artifacts/evidence/D24/TV1-D24-history-blocked.png (Giao diện cảnh báo lịch sử nâng cao BLOCKED/P1)
+- artifacts/evidence/D24/TV1-D24-result.log (Báo cáo này)
+
+KẾT LUẬN: Task TV1-D24 ĐẠT ĐẦY ĐỦ TIÊU CHÍ PASS CỦA ĐỢT D24 VỚI FAKE SERVER.
+Sẵn sàng bàn giao cho TV2 (Backend Cancel) và TV3 (Networking/Shared).
+================================================================================

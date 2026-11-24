@@ -5,6 +5,7 @@ import vn.nhom6.railway.protocol.codec.MessageCodec;
 import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 import vn.nhom6.railway.protocol.dto.FrameCodec;
+import vn.nhom6.railway.protocol.dto.GetRequestResultRequestDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
@@ -19,6 +20,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -468,15 +470,72 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
      * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT) theo SPEC-03 Section 4.4.
      */
     /**
-     * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT):
-     * Do TV3 chưa cung cấp DTO GetRequestResultRequestDto trong module
-     * {@code shared},
-     * phương thức đánh dấu BLOCKED theo quy định Bước 0 của SPEC-03/D09.
+     * Tra cứu kết quả yêu cầu (GET_REQUEST_RESULT) theo SPEC-03 Section 4.4 (TASK TV1-D24).
      */
     @Override
     public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
-        return CompletableFuture.failedFuture(
-                new UnsupportedOperationException("BLOCKED: thiếu DTO GET_REQUEST_RESULT từ TV3"));
+        if (requestId == null || requestId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("requestId không được null hoặc rỗng"));
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            long startTime = System.currentTimeMillis();
+            GetRequestResultRequestDto reqDto = new GetRequestResultRequestDto(requestId);
+            MessageEnvelope<GetRequestResultRequestDto> reqEnvelope = MessageEnvelope.createRequest(
+                    MessageType.GET_REQUEST_RESULT,
+                    senderId,
+                    reqDto);
+            String messageId = reqEnvelope.getMessageId();
+
+            try {
+                MessageEnvelope<JsonNode> resEnvelope = sendAndReceive(reqEnvelope);
+                long elapsed = System.currentTimeMillis() - startTime;
+                MessageType resType = resEnvelope.getType();
+
+                if (resType == MessageType.GET_REQUEST_RESULT_RESPONSE) {
+                    GetRequestResultResponseDto resDto = MessageCodec.decodePayload(resEnvelope, GetRequestResultResponseDto.class);
+                    logCall(requestId, messageId, "GET_REQUEST_RESULT", resDto.getState(), elapsed);
+                    return resDto;
+                } else if (resType == MessageType.ERROR_RESPONSE) {
+                    ErrorResponseDto err = MessageCodec.decodePayload(resEnvelope, ErrorResponseDto.class);
+                    String errorCode = err.getErrorCode();
+                    logCall(requestId, messageId, "GET_REQUEST_RESULT", errorCode, elapsed);
+
+                    if ("NOT_LEADER".equalsIgnoreCase(errorCode)) {
+                        throw new NotLeaderException(err.getMessage(), err.getLeaderHint());
+                    } else if ("READ_UNAVAILABLE".equalsIgnoreCase(errorCode)) {
+                        return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, "READ_UNAVAILABLE", null);
+                    } else if ("NO_QUORUM".equalsIgnoreCase(errorCode)) {
+                        return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, "NO_QUORUM", null);
+                    } else {
+                        return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, errorCode, null);
+                    }
+                } else {
+                    logCall(requestId, messageId, "GET_REQUEST_RESULT", "UNKNOWN_TYPE_" + resType, elapsed);
+                    return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, "UNEXPECTED_RESPONSE_TYPE", null);
+                }
+            } catch (SocketTimeoutException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "GET_REQUEST_RESULT", "TIMEOUT_UNKNOWN", elapsed);
+                return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, "TIMEOUT_UNKNOWN", null);
+            } catch (FailedNotSentException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "GET_REQUEST_RESULT", "FAILED_NOT_SENT", elapsed);
+                throw new CompletionException("Kết nối thất bại trước khi gửi: " + e.getMessage(), e);
+            } catch (NotLeaderException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "GET_REQUEST_RESULT", "NOT_LEADER", elapsed);
+                throw new CompletionException(e);
+            } catch (IOException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "GET_REQUEST_RESULT", "CONNECTION_LOST", elapsed);
+                throw new CompletionException("Mất kết nối tới cụm máy chủ: " + e.getMessage(), e);
+            } catch (Exception e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                logCall(requestId, messageId, "GET_REQUEST_RESULT", "INTERNAL_ERROR", elapsed);
+                return new GetRequestResultResponseDto(requestId, "UNKNOWN", null, null, "INTERNAL_ERROR", null);
+            }
+        }, executor);
     }
 
     // =========================================================================

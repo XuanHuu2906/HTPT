@@ -17,10 +17,13 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import vn.nhom6.railway.client.ClientFactory;
+import vn.nhom6.railway.client.viewmodel.TicketLookupViewModel;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel.MockTicketSource;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel.TicketStatus;
@@ -29,14 +32,15 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Controller quản lý màn hình danh sách và tra cứu vé MOCK (TASK D06).
+ * Controller quản lý màn hình danh sách và tra cứu vé (TASK D06, tích hợp TV1-D24).
  * <p>
  * Tính năng chính:
- * - Hiển thị TableView danh sách vé bằng ObservableList mô phỏng (không ghi DB, không gọi mạng).
- * - Tra cứu theo Request ID hoặc Ticket ID kèm trạng thái loading giả (PauseTransition).
- * - Highlight kết quả tìm kiếm và báo lỗi rõ ràng nếu không tìm thấy.
+ * - Tra cứu theo Request ID bằng bản tin GET_REQUEST_RESULT theo SPEC-03 §4.4 thông qua {@link TicketLookupViewModel}.
+ * - Tra cứu cục bộ theo Ticket ID trong danh sách vé đã xác nhận của ứng dụng.
+ * - Hiển thị nhãn nguồn vé (REAL vs DEMO / MOCK) và nhãn 'chưa xác minh' theo D15.
+ * - Khóa tính năng lịch sử vé nâng cao khi chưa có contract được duyệt (BLOCKED/P1).
  * - Điều khiển nút "Hủy vé" chỉ kích hoạt khi vé ở trạng thái CONFIRMED kèm Tooltip giải thích.
- * - Hỗ trợ mở hộp thoại xác nhận hủy vé (TASK D06 Part 2).
+ * - Hỗ trợ mở hộp thoại xác nhận hủy vé.
  */
 public class TicketStatusController {
 
@@ -45,6 +49,21 @@ public class TicketStatusController {
 
     @FXML
     private Label mockBadgeLabel;
+
+    @FXML
+    private HBox bannerBox;
+
+    @FXML
+    private Label bannerTitleLabel;
+
+    @FXML
+    private Label bannerTextLabel;
+
+    @FXML
+    private HBox historyBlockedBox;
+
+    @FXML
+    private Label historyBlockedLabel;
 
     // === Vùng Tìm kiếm / Tra cứu ===
     @FXML
@@ -100,38 +119,110 @@ public class TicketStatusController {
     @FXML
     private Button cancelTicketBtn;
 
-    // Nguồn dữ liệu MOCK dùng chung
+    // Nguồn dữ liệu MOCK dùng chung fallback
     private final ObservableList<TicketViewModel> allTickets = MockTicketSource.getSharedTickets();
     private final ObservableList<TicketViewModel> displayedTickets = FXCollections.observableArrayList();
+
+    // ViewModel tra cứu TV1-D24
+    private TicketLookupViewModel lookupViewModel;
 
     // Callback quay lại màn hình chính
     private Runnable onBackAction;
 
     @FXML
     public void initialize() {
-        if (mockBadgeLabel != null) {
-            mockBadgeLabel.setText(MockTicketSource.MOCK_NOTICE);
+        if (lookupViewModel == null) {
+            try {
+                lookupViewModel = ClientFactory.getTicketLookupViewModel();
+            } catch (Exception ignored) {}
         }
 
         initSearchControls();
         initTableColumns();
 
-        displayedTickets.setAll(allTickets);
         ticketTableView.setItems(displayedTickets);
 
-        // Lắng nghe vé mới được thêm vào hoặc cập nhật để tự động làm mới
-        allTickets.addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
-            displayedTickets.setAll(allTickets);
-            if (ticketTableView != null) {
-                ticketTableView.refresh();
-            }
-            if (!displayedTickets.isEmpty() && ticketTableView != null) {
-                ticketTableView.getSelectionModel().select(0);
-            }
-        });
-
+        bindLookupViewModel();
         setupTableSelectionListener();
         updateSelectedTicketUI(null);
+    }
+
+    public void setLookupViewModel(TicketLookupViewModel lookupViewModel) {
+        this.lookupViewModel = lookupViewModel;
+        if (ticketTableView != null) {
+            bindLookupViewModel();
+        }
+    }
+
+    public TicketLookupViewModel getLookupViewModel() {
+        return lookupViewModel;
+    }
+
+    private void bindLookupViewModel() {
+        if (lookupViewModel != null) {
+            displayedTickets.setAll(lookupViewModel.getDisplayedTickets());
+            lookupViewModel.getDisplayedTickets().addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
+                displayedTickets.setAll(lookupViewModel.getDisplayedTickets());
+                if (ticketTableView != null) {
+                    ticketTableView.refresh();
+                }
+                if (!displayedTickets.isEmpty() && ticketTableView != null) {
+                    ticketTableView.getSelectionModel().select(0);
+                }
+            });
+
+            if (searchProgressIndicator != null) {
+                searchProgressIndicator.visibleProperty().bind(lookupViewModel.busyProperty());
+                searchProgressIndicator.managedProperty().bind(lookupViewModel.busyProperty());
+            }
+            if (searchBtn != null) {
+                searchBtn.disableProperty().bind(lookupViewModel.busyProperty());
+            }
+            if (searchResultLabel != null) {
+                searchResultLabel.textProperty().bind(lookupViewModel.statusMessageProperty());
+                lookupViewModel.statusStyleClassProperty().addListener((obs, oldV, newV) -> setSearchResultStyle(newV));
+                setSearchResultStyle(lookupViewModel.getStatusStyleClass());
+            }
+
+            if (lookupViewModel.isMockMode()) {
+                if (mockBadgeLabel != null) {
+                    mockBadgeLabel.setText(MockTicketSource.MOCK_NOTICE);
+                    mockBadgeLabel.getStyleClass().removeAll("badge-ticket-confirmed");
+                    if (!mockBadgeLabel.getStyleClass().contains("badge-mock")) {
+                        mockBadgeLabel.getStyleClass().add("badge-mock");
+                    }
+                }
+                if (bannerTitleLabel != null) bannerTitleLabel.setText("ℹ THÔNG BÁO MÔ PHỎNG:");
+                if (bannerTextLabel != null) bannerTextLabel.setText("Tất cả dữ liệu vé bên dưới là dữ liệu giả lập (MOCK) lưu trong bộ nhớ máy trạm, không ghi DB hay gửi qua mạng.");
+                if (historyBlockedLabel != null) historyBlockedLabel.setText("Chế độ MOCK: Dữ liệu mô phỏng minh họa.");
+            } else {
+                if (mockBadgeLabel != null) {
+                    mockBadgeLabel.setText("REAL / SOCKET");
+                    mockBadgeLabel.getStyleClass().removeAll("badge-mock");
+                    if (!mockBadgeLabel.getStyleClass().contains("badge-ticket-confirmed")) {
+                        mockBadgeLabel.getStyleClass().add("badge-ticket-confirmed");
+                    }
+                }
+                if (bannerTitleLabel != null) bannerTitleLabel.setText("ℹ CHẾ ĐỘ SOCKET / REAL:");
+                if (bannerTextLabel != null) bannerTextLabel.setText("Bảng hiển thị các vé đã xác nhận (CONFIRMED) trong phiên hoặc lưu bền từ Journal máy trạm này.");
+                if (historyBlockedLabel != null) historyBlockedLabel.setText(lookupViewModel.getHistoryBlockedMessage());
+            }
+        } else {
+            // Fallback mock
+            if (mockBadgeLabel != null) {
+                mockBadgeLabel.setText(MockTicketSource.MOCK_NOTICE);
+            }
+            displayedTickets.setAll(allTickets);
+            allTickets.addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
+                displayedTickets.setAll(allTickets);
+                if (ticketTableView != null) {
+                    ticketTableView.refresh();
+                }
+                if (!displayedTickets.isEmpty() && ticketTableView != null) {
+                    ticketTableView.getSelectionModel().select(0);
+                }
+            });
+        }
     }
 
     /**
@@ -141,8 +232,13 @@ public class TicketStatusController {
         if (searchField != null) {
             searchField.clear();
         }
-        displayedTickets.setAll(allTickets);
-        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
+        if (lookupViewModel != null) {
+            lookupViewModel.loadConfirmedTicketsFromJournal();
+            lookupViewModel.resetFilter();
+        } else {
+            displayedTickets.setAll(allTickets);
+            setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
+        }
         if (!displayedTickets.isEmpty() && ticketTableView != null) {
             ticketTableView.getSelectionModel().select(0);
         } else {
@@ -210,22 +306,27 @@ public class TicketStatusController {
             }
         });
 
-        // Cột Ghi chú: Hiển thị nhãn DEMO / MOCK
+        // Cột Ghi chú: Hiển thị nhãn DEMO / MOCK hoặc REAL
         colMock.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getMockBadge()));
         colMock.setCellFactory(column -> new TableCell<>() {
-            private final Label mockLabel = new Label("DEMO / MOCK");
-
-            {
-                mockLabel.getStyleClass().add("badge-mock");
-            }
+            private final Label badgeLabel = new Label();
 
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setGraphic(null);
+                    setText(null);
                 } else {
-                    setGraphic(mockLabel);
+                    badgeLabel.setText(item);
+                    badgeLabel.getStyleClass().removeAll("badge-mock", "badge-ticket-confirmed");
+                    if ("REAL".equalsIgnoreCase(item)) {
+                        badgeLabel.getStyleClass().add("badge-ticket-confirmed");
+                    } else {
+                        badgeLabel.getStyleClass().add("badge-mock");
+                    }
+                    setGraphic(badgeLabel);
+                    setText(null);
                 }
             }
         });
@@ -300,19 +401,41 @@ public class TicketStatusController {
                 : "";
 
         if (query.isEmpty()) {
-            setSearchResultMessage("⚠️ Vui lòng nhập mã Request ID hoặc Ticket ID để tra cứu!", "search-msg-error");
+            if (lookupViewModel != null) {
+                lookupViewModel.lookup("");
+            } else {
+                setSearchResultMessage("⚠️ Vui lòng nhập mã Request ID hoặc Ticket ID để tra cứu!", "search-msg-error");
+            }
             return;
         }
 
-        // Bật trạng thái loading giả (giả lập độ trễ tra cứu mạng)
-        setSearchLoading(true);
+        String searchType = (searchTypeCombo != null && searchTypeCombo.getValue() != null)
+                ? searchTypeCombo.getValue()
+                : "Tất cả mã";
 
-        PauseTransition delay = new PauseTransition(Duration.millis(350));
-        delay.setOnFinished(event -> {
-            setSearchLoading(false);
-            performSearch(query);
-        });
-        delay.play();
+        if (lookupViewModel != null) {
+            if ("Mã yêu cầu (Request ID)".equals(searchType)) {
+                lookupViewModel.lookup(query);
+            } else if ("Mã vé (Ticket ID)".equals(searchType)) {
+                lookupViewModel.searchByTicketId(query);
+            } else {
+                if (lookupViewModel.isValidRequestId(query)) {
+                    lookupViewModel.lookup(query);
+                } else {
+                    lookupViewModel.filterAll(query);
+                }
+            }
+        } else {
+            // Bật trạng thái loading giả (giả lập độ trễ tra cứu mạng cho fallback)
+            setSearchLoading(true);
+
+            PauseTransition delay = new PauseTransition(Duration.millis(350));
+            delay.setOnFinished(event -> {
+                setSearchLoading(false);
+                performSearch(query);
+            });
+            delay.play();
+        }
     }
 
     private void performSearch(String query) {
@@ -353,12 +476,26 @@ public class TicketStatusController {
         if (searchField != null) {
             searchField.clear();
         }
-        displayedTickets.setAll(allTickets);
-        setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
-        if (!displayedTickets.isEmpty()) {
+        if (lookupViewModel != null) {
+            lookupViewModel.resetFilter();
+        } else {
+            displayedTickets.setAll(allTickets);
+            setSearchResultMessage("Hiển thị tất cả " + allTickets.size() + " vé trong danh sách MOCK.", "search-msg-muted");
+        }
+        if (!displayedTickets.isEmpty() && ticketTableView != null) {
             ticketTableView.getSelectionModel().select(0);
         } else {
             updateSelectedTicketUI(null);
+        }
+    }
+
+    private void setSearchResultStyle(String styleClass) {
+        if (searchResultLabel != null) {
+            searchResultLabel.setStyle(null);
+            searchResultLabel.getStyleClass().removeAll("search-msg-info", "search-msg-muted", "search-msg-success", "search-msg-error");
+            if (styleClass != null && !styleClass.isBlank()) {
+                searchResultLabel.getStyleClass().add(styleClass);
+            }
         }
     }
 

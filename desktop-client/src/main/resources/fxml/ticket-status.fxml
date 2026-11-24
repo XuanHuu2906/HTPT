@@ -36,16 +36,30 @@
         </children>
     </HBox>
 
-    <!-- 2. BANNER CẢNH BÁO MOCK: Không ngụ ý thao tác đã gửi backend -->
-    <HBox alignment="CENTER_LEFT" spacing="10.0"
-          style="-fx-background-color: #fffbeb; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #fde68a; -fx-border-radius: 6;">
+    <!-- 2. BANNER CHẾ ĐỘ DỮ LIỆU & CẢNH BÁO -->
+    <VBox spacing="6.0">
         <children>
-            <Label text="ℹ THÔNG BÁO MÔ PHỎNG:"
-                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #92400e;" />
-            <Label text="Tất cả dữ liệu vé bên dưới là dữ liệu giả lập (MOCK) lưu trong bộ nhớ máy trạm, không ghi DB hay gửi qua mạng."
-                   style="-fx-font-size: 11px; -fx-text-fill: #78350f;" />
+            <HBox fx:id="bannerBox" alignment="CENTER_LEFT" spacing="10.0"
+                  style="-fx-background-color: #fffbeb; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #fde68a; -fx-border-radius: 6;">
+                <children>
+                    <Label fx:id="bannerTitleLabel" text="ℹ THÔNG BÁO MÔ PHỎNG:"
+                           style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #92400e;" />
+                    <Label fx:id="bannerTextLabel" text="Tất cả dữ liệu vé bên dưới là dữ liệu giả lập (MOCK) lưu trong bộ nhớ máy trạm, không ghi DB hay gửi qua mạng."
+                           style="-fx-font-size: 11px; -fx-text-fill: #78350f;" />
+                </children>
+            </HBox>
+            <!-- Nhãn thông báo lịch sử nâng cao BLOCKED/P1 (TASK TV1-D24) -->
+            <HBox fx:id="historyBlockedBox" alignment="CENTER_LEFT" spacing="8.0"
+                  style="-fx-background-color: #f1f5f9; -fx-padding: 6 12; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;">
+                <children>
+                    <Label text="ℹ LỊCH SỬ NÂNG CAO:"
+                           style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #475569;" />
+                    <Label fx:id="historyBlockedLabel" text="Lịch sử vé nâng cao chưa có contract được duyệt (BLOCKED/P1) — Bảng chỉ hiển thị vé đã xác nhận của ứng dụng này."
+                           style="-fx-font-size: 11px; -fx-text-fill: #334155;" />
+                </children>
+            </HBox>
         </children>
-    </HBox>
+    </VBox>
 
     <!-- 3. KHU VỰC TÌM KIẾM & TRA CỨU VÉ -->
     <VBox spacing="10.0"

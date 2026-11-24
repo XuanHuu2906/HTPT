@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
+import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.client.network.GetSeatsResponseDto;
 import vn.nhom6.railway.client.network.SeatInfoDto;
 import vn.nhom6.railway.client.network.SocketBookingClient;
@@ -324,21 +325,18 @@ public class SingleNodeSmokeTest {
     }
 
     @Test
-    @DisplayName("7. GET_REQUEST_RESULT: Ghi nhận tình trạng DTO từ TV3 theo quy tắc Bước 0")
+    @DisplayName("7. GET_REQUEST_RESULT: Kiểm tra tra cứu kết quả theo chuẩn SPEC-03 (TASK TV1-D24)")
     void testGetRequestResultStatus() {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             String queryReqId = UUID.randomUUID().toString();
             LOGGER.info("[SMOKE-STEP-7] Kiểm tra getRequestResult với requestId=" + queryReqId);
 
-            // Kiểm tra phương thức getRequestResult() của SocketBookingClient
-            CompletableFuture<?> future = client.getRequestResult(queryReqId);
-            ExecutionException ex = assertThrows(ExecutionException.class, () -> future.get(1, TimeUnit.SECONDS));
+            CompletableFuture<GetRequestResultResponseDto> future = client.getRequestResult(queryReqId);
+            GetRequestResultResponseDto res = future.get(3, TimeUnit.SECONDS);
+            assertNotNull(res);
+            assertEquals(queryReqId, res.getRequestId());
 
-            assertTrue(ex.getCause() instanceof UnsupportedOperationException);
-            assertTrue(ex.getCause().getMessage().contains("BLOCKED"),
-                    "Phải thông báo BLOCKED do thiếu DTO GET_REQUEST_RESULT từ TV3");
-
-            LOGGER.info("[SMOKE-STEP-7-PASS] getRequestResult phản ánh đúng trạng thái BLOCKED theo SPEC-03/D09!");
+            LOGGER.info("[SMOKE-STEP-7-PASS] getRequestResult phản ánh đúng trạng thái theo SPEC-03 §4.4!");
         });
     }
 }

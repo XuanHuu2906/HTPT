@@ -64,6 +64,7 @@ public final class ClientFactory {
     private static volatile ReadAdapter readAdapter = createDefaultReadAdapter();
     private static volatile SeatsRefreshService seatsRefreshService = null;
     private static volatile vn.nhom6.railway.client.controller.ReconnectController reconnectController = null;
+    private static volatile vn.nhom6.railway.client.viewmodel.TicketLookupViewModel ticketLookupViewModel = null;
 
     private ClientFactory() {
     }
@@ -92,6 +93,7 @@ public final class ClientFactory {
         journalingBookingClient = wrapWithJournal(rawBookingClient);
         bookingViewModel = new BookingViewModel(journalingBookingClient);
         pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+        ticketLookupViewModel = null;
     }
 
     private static PersistentPendingJournal createDefaultJournal() {
@@ -247,6 +249,7 @@ public final class ClientFactory {
         journalingBookingClient = wrapWithJournal(rawBookingClient);
         bookingViewModel = new BookingViewModel(journalingBookingClient);
         pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+        ticketLookupViewModel = null;
     }
 
     /**
@@ -402,5 +405,31 @@ public final class ClientFactory {
      */
     public static synchronized void setReconnectController(vn.nhom6.railway.client.controller.ReconnectController controller) {
         reconnectController = controller;
+    }
+
+    /**
+     * Lấy TicketLookupViewModel dùng chung cho ứng dụng (TASK TV1-D24).
+     */
+    public static synchronized vn.nhom6.railway.client.viewmodel.TicketLookupViewModel getTicketLookupViewModel() {
+        if (ticketLookupViewModel == null) {
+            ticketLookupViewModel = new vn.nhom6.railway.client.viewmodel.TicketLookupViewModel(
+                    getJournalingBookingClient(),
+                    getJournal(),
+                    null,
+                    () -> {
+                        if (seatsRefreshService != null) {
+                            seatsRefreshService.refreshNow();
+                        }
+                    }
+            );
+        }
+        return ticketLookupViewModel;
+    }
+
+    /**
+     * Đặt TicketLookupViewModel tùy biến (dùng trong kiểm thử).
+     */
+    public static synchronized void setTicketLookupViewModel(vn.nhom6.railway.client.viewmodel.TicketLookupViewModel vm) {
+        ticketLookupViewModel = vm;
     }
 }

@@ -6,6 +6,7 @@ import vn.nhom6.railway.protocol.codec.MessageCodec;
 import vn.nhom6.railway.protocol.dto.BookTicketResponseDto;
 import vn.nhom6.railway.protocol.dto.ErrorResponseDto;
 import vn.nhom6.railway.protocol.dto.FrameCodec;
+import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsResponseDto;
 import vn.nhom6.railway.protocol.dto.MessageEnvelope;
 import vn.nhom6.railway.protocol.dto.MessageType;
@@ -112,6 +113,7 @@ public class FakeNodeServer implements AutoCloseable {
     private final List<RequestTraceEntry> requestTraceLog = new CopyOnWriteArrayList<>();
     private volatile String currentTestCase = "DEFAULT";
     private volatile Consumer<String> auditLogListener = null;
+    private final Map<String, GetRequestResultResponseDto> customResults = new ConcurrentHashMap<>();
 
     // Sentinel nội bộ đánh dấu đã lưu kết quả nhưng giả lập rơi phản hồi (hold socket ngoài lock)
     private static final MessageEnvelope<ObjectNode> DROP_RESPONSE_SENTINEL =
@@ -555,6 +557,14 @@ public class FakeNodeServer implements AutoCloseable {
         this.forcedErrorMessage = message;
     }
 
+    public void setCustomRequestResult(String requestId, GetRequestResultResponseDto responseDto) {
+        if (responseDto == null) {
+            this.customResults.remove(requestId);
+        } else {
+            this.customResults.put(requestId, responseDto);
+        }
+    }
+
     public void setSimulateTimeoutOnBook(boolean simulate, long sleepMs) {
         this.simulateTimeoutOnBook = simulate;
         this.timeoutSleepMs = sleepMs;
@@ -823,8 +833,71 @@ public class FakeNodeServer implements AutoCloseable {
     private MessageEnvelope<?> handleGetRequestResult(String correlationId, JsonNode payload) {
         String requestId = payload != null && payload.hasNonNull("requestId") ? payload.get("requestId").asText() : null;
 
+        if (forceNotLeader) {
+            ErrorResponseDto err = new ErrorResponseDto("NOT_LEADER",
+                    "Node không phải là Leader hiện tại (term=" + notLeaderTerm + ")",
+                    notLeaderHint, notLeaderTerm, requestId);
+            return MessageEnvelope.createResponse(correlationId, MessageType.ERROR_RESPONSE, nodeId, err);
+        }
+
+        if (forcedErrorCode != null) {
+            ErrorResponseDto err = new ErrorResponseDto(forcedErrorCode,
+                    forcedErrorMessage != null ? forcedErrorMessage : "Lỗi do cấu hình kiểm thử",
+                    null, configuredTerm, requestId);
+            return MessageEnvelope.createResponse(correlationId, MessageType.ERROR_RESPONSE, nodeId, err);
+        }
+
         ObjectNode resultPayload = MessageCodec.getMapper().createObjectNode();
         resultPayload.put("requestId", requestId != null ? requestId : "");
+
+        if (requestId != null && customResults.containsKey(requestId)) {
+            GetRequestResultResponseDto custom = customResults.get(requestId);
+            if (custom.getRequestId() != null) {
+                resultPayload.put("requestId", custom.getRequestId());
+            }
+            resultPayload.put("state", custom.getState());
+            if (custom.getCommandType() != null) {
+                resultPayload.put("commandType", custom.getCommandType());
+            } else {
+                resultPayload.putNull("commandType");
+            }
+            if (custom.getTicketId() != null) {
+                resultPayload.put("ticketId", custom.getTicketId());
+            } else {
+                resultPayload.putNull("ticketId");
+            }
+            if (custom.getReasonCode() != null) {
+                resultPayload.put("reasonCode", custom.getReasonCode());
+            } else {
+                resultPayload.putNull("reasonCode");
+            }
+            if (custom.getAppliedLogIndex() != null) {
+                resultPayload.put("appliedLogIndex", custom.getAppliedLogIndex());
+            } else {
+                resultPayload.putNull("appliedLogIndex");
+            }
+
+            requestTraceLog.add(new RequestTraceEntry(
+                    currentTestCase,
+                    1,
+                    "GET_REQUEST_RESULT",
+                    requestId,
+                    correlationId,
+                    "-",
+                    "-",
+                    "-",
+                    custom.getState(),
+                    custom.getState(),
+                    "Custom result resolved from test setup"
+            ));
+
+            return MessageEnvelope.createResponse(
+                    correlationId,
+                    MessageType.GET_REQUEST_RESULT_RESPONSE,
+                    nodeId,
+                    resultPayload
+            );
+        }
 
         if (requestId != null && pendingRequestIds.contains(requestId)) {
             resultPayload.put("state", "PENDING");
