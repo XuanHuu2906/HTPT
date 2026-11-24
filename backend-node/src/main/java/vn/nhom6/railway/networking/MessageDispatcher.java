@@ -43,6 +43,39 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     );
 
     /**
+     * Standard client-facing TCP port on LAN per SPEC-08 Section 3 and configs/lan/PORTS.md.
+     */
+    public static final int STANDARD_CLIENT_PORT = 9100;
+
+    /**
+     * Standard Raft peer-to-peer consensus TCP port on LAN per SPEC-08 Section 3 and configs/lan/PORTS.md.
+     */
+    public static final int STANDARD_PEER_PORT = 9200;
+
+    /**
+     * Resolves the expected {@link ChannelType} based on standard SPEC-08 port mapping.
+     *
+     * <p>Port mapping rules per SPEC-08 §3 and configs/lan/PORTS.md:
+     * <ul>
+     *   <li>Port 9100 (or dev host published 9101..9105) maps to {@link ChannelType#CLIENT}.</li>
+     *   <li>Port 9200 (or dev host published 9201..9205) maps to {@link ChannelType#PEER}.</li>
+     *   <li>Any other port defaults to {@link ChannelType#ALL}.</li>
+     * </ul>
+     *
+     * @param port Socket port number
+     * @return Resolved ChannelType
+     */
+    public static ChannelType resolveChannelForPort(int port) {
+        if (port == STANDARD_CLIENT_PORT || (port >= 9101 && port <= 9105)) {
+            return ChannelType.CLIENT;
+        }
+        if (port == STANDARD_PEER_PORT || (port >= 9201 && port <= 9205)) {
+            return ChannelType.PEER;
+        }
+        return ChannelType.ALL;
+    }
+
+    /**
      * Channel type defining which category of messages are accepted on this port/connection.
      */
     public enum ChannelType {
