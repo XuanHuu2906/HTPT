@@ -1,0 +1,104 @@
+2026-11-24T07:36:40.297560Z [INFO] ================================================================================
+2026-11-24T07:36:40.297607Z [INFO]  RAILWAY DISTRIBUTED SYSTEM - NHOM 6 | LAN PREFLIGHT CHECK (TV3-D24)
+2026-11-24T07:36:40.297624Z [INFO] ================================================================================
+2026-11-24T07:36:40.304309Z [INFO] Thư mục dự án (RepoRoot)       : /home/chennan/Documents/code-project/do-an-phan-tan-java
+2026-11-24T07:36:40.304598Z [INFO] Nhánh Git (Git Branch)         : feat/tv3-d23
+2026-11-24T07:36:40.304662Z [INFO] Mã Commit SHA                  : 0804dbd1376c8aee840f5a4bf66c028bf6e9ce70
+2026-11-24T07:36:40.304724Z [INFO] Chế độ kiểm tra (Mode)         : Preflight (AllNodes)
+2026-11-24T07:36:40.304776Z [INFO] Thời điểm bắt đầu (UTC)        : 2026-11-24T07:36:40.304753Z
+2026-11-24T07:36:40.304809Z [INFO] ================================================================================
+2026-11-24T07:36:40.304832Z [INFO]  1. KIỂM TRA CÚ PHÁP VÀ PORT MAPPING CẤU HÌNH LAN (SPEC-08 §3)
+2026-11-24T07:36:40.304853Z [INFO] ================================================================================
+2026-11-24T07:36:40.304959Z [INFO] 
+[Đang kiểm tra: node-1.properties]
+2026-11-24T07:36:40.305760Z [INFO]   - Cú pháp cơ bản & Node ID (node-1)  : [PASS]
+2026-11-24T07:36:40.305843Z [INFO]   - Cổng Client TCP (9100)               : [PASS 9100]
+2026-11-24T07:36:40.305888Z [INFO]   - Cổng Raft Peer TCP (9200)            : [PASS 9200]
+2026-11-24T07:36:40.305906Z [INFO]   - Advertise Client                          : 192.168.10.11:9100
+2026-11-24T07:36:40.305922Z [INFO]   - Advertise Peer                            : 192.168.10.11:9200
+2026-11-24T07:36:40.305947Z [INFO]   - Database cách ly (TV2 DB isolation)       : [PASS] railway_node1
+2026-11-24T07:36:40.305970Z [INFO]   - Danh bạ Raft node.peers (5 voter)            : [PASS]
+2026-11-24T07:36:40.305983Z [INFO]       * node-1@192.168.10.11:9200 (Placeholder IP)
+2026-11-24T07:36:40.305996Z [INFO]       * node-2@192.168.10.12:9200 (Placeholder IP)
+2026-11-24T07:36:40.306010Z [INFO]       * node-3@192.168.10.13:9200 (Placeholder IP)
+2026-11-24T07:36:40.306022Z [INFO]       * node-4@192.168.10.14:9200 (Placeholder IP)
+2026-11-24T07:36:40.306034Z [INFO]       * node-5@192.168.10.15:9200 (Placeholder IP)
+2026-11-24T07:36:40.306073Z [INFO] 
+[Đang kiểm tra: node-2.properties]
+2026-11-24T07:36:40.307376Z [INFO]   - Cú pháp cơ bản & Node ID (node-2)  : [PASS]
+2026-11-24T07:36:40.307529Z [INFO]   - Cổng Client TCP (9100)               : [PASS 9100]
+2026-11-24T07:36:40.307586Z [INFO]   - Cổng Raft Peer TCP (9200)            : [PASS 9200]
+2026-11-24T07:36:40.307617Z [INFO]   - Advertise Client                          : 192.168.10.12:9100
+2026-11-24T07:36:40.307642Z [INFO]   - Advertise Peer                            : 192.168.10.12:9200
+2026-11-24T07:36:40.307669Z [INFO]   - Database cách ly (TV2 DB isolation)       : [PASS] railway_node2
+2026-11-24T07:36:40.307714Z [INFO]   - Danh bạ Raft node.peers (5 voter)            : [PASS]
+2026-11-24T07:36:40.307746Z [INFO]       * node-1@192.168.10.11:9200 (Placeholder IP)
+2026-11-24T07:36:40.307762Z [INFO]       * node-2@192.168.10.12:9200 (Placeholder IP)
+2026-11-24T07:36:40.307781Z [INFO]       * node-3@192.168.10.13:9200 (Placeholder IP)
+2026-11-24T07:36:40.307801Z [INFO]       * node-4@192.168.10.14:9200 (Placeholder IP)
+2026-11-24T07:36:40.307814Z [INFO]       * node-5@192.168.10.15:9200 (Placeholder IP)
+2026-11-24T07:36:40.307899Z [INFO] 
+[Đang kiểm tra: node-3.properties]
+2026-11-24T07:36:40.308814Z [INFO]   - Cú pháp cơ bản & Node ID (node-3)  : [PASS]
+2026-11-24T07:36:40.308901Z [INFO]   - Cổng Client TCP (9100)               : [PASS 9100]
+2026-11-24T07:36:40.308929Z [INFO]   - Cổng Raft Peer TCP (9200)            : [PASS 9200]
+2026-11-24T07:36:40.308957Z [INFO]   - Advertise Client                          : 192.168.10.13:9100
+2026-11-24T07:36:40.308975Z [INFO]   - Advertise Peer                            : 192.168.10.13:9200
+2026-11-24T07:36:40.309006Z [INFO]   - Database cách ly (TV2 DB isolation)       : [PASS] railway_node3
+2026-11-24T07:36:40.309055Z [INFO]   - Danh bạ Raft node.peers (5 voter)            : [PASS]
+2026-11-24T07:36:40.309097Z [INFO]       * node-1@192.168.10.11:9200 (Placeholder IP)
+2026-11-24T07:36:40.309123Z [INFO]       * node-2@192.168.10.12:9200 (Placeholder IP)
+2026-11-24T07:36:40.309159Z [INFO]       * node-3@192.168.10.13:9200 (Placeholder IP)
+2026-11-24T07:36:40.309206Z [INFO]       * node-4@192.168.10.14:9200 (Placeholder IP)
+2026-11-24T07:36:40.309255Z [INFO]       * node-5@192.168.10.15:9200 (Placeholder IP)
+2026-11-24T07:36:40.309371Z [INFO] 
+[Đang kiểm tra: node-4.properties]
+2026-11-24T07:36:40.310626Z [INFO]   - Cú pháp cơ bản & Node ID (node-4)  : [PASS]
+2026-11-24T07:36:40.310802Z [INFO]   - Cổng Client TCP (9100)               : [PASS 9100]
+2026-11-24T07:36:40.310842Z [INFO]   - Cổng Raft Peer TCP (9200)            : [PASS 9200]
+2026-11-24T07:36:40.310864Z [INFO]   - Advertise Client                          : 192.168.10.14:9100
+2026-11-24T07:36:40.310880Z [INFO]   - Advertise Peer                            : 192.168.10.14:9200
+2026-11-24T07:36:40.310905Z [INFO]   - Database cách ly (TV2 DB isolation)       : [PASS] railway_node4
+2026-11-24T07:36:40.310949Z [INFO]   - Danh bạ Raft node.peers (5 voter)            : [PASS]
+2026-11-24T07:36:40.310987Z [INFO]       * node-1@192.168.10.11:9200 (Placeholder IP)
+2026-11-24T07:36:40.311015Z [INFO]       * node-2@192.168.10.12:9200 (Placeholder IP)
+2026-11-24T07:36:40.311054Z [INFO]       * node-3@192.168.10.13:9200 (Placeholder IP)
+2026-11-24T07:36:40.311112Z [INFO]       * node-4@192.168.10.14:9200 (Placeholder IP)
+2026-11-24T07:36:40.311134Z [INFO]       * node-5@192.168.10.15:9200 (Placeholder IP)
+2026-11-24T07:36:40.311197Z [INFO] 
+[Đang kiểm tra: node-5.properties]
+2026-11-24T07:36:40.311903Z [INFO]   - Cú pháp cơ bản & Node ID (node-5)  : [PASS]
+2026-11-24T07:36:40.311980Z [INFO]   - Cổng Client TCP (9100)               : [PASS 9100]
+2026-11-24T07:36:40.312004Z [INFO]   - Cổng Raft Peer TCP (9200)            : [PASS 9200]
+2026-11-24T07:36:40.312020Z [INFO]   - Advertise Client                          : 192.168.10.15:9100
+2026-11-24T07:36:40.312033Z [INFO]   - Advertise Peer                            : 192.168.10.15:9200
+2026-11-24T07:36:40.312046Z [INFO]   - Database cách ly (TV2 DB isolation)       : [PASS] railway_node5
+2026-11-24T07:36:40.312068Z [INFO]   - Danh bạ Raft node.peers (5 voter)            : [PASS]
+2026-11-24T07:36:40.312101Z [INFO]       * node-1@192.168.10.11:9200 (Placeholder IP)
+2026-11-24T07:36:40.312118Z [INFO]       * node-2@192.168.10.12:9200 (Placeholder IP)
+2026-11-24T07:36:40.312131Z [INFO]       * node-3@192.168.10.13:9200 (Placeholder IP)
+2026-11-24T07:36:40.312147Z [INFO]       * node-4@192.168.10.14:9200 (Placeholder IP)
+2026-11-24T07:36:40.312162Z [INFO]       * node-5@192.168.10.15:9200 (Placeholder IP)
+2026-11-24T07:36:40.312181Z [INFO] ================================================================================
+2026-11-24T07:36:40.312199Z [INFO]  2. KIỂM TRA KHẢ NĂNG BIND CỔNG CỤC BỘ (PORTS 9100, 9200)
+2026-11-24T07:36:40.312214Z [INFO] ================================================================================
+2026-11-24T07:36:40.314877Z [INFO]   - Client Port 9100: Cổng 9100 khả dụng, có thể bind thành công (READY TO BIND)
+2026-11-24T07:36:40.315082Z [INFO]   - Raft Peer Port 9200: Cổng 9200 khả dụng, có thể bind thành công (READY TO BIND)
+2026-11-24T07:36:40.315137Z [INFO] ================================================================================
+2026-11-24T07:36:40.315155Z [INFO]  3. TIỀN KIỂM TƯỜNG LỬA (FIREWALL PREFLIGHT)
+2026-11-24T07:36:40.315277Z [INFO] ================================================================================
+2026-11-24T07:36:40.315295Z [INFO]   - Hệ điều hành hiện tại: Linux (Kiểm tra quy tắc socket và firewall preflight).
+2026-11-24T07:36:40.315318Z [INFO]   - Cổng 9100 : [CHECKED] Sẵn sàng cho rules Inbound TCP 9100.
+2026-11-24T07:36:40.315362Z [INFO]   - Cổng 9200 : [CHECKED] Sẵn sàng cho rules Inbound TCP 9200.
+2026-11-24T07:36:40.315387Z [INFO]   - Hướng dẫn cấu hình Windows Firewall (khi chạy demo trên laptop Windows):
+2026-11-24T07:36:40.315419Z [INFO]       * New-NetFirewallRule -DisplayName "Railway-TCP-9100" -Direction Inbound -LocalPort 9100 -Protocol TCP -Action Allow
+2026-11-24T07:36:40.315438Z [INFO]       * New-NetFirewallRule -DisplayName "Railway-TCP-9200" -Direction Inbound -LocalPort 9200 -Protocol TCP -Action Allow
+2026-11-24T07:36:40.315465Z [INFO] ================================================================================
+2026-11-24T07:36:40.315501Z [INFO]  4. BÁO CÁO TỔNG HỢP VÀ RÀNG BUỘC AN TOÀN (AGENTS.md §0, §5, §6)
+2026-11-24T07:36:40.315518Z [INFO] ================================================================================
+2026-11-24T07:36:40.315541Z [INFO]   1. Cú pháp cấu hình (configs/lan/node-1..5.properties) : [PASS]
+2026-11-24T07:36:40.315560Z [INFO]   2. Quy chuẩn cổng mạng (Client: 9100, Peer: 9200)       : [PASS]
+2026-11-24T07:36:40.315577Z [INFO]   3. Định dạng danh bạ cụm (Đủ 5 voter node-1..node-5)   : [PASS]
+2026-11-24T07:36:40.315594Z [INFO]   4. Chế độ địa chỉ IP                                   : [PLACEHOLDER_MODE]
+2026-11-24T07:36:40.315607Z [INFO]   5. Trạng thái kết nối 5 Laptop vật lý                   : [NOT_RUN / DEFERRED_TO_D25]
+2026-11-24T07:36:40.315621Z [INFO]      => LƯU Ý BẮT BUỘC: Preflight syntax đạt yêu cầu; TV6-D25 mới thực hiện deploy vật lý.
