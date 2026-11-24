@@ -1,0 +1,188 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] desktop-client                                                     [jar]
+[INFO] desktop-monitor                                                    [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO] 
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/6]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/6]
+[INFO]   from shared/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24410 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to plexus.snapshots (https://oss.sonatype.org/content/repositories/plexus-snapshots): oss.sonatype.org: Temporary failure in name resolution
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to central-snapshots (https://central.sonatype.com/repository/maven-snapshots): central.sonatype.com: Temporary failure in name resolution
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/shared/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO] 
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/6]
+[INFO]   from backend-node/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 83 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 100 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.networking.LanConfigPreflightTest
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-1.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-2.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-3.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-4.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-5.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO: ================================================================================
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  LAN PREFLIGHT VERIFICATION REPORT (TV3-D23)
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO: ================================================================================
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  1. Configuration templates (configs/lan/node-1..5.properties) : SYNTAX_PASS
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  2. Port mapping specification (configs/lan/PORTS.md)           : SPEC_VALID
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  3. Raft voter peer formatting (ElectionRuntime parser)         : 5_VOTERS_VALID
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  4. IP mode                                                     : PLACEHOLDER_MODE
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO:  5. Physical 5-Laptop TCP connection status                     : NOT_RUN (TV6-D24 / G6)
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.LanConfigPreflightTest testExplicitLanPreflightAssertionNotClaimingPhysicalCluster
+INFO: ================================================================================
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-1.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-2.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-3.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-4.properties
+Nov 23, 2026 2:42:36 PM vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: /home/chennan/Documents/code-project/do-an-phan-tan-java/backend-node/../configs/lan/node-5.properties
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.159 s -- in vn.nhom6.railway.networking.LanConfigPreflightTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-client >-------------------
+[INFO] Building desktop-client 1.0.0-SNAPSHOT                             [4/6]
+[INFO]   from desktop-client/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-fxml:jar:21.0.2 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-client ---
+[INFO] Copying 13 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-client ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 60 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-client ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/desktop-client/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-client ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 33 source files with javac [debug release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-client ---
+[INFO] 
+[INFO] ------------------< vn.nhom6.railway:desktop-monitor >------------------
+[INFO] Building desktop-monitor 1.0.0-SNAPSHOT                            [5/6]
+[INFO]   from desktop-monitor/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ desktop-monitor ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ desktop-monitor ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ desktop-monitor ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/desktop-monitor/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ desktop-monitor ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ desktop-monitor ---
+[INFO] 
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [6/6]
+[INFO]   from integration-tests/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory /home/chennan/Documents/code-project/do-an-phan-tan-java/integration-tests/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] railway-distributed-system ......................... SUCCESS [  0.003 s]
+[INFO] shared ............................................. SUCCESS [  1.182 s]
+[INFO] backend-node ....................................... SUCCESS [  9.771 s]
+[INFO] desktop-client ..................................... SUCCESS [  1.940 s]
+[INFO] desktop-monitor .................................... SUCCESS [  0.390 s]
+[INFO] integration-tests .................................. SUCCESS [  0.330 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.775 s
+[INFO] Finished at: 2026-11-23T14:42:39+07:00
+[INFO] ------------------------------------------------------------------------
