@@ -20,7 +20,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -480,14 +479,15 @@ public class SocketBookingClient implements BookingClient, AutoCloseable {
 
         return CompletableFuture.supplyAsync(() -> {
             long startTime = System.currentTimeMillis();
-            GetRequestResultRequestDto reqDto = new GetRequestResultRequestDto(requestId);
-            MessageEnvelope<GetRequestResultRequestDto> reqEnvelope = MessageEnvelope.createRequest(
-                    MessageType.GET_REQUEST_RESULT,
-                    senderId,
-                    reqDto);
-            String messageId = reqEnvelope.getMessageId();
-
+            String messageId = "UNKNOWN";
             try {
+                GetRequestResultRequestDto reqDto = new GetRequestResultRequestDto(requestId);
+                MessageEnvelope<GetRequestResultRequestDto> reqEnvelope = MessageEnvelope.createRequest(
+                        MessageType.GET_REQUEST_RESULT,
+                        senderId,
+                        reqDto);
+                messageId = reqEnvelope.getMessageId();
+
                 MessageEnvelope<JsonNode> resEnvelope = sendAndReceive(reqEnvelope);
                 long elapsed = System.currentTimeMillis() - startTime;
                 MessageType resType = resEnvelope.getType();
