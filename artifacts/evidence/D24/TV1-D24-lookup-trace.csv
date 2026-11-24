@@ -1,7 +1,7 @@
 test_case,attempt,step,request_id,message_id,trip_id,seat_id,passenger_name,expected_outcome,actual_status,comment
-DEFAULT,1,GET_REQUEST_RESULT,REQ-SENT-adb2cddb-81c2-440b-a128-92f85a771a38,851d54d8-34f7-4ac2-9460-a41e3e481c2d,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
-DEFAULT,1,GET_REQUEST_RESULT,REQ-REJECT-26d1921f-782d-4345-814b-266df2ff30e0,8cb6ec28-5409-4646-bb0e-f42304a0afb6,-,-,"-",APPLIED_REJECTED,APPLIED_REJECTED,"Custom result resolved from test setup"
-DEFAULT,1,GET_REQUEST_RESULT,REQ-REDIRECT-4489af6e-320f-42d0-acdb-10c8b2319eb2,39a1f812-a20f-49a8-a8d8-91d2e861eab1,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
-DEFAULT,1,GET_REQUEST_RESULT,REQ-SUCCESS-caf2b2fc-cae9-444e-9a7d-a4aac14fd8b8,f7f49730-7506-4330-833e-ae9c8c4983b7,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
-DEFAULT,1,GET_REQUEST_RESULT,REQ-RESOLVE-58e96236-ac6d-40ef-b98e-1c7a26f842ba,ef990d2e-8599-4329-b233-48c6da4df102,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
-DEFAULT,1,GET_REQUEST_RESULT,REQ-PENDING-40147fb3-65df-4343-b6dd-bc9efca4a2b7,e198fff9-1ad3-4e58-b634-088cec93454c,-,-,"-",PENDING,PENDING,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SENT-0043667f-f7a9-493c-8ae2-3ea4b09fa187,89b6f2a8-5824-48c4-9bcf-1136827d4a3d,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REJECT-0c03dbfe-a333-432d-9c48-9cb0166e65ee,0909760b-2d1e-4e0e-b757-a045bc4e5733,-,-,"-",APPLIED_REJECTED,APPLIED_REJECTED,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REDIRECT-7fdf80c7-925b-4c4a-9fad-b784b9e801ec,00165f1a-aab3-4d47-8fc4-0d47367cdd25,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SUCCESS-c2fd35df-5afd-432b-8615-eec9ae844361,59390068-244b-4c65-9323-6d0882cbd7fd,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-RESOLVE-a132df63-107c-4387-bad3-137bee41a3b2,0b46cc80-7042-4044-b8d0-12994ac1712c,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-PENDING-08220f22-85d7-4bd2-8acd-f5fb036bfe5d,0856293d-d1a9-42e3-8e6b-ed6f5e7adde5,-,-,"-",PENDING,PENDING,"Custom result resolved from test setup"
