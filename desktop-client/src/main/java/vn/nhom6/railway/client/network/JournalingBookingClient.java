@@ -338,11 +338,6 @@ public class JournalingBookingClient implements BookingClient, Closeable {
     }
 
     @Override
-    public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
-        return delegate.getRequestResult(requestId);
-    }
-
-    @Override
     public void close() throws IOException {
         if (delegate instanceof AutoCloseable ac) {
             try {
