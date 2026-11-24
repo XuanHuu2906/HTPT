@@ -33,9 +33,19 @@ public final class RaftElectionComponent implements AutoCloseable {
     private boolean heartbeatActive;
     private final ElectionConfig config;
     private final Consumer<Exception> onFailure;
+    private Runnable onBecomeLeaderHook = () -> {};
+    private Runnable onStepDownHook = () -> {};
     private boolean failed;
     private volatile boolean closed;
     private volatile Thread raftThread;
+
+    /** Loop-serialized wiring view used by ElectionRuntime to compose replication/commit/apply. */
+    public record WiringContext(
+            RaftState state,
+            RaftNode core,
+            ScheduledThreadPoolExecutor loop,
+            HigherTermHandler higherTermHandler,
+            Consumer<Exception> onFailure) { }
 
     /** Factory must retain exactly the restored state passed here, without reloading storage. */
     @FunctionalInterface
@@ -83,6 +93,7 @@ public final class RaftElectionComponent implements AutoCloseable {
                 }), higherTermHandler, () -> {
                     timerStop();
                     System.out.println("[RAFT] node=" + localId + " role=LEADER term=" + state.currentTerm());
+                    onBecomeLeaderHook.run();
                     if (heartbeatCoordinator != null) {
                         heartbeatActive = true;
                         heartbeatCoordinator.start();
@@ -134,6 +145,53 @@ public final class RaftElectionComponent implements AutoCloseable {
     }
 
     /**
+     * Composes replication/commit/apply hooks on this component's serialized Raft event loop.
+     */
+    public void configureWiring(
+            Consumer<WiringContext> configurator,
+            Runnable onBecomeLeader,
+            Runnable onStepDown) throws Exception {
+        Objects.requireNonNull(configurator, "configurator");
+        Objects.requireNonNull(onBecomeLeader, "onBecomeLeader");
+        Objects.requireNonNull(onStepDown, "onStepDown");
+        call(() -> {
+            requireHealthy();
+            this.onBecomeLeaderHook = onBecomeLeader;
+            this.onStepDownHook = onStepDown;
+            configurator.accept(new WiringContext(state, core, loop, higherTermHandler, this::fail));
+            return null;
+        });
+    }
+
+    /**
+     * Executes a task synchronously on this component's single serialized Raft event loop.
+     * Safe to invoke from client TCP threads; if already on the Raft thread, runs inline.
+     */
+    public <T> T submitOnLoop(Callable<T> task) throws Exception {
+        Objects.requireNonNull(task, "task");
+        if (Thread.currentThread() == raftThread) {
+            if (closed) throw new IllegalStateException("Election component closed");
+            return task.call();
+        }
+        return call(task);
+    }
+
+    /**
+     * Surfaces a higher term discovered by replication onto the shared HigherTermHandler.
+     * Must be invoked on the serialized Raft event loop.
+     */
+    public void observeHigherTermFromReplication(long term) {
+        if (closed || failed) return;
+        try {
+            if (term > state.currentTerm()) {
+                higherTermHandler.observe(term);
+            }
+        } catch (Exception failure) {
+            fail(failure);
+        }
+    }
+
+    /**
      * Called by the replication module (TV4-D16) when commitIndex advances.
      * Ensures the next heartbeat carries the updated leaderCommit.
      */
@@ -149,6 +207,7 @@ public final class RaftElectionComponent implements AutoCloseable {
         } else if (heartbeat != null) {
             heartbeat.stop();
         }
+        onStepDownHook.run();
         if (heartbeatActive) {
             heartbeatActive = false;
             System.out.println("[RAFT] node=" + localId + " heartbeat=STOPPED term=" + state.currentTerm());
@@ -214,8 +273,28 @@ public final class RaftElectionComponent implements AutoCloseable {
                 state.commitIndex(), state.lastApplied(), !failed));
     }
 
+    /** Extended coherent snapshot including leaderId and lastLogIndex for NODE_STATUS & LeaderRouter. */
+    public DetailedStatus detailedStatus() throws Exception {
+        return submitOnLoop(() -> {
+            String knownLeader = state.role() == vn.nhom6.railway.raft.core.Role.LEADER
+                    ? localId
+                    : state.leaderId();
+            return new DetailedStatus(
+                    state.role().name(),
+                    state.currentTerm(),
+                    knownLeader,
+                    state.lastLogIndex(),
+                    state.commitIndex(),
+                    state.lastApplied(),
+                    !failed);
+        });
+    }
+
     public record Status(String role, long currentTerm, long commitIndex,
             long lastApplied, boolean storageHealthy) { }
+
+    public record DetailedStatus(String role, long currentTerm, String leaderId,
+            long lastLogIndex, long commitIndex, long lastApplied, boolean storageHealthy) { }
 
     private void fail(Exception failure) {
         if (failed) return;
@@ -226,6 +305,9 @@ public final class RaftElectionComponent implements AutoCloseable {
         } else if (heartbeat != null) {
             heartbeat.close();
         }
+        try {
+            onStepDownHook.run();
+        } catch (RuntimeException ignored) { }
         onFailure.accept(failure);
     }
 

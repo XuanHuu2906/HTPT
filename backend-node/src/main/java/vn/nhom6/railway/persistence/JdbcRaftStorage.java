@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import vn.nhom6.railway.booking.ConnectionFactory;
 import vn.nhom6.railway.protocol.codec.MessageCodec;
@@ -47,6 +48,8 @@ public final class JdbcRaftStorage implements RaftStorage {
 
     private static final Logger LOGGER = Logger.getLogger(JdbcRaftStorage.class.getName());
     private static final ObjectMapper MAPPER = MessageCodec.getMapper();
+    private static final ObjectMapper CANONICAL_MAPPER = new ObjectMapper()
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
     @FunctionalInterface
     public interface ConnectionProvider {
@@ -124,7 +127,7 @@ public final class JdbcRaftStorage implements RaftStorage {
                             }
                             prevTerm = term;
                             expectedIndex = Math.addExact(expectedIndex, 1L);
-                            entries.add(new RaftLogEntry(index, term, commandType, commandJson));
+                            entries.add(new RaftLogEntry(index, term, commandType, canonicalizeJson(commandJson)));
                         }
                     }
                 }
@@ -354,6 +357,18 @@ public final class JdbcRaftStorage implements RaftStorage {
             }
         } catch (SQLException e) {
             throw logAndWrap("loadLastApplied", e);
+        }
+    }
+
+    private static String canonicalizeJson(String rawJson) {
+        if (rawJson == null || rawJson.isBlank()) {
+            return rawJson;
+        }
+        try {
+            Object parsed = CANONICAL_MAPPER.readValue(rawJson, Object.class);
+            return CANONICAL_MAPPER.writeValueAsString(parsed);
+        } catch (JsonProcessingException e) {
+            return rawJson;
         }
     }
 

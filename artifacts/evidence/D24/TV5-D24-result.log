@@ -1,0 +1,128 @@
+TV5-D24 validation evidence
+===========================
+
+Task: TV5-D24 Phục hồi term/vote sau restart (Raft Election + Recovery — Shutdown & Restart of Follower/Candidate/Leader, Term/Vote Recovery, Election Timer Reset, Single-Vote-Per-Term & Log Preservation)
+Date: 2026-11-24
+Base Commit: effa967 (branch Huu)
+Environment:
+- Host OS: Linux 7.3.4-300.fc45.x86_64 (x86_64)
+- JDK / Maven: OpenJDK 25.0.5, Apache Maven 3.9.11
+- Docker Cluster: 5 Backend containers (railway-backend-node-1..5, ports 9101..9105 client / 9201..9205 peer) + 5 independent PostgreSQL 16-alpine containers (railway-postgres-1..5, host ports 5438, 5434, 5435, 5436, 5437)
+
+Scope:
+- backend-node election package (14 deterministic/component tests + 4 real PostgreSQL 16 JDBC tests = 18 tests in ElectionRestartTest)
+- TV2-D13 persistent loader (DbStateLoader) real PostgreSQL restart verification (PersistenceRestartTest: 6 Group A + 12 Group B real PostgreSQL = 18/18 PASS, 0 skipped)
+- TV4-D22 startup replay (LogReplayCoordinatorJdbcTest: 5/5 real PostgreSQL PASS, 0 skipped)
+- Live 5-Node Docker + 5-PostgreSQL container restart verification over real TCP v1 protocol (Follower container stop/restart + live TCP REQUEST_VOTE single-vote-per-term & idempotent retry; Leader container stop + 4/5 reelection + Old Leader restart + DbStateLoader bootstrapType=RESTART + 5/5 convergence + raft_log preservation)
+- Verifies TC-RAFT-01, TC-RAFT-02, TC-RAFT-05, TC-RAFT-08, TC-RAFT-09, AC07, AC08.
+
+Deliverables:
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionRestartTest.java (18 scenarios: 14 in-memory/component + 4 real PostgreSQL JDBC)
+- artifacts/evidence/D24/TV5-D24-result.log (this evidence file)
+- docs/implementation/TV5-D24-notes.md (technical notes & verification summary)
+
+Verified Scenarios in ElectionRestartTest (18/18 PASS):
+In-memory & Real RaftElectionComponent Suite (14/14 PASS):
+1.  followerRestart_readsTermAndVote_preventsDoubleVoteAndPreservesOldLog: PASS
+2.  candidateRestart_restartsAsFollower_keepsSelfVoteAndStartsFreshTermOnNextTimeout: PASS
+3.  leaderRestart_losesLeadership_armsElectionTimer_preservesCommittedAndUncommittedLog: PASS
+4.  electionTimerResetRules_afterRestart_followSpec04Section31: PASS
+5.  restartPreservesLog_upToDateVoteRuleStillRejectsStaleCandidates: PASS
+6.  multipleRestartCycles_monotonicTermAndSingleVotePerTerm: PASS
+7.  dbStateLoaderAndLogReplayCoordinator_cleanRestartLeavesUncommittedTailUntilLeaderCommits: PASS
+8.  crashMidApply_logReplayCoordinatorReconcilesIdempotentlyAndPreservesElectionSafety: PASS
+9.  raftAheadOfDurableDb_failsClosedThenRestoresAlignedWithoutLosingVoteOrLog: PASS
+10. failClosedOnCorruptStorage_andAmbiguousWritePreservesVoteOnRestart: PASS
+11. realRaftElectionComponent_leaderShutdownAndRestart_preservesVoteLogAndRearmsTimer: PASS
+12. fiveNodeCluster_leaderCrashAndRestart_preservesVoteRulesThenRepairsAndConverges: PASS
+13. fiveNodeCluster_followerRestartsMidSplitVote_preventsTwoLeadersInSameTerm: PASS
+14. dbStateLoader_distinguishesGenesisAndEmptyLogRestartWithVote: PASS
+
+Real PostgreSQL 16 JDBC Suite — ElectionRestartTest$RealPostgreSqlElectionRestartTests (4/4 PASS):
+15. jdbcFollowerRestart_preservesTermVoteAndLogAcrossPostgresReload: PASS
+16. jdbcCandidateRestart_keepsSelfVoteAndAdvancesTermOnNextTimeout: PASS
+17. jdbcRealRaftElectionComponent_leaderRestartPreservesVoteLogAndRearmsTimer: PASS
+18. jdbcMidApplyReplay_reconcilesIdempotentlyAndEnforcesVoteAndLogRules: PASS
+
+--- Suite 1: Real PostgreSQL JDBC Restart & Replay Suites (TV5-D24 + TV2-D13 + TV4-D22) ---
+
+Command:
+RAILWAY_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:5438/railway_node1" \
+RAILWAY_TEST_DB_USER="railway" \
+RAILWAY_TEST_DB_PASSWORD="railway_secret_local_only" \
+mvn -B -ntp -pl backend-node test -Drailway.requirePostgres=true \
+  -Dtest="ElectionRestartTest,PersistenceRestartTest,LogReplayCoordinatorJdbcTest" \
+  -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in PersistenceRestartTest$GroupB_RealPostgreSqlRestartTests
+[INFO] Running vn.nhom6.railway.booking.PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in PersistenceRestartTest$GroupA_IsolatedConsistencyTests
+[INFO] Running vn.nhom6.railway.raft.election.ElectionRestartTest
+[INFO] Running vn.nhom6.railway.raft.election.ElectionRestartTest$RealPostgreSqlElectionRestartTests
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.133 s -- in ElectionRestartTest (14 + 4 JDBC)
+[INFO] Running vn.nhom6.railway.raft.replication.LogReplayCoordinatorJdbcTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.304 s -- in LogReplayCoordinatorJdbcTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time: 10.814 s
+
+--- Suite 2: Full Election Package Regression With Real PostgreSQL Enabled ---
+
+Command:
+RAILWAY_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:5438/railway_node1" \
+RAILWAY_TEST_DB_USER="railway" \
+RAILWAY_TEST_DB_PASSWORD="railway_secret_local_only" \
+mvn -B -ntp -pl backend-node test -Drailway.requirePostgres=true \
+  -Dtest="vn.nhom6.railway.raft.election.*Test" \
+  -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Tests run: 320, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time: 8.828 s
+
+--- Suite 3: Live 5-Node Docker + 5-PostgreSQL Container Restart Verification ---
+
+Environment:
+- Live Docker Compose cluster: railway-backend-node-1..5 + railway-postgres-1..5 (postgres:16-alpine)
+- Protocol: Real TCP length-prefixed JSON v1 (client ports 9101..9105, peer ports 9201..9205) + psql direct DB inspection
+
+Verified Steps & Actual Output (Exit Code: 0):
+1. Baseline 5/5 cluster:
+   [PASS] 1. Baseline 5/5 cluster: leader=node-5 term=41
+   All 5 PostgreSQL nodes synced: term=41, logCount=15, maxLogIndex=15, maxLogTerm=23, lastApplied=15, storageHealthy=True.
+
+2. Stop & Restart Follower container (railway-backend-node-1):
+   - docker stop -t 2 railway-backend-node-1 && docker start railway-backend-node-1
+   - [PASS] 2. Cluster after Follower restart: leader=node-5 term=41
+   - Restarted node-1: role=FOLLOWER, term=41, leaderId=node-5, storageHealthy=True, pg={term: 41, votedFor: 'node-5', logCount: 15, lastApplied: 15} (old log intact, term never decreased)
+   - Live TCP peer REQUEST_VOTE from same-term rival (node-2 -> node-1 at term 41): {'term': 41, 'voteGranted': False}
+   - Live TCP peer REQUEST_VOTE idempotent retry (node-5 -> node-1 at term 41): {'term': 41, 'voteGranted': True}
+   - [PASS] 2b. Single-vote-per-term & idempotent retry verified via live TCP peer RPC after container restart
+
+3. Stop Leader container (railway-backend-node-5, term=41) -> 4/5 Failover -> Restart Old Leader:
+   - docker stop -t 2 railway-backend-node-5
+   - [PASS] 3a. 4/5 reelection after Leader stop: leader=node-4 term=50 (election timers fired, new Leader elected in higher term)
+   - docker start railway-backend-node-5
+   - [PASS] 3b. 5/5 convergence after Old Leader restart: leader=node-5 term=51
+   - Valid Raft behavior: restarted node-5 loaded DbStateLoader bootstrapType=RESTART (verified in container logs), preserved all 15 raft_log rows, and won a fresh election at strictly higher term 51 > 50 (never resumed old term 41 leadership)
+   - Live TCP peer REQUEST_VOTE same-term rival (node-1 -> restarted node-5 at term 51): {'term': 51, 'voteGranted': False}
+   - Final 5/5 PostgreSQL convergence across railway-postgres-1..5:
+     node-1: FOLLOWER, term=51, votedFor=node-5, logCount=15, lastApplied=15
+     node-2: FOLLOWER, term=51, votedFor=node-5, logCount=15, lastApplied=15
+     node-3: FOLLOWER, term=51, votedFor=node-5, logCount=15, lastApplied=15
+     node-4: FOLLOWER, term=51, votedFor=node-5, logCount=15, lastApplied=15
+     node-5: LEADER,   term=51, votedFor=node-5, logCount=15, lastApplied=15
+   - DbStateLoader RESTART log seen on restarted node-5: True
+
+=== ALL LIVE 5-NODE DOCKER + POSTGRESQL RESTART CHECKS PASSED ===
