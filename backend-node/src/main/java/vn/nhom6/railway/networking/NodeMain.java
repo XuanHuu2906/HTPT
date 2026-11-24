@@ -85,7 +85,7 @@ public class NodeMain implements AutoCloseable {
                 persistentHandler(config, submitter, barrier));
     }
 
-    /** Production election composition; supplied configuration must describe all five voters. */
+    /** Production Raft consensus + persistent booking composition; requires all five voters. */
     public static NodeMain withElectionRuntime(NodeConfig config, Map<String, String> environment)
             throws Exception {
         var owner = new java.util.concurrent.atomic.AtomicReference<NodeMain>();
@@ -98,17 +98,38 @@ public class NodeMain implements AutoCloseable {
         });
         try {
             var node = new NodeMain(config, new UnavailableBookingService(), runtime.election(),
-                    persistentHandler(config,
-                            command -> { throw new BookingRequestHandler.NotLeaderException(null); },
-                            timeout -> { throw new BookingRequestHandler.ReadUnavailableException(
-                                    "Leader majority commit/apply is not wired"); }));
+                    persistentHandler(config, runtime.commandSubmitter(), runtime.readBarrier()));
             node.ownedElectionRuntime = runtime;
+            node.clientRegistry.register(MessageType.GET_REQUEST_RESULT,
+                    req -> runtime.getRequestResultHandler().handleEnvelope(req, config.nodeId()));
             owner.set(node);
             return node;
         } catch (RuntimeException failure) {
             runtime.close();
             throw failure;
         }
+    }
+
+    /** Package-private factory for real multi-node TCP integration tests with custom storage/repo. */
+    static NodeMain withCustomElectionRuntime(
+            NodeConfig config,
+            ElectionRuntime runtime,
+            vn.nhom6.railway.booking.BookingRepository repository,
+            BookingRequestHandler.SeatSnapshotReader seatSnapshotReader) {
+        var handler = new BookingRequestHandler(
+                runtime.commandSubmitter(),
+                runtime.readBarrier(),
+                () -> UUID.randomUUID().toString(),
+                Clock.systemUTC(),
+                repository,
+                seatSnapshotReader,
+                config.nodeId(),
+                Duration.ofSeconds(3));
+        var node = new NodeMain(config, new UnavailableBookingService(), runtime.election(), handler);
+        node.ownedElectionRuntime = runtime;
+        node.clientRegistry.register(MessageType.GET_REQUEST_RESULT,
+                req -> runtime.getRequestResultHandler().handleEnvelope(req, config.nodeId()));
+        return node;
     }
 
     private static BookingRequestHandler persistentHandler(NodeConfig config,
@@ -159,9 +180,13 @@ public class NodeMain implements AutoCloseable {
             String role = "FOLLOWER";
             Long currentTerm = 0L;
             String leaderId = null;
+            Long lastLogIndex = null;
             Long commitIndex = 0L;
             Long lastApplied = 0L;
             boolean storageHealthy = true;
+            Map<String, Boolean> peers = ownedElectionRuntime != null
+                    ? ownedElectionRuntime.peerConnectivitySnapshot()
+                    : NodeStatusHandler.StatusSnapshot.defaultPeers(config.nodeId());
 
             var restored = startupState;
             if (restored != null) {
@@ -173,9 +198,11 @@ public class NodeMain implements AutoCloseable {
             }
             if (election != null) {
                 try {
-                    var snapshot = election.status();
+                    var snapshot = election.detailedStatus();
                     role = snapshot.role();
                     currentTerm = snapshot.currentTerm();
+                    leaderId = snapshot.leaderId();
+                    lastLogIndex = snapshot.lastLogIndex();
                     commitIndex = snapshot.commitIndex();
                     lastApplied = snapshot.lastApplied();
                     storageHealthy = snapshot.storageHealthy();
@@ -186,11 +213,11 @@ public class NodeMain implements AutoCloseable {
                     role,
                     currentTerm,
                     leaderId,
-                    null,
+                    lastLogIndex,
                     commitIndex,
                     lastApplied,
                     storageHealthy,
-                    NodeStatusHandler.StatusSnapshot.defaultPeers(config.nodeId())
+                    peers
             );
         });
         clientRegistry.registerStatusHandler(statusHandler);
@@ -393,9 +420,12 @@ public class NodeMain implements AutoCloseable {
 
             if (election != null) {
                 try {
-                    var status = election.status();
+                    var status = election.detailedStatus();
                     role = vn.nhom6.railway.raft.core.Role.valueOf(status.role());
                     term = status.currentTerm();
+                    if (status.leaderId() != null && !status.leaderId().isBlank()) {
+                        hint = status.leaderId();
+                    }
                 } catch (Exception ignored) {}
             }
 

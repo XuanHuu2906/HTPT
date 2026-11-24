@@ -155,6 +155,16 @@ public final class PersistentRaftNode implements RaftNode {
         listeners.add(Objects.requireNonNull(listener));
     }
 
+    /**
+     * Delivers any committed entries in {@code (delivered, commitIndex]} to registered listeners.
+     * Must be invoked on the serialized Raft event loop right after the Leader advances
+     * {@code commitIndex}.
+     */
+    public void deliverCommittedEntries() {
+        requireHealthy();
+        deliverCommitted();
+    }
+
     private void deliverCommitted() {
         if (listeners.isEmpty()) return;
         while (delivered < commitIndex()) {

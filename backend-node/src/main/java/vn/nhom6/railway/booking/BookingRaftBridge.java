@@ -426,19 +426,20 @@ public final class BookingRaftBridge implements BookingRequestHandler.CommandSub
     public static String serializePayload(BookingCommand command) {
         try {
             if (command instanceof BookingCommand.BookTicket book) {
+                // Canonical compact JSON with alphabetically ordered keys (required by RaftTransportAdapter)
                 ObjectNode node = MAPPER.createObjectNode();
-                node.put("requestId", book.requestId());
-                node.put("tripId", book.tripId());
-                node.put("seatId", book.seatId());
-                node.put("passengerName", book.passengerName());
-                node.put("ticketId", book.ticketId());
                 node.put("issuedAt", book.issuedAt().toString());
+                node.put("passengerName", book.passengerName());
+                node.put("requestId", book.requestId());
+                node.put("seatId", book.seatId());
+                node.put("ticketId", book.ticketId());
+                node.put("tripId", book.tripId());
                 return MAPPER.writeValueAsString(node);
             } else if (command instanceof BookingCommand.CancelTicket cancel) {
                 ObjectNode node = MAPPER.createObjectNode();
+                node.put("cancelledAt", cancel.cancelledAt().toString());
                 node.put("requestId", cancel.requestId());
                 node.put("ticketId", cancel.ticketId());
-                node.put("cancelledAt", cancel.cancelledAt().toString());
                 return MAPPER.writeValueAsString(node);
             } else if (command instanceof BookingCommand.NoOp) {
                 return "{}";
