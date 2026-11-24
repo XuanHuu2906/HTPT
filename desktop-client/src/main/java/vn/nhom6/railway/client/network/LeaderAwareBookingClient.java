@@ -6,6 +6,7 @@ import vn.nhom6.railway.protocol.dto.BookTicketRequestDto;
 import vn.nhom6.railway.protocol.dto.GetSeatsRequestDto;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -916,8 +917,94 @@ public class LeaderAwareBookingClient implements BookingClient, AutoCloseable {
 
     @Override
     public CompletableFuture<GetRequestResultResponseDto> getRequestResult(String requestId) {
-        String target = (knownLeaderId.get() != null) ? knownLeaderId.get() : clusterEndpoints.getDefaultNodeId();
-        return getOrCreateClient(target).getRequestResult(requestId);
+        if (requestId == null || requestId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("requestId không được null hoặc rỗng"));
+        }
+        return CompletableFuture.supplyAsync(() -> executeGetRequestResultWithRedirect(requestId), executor);
+    }
+
+    private GetRequestResultResponseDto executeGetRequestResultWithRedirect(String requestId) {
+        String targetNodeId = (knownLeaderId.get() != null) ? knownLeaderId.get() : clusterEndpoints.getDefaultNodeId();
+        Set<String> visitedNodes = new HashSet<>();
+        int redirectCount = 0;
+        long startTime = System.currentTimeMillis();
+
+        while (true) {
+            if (visitedNodes.contains(targetNodeId)) {
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "REDIRECT_LOOP_DETECTED", "UNKNOWN");
+                return GetRequestResultResponseDto.unknown(requestId);
+            }
+
+            if (redirectCount >= redirectPolicy.maxRedirects()) {
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "MAX_REDIRECTS_EXCEEDED", "TIMEOUT_UNKNOWN");
+                return GetRequestResultResponseDto.unknown(requestId);
+            }
+
+            visitedNodes.add(targetNodeId);
+
+            BookingClient client;
+            try {
+                client = getOrCreateClient(targetNodeId);
+            } catch (Exception e) {
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "CLIENT_INIT_FAILED: " + e.getMessage(), "CONNECTION_FAILED");
+                return GetRequestResultResponseDto.unknown(requestId);
+            }
+
+            long remainingMs = redirectPolicy.totalTimeoutMs() - (System.currentTimeMillis() - startTime);
+            long stepTimeout = Math.min(redirectPolicy.stepTimeoutMs(), Math.max(50, remainingMs));
+
+            try {
+                GetRequestResultResponseDto res = client.getRequestResult(requestId).get(stepTimeout, TimeUnit.MILLISECONDS);
+                if (res != null) {
+                    if (!"UNKNOWN".equalsIgnoreCase(res.getState())) {
+                        knownLeaderId.set(targetNodeId);
+                    }
+                    logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                            "RESULT_STATE: " + res.getState(), res.getState());
+                    return res;
+                }
+                return GetRequestResultResponseDto.unknown(requestId);
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                if (cause instanceof NotLeaderException nle) {
+                    String hint = nle.getLeaderHint();
+                    if (hint != null && !hint.isBlank()) {
+                        hint = hint.trim();
+                        if (clusterEndpoints.containsNode(hint)) {
+                            knownLeaderId.set(hint);
+                            redirectCount++;
+                            logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, hint, redirectCount,
+                                    "REDIRECT_TO_HINT", "REDIRECTING");
+                            targetNodeId = hint;
+                            continue;
+                        }
+                    }
+                    logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, "NONE", redirectCount,
+                            "NOT_LEADER_HINT_NULL", "NOT_LEADER_UNRESOLVED");
+                    return GetRequestResultResponseDto.unknown(requestId);
+                }
+                if (nodeSelector != null) {
+                    nodeSelector.markFailed(targetNodeId);
+                }
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "EXECUTION_ERROR: " + cause.getMessage(), "UNKNOWN");
+                return GetRequestResultResponseDto.unknown(requestId);
+            } catch (TimeoutException te) {
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "STEP_TIMEOUT", "TIMEOUT_UNKNOWN");
+                return GetRequestResultResponseDto.unknown(requestId);
+            } catch (Exception e) {
+                logStep(requestId, "N/A", "GET_REQUEST_RESULT", targetNodeId, targetNodeId, redirectCount,
+                        "ERROR: " + e.getMessage(), "UNKNOWN");
+                return GetRequestResultResponseDto.unknown(requestId);
+            }
+        }
     }
 
     // =========================================================================

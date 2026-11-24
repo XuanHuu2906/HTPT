@@ -372,12 +372,26 @@ class SocketBookingClientTest {
     }
 
     @Test
-    @DisplayName("getRequestResult đánh dấu BLOCKED: ném UnsupportedOperationException chứa 'BLOCKED: thiếu DTO'")
-    void testGetRequestResultThrowsBlockedException() {
-        CompletableFuture<?> future = client.getRequestResult("REQ-123");
-        ExecutionException ex = assertThrows(ExecutionException.class, () -> future.get(1, TimeUnit.SECONDS));
-        assertTrue(ex.getCause() instanceof UnsupportedOperationException);
-        assertTrue(ex.getCause().getMessage().contains("BLOCKED"));
+    @DisplayName("getRequestResult gửi GET_REQUEST_RESULT theo chuẩn SPEC-03 và nhận phản hồi (TASK TV1-D24)")
+    void testGetRequestResultSuccess() throws Exception {
+        String reqId = UUID.randomUUID().toString();
+        fakeServer.setHandler(req -> {
+            assertEquals(MessageType.GET_REQUEST_RESULT, req.getType());
+            com.fasterxml.jackson.databind.node.ObjectNode resPayload = MessageCodec.getMapper().createObjectNode();
+            resPayload.put("requestId", reqId);
+            resPayload.put("state", "APPLIED_SUCCESS");
+            resPayload.put("commandType", "BOOK_TICKET");
+            resPayload.put("ticketId", "TCK-123");
+            resPayload.putNull("reasonCode");
+            resPayload.put("appliedLogIndex", 100L);
+            return MessageEnvelope.createResponse(req.getMessageId(), MessageType.GET_REQUEST_RESULT_RESPONSE, "node-1", resPayload);
+        });
+
+        var res = client.getRequestResult(reqId).get(2, TimeUnit.SECONDS);
+        assertNotNull(res);
+        assertEquals(reqId, res.getRequestId());
+        assertEquals("APPLIED_SUCCESS", res.getState());
+        assertEquals("TCK-123", res.getTicketId());
     }
 
     @Test

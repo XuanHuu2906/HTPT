@@ -1,11 +1,20 @@
 package vn.nhom6.railway.client.network;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 
 /**
  * Response payload cho GET_REQUEST_RESULT theo SPEC-03 Section 4.4.
  */
 public class GetRequestResultResponseDto {
+
+    public static final String STATE_APPLIED_SUCCESS = "APPLIED_SUCCESS";
+    public static final String STATE_APPLIED_REJECTED = "APPLIED_REJECTED";
+    public static final String STATE_PENDING = "PENDING";
+    public static final String STATE_UNKNOWN = "UNKNOWN";
+
     private final String requestId;
     private final String state; // "APPLIED_SUCCESS", "APPLIED_REJECTED", "PENDING", "UNKNOWN"
     private final String commandType; // "BOOK_TICKET", "CANCEL_TICKET"
@@ -14,9 +23,15 @@ public class GetRequestResultResponseDto {
     private final Long appliedLogIndex;
     private final boolean mock;
 
-    public GetRequestResultResponseDto(String requestId, String state, String commandType,
-                                       String ticketId, String reasonCode, Long appliedLogIndex,
-                                       boolean mock) {
+    @JsonCreator
+    public GetRequestResultResponseDto(
+            @JsonProperty("requestId") String requestId,
+            @JsonProperty("state") String state,
+            @JsonProperty("commandType") String commandType,
+            @JsonProperty("ticketId") String ticketId,
+            @JsonProperty("reasonCode") String reasonCode,
+            @JsonProperty("appliedLogIndex") Long appliedLogIndex,
+            @JsonProperty("mock") boolean mock) {
         this.requestId = requestId;
         this.state = state;
         this.commandType = commandType;
@@ -24,6 +39,19 @@ public class GetRequestResultResponseDto {
         this.reasonCode = reasonCode;
         this.appliedLogIndex = appliedLogIndex;
         this.mock = mock;
+    }
+
+    public GetRequestResultResponseDto(String requestId, String state, String commandType,
+                                       String ticketId, String reasonCode, Long appliedLogIndex) {
+        this(requestId, state, commandType, ticketId, reasonCode, appliedLogIndex, false);
+    }
+
+    public static GetRequestResultResponseDto unknown(String requestId, String reasonCode) {
+        return new GetRequestResultResponseDto(requestId, STATE_UNKNOWN, null, null, reasonCode, null, false);
+    }
+
+    public static GetRequestResultResponseDto unknown(String requestId) {
+        return unknown(requestId, null);
     }
 
     public String getRequestId() {
@@ -80,6 +108,7 @@ public class GetRequestResultResponseDto {
                 ", commandType='" + commandType + '\'' +
                 ", ticketId='" + ticketId + '\'' +
                 ", reasonCode='" + reasonCode + '\'' +
+                ", appliedLogIndex=" + appliedLogIndex +
                 ", mock=" + mock +
                 '}';
     }

@@ -1,0 +1,7 @@
+test_case,attempt,step,request_id,message_id,trip_id,seat_id,passenger_name,expected_outcome,actual_status,comment
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SENT-adb2cddb-81c2-440b-a128-92f85a771a38,851d54d8-34f7-4ac2-9460-a41e3e481c2d,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REJECT-26d1921f-782d-4345-814b-266df2ff30e0,8cb6ec28-5409-4646-bb0e-f42304a0afb6,-,-,"-",APPLIED_REJECTED,APPLIED_REJECTED,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-REDIRECT-4489af6e-320f-42d0-acdb-10c8b2319eb2,39a1f812-a20f-49a8-a8d8-91d2e861eab1,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-SUCCESS-caf2b2fc-cae9-444e-9a7d-a4aac14fd8b8,f7f49730-7506-4330-833e-ae9c8c4983b7,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-RESOLVE-58e96236-ac6d-40ef-b98e-1c7a26f842ba,ef990d2e-8599-4329-b233-48c6da4df102,-,-,"-",APPLIED_SUCCESS,APPLIED_SUCCESS,"Custom result resolved from test setup"
+DEFAULT,1,GET_REQUEST_RESULT,REQ-PENDING-40147fb3-65df-4343-b6dd-bc9efca4a2b7,e198fff9-1ad3-4e58-b634-088cec93454c,-,-,"-",PENDING,PENDING,"Custom result resolved from test setup"

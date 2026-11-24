@@ -70,6 +70,12 @@ public class TicketViewModel {
     public TicketViewModel(String requestId, String ticketId, String seatId, String tripCode,
             String passengerName, String createdAt, String priceFormatted,
             TicketStatus initialStatus, String reasonCode) {
+        this(requestId, ticketId, seatId, tripCode, passengerName, createdAt, priceFormatted, initialStatus, reasonCode, "DEMO / MOCK");
+    }
+
+    public TicketViewModel(String requestId, String ticketId, String seatId, String tripCode,
+            String passengerName, String createdAt, String priceFormatted,
+            TicketStatus initialStatus, String reasonCode, String mockBadge) {
         this.requestId = requestId;
         this.ticketId = (ticketId != null && !ticketId.isBlank()) ? ticketId : "— (Chưa cấp)";
         this.seatId = seatId;
@@ -77,7 +83,7 @@ public class TicketViewModel {
         this.passengerName = passengerName;
         this.createdAt = createdAt;
         this.priceFormatted = priceFormatted;
-        this.mockBadge = "DEMO / MOCK";
+        this.mockBadge = (mockBadge != null && !mockBadge.isBlank()) ? mockBadge : "DEMO / MOCK";
 
         this.status.addListener((obs, oldVal, newVal) -> syncStatusDisplay(newVal));
         this.status.set(initialStatus != null ? initialStatus : TicketStatus.UNKNOWN);
