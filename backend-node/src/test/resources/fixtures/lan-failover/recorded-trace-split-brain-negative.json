@@ -1,0 +1,32 @@
+{
+  "traceId": "TV5-D25-TRACE-NEGATIVE-SPLIT-BRAIN-AND-REGRESSION",
+  "mode": "NEGATIVE_AUDIT_FIXTURE",
+  "physicalLanVerified": false,
+  "description": "Negative fixture intentionally violating Election Safety (two Leaders in term 7) and Term Monotonicity (node-1 term 7 -> 6) to verify auditRecordedStatusTrace fails closed.",
+  "splitBrainSteps": [
+    {
+      "stepIndex": 0,
+      "phase": "ILLEGAL_DUAL_LEADER_SAME_TERM",
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "LEADER", "term": 7, "leaderId": "node-1", "lastLogIndex": 10, "commitIndex": 10, "lastApplied": 10, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": false, "node-4": false, "node-5": false}, "observedAt": "2026-11-25T09:30:00.000Z"},
+        "node-3": {"nodeId": "node-3", "role": "LEADER", "term": 7, "leaderId": "node-3", "lastLogIndex": 10, "commitIndex": 10, "lastApplied": 10, "storageHealthy": true, "peerConnectivity": {"node-1": false, "node-2": false, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:30:00.010Z"}
+      }
+    }
+  ],
+  "termRegressionSteps": [
+    {
+      "stepIndex": 0,
+      "phase": "BEFORE_RESTART",
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "FOLLOWER", "term": 7, "leaderId": "node-3", "lastLogIndex": 10, "commitIndex": 10, "lastApplied": 10, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:31:00.000Z"}
+      }
+    },
+    {
+      "stepIndex": 1,
+      "phase": "ILLEGAL_TERM_REGRESSION_AFTER_RESTART",
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "FOLLOWER", "term": 6, "leaderId": null, "lastLogIndex": 10, "commitIndex": 10, "lastApplied": 10, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:31:05.000Z"}
+      }
+    }
+  ]
+}

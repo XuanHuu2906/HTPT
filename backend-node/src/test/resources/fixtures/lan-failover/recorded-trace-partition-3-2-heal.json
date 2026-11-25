@@ -1,0 +1,47 @@
+{
+  "traceId": "TV5-D25-TRACE-PARTITION-3-2-HEAL",
+  "mode": "RECORDED_TRACE_FIXTURE",
+  "physicalLanVerified": false,
+  "description": "Recorded 3-2 LAN partition trace (TC-AC09): minority {node-1,node-2} stalls at term 3 commitIndex 5; majority {node-3,node-4,node-5} elects node-4 at term 4 and commits up to 8; after heal node-2 steps down and all 5 converge.",
+  "steps": [
+    {
+      "stepIndex": 0,
+      "phase": "BASELINE_5_OF_5",
+      "action": "PROBE_BASELINE",
+      "onlineNodes": ["node-1", "node-2", "node-3", "node-4", "node-5"],
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "FOLLOWER", "term": 3, "leaderId": "node-2", "lastLogIndex": 5, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:00.000Z"},
+        "node-2": {"nodeId": "node-2", "role": "LEADER", "term": 3, "leaderId": "node-2", "lastLogIndex": 5, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:00.010Z"},
+        "node-3": {"nodeId": "node-3", "role": "FOLLOWER", "term": 3, "leaderId": "node-2", "lastLogIndex": 5, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:00.020Z"},
+        "node-4": {"nodeId": "node-4", "role": "FOLLOWER", "term": 3, "leaderId": "node-2", "lastLogIndex": 5, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-3": true, "node-5": true}, "observedAt": "2026-11-25T09:20:00.030Z"},
+        "node-5": {"nodeId": "node-5", "role": "FOLLOWER", "term": 3, "leaderId": "node-2", "lastLogIndex": 5, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-3": true, "node-4": true}, "observedAt": "2026-11-25T09:20:00.040Z"}
+      }
+    },
+    {
+      "stepIndex": 1,
+      "phase": "PARTITION_3_2_ACTIVE",
+      "action": "PARTITION({node-1,node-2} | {node-3,node-4,node-5})",
+      "onlineNodes": ["node-1", "node-2", "node-3", "node-4", "node-5"],
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "FOLLOWER", "term": 3, "leaderId": "node-2", "lastLogIndex": 6, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": false, "node-4": false, "node-5": false}, "observedAt": "2026-11-25T09:20:03.000Z"},
+        "node-2": {"nodeId": "node-2", "role": "LEADER", "term": 3, "leaderId": "node-2", "lastLogIndex": 6, "commitIndex": 5, "lastApplied": 5, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-3": false, "node-4": false, "node-5": false}, "observedAt": "2026-11-25T09:20:03.010Z"},
+        "node-3": {"nodeId": "node-3", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": false, "node-2": false, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:03.020Z"},
+        "node-4": {"nodeId": "node-4", "role": "LEADER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": false, "node-2": false, "node-3": true, "node-5": true}, "observedAt": "2026-11-25T09:20:03.030Z"},
+        "node-5": {"nodeId": "node-5", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": false, "node-2": false, "node-3": true, "node-4": true}, "observedAt": "2026-11-25T09:20:03.040Z"}
+      }
+    },
+    {
+      "stepIndex": 2,
+      "phase": "HEAL_AND_CONVERGED",
+      "action": "HEAL_PARTITION -> OLD_LEADER_STEP_DOWN",
+      "onlineNodes": ["node-1", "node-2", "node-3", "node-4", "node-5"],
+      "statuses": {
+        "node-1": {"nodeId": "node-1", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-2": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:06.000Z"},
+        "node-2": {"nodeId": "node-2", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-3": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:06.010Z"},
+        "node-3": {"nodeId": "node-3", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-4": true, "node-5": true}, "observedAt": "2026-11-25T09:20:06.020Z"},
+        "node-4": {"nodeId": "node-4", "role": "LEADER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-3": true, "node-5": true}, "observedAt": "2026-11-25T09:20:06.030Z"},
+        "node-5": {"nodeId": "node-5", "role": "FOLLOWER", "term": 4, "leaderId": "node-4", "lastLogIndex": 8, "commitIndex": 8, "lastApplied": 8, "storageHealthy": true, "peerConnectivity": {"node-1": true, "node-2": true, "node-3": true, "node-4": true}, "observedAt": "2026-11-25T09:20:06.040Z"}
+      }
+    }
+  ]
+}
