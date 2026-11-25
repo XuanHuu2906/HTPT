@@ -1,0 +1,65 @@
+TV3-D26 TCP Packet Loss, Response-Lost, Timeout & Correlation Fault Evidence
+================================================================================
+
+Task ID       : tv3-d26
+Date (Local)  : 2026-11-26 06:03:24 +07:00
+Base Commit   : aeea4ba7cd40077c2d3c2fceda4090d4ecafe543 (branch feat/tv3-d26)
+Environment   : Linux 7.3.4-1-cachyos (amd64), OpenJDK 27.0.1.0.3, Apache Maven 3.10.0
+
+TASK_SCOPE & HONEST BOUNDARY (AGENTS.md §0, §5, §6):
+- UNIT_AND_LOOPBACK_FAULT_TESTS = PASS (61/61 PASS, 0 skipped)
+- SHARED_AND_BACKEND_REGRESSION = PASS (BUILD SUCCESS, 0 failures, 0 errors)
+- PHYSICAL_5_LAPTOP_LAN_G6      = NOT_RUN (physical LAN verification separated to Gate G6)
+
+Deliverables & SHA256:
+- backend-node/src/main/java/vn/nhom6/railway/networking/MessageDispatcher.java
+  SHA256=8bbc4e60215ee3cc4d66a29b915f6672ef48674ca9f1fbf782e71eb5d6b90daa
+- backend-node/src/test/java/vn/nhom6/railway/networking/TestNetworkFilter.java
+  SHA256=de1474ebbcea9fd3117ca77628ce1ecfd2c950d74d38c24aac7648fe067ad620
+- backend-node/src/test/java/vn/nhom6/railway/networking/TcpPacketLossTimeoutIntegrationTest.java
+  SHA256=6c421ed69d84d97a9467e745a43a3a297fe772b3dbb7595298e3cdd7a80cd522
+- docs/implementation/TV3-D26-notes.md
+
+================================================================================
+1. TARGETED PACKET LOSS, RESPONSE-LOST, TIMEOUT & CORRELATION SUITE
+================================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test -pl backend-node -am \
+    -Dtest="TcpPacketLossTimeoutIntegrationTest,TestNetworkFilterTest,ConnectionManagerTcpIntegrationTest,PeerConnectionManagerTest,RpcCorrelationRegistryTest,MessageDispatcherTest,LanLivePreflightAndIsolationTest" \
+    -Dsurefire.failIfNoSpecifiedTests=false
+
+Result: BUILD SUCCESS (Total time: 16.071 s)
+Summary: Tests run: 61, Failures: 0, Errors: 0, Skipped: 0
+Breakdown:
+  - ConnectionManagerTcpIntegrationTest : Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 (0.627 s)
+  - LanLivePreflightAndIsolationTest    : Tests run:  4, Failures: 0, Errors: 0, Skipped: 0 (0.088 s)
+  - MessageDispatcherTest               : Tests run: 28, Failures: 0, Errors: 0, Skipped: 0 (0.140 s)
+  - PeerConnectionManagerTest           : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (0.203 s)
+  - RpcCorrelationRegistryTest          : Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 (0.077 s)
+  - TcpPacketLossTimeoutIntegrationTest : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (1.200 s)
+      * TC-D26-01 Request packet loss -> UNKNOWN (TIMEOUT_UNKNOWN) -> heal & retry same requestId: PASS
+      * TC-D26-02 Response lost after apply -> UNKNOWN -> GET_REQUEST_RESULT & ResultLookup recovery (no duplicate): PASS
+      * TC-D26-03 Strict correlation repair in MessageDispatcher + late/stale correlationId drop in RpcCorrelationRegistry: PASS
+      * TC-D26-04 5-node loopback cluster with D25 allowlist + TestNetworkFilter selective loss & heal: PASS
+      * TC-D26-05 Repeated response-lost timeouts reconnect cleanly without TCP frame corruption: PASS
+      * TC-D26-06 Channel isolation (TC-TCP-04) & D25 peer allowlist intact under active fault filter: PASS
+  - TestNetworkFilterTest               : Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 (3.849 s)
+
+================================================================================
+2. FULL SHARED & BACKEND-NODE MODULE REGRESSION
+================================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test -pl backend-node -am
+
+Result: BUILD SUCCESS (Total time: 56.718 s)
+Module breakdown:
+  - shared       : Tests run:   38, Failures: 0, Errors: 0, Skipped:   0 ( 2.305 s)
+  - backend-node : Tests run: 1325, Failures: 0, Errors: 0, Skipped: 146 (54.275 s)
+
+Note on skipped tests: The 146 skipped tests in backend-node are PostgreSQL/Docker/LAN-gated
+integration suites (Jdbc*/PersistenceRestart*/RaftElectionLanTest) requiring live external DB/Docker/LAN hosts.
+
+================================================================================
+3. GATE G6 PHYSICAL LAN STATUS
+================================================================================
+PHYSICAL_5_LAPTOP_LAN_G6=NOT_RUN (physical 5-laptop packet loss/timeout verification scheduled separately at Gate G6)

@@ -143,12 +143,36 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         boolean shouldDeliver(String senderId, String recipientNodeId, MessageEnvelope<?> message);
     }
 
+    /**
+     * Test-only hook interface for simulating outbound response packet loss after a request
+     * has already been handled/committed (e.g. SPEC-07 TC-AC10 post-apply response drop).
+     */
+    @FunctionalInterface
+    public interface ResponseFilterHook {
+        /**
+         * Evaluates whether a correlated response envelope should be written back on the TCP socket.
+         *
+         * @param responderNodeId Local node ID sending the response
+         * @param senderId Original requester ID
+         * @param request Decoded incoming request envelope
+         * @param response Produced and correlated response envelope
+         * @return {@code true} to send response normally, {@code false} to drop silently
+         */
+        boolean shouldSendResponse(
+                String responderNodeId,
+                String senderId,
+                MessageEnvelope<JsonNode> request,
+                MessageEnvelope<?> response
+        );
+    }
+
     private final HandlerRegistry registry;
     private final ChannelType channelType;
     private final String nodeId;
     private final int maxInFlightRequests;
     private volatile LeaderRouter leaderRouter;
     private volatile MessageFilterHook filterHook;
+    private volatile ResponseFilterHook responseFilterHook;
     private volatile Set<String> allowedPeerIds;
 
     private final ConcurrentMap<String, InFlightContext> activeInFlight = new ConcurrentHashMap<>();
@@ -299,7 +323,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
                         if (redirectResponse != null) {
                             LOGGER.info(() -> "[" + nodeId + "] Intercepted write request " + type + " for leader redirect; returning "
                                     + redirectResponse.getType() + " (correlationId=" + redirectResponse.getCorrelationId() + ")");
-                            return ensureStrictCorrelation(redirectResponse, messageId, requestId);
+                            return finalizeResponse(redirectResponse, request, messageId, requestId);
                         }
                     }
                 } catch (Exception ex) {
@@ -318,12 +342,12 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             // 11. Execute handler and catch any exceptions safely
             try {
                 MessageEnvelope<?> response = handler.handle(request);
-                return ensureStrictCorrelation(response, messageId, requestId);
+                return finalizeResponse(response, request, messageId, requestId);
             } catch (Throwable t) {
                 MessageEnvelope<ErrorResponseDto> errorResponse = ResponseMapper.mapThrowable(
                         messageId, nodeId, requestId, t, leaderRouter
                 );
-                return ensureStrictCorrelation(errorResponse, messageId, requestId);
+                return finalizeResponse(errorResponse, request, messageId, requestId);
             }
         } finally {
             activeInFlight.remove(messageId);
@@ -356,6 +380,25 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             current = current.getCause();
         }
         return null;
+    }
+
+    private MessageEnvelope<?> finalizeResponse(
+            MessageEnvelope<?> response,
+            MessageEnvelope<JsonNode> request,
+            String expectedCorrelationId,
+            String requestId) {
+        MessageEnvelope<?> correlated = ensureStrictCorrelation(response, expectedCorrelationId, requestId);
+        if (correlated == null) {
+            return null;
+        }
+        ResponseFilterHook outboundHook = this.responseFilterHook;
+        if (outboundHook != null && !outboundHook.shouldSendResponse(this.nodeId, request.getSenderId(), request, correlated)) {
+            LOGGER.info(() -> "[" + this.nodeId + "] Response dropped by ResponseFilterHook: to="
+                    + request.getSenderId() + " type=" + correlated.getType()
+                    + ", correlationId=" + correlated.getCorrelationId());
+            return null;
+        }
+        return correlated;
     }
 
     private MessageEnvelope<?> ensureStrictCorrelation(MessageEnvelope<?> response, String expectedCorrelationId, String requestId) {
@@ -423,6 +466,14 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public void setFilterHook(MessageFilterHook filterHook) {
         this.filterHook = filterHook;
+    }
+
+    public ResponseFilterHook getResponseFilterHook() {
+        return responseFilterHook;
+    }
+
+    public void setResponseFilterHook(ResponseFilterHook responseFilterHook) {
+        this.responseFilterHook = responseFilterHook;
     }
 
     /**
