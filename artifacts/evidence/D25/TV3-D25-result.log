@@ -1,0 +1,98 @@
+TV3-D25 LAN Connectivity Preflight & MessageDispatcher Hardening Evidence
+=========================================================================
+
+Task ID       : tv3-d25
+Date (Local)  : 2026-11-25 12:20:38 +07:00
+Base Commit   : dbaa934dc3e5599e4f5142324a7ca5539ff5927c (branch feat/tv3-d25)
+Environment   : Linux 7.3.4-1-cachyos (amd64), OpenJDK 27.0.1.0.3, Apache Maven 3.10.0
+Host Net Tools: ip (lo=127.0.0.1/8 ::1/128), ss, ufw=true, iptables=true, pwsh=false, docker_daemon=NOT_RUNNING
+
+TASK_SCOPE & HONEST BOUNDARY (AGENTS.md §0, §5, §6, §9):
+- HOST_PREFLIGHT_AND_ISOLATION   = PASS (verified locally on available host)
+- LOCAL_5NODE_TCP_CLUSTER_SMOKE  = PASS (TcpClusterSmokeTest 6/6 on 127.0.0.1, 10 unique ports)
+- LAN_SCRIPT_AND_CONFIG_PREFLIGHT= PASS (LanConfigPreflightTest 7/7, LanConnectivityCheckScriptTest 7/7)
+- TV6_D24_REAL_IP_INVENTORY      = MISSING (configs/lan/node-1..5.properties still hold placeholder 192.168.10.11..15)
+- PHYSICAL_5_LAPTOP_LAN_G6       = NOT_RUN (DEFERRED_TO_G6: awaiting TV6-D24 IP inventory & TV6-D25 6-laptop deploy)
+
+Deliverables & SHA256:
+- backend-node/src/main/java/vn/nhom6/railway/networking/MessageDispatcher.java
+  SHA256=15c8657b3f1e752416024af2f5a614f26669569938dc68a8176fb3c9f7f394ae
+- backend-node/src/test/java/vn/nhom6/railway/networking/LanLivePreflightAndIsolationTest.java
+  SHA256=131e21f85e808ffcbe2ead5160776bc7fa237ee19c042babe98e2efbcc5fe843
+- backend-node/src/test/java/vn/nhom6/railway/networking/LanConnectivityCheckScriptTest.java
+  SHA256=6d94f293696d592b4a1abfa5dde0b214ec0e1d2159c55a30f8ea2e2ca0e54f2d
+- scripts/lan-connectivity-check.ps1
+  SHA256=a005537d11e5cee933dd884eae1bfa9e115a89746b505f6dbdd5987ef7ff9d1c
+- configs/lan/node-1.properties
+  SHA256=a039bd13c75507a96717eb1b0710379d00b8a10f63ab2f198d1fdc98ea460ff5
+- configs/lan/PORTS.md
+  SHA256=2d1387a2d63da2655001cfadc856c931e9fa8b650950632ca48677fd55dea314
+- docs/implementation/TV3-D25-notes.md
+
+=========================================================================
+1. AVAILABLE HOST SOCKET & INTERFACE PREFLIGHT
+=========================================================================
+Command: ip -brief addr ; ss -tuln
+Output :
+  lo               UNKNOWN        127.0.0.1/8 ::1/128
+  Netid   State   Recv-Q   Send-Q     Local Address:Port      Peer Address:Port
+
+Command: python3 socket bind preflight (ports 9100 & 9200 on 0.0.0.0)
+Output :
+  PORT_9100_BIND=OK
+  PORT_9200_BIND=OK
+  PWSH_AVAILABLE= False
+  UFW_AVAILABLE= True
+  IPTABLES_AVAILABLE= True
+
+Note: Windows PowerShell (pwsh) and Windows Defender Firewall (Get-NetFirewallRule)
+cannot execute on this Linux host; PowerShell LiveProbe + -InventoryFile script updates
+were verified structurally via LanConnectivityCheckScriptTest and fail closed when
+placeholder IPs (192.168.10.11..15) are present.
+
+=========================================================================
+2. TARGETED NETWORKING, PREFLIGHT & 5-NODE TCP CLUSTER SMOKE SUITE
+=========================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test -pl backend-node -am \
+    -Dtest="LanLivePreflightAndIsolationTest,TcpClusterSmokeTest,LanConfigPreflightTest,LanConnectivityCheckScriptTest,NodeMainTest" \
+    -Dsurefire.failIfNoSpecifiedTests=false
+
+Result: BUILD SUCCESS (Total time: 10.789 s)
+Summary: Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+  - LanConfigPreflightTest         : Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 (0.185 s)
+  - LanConnectivityCheckScriptTest : Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 (0.027 s)
+  - LanLivePreflightAndIsolationTest: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 (0.380 s)
+      * TC-D25-01 Standard client (9100/9101..9105) and peer (9200/9201..9205) helpers: PASS
+      * TC-D25-02 MessageDispatcher PEER channel allowedPeerIds allowlist (rejects rogue/self): PASS
+      * TC-D25-03 Real TCP NodeMain channel isolation (TC-TCP-04) + PING/PONG + NODE_STATUS: PASS
+      * TC-D25-04 Host interface IPv4 check + port 9100/9200 bind preflight: PASS
+  - NodeMainTest                   : Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 (0.674 s)
+  - TcpClusterSmokeTest            : Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 (0.302 s)
+      * 5-node cluster port allocation (10 unique ports), PING/PONG, full-mesh RPC,
+        NODE_STATUS, and correlation log checks: PASS
+
+=========================================================================
+3. FULL 6-MODULE MAVEN REACTOR REGRESSION
+=========================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test
+
+Result: BUILD SUCCESS (Total time: 01:24 min)
+Module breakdown:
+  - shared            : Tests run: 38,   Failures: 0, Errors: 0, Skipped: 0   (2.608 s)
+  - backend-node      : Tests run: 1304, Failures: 0, Errors: 0, Skipped: 146 (55.607 s)
+  - desktop-client    : Tests run: 273,  Failures: 0, Errors: 0, Skipped: 17  (21.909 s)
+  - desktop-monitor   : Tests run: 12,   Failures: 0, Errors: 0, Skipped: 0   (1.823 s)
+  - integration-tests : Tests run: 24,   Failures: 0, Errors: 0, Skipped: 3   (2.461 s)
+
+Note on skipped tests: Tests skipped in backend-node (146), desktop-client (17), and
+integration-tests (3) require live PostgreSQL/Docker or GUI/G5 live environment flags
+which are unavailable in this isolated Linux host sandbox.
+
+=========================================================================
+4. PENDING FOR GATE G6 (6-LAPTOP PHYSICAL LAN)
+=========================================================================
+When TV6 supplies real laptop IPs (TV6-D24 inventory) and starts nodes on Laptop 1..5:
+  .\scripts\lan-connectivity-check.ps1 -Mode LiveProbe -InventoryFile <path-to-inventory> -CheckFirewall -LogPath artifacts/evidence/D25/TV3-D25-g6-live.log
+  Status: NOT_RUN (awaiting TV6-D24 inventory & TV6-D25 physical LAN deployment)
