@@ -53,6 +53,28 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     public static final int STANDARD_PEER_PORT = 9200;
 
     /**
+     * Checks whether a TCP port corresponds to a standard Client channel port
+     * (LAN {@code 9100} or Windows dev host published {@code 9101..9105}) per SPEC-08 §3.
+     *
+     * @param port Socket port number
+     * @return {@code true} if the port is designated for CLIENT traffic
+     */
+    public static boolean isStandardClientPort(int port) {
+        return port == STANDARD_CLIENT_PORT || (port >= 9101 && port <= 9105);
+    }
+
+    /**
+     * Checks whether a TCP port corresponds to a standard Raft Peer channel port
+     * (LAN {@code 9200} or Windows dev host published {@code 9201..9205}) per SPEC-08 §3.
+     *
+     * @param port Socket port number
+     * @return {@code true} if the port is designated for PEER Raft traffic
+     */
+    public static boolean isStandardPeerPort(int port) {
+        return port == STANDARD_PEER_PORT || (port >= 9201 && port <= 9205);
+    }
+
+    /**
      * Resolves the expected {@link ChannelType} based on standard SPEC-08 port mapping.
      *
      * <p>Port mapping rules per SPEC-08 §3 and configs/lan/PORTS.md:
@@ -66,10 +88,10 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
      * @return Resolved ChannelType
      */
     public static ChannelType resolveChannelForPort(int port) {
-        if (port == STANDARD_CLIENT_PORT || (port >= 9101 && port <= 9105)) {
+        if (isStandardClientPort(port)) {
             return ChannelType.CLIENT;
         }
-        if (port == STANDARD_PEER_PORT || (port >= 9201 && port <= 9205)) {
+        if (isStandardPeerPort(port)) {
             return ChannelType.PEER;
         }
         return ChannelType.ALL;
@@ -127,6 +149,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     private final int maxInFlightRequests;
     private volatile LeaderRouter leaderRouter;
     private volatile MessageFilterHook filterHook;
+    private volatile Set<String> allowedPeerIds;
 
     private final ConcurrentMap<String, InFlightContext> activeInFlight = new ConcurrentHashMap<>();
 
@@ -235,6 +258,17 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         if (channelType == ChannelType.MONITOR && type != MessageType.NODE_STATUS) {
             LOGGER.warning(() -> "Non-monitor message rejected on MONITOR channel: " + type + " from sender=" + request.getSenderId());
             return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
+        }
+
+        // 8a-peer. Optional Peer Sender Allowlist Check (SPEC-08 §3.1 configuration sanity guard; NOT cryptographic auth)
+        Set<String> peerAllowlist = this.allowedPeerIds;
+        if (channelType == ChannelType.PEER && peerAllowlist != null) {
+            String sender = request.getSenderId().strip();
+            if (this.nodeId.equals(sender) || !peerAllowlist.contains(sender)) {
+                LOGGER.warning(() -> "[" + this.nodeId + "] Rejected PEER Raft RPC from unconfigured/self senderId=" + sender);
+                return createErrorResponse(messageId, "INVALID_REQUEST",
+                        "SenderId is not an allowed remote peer on PEER channel: " + sender, requestId);
+            }
         }
 
         // 8a. Test Network Filter Hook (Network Partition & Fault Simulation - TV3-D21)
@@ -389,6 +423,27 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public void setFilterHook(MessageFilterHook filterHook) {
         this.filterHook = filterHook;
+    }
+
+    /**
+     * Returns the configured remote/cluster peer ID allowlist for the {@link ChannelType#PEER} channel,
+     * or {@code null} when no allowlist filter is active.
+     */
+    public Set<String> getAllowedPeerIds() {
+        return allowedPeerIds;
+    }
+
+    /**
+     * Configures an allowlist of known peer IDs accepted on the {@link ChannelType#PEER} channel per SPEC-08 §3.1.
+     *
+     * <p>Note per SPEC-08 §3.1: checking {@code senderId} against the configured peer topology is a routing/sanity
+     * guard only and MUST NOT be advertised as cryptographic authentication; LAN firewall isolation on port 9200
+     * provides host-level restriction.
+     *
+     * @param allowedPeerIds Set of valid voter IDs (e.g. {@code node-1..node-5}), or {@code null} to disable
+     */
+    public void setAllowedPeerIds(Set<String> allowedPeerIds) {
+        this.allowedPeerIds = (allowedPeerIds == null) ? null : Set.copyOf(allowedPeerIds);
     }
 
     public boolean isLeaderOnlyRequest(MessageType type) {

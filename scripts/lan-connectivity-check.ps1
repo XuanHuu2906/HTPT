@@ -18,7 +18,11 @@
       - Preflight  : Tiền kiểm cú pháp, port mapping 9100/9200, danh bạ 5 voter, firewall (Mặc định).
       - LocalCheck : Kiểm tra kết nối TCP socket thực tế tới cổng local (127.0.0.1 hoặc TargetHost).
       - SelfTest   : Tự kiểm tra logic phân tích cấu hình, phát hiện lỗi cú pháp và thiếu voter.
-      - LiveProbe  : Thử kết nối TCP thực tế tới các IP trong danh bạ (dành cho TV6-D25 khi ráp LAN).
+      - LiveProbe  : Thử kết nối TCP thực tế tới cả 5 IP trong inventory TV6-D24 (Client 9100 + PING/PONG, Peer 9200).
+.PARAMETER InventoryFile
+    Đường dẫn tới file inventory IP thật từ TV6-D24 (.properties hoặc .env chứa NODE_PEERS / lan.node.node-X.*).
+.PARAMETER AllowPlaceholderProbe
+    Switch chỉ dùng cho test harness nếu muốn ép LiveProbe chạy thử khi vẫn đang là placeholder/localhost.
 .PARAMETER TargetHost
     Địa chỉ host cho chế độ LocalCheck (Mặc định: 127.0.0.1).
 .PARAMETER TimeoutMs
@@ -36,6 +40,8 @@
 .EXAMPLE
     .\scripts\lan-connectivity-check.ps1 -Mode LocalCheck -TargetHost 127.0.0.1
 .EXAMPLE
+    .\scripts\lan-connectivity-check.ps1 -Mode LiveProbe -InventoryFile configs/lan/inventory-live.env -CheckFirewall -LogPath artifacts/evidence/D25/TV3-D25-result.log
+.EXAMPLE
     .\scripts\lan-connectivity-check.ps1 -Mode SelfTest
 #>
 [CmdletBinding()]
@@ -43,6 +49,8 @@ param(
     [string]$ConfigFile = 'configs/lan/node-1.properties',
     [switch]$AllNodes,
     [ValidateSet('Preflight', 'LocalCheck', 'SelfTest', 'LiveProbe')][string]$Mode = 'Preflight',
+    [string]$InventoryFile = '',
+    [switch]$AllowPlaceholderProbe,
     [string]$TargetHost = '127.0.0.1',
     [ValidateRange(100, 30000)][int]$TimeoutMs = 1500,
     [switch]$CheckFirewall,
@@ -431,6 +439,113 @@ function Test-SocketConnection {
     }
 }
 
+function Test-RawPingFrame {
+    param(
+        [string]$HostAddress,
+        [int]$Port,
+        [int]$Timeout
+    )
+
+    $tcpClient = New-Object System.Net.Sockets.TcpClient
+    try {
+        $tcpClient.ReceiveTimeout = $Timeout
+        $tcpClient.SendTimeout = $Timeout
+        $connectAsync = $tcpClient.BeginConnect($HostAddress, $Port, $null, $null)
+        if (-not $connectAsync.AsyncWaitHandle.WaitOne($Timeout, $false)) {
+            return @{ Success = $false; Message = "Timeout khi kết nối $HostAddress`:$Port" }
+        }
+        $tcpClient.EndConnect($connectAsync)
+
+        $stream = $tcpClient.GetStream()
+        $payload = [System.Text.Encoding]::UTF8.GetBytes('PING')
+        $lenBytes = [System.BitConverter]::GetBytes([System.Net.IPAddress]::HostToNetworkOrder([int]$payload.Length))
+        $stream.Write($lenBytes, 0, 4)
+        $stream.Write($payload, 0, $payload.Length)
+        $stream.Flush()
+
+        $respLenBuf = New-Object byte[] 4
+        $readCount = 0
+        while ($readCount -lt 4) {
+            $r = $stream.Read($respLenBuf, $readCount, 4 - $readCount)
+            if ($r -le 0) { throw 'EOF trước khi nhận đủ 4-byte length header' }
+            $readCount += $r
+        }
+        $respLen = [System.Net.IPAddress]::NetworkToHostOrder([System.BitConverter]::ToInt32($respLenBuf, 0))
+        if ($respLen -le 0 -or $respLen -gt 1024) {
+            return @{ Success = $false; Message = "Length header bất thường: $respLen" }
+        }
+        $respBuf = New-Object byte[] $respLen
+        $respRead = 0
+        while ($respRead -lt $respLen) {
+            $r = $stream.Read($respBuf, $respRead, $respLen - $respRead)
+            if ($r -le 0) { throw 'EOF khi đang đọc phản hồi PING' }
+            $respRead += $r
+        }
+        $respText = [System.Text.Encoding]::UTF8.GetString($respBuf)
+        if ($respText -eq 'PONG') {
+            return @{ Success = $true; Message = "PING -> PONG hợp lệ tại $HostAddress`:$Port" }
+        }
+        return @{ Success = $false; Message = "Nhận phản hồi bất thường '$respText' (mong đợi PONG)" }
+    } catch {
+        return @{ Success = $false; Message = "PING lỗi tại $HostAddress`:$Port - $($_.Exception.Message)" }
+    } finally {
+        $tcpClient.Close()
+    }
+}
+
+function Get-InventoryEndpoints {
+    param([string]$InventoryPath)
+
+    $endpoints = [ordered]@{}
+    $sourceProps = @{}
+
+    if (-not [string]::IsNullOrWhiteSpace($InventoryPath)) {
+        $sourceProps = Get-PropertiesFileContent -Path $InventoryPath
+    } else {
+        $node1Path = Join-Path $repoRoot 'configs/lan/node-1.properties'
+        $sourceProps = Get-PropertiesFileContent -Path $node1Path
+    }
+
+    $peersRaw = if ($sourceProps.ContainsKey('NODE_PEERS')) { $sourceProps['NODE_PEERS'] } else { $sourceProps['node.peers'] }
+    $peerRes = Test-NodePeersFormat -PeersString $peersRaw
+    if (-not $peerRes.IsValid) {
+        throw "Danh bạ peer trong inventory không hợp lệ: $($peerRes.Errors -join '; ')"
+    }
+
+    for ($i = 1; $i -le 5; $i++) {
+        $nid = "node-$i"
+        $pInfo = $peerRes.Parsed[$nid]
+        $clientHost = $pInfo.Host
+        $clientPort = 9100
+
+        $lanHostKey = "lan.node.$nid.client.host"
+        $lanPortKey = "lan.node.$nid.client.port"
+        $plainHostKey = "node.$nid.client.host"
+        $plainPortKey = "node.$nid.client.port"
+
+        if ($sourceProps.ContainsKey($lanHostKey) -and -not [string]::IsNullOrWhiteSpace($sourceProps[$lanHostKey])) {
+            $clientHost = $sourceProps[$lanHostKey]
+        } elseif ($sourceProps.ContainsKey($plainHostKey) -and -not [string]::IsNullOrWhiteSpace($sourceProps[$plainHostKey])) {
+            $clientHost = $sourceProps[$plainHostKey]
+        }
+
+        if ($sourceProps.ContainsKey($lanPortKey) -and [int]::TryParse($sourceProps[$lanPortKey], [ref]$clientPort)) {
+            # parsed lan port
+        } elseif ($sourceProps.ContainsKey($plainPortKey) -and [int]::TryParse($sourceProps[$plainPortKey], [ref]$clientPort)) {
+            # parsed plain port
+        }
+
+        $endpoints[$nid] = @{
+            ClientHost = $clientHost
+            ClientPort = $clientPort
+            PeerHost = $pInfo.Host
+            PeerPort = $pInfo.Port
+            IsPlaceholder = $pInfo.IsPlaceholder
+        }
+    }
+    return $endpoints
+}
+
 # ------------------------------------------------------------------------------
 # 7. QUY TRÌNH SELF-TEST NỘI BỘ (Chế độ -Mode SelfTest)
 # ------------------------------------------------------------------------------
@@ -628,15 +743,44 @@ if ($Mode -eq 'SelfTest') {
 
         Write-Log "  - Socket Client ($TargetHost`:9100): $($connClient.Message)" $(if ($connClient.Success) { 'Green' } else { 'Yellow' })
         Write-Log "  - Socket Raft Peer ($TargetHost`:9200): $($connPeer.Message)" $(if ($connPeer.Success) { 'Green' } else { 'Yellow' })
+    } elseif ($Mode -eq 'LiveProbe') {
+        Write-Section "4. LIVE PROBE 5 NODE LAN (D25 / G6 INVENTORY VERIFICATION)"
+        $endpoints = Get-InventoryEndpoints -InventoryPath $InventoryFile
+        $placeholderNodes = @($endpoints.Keys | Where-Object { $endpoints[$_].IsPlaceholder })
+
+        if ($placeholderNodes.Count -gt 0 -and -not $AllowPlaceholderProbe) {
+            Write-Log "  [BLOCKED / NOT_RUN] Phát hiện IP placeholder trong inventory ($($placeholderNodes -join ', '))." 'Yellow' 'WARN'
+            Write-Log "  REAL_IP_INVENTORY=MISSING_PLACEHOLDER_DETECTED; PHYSICAL_5_LAPTOP_CLUSTER=NOT_RUN (DEFERRED_TO_G6)" 'Yellow' 'WARN'
+            $hasFailure = $true
+        } else {
+            $clientReachable = 0
+            $peerReachable = 0
+            foreach ($nid in $endpoints.Keys) {
+                $ep = $endpoints[$nid]
+                $cPing = Test-RawPingFrame -HostAddress $ep.ClientHost -Port $ep.ClientPort -Timeout $TimeoutMs
+                $pConn = Test-SocketConnection -HostAddress $ep.PeerHost -Port $ep.PeerPort -Timeout $TimeoutMs
+                if ($cPing.Success) { $clientReachable++ }
+                if ($pConn.Success) { $peerReachable++ }
+                Write-Log "  - $nid Client ($($ep.ClientHost):$($ep.ClientPort)): $($cPing.Message)" $(if ($cPing.Success) { 'Green' } else { 'Red' })
+                Write-Log "  - $nid Peer   ($($ep.PeerHost):$($ep.PeerPort)): $($pConn.Message)" $(if ($pConn.Success) { 'Green' } else { 'Red' })
+            }
+            Write-Log "  Tổng kết LiveProbe: Client=$clientReachable/5, Peer=$peerReachable/5 (Quorum tối thiểu: 3/5)" $(if ($peerReachable -eq 5 -and $clientReachable -eq 5) { 'Green' } else { 'Yellow' })
+            if ($peerReachable -lt 5 -or $clientReachable -lt 5) {
+                $hasFailure = $true
+            }
+        }
     }
 
     Write-Section "5. BÁO CÁO TỔNG HỢP VÀ RÀNG BUỘC AN TOÀN (AGENTS.md §0, §5, §6)"
     Write-Log "  1. Cú pháp cấu hình (configs/lan/node-1..5.properties) : $(if (-not $hasFailure) { '[PASS]' } else { '[FAIL]' })" $(if (-not $hasFailure) { 'Green' } else { 'Red' })
     Write-Log "  2. Quy chuẩn cổng mạng (Client: 9100, Peer: 9200)       : [PASS]" 'Green'
     Write-Log "  3. Định dạng danh bạ cụm (Đủ 5 voter node-1..node-5)   : [PASS]" 'Green'
-    Write-Log "  4. Chế độ địa chỉ IP                                   : [PLACEHOLDER_MODE]" 'Cyan'
-    Write-Log "  5. Trạng thái kết nối 5 Laptop vật lý                   : [NOT_RUN / DEFERRED_TO_D25]" 'Yellow'
-    Write-Log "     => LƯU Ý BẮT BUỘC: Preflight syntax đạt yêu cầu; TV6-D25 mới thực hiện deploy vật lý." 'Yellow'
+    $isLiveClusterPass = ($Mode -eq 'LiveProbe' -and -not $hasFailure -and -not $AllowPlaceholderProbe)
+    Write-Log "  4. Chế độ địa chỉ IP                                   : $(if ($isLiveClusterPass) { '[REAL_LAN_INVENTORY]' } else { '[PLACEHOLDER_MODE]' })" 'Cyan'
+    Write-Log "  5. Trạng thái kết nối 5 Laptop vật lý                   : $(if ($isLiveClusterPass) { '[PASS]' } else { '[NOT_RUN / DEFERRED_TO_D25]' })" $(if ($isLiveClusterPass) { 'Green' } else { 'Yellow' })
+    if (-not $isLiveClusterPass) {
+        Write-Log "     => LƯU Ý BẮT BUỘC: Preflight syntax đạt yêu cầu; TV6-D25 mới thực hiện deploy vật lý." 'Yellow'
+    }
 }
 
 $transcript | Out-File -FilePath $LogPath -Encoding UTF8

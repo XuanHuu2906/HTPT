@@ -64,8 +64,14 @@ public class LanConnectivityCheckScriptTest {
         // Parameter definitions
         assertTrue(content.contains("$ConfigFile"), "Script must declare $ConfigFile parameter");
         assertTrue(content.contains("$AllNodes"), "Script must declare $AllNodes parameter");
-        assertTrue(content.contains("Preflight") && content.contains("LocalCheck") && content.contains("SelfTest"),
-                "Script must declare Preflight, LocalCheck, SelfTest modes");
+        assertTrue(content.contains("Preflight") && content.contains("LocalCheck")
+                && content.contains("SelfTest") && content.contains("LiveProbe"),
+                "Script must declare Preflight, LocalCheck, SelfTest, and LiveProbe modes");
+        assertTrue(content.contains("$InventoryFile"), "Script must declare $InventoryFile parameter");
+        assertTrue(content.contains("Get-InventoryEndpoints"), "Script must define Get-InventoryEndpoints helper");
+        assertTrue(content.contains("Test-RawPingFrame"), "Script must define Test-RawPingFrame helper");
+        assertTrue(content.contains("REAL_IP_INVENTORY=MISSING_PLACEHOLDER_DETECTED"),
+                "LiveProbe must fail closed when placeholder IPs are present without real inventory");
         assertTrue(content.contains("$TargetHost"), "Script must declare $TargetHost parameter");
         assertTrue(content.contains("$TimeoutMs"), "Script must declare $TimeoutMs parameter");
         assertTrue(content.contains("$CheckFirewall"), "Script must declare $CheckFirewall parameter");
