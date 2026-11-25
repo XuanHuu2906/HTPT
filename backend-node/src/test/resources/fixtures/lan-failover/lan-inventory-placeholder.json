@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "taskRef": "TV5-D25",
+  "dependsOn": ["TV3-D23", "TV6-D24", "TV5-D22"],
+  "mode": "PLACEHOLDER_TEMPLATE",
+  "physicalLanVerified": false,
+  "deferredToGate": "G6",
+  "clusterId": "railway-demo-5",
+  "quorumSize": 3,
+  "voterCount": 5,
+  "ports": {
+    "clientTcp": 9100,
+    "peerRaftTcp": 9200
+  },
+  "voters": [
+    {
+      "laptop": "Laptop-1",
+      "nodeId": "node-1",
+      "ipPlaceholder": "192.168.10.11",
+      "clientEndpoint": "192.168.10.11:9100",
+      "peerEndpoint": "192.168.10.11:9200",
+      "database": "railway_node1",
+      "dbPort": 5433,
+      "configFile": "configs/lan/node-1.properties",
+      "stopCommandTemplate": "docker stop -t 10 railway-backend-node-1"
+    },
+    {
+      "laptop": "Laptop-2",
+      "nodeId": "node-2",
+      "ipPlaceholder": "192.168.10.12",
+      "clientEndpoint": "192.168.10.12:9100",
+      "peerEndpoint": "192.168.10.12:9200",
+      "database": "railway_node2",
+      "dbPort": 5434,
+      "configFile": "configs/lan/node-2.properties",
+      "stopCommandTemplate": "docker stop -t 10 railway-backend-node-2"
+    },
+    {
+      "laptop": "Laptop-3",
+      "nodeId": "node-3",
+      "ipPlaceholder": "192.168.10.13",
+      "clientEndpoint": "192.168.10.13:9100",
+      "peerEndpoint": "192.168.10.13:9200",
+      "database": "railway_node3",
+      "dbPort": 5435,
+      "configFile": "configs/lan/node-3.properties",
+      "stopCommandTemplate": "docker stop -t 10 railway-backend-node-3"
+    },
+    {
+      "laptop": "Laptop-4",
+      "nodeId": "node-4",
+      "ipPlaceholder": "192.168.10.14",
+      "clientEndpoint": "192.168.10.14:9100",
+      "peerEndpoint": "192.168.10.14:9200",
+      "database": "railway_node4",
+      "dbPort": 5436,
+      "configFile": "configs/lan/node-4.properties",
+      "stopCommandTemplate": "docker stop -t 10 railway-backend-node-4"
+    },
+    {
+      "laptop": "Laptop-5",
+      "nodeId": "node-5",
+      "ipPlaceholder": "192.168.10.15",
+      "clientEndpoint": "192.168.10.15:9100",
+      "peerEndpoint": "192.168.10.15:9200",
+      "database": "railway_node5",
+      "dbPort": 5437,
+      "configFile": "configs/lan/node-5.properties",
+      "stopCommandTemplate": "docker stop -t 10 railway-backend-node-5"
+    }
+  ],
+  "nonVoters": [
+    {
+      "laptop": "Laptop-6",
+      "clientId": "monitor-6",
+      "role": "CLUSTER_MONITOR_AND_CLIENT",
+      "ipPlaceholder": "192.168.10.16",
+      "raftVoter": false
+    }
+  ],
+  "nodePeersString": "node-1@192.168.10.11:9200,node-2@192.168.10.12:9200,node-3@192.168.10.13:9200,node-4@192.168.10.14:9200,node-5@192.168.10.15:9200"
+}

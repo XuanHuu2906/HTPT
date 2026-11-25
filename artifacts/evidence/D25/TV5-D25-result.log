@@ -1,0 +1,113 @@
+TV5-D25 validation evidence
+===========================
+
+Task: TV5-D25 Chuẩn bị failover LAN test script/fixtures (Raft Election + Recovery — RaftElectionLanTest với recorded trace & fake TCP v1 endpoints, stop-leader actions, structured term logging, và LAN failover script chuẩn bị cho 5 laptop sau TV6-D25/G6)
+Date: 2026-11-25
+Base Commit: be0009e (branch Huu)
+Environment:
+- Host OS: Linux 7.3.4-300.fc45.x86_64 (x86_64)
+- JDK / Maven: OpenJDK 25.0.5, Apache Maven 3.9.11
+- Python: Python 3 (stdlib only)
+- Execution Mode: FAKE_LOCAL_TCP_V1_ENDPOINTS + RECORDED_TRACE_FIXTURES (NO physical 5-laptop LAN cluster run in D25; real physical failover is strictly Gate G6)
+
+Scope & Honesty Boundary (AGENTS.md §0, §6; SPEC-07 §1; SPEC-08 §6):
+- Reuses TV5-D22 election/partition infrastructure (TestNetworkFilter, RaftElectionService, WriteAvailabilityPolicy) and TV3-D23 / TV6-D24 LAN inventory templates (configs/lan/node-1..5.properties, configs/lan/PORTS.md).
+- Does NOT wait for TV6-D25 cluster startup.
+- Real 5-laptop physical failover: NOT_RUN (deferred to Gate G6 after TV6-D25 cluster setup).
+- Test script / fake endpoint / recorded trace fixtures: PASS.
+
+Deliverables:
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionService.java
+  (Added TermLogEntry, StopLeaderAction, TraceAuditReport, structured term-transition logging,
+   dynamic prepareStopLeaderFromStatuses(), simulateStopLeader()/simulateRestartAfterStop(),
+   auditTermLog(), auditRecordedStatusTrace(), assertTermMonotonicity())
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/RaftElectionLanTest.java (15 tests)
+- backend-node/src/test/resources/fixtures/lan-failover/lan-inventory-placeholder.json
+- backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-leader-failover-4of5.json
+- backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-3of5-and-2of5-quorum-loss.json
+- backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-partition-3-2-heal.json
+- backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-split-brain-negative.json
+- scripts/test-election-lan.py (modes: --mode fake, --mode replay, --mode live with placeholder guard)
+- artifacts/evidence/D25/TV5-D25-result.log (this evidence file)
+- docs/implementation/TV5-D25-notes.md
+
+Verified Scenarios in RaftElectionLanTest (15/15 PASS):
+1.  lanInventoryAndConfigs_loadAllFiveVotersAndNonVoterMonitor_withoutPhysicalClusterClaim: PASS
+2.  fakeTcpEndpoints_serveSpec03NodeStatus_andDynamicallyDiscoverNonNode1Leader: PASS
+3.  fakeTcpEndpoints_stopLeaderAction_triggers4of5FailoverAndLogsHigherTerm: PASS
+4.  fakeTcpEndpoints_twoNodesDown_3of5MaintainsQuorumAndReelectsLeader: PASS
+5.  fakeTcpEndpoints_threeNodesDown_2of5CannotElectLeaderAndReportsNoQuorum: PASS
+6.  fakeTcpEndpoints_oldLeaderRestartAfterStop_recoversTermVoteStepsDownAndRejoins: PASS
+7.  fakeTcpEndpoints_channelIsolation_rejectsRaftRpcOnClientPort: PASS
+8.  fakeLanPartition3to2_viaTestNetworkFilter_minorityNoCommitMajorityFailoverAndHeal: PASS
+9.  laptop6MonitorOffline_doesNotAffectFiveVoterQuorumOrElection: PASS
+10. recordedTrace_leaderFailover4of5_replaysAndPassesAllSafetyAssertions: PASS
+11. recordedTrace_3of5And2of5QuorumLoss_verifiesNoMinorityLeaderAndRecovery: PASS
+12. recordedTrace_partition3to2AndHeal_verifiesNoSplitBrainCommitAndConvergence: PASS
+13. recordedTrace_negativeSplitBrainAndTermRegression_failsClosed: PASS
+14. stopLeaderPreparation_failClosedOnZeroLeadersMultipleLeadersOrUnhealthyStorage: PASS
+15. firewallTimeoutAndAsymmetricDrop_onFakeLanEndpoints_preservesSafetyAndLogsEvents: PASS
+
+--- Suite 1: Targeted LAN Failover + D22 Partition + D23 LAN Config Preflight ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test \
+  -Dtest="RaftElectionLanTest,LanConfigPreflightTest,RaftElectionServiceTest,NetworkPartitionElectionTest" \
+  -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[INFO] Running vn.nhom6.railway.networking.LanConfigPreflightTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in vn.nhom6.railway.networking.LanConfigPreflightTest
+[INFO] Running vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.280 s -- in vn.nhom6.railway.raft.election.NetworkPartitionElectionTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionLanTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.262 s -- in vn.nhom6.railway.raft.election.RaftElectionLanTest
+[INFO] Running vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in vn.nhom6.railway.raft.election.RaftElectionServiceTest
+[INFO]
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+--- Suite 2: Full Raft Election Package Regression ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test \
+  -Dtest="vn.nhom6.railway.raft.election.*Test" \
+  -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[WARNING] Tests run: 335, Failures: 0, Errors: 0, Skipped: 5 (optional real-PostgreSQL JDBC tests skipped when RAILWAY_TEST_JDBC_URL not set)
+[INFO] BUILD SUCCESS
+[INFO] Total time: 6.007 s
+
+--- Suite 3: LAN Failover Test Script Verification (scripts/test-election-lan.py) ---
+
+Commands & Actual Output:
+1. Fake local TCP v1 5-endpoint failover drill:
+   Command: python3 scripts/test-election-lan.py --mode fake
+   Exit Code: 0
+   Key Output:
+   - Bound 5 fake TCP v1 endpoints on 127.0.0.1 ephemeral ports
+   - [STOP-LEADER] step=1 target=node-3 term=5 -> 4/5 failover PASS: oldLeader=node-3@term=5 -> newLeader=node-1@term=6
+   - [STOP-LEADER] step=2 target=node-1 term=6 -> 3/5 failover PASS: newLeader=node-4@term=7
+   - [STOP-LEADER] step=3 target=node-4 term=7 -> 2/5 no-quorum PASS: online=['node-2', 'node-5'], roles={'node-2': 'CANDIDATE', 'node-5': 'FOLLOWER'} -> 0 LEADERs
+   - [TERM-LOG] 5/5 restore PASS: leader=node-2@term=9 commit=15
+   - [AUDIT] PASS: steps=5 leaderByTerm={5: 'node-3', 6: 'node-1', 7: 'node-4', 9: 'node-2'} maxTermByNode={'node-1': 9, 'node-2': 9, 'node-3': 9, 'node-4': 9, 'node-5': 9}
+   - [RESULT] FAKE_LAN_ENDPOINT_DRILL=PASS | PHYSICAL_5_LAPTOP_FAILOVER=NOT_RUN (G6)
+
+2. Recorded trace replays:
+   - recorded-trace-leader-failover-4of5.json: Exit Code 0 | passed=True | leaderByTerm={5: 'node-3', 6: 'node-1'}
+   - recorded-trace-3of5-and-2of5-quorum-loss.json: Exit Code 0 | passed=True | leaderByTerm={2: 'node-5', 3: 'node-2', 6: 'node-3'}
+   - recorded-trace-partition-3-2-heal.json: Exit Code 0 | passed=True | leaderByTerm={3: 'node-2', 4: 'node-4'}
+
+3. Live mode placeholder IP safety guard:
+   Command: python3 scripts/test-election-lan.py --mode live --inventory backend-node/src/test/resources/fixtures/lan-failover/lan-inventory-placeholder.json --dry-run
+   Exit Code: 2 (BLOCKED fail-closed as designed — refuses to run live against placeholder IPs 192.168.10.11:9100 before TV6-D24/D25 real IP inventory)
+
+=== SUMMARY ===
+- Fake TCP v1 endpoints + Recorded Trace fixtures + LAN Failover Script: PASS
+- Real 5-laptop physical LAN failover: NOT_RUN (deferred to TV6-D25 / Gate G6)
