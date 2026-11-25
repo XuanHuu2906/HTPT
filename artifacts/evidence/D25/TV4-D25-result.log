@@ -1,0 +1,36 @@
+﻿TV4-D25 Partition 3-2 Replication result
+Timestamp UTC: 2026-11-25T09:37:57.9089144Z
+Environment: Docker maven:3.9-eclipse-temurin-25, network=railway-dev-network, PostgreSQL=railway-postgres-1
+Command targeted: docker run --rm --network railway-dev-network -v <WORKSPACE>:/workspace -w /workspace -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='<REDACTED>' maven:3.9-eclipse-temurin-25 mvn -B -ntp -pl backend-node -am -Dtest=PartitionReplicationTest -Dsurefire.failIfNoSpecifiedTests=false test
+Command full: docker run --rm --network railway-dev-network -v <WORKSPACE>:/workspace -w /workspace -e RAILWAY_TEST_JDBC_URL='jdbc:postgresql://postgres-1:5432/railway_node1' -e RAILWAY_TEST_DB_USER='railway' -e RAILWAY_TEST_DB_PASSWORD='<REDACTED>' maven:3.9-eclipse-temurin-25 mvn -B -ntp clean verify
+Base SHA: 535e00e9bb05594a674618be48f92dbbb9ae150d
+Code SHA: e7dbb2b9ef6f1ee9cd07e6a3d7bf35b1e73b7019
+Baseline: post-merge 535e00e full clean verify BUILD SUCCESS
+=== TEST RESULT EXTRACT ===
+PartitionReplicationTest: Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+D25-1 seeds=20 minorityCommit=0 minorityApplied=0 dropped>0
+D25-2 seeds=20 realVotes=3 majorityCommitCurrentTerm=present
+D25-3 seeds=20 minorityCandidateLeader=0 minorityVotes<=2
+D25-4 seeds=20 staleVote=false upToDateVote=true
+D25-5 seeds=20 majorityCommit=true minorityCommitKnowledge=1
+D25-6 seeds=20 oldLeaderFollower=true staleSuffixReplaced=1 logsEqual=5
+D25-7 seeds=20 sameTermLeaders=0 divergentCommittedContent=0
+D25-8 seeds=20 rounds=80 healFinal=true converged=5
+D25-9 seeds=20 committedPrefixPreserved=20 lostCommitted=0
+TestNetworkFilter: used directly; partition 12 directed links blocked; dropped count asserted; no TCP filter/TCP claim
+Election: real PersistentRaftNode onElectionTimeout + handleRequestVote + persisted term/vote; promotion through RaftState is harness transition
+Append/commit/apply: real PersistentRaftNode, CommitAdvancer, ReplicationTracker, RaftStateMachineApplier
+=== FULL SUITE ===
+Full clean verify: FAIL at desktop-monitor; backend-node SUCCESS including PartitionReplicationTest and D24; desktop-client SUCCESS; desktop-monitor 1 failure / 11 pass
+Failure: TcpNodeStatusAdapterTest.pollsRealTcpNodeStatusAndHandlesOfflineAndStorageError expected LEADER but got null; reproduced targeted by rerun: 2 tests, 1 failure
+Integration-tests was skipped after desktop-monitor reactor failure
+This is outside D25 scope; no production or existing test file modified
+=== RUNTIME WIRING ===
+CommitAdvancer is wired in ElectionRuntime line 324
+RaftStateMachineApplier exists and LogReplayCoordinator is wired to it in source
+RaftReadBarrier is wired in ElectionRuntime; production NodeMain/Runtime wiring found
+=== LIMITS ===
+No real process kill, TCP 5-node cluster, Docker fault runner, G5/G6 acceptance
+No real five-process election; 5 in-memory PersistentRaftNode objects + TestNetworkFilter
+Secret check: password redacted; no credential in this log
+
