@@ -1,0 +1,2 @@
+{"protocolVersion":1,"messageId":"trace-msg-04","correlationId":"corr-04","type":"BOOK_TICKET","senderId":"client-laptop6","sentAt":"2026-11-26T10:00:03.000Z","payload":{"requestId":"REQ-TIMEOUT-001","tripId":"SE-001","seatId":"G04","passengerName":"Pham Van D"}}
+{"action":"HOLD_CONNECTION","durationMs":5000,"reason":"Network partition causes request to hang until client read timeout fires"}

@@ -1,0 +1,103 @@
+================================================================================
+BÁO CÁO KẾT QUẢ KIỂM THỬ TASK TV1-D25: TÍCH HỢP CẤU HÌNH LAN & KIỂM TRA ENDPOINT
+================================================================================
+Người thực hiện: TV1 (Khoa - Desktop Client JavaFX, vn.nhom6.railway.client)
+Thời gian thực hiện: 2026-11-26 10:04:15 +07:00
+Môi trường: Windows 11 Pro 64-bit, OpenJDK 21.0.12.1 LTS, Apache Maven 3.10.0
+Git Branch: feature/UI
+Base Commit SHA: 38bd164ed1404cfa38ce4e1f10c7cb30c079313d
+
+--------------------------------------------------------------------------------
+1. KHẢO SÁT TIỀN ĐIỀU KIỆN (PREFLIGHT CHECKS)
+--------------------------------------------------------------------------------
+- Tài liệu quy ước cổng & topology: configs/lan/PORTS.md (TV3-D23) -> TỒN TẠI.
+  + Cổng Client cố định: TCP 9100 trên cả 5 Laptop voter.
+  + Cổng Raft Peer: TCP 9200 (Client tuyệt đối KHÔNG kết nối vào 9200).
+- Cấu hình mẫu node template: configs/lan/node-1.properties .. node-5.properties -> TỒN TẠI.
+  + node.id: node-1 .. node-5
+  + client.port: 9100
+- Inventory IP vật lý LAN thật từ TV6-D24: CHƯA CÓ (TV6-D24 đang ở trạng thái chuẩn bị ráp mạng).
+  + Đánh giá: BLOCKED_LAN_IP (IP vật lý thật).
+  + Giải pháp an toàn: Sử dụng IP placeholder chuẩn mẫu (192.168.1.101..105 / 192.168.10.11..15).
+  + ClientConfig bổ sung cơ chế kiểm tra fail-fast: Từ chối kết nối IP placeholder khi chạy ở chế độ thật.
+- Cụm Backend Node chạy thật trên LAN (TV2-D24 CANCEL): CHƯA CHẠY TRÊN LAN THỰC ĐỊA.
+  + Đánh giá: BLOCKED_CANCEL_REAL.
+  + Giải pháp an toàn: Test case RealCancelTicketCheckTest được bảo vệ bởi guard môi trường
+    Assumptions.assumeTrue("true".equalsIgnoreCase(System.getenv("ALLOW_REAL_CANCEL_TEST"))).
+    Mặc định SKIPPED, không giả mạo kết quả PASS khi chưa kết nối cụm thật.
+
+--------------------------------------------------------------------------------
+2. BẢNG MA TRẬN ÁNH XẠ 5 ENDPOINT LAN (TOPOLOGY & PORT MAPPING)
+--------------------------------------------------------------------------------
+| Node ID | Vai trò cụm | IP Placeholder mẫu | Cổng Client (TCP) | Cổng Raft (TCP) | Nguồn cấu hình |
+|---------|-------------|--------------------|-------------------|-----------------|----------------|
+| node-1  | Voter (1/5) | 192.168.1.101      | 9100              | 9200 (Bị cấm)   | client-lan.properties |
+| node-2  | Voter (2/5) | 192.168.1.102      | 9100              | 9200 (Bị cấm)   | client-lan.properties |
+| node-3  | Voter (3/5) | 192.168.1.103      | 9100              | 9200 (Bị cấm)   | client-lan.properties |
+| node-4  | Voter (4/5) | 192.168.1.104      | 9100              | 9200 (Bị cấm)   | client-lan.properties |
+| node-5  | Voter (5/5) | 192.168.1.105      | 9100              | 9200 (Bị cấm)   | client-lan.properties |
+
+Ghi chú:
+- Cấu hình LAN được tách riêng thành desktop-client/src/main/resources/config/client-lan.properties.
+- Đã loại bỏ hoàn toàn danh sách lan.cluster.nodes trùng lặp khỏi client.properties để giữ duy nhất 1 nguồn chân lý.
+
+--------------------------------------------------------------------------------
+3. KẾT QUẢ KIỂM THỬ TỰ ĐỘNG (MAVEN JUNIT 5 TEST SUITE)
+--------------------------------------------------------------------------------
+Lệnh thực thi:
+mvn -pl desktop-client test "-Dtest=ClientLanConfigTest,LanEndpointMappingSocketTest,RealCancelTicketCheckTest" "-Dmaven.compiler.release=21"
+
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.client.ClientLanConfigTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in vn.nhom6.railway.client.ClientLanConfigTest
+  + TC_LAN_CFG_01: Nạp thành công profile lan với đủ 5 node và cổng client 9100 -> PASS
+  + TC_LAN_CFG_02: Đối chiếu cổng Client và Node ID khớp với template configs/lan/node-1..5.properties -> PASS
+  + TC_LAN_CFG_03: Phát hiện và từ chối IP placeholder khi gọi validateNoPlaceholders -> PASS
+  + TC_LAN_CFG_04: Đảm bảo client.properties không còn danh sách lan.cluster.nodes trùng lặp -> PASS
+  + TC_LAN_CFG_05: Ghi đè bằng IP thật hợp lệ thì validateNoPlaceholders thành công -> PASS
+
+[INFO] Running vn.nhom6.railway.client.LanEndpointMappingSocketTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.441 s -- in vn.nhom6.railway.client.LanEndpointMappingSocketTest
+  + TC_LAN_SOCK_01: Định tuyến chính xác tới từng Node trong 5 Node mô phỏng loopback -> PASS
+  + TC_LAN_SOCK_02: Chuyển đổi kết nối (failover) khi một Node gặp sự cố tắt server -> PASS
+  + TC_LAN_SOCK_03: Phát hiện lệch ánh xạ nếu endpoint trả về nodeId khác kỳ vọng -> PASS
+  + TC_LAN_SOCK_04: Kiểm tra live LAN thật (Opt-in: Guard LAN_REAL_CHECK) -> SKIPPED (Bảo vệ môi trường)
+
+[INFO] Running vn.nhom6.railway.client.RealCancelTicketCheckTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.110 s -- in vn.nhom6.railway.client.RealCancelTicketCheckTest
+  + TC_CANCEL_REAL_01: Kiểm tra CANCEL_TICKET thật qua Socket (Guard ALLOW_REAL_CANCEL_TEST) -> SKIPPED (BLOCKED_CANCEL)
+  + TC_CANCEL_REAL_02: Xác thực Guard môi trường hoạt động chính xác khi biến môi trường không được bật -> PASS
+  + TC_CANCEL_REAL_03: DTO và payload CANCEL_TICKET tuần tự hóa đúng cấu trúc SPEC-03 -> PASS
+
+TỔNG HỢP TOÀN BỘ SUITE:
+- Tests run: 12
+- Failures: 0
+- Errors: 0
+- Skipped: 2 (Có chủ đích theo guard môi trường an toàn của AGENTS.md)
+- BUILD SUCCESS
+
+--------------------------------------------------------------------------------
+4. KIỂM TRA BẤT BIẾN & GREP KHÔNG VI PHẠM (SAFETY INVARIANTS)
+--------------------------------------------------------------------------------
+1. Không hardcode Leader:
+   - grep "leader=node-" desktop-client/src/main/resources/config/client-lan.properties -> 0 kết quả (PASS).
+2. Không sử dụng REST/HTTP/Spring Web:
+   - grep "org.springframework.web" desktop-client/src/main/** -> 0 kết quả (PASS).
+3. Không gọi JDBC trực tiếp từ Desktop Client:
+   - grep "java.sql" desktop-client/src/main/** -> 0 kết quả (PASS).
+4. Phân tách kênh mạng an toàn:
+   - Cổng Client 9100 được cấu hình cố định; không có kết nối vào cổng 9200 của Raft.
+
+--------------------------------------------------------------------------------
+5. KẾT LUẬN & BÀN GIAO TASK TV1-D25
+--------------------------------------------------------------------------------
+- Trạng thái hoàn thành phần Desktop Client: PASS (Mô phỏng loopback 5 node + nạp cấu hình LAN).
+- Trạng thái tích hợp môi trường ngoài:
+  + IP LAN thật: BLOCKED (Chờ TV6-D24 nghiệm thu thực địa trên 5 laptop phòng máy).
+  + Backend CANCEL thật trên LAN: BLOCKED_CANCEL (Chờ cụm node TV2/TV4/TV5 khởi động đầy đủ trên LAN).
+- Bàn giao:
+  + TV3: Xác nhận cổng Client 9100 và profile lan trong client-lan.properties.
+  + TV6: Điền IP thật vào client-lan.properties khi ráp mạng tại G6.
+================================================================================

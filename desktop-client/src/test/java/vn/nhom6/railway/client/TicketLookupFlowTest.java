@@ -23,7 +23,6 @@ import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 import vn.nhom6.railway.client.viewmodel.TicketLookupViewModel;
 import vn.nhom6.railway.client.viewmodel.TicketViewModel;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -382,6 +381,7 @@ public class TicketLookupFlowTest {
         CompletableFuture<GetRequestResultResponseDto> f1 = vm.lookup(reqId);
         CompletableFuture<GetRequestResultResponseDto> f2 = vm.lookup(reqId);
 
+        assertNotNull(f1, "Lần gọi đầu tiên phải khởi tạo CompletableFuture");
         assertTrue(f2.isCompletedExceptionally(), "Lần gọi thứ hai ngay lập tức phải bị chặn bởi single-flight hoặc cooldown");
     }
 

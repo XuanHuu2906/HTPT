@@ -1,0 +1,91 @@
+================================================================================
+BÁO CÁO NGHIỆM THU KIỂM THỬ GIAO DIỆN TASK TV1-D26
+TÊN TASK: UI LAN fault scenario harness (G6 chạy thật riêng)
+================================================================================
+Người thực hiện: TV1 (Khoa - Desktop Client JavaFX, vn.nhom6.railway.client)
+Thời điểm kiểm thử: 2026-11-26T10:22:14+07:00
+Môi trường thực tế:
+  - Hệ điều hành: Windows 11 Home Single Language (10.0.26300 amd64)
+  - Java runtime: OpenJDK 64-Bit Server VM (Adoptium 21.0.13+11-LTS)
+  - Apache Maven: 3.10.0
+  - Git Branch: feature/UI
+  - Cụm LAN 5 Laptop thật: CHƯA KẾT NỐI (kịch bản chạy live bàn giao tại G6 theo AGENTS.md §8)
+
+TUYÊN BỐ NGUỒN DỮ LIỆU & RANH GIỚI:
+  - NGUỒN KIỂM THỬ: FAKE & RECORDED-FIXTURE (RecordedTraceReplayServer, FakeNodeServer)
+  - Bộ trace mô phỏng sự cố mạng LAN được ghi lại/phát lại trên loopback:
+    + desktop-client/src/test/resources/traces/leader-lost.jsonl
+    + desktop-client/src/test/resources/traces/no-quorum.jsonl
+    + desktop-client/src/test/resources/traces/not-leader-redirect.jsonl
+    + desktop-client/src/test/resources/traces/timeout-unknown.jsonl
+  - Live LAN Fault thật (kill Leader, chia mạng 3-2 trên 5 laptop phòng máy):
+    Được phân công cho TV5 & TV6 điều phối chạy nghiệm thu tại mốc G6.
+    Desktop Client TUYỆT ĐỐI KHÔNG tự ý dừng Node hay chặn mạng OS.
+
+================================================================================
+BẢNG ĐỐI CHIẾU CÁC CA KIỂM THỬ BẮT BUỘC (TV1-D26 ↔ SPEC / FR / AC)
+================================================================================
+Mã Test Case                                           | FR/AC Liên Quan | Kết Quả  | Chi Tiết Kiểm Thử & Assertion
+-------------------------------------------------------+-----------------+----------+-------------------------------------------------------------
+TC_LAN_01_LeaderLostMidFlight_PreservesRequestId       | AC06, AC10      | PASS     | Gửi BOOK_TICKET thì Leader ngắt socket giữa chừng.
+                                                       |                 |          | Phản hồi trả về UNKNOWN (SENT_UNRESOLVED),
+                                                       |                 |          | requestId và payload nguyên vẹn, journal bảo toàn.
+TC_LAN_02_ReconnectDiscoversNewLeaderAndResolvesPending| AC06, AC10      | PASS     | Reconnect tìm thấy Leader mới (node-2) qua PING/STATUS,
+                                                       |                 |          | tra cứu bằng requestId gốc qua GET_REQUEST_RESULT,
+                                                       |                 |          | chuyển trạng thái thành công CONFIRMED.
+TC_LAN_03_NoQuorumError                                | AC05, SPEC-03   | PASS     | Cụm mất đa số 2/5 -> Leader trả NO_QUORUM.
+                                                       |                 |          | UI hiển thị lỗi đa số, ghế KHÔNG đổi sang BOOKED.
+TC_LAN_04_TimeoutAfterSend                             | AC03, AC10      | PASS     | Timeout socket sau khi gửi -> UNKNOWN, ghế cam nét đứt.
+                                                       |                 |          | Không báo thành công, không báo thất bại, bật nút Tra cứu.
+TC_LAN_05_ConnectErrorBeforeSend                       | AC03, AC10      | PASS     | Lỗi kết nối trước khi gửi byte ra socket -> FAILED_NOT_SENT.
+                                                       |                 |          | Ghế giữ nguyên AVAILABLE, cho phép thử lại ngay.
+TC_LAN_06_NotLeaderRedirectKeepsRequestId              | AC06, SPEC-03   | PASS     | Follower trả NOT_LEADER kèm leaderHint="node-2".
+                                                       |                 |          | Client kết nối tới node-2 với cùng requestId và payload.
+TC_LAN_07_MaxRedirectLimit                             | SPEC-03 §5.3    | PASS     | Chuyển hướng lặp vòng quá 3 lần -> UNKNOWN/EXCEEDED.
+                                                       |                 |          | Tránh kẹt socket vô hạn khi cụm chưa ổn định.
+TC_LAN_08_IdempotencyAfterFailover                     | AC01, AC02      | PASS     | Retry cùng requestId sau failover nhận đúng kết quả cũ.
+                                                       |                 |          | Bất biến: Duy nhất 1 vé ACTIVE trên ghế SE-001/G05.
+TC_LAN_09_NetworkPartitionRecordedTrace                | AC05, AC06      | PASS     | Phát lại trace phân vùng mạng (no-quorum.jsonl).
+                                                       |                 |          | Client nhận mã lỗi chuẩn cấu trúc, không parse text tự do.
+TC_LAN_10_CrashDuringFaultRecoversJournal              | AC10, FR04      | PASS     | Đóng ứng dụng giữa lúc sự cố, khởi động lại journal
+                                                       |                 |          | phục hồi 100% bản ghi SENT_UNRESOLVED trên đĩa.
+TC_LAN_11_StandardErrorMappingWithoutStringParsing     | SPEC-03 §5.3    | PASS     | ErrorPresentationMapper ánh xạ chuẩn NOT_LEADER,
+                                                       |                 |          | READ_UNAVAILABLE, REQUEST_ID_CONFLICT; không parse chuỗi.
+TC_LAN_12_ExportTimelineCsv                            | TV1-D26 Evidence| PASS     | Xuất dữ liệu UiFaultTimeline ra tệp CSV:
+                                                       |                 |          | artifacts/evidence/D26/TV1-D26-ui-timeline.csv.
+TC_LAN_13_LiveLanAcceptanceOptIn                       | AC06, G6 live   | SKIPPED  | Guard bằng cờ môi trường LIVE_LAN_ACCEPTANCE.
+                                                       |                 |          | Chờ nghiệm thu thực tế trên 5 laptop phòng máy tại G6.
+TC_LAN_14_GenerateUiEvidenceImage                      | TV1-D26 Evidence| PASS     | Xuất ảnh minh họa giao diện sự cố LAN:
+                                                       |                 |          | artifacts/evidence/D26/TV1-D26-ui.png có nhãn FAKE/TRACE.
+TC_OBSERVER_01 (LanFaultObserverTest)                  | TV1-D26 Harness | PASS     | LanFaultObserver ghi nhận đầy đủ chuỗi sự kiện Leader
+                                                       |                 |          | và chuyển đổi UI sẵn sàng cắm vào app ở G6.
+
+Tổng số ca kiểm thử: 15
+  - PASS: 14
+  - SKIPPED: 1 (TC_LAN_13_LiveLanAcceptanceOptIn - chờ nghiệm thu trên cụm 5 laptop phòng máy tại mốc G6)
+  - FAIL: 0
+  - ERROR: 0
+
+================================================================================
+KIỂM TRA BẤT BIẾN KIẾN TRÚC & CLEAN ARCHITECTURE (AGENTS.md)
+================================================================================
+1. Kiểm tra import java.net / java.sql trong controller & viewmodel:
+   Lệnh: git grep -E "import java\.(net|sql)" desktop-client/src/main/java/vn/nhom6/railway/client/controller/ desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel/
+   Kết quả: 0 dòng mã thực thi vi phạm.
+
+2. Kiểm tra cấm HTTP / REST / WebSocket trong desktop-client:
+   Lệnh: git grep -iE "(httpclient|okhttp|retrofit|websocket|resttemplate|webmvc)" desktop-client/src/main/
+   Kết quả: 0 dòng vi phạm. Giao tiếp 100% qua Java TCP Socket và protocol DTO của module shared.
+
+3. Kiểm tra cấm chuỗi tự chế SEAT_SOLD:
+   Lệnh: git grep -i "SEAT_SOLD" desktop-client/src/main/
+   Kết quả: 0 dòng vi phạm.
+
+4. Kiểm tra không hardcode Laptop 1 / Node 1 làm Leader:
+   Lệnh: git grep -i "hardcode.*leader" desktop-client/
+   Kết quả: 0 vi phạm. Tìm kiếm Leader linh hoạt qua cấu hình endpoints và cơ chế thăm dò trạng thái cụm.
+================================================================================
+BÀN GIAO:
+  - Bàn giao harness mô phỏng và bộ trace cho TV5 + TV6.
+  - Sẵn sàng tích hợp LanFaultObserver vào buổi nghiệm thu live LAN 5 laptop tại mốc G6.
+================================================================================

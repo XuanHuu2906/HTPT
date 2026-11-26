@@ -1,0 +1,2 @@
+{"protocolVersion":1,"messageId":"trace-msg-01","correlationId":"corr-01","type":"BOOK_TICKET","senderId":"client-laptop6","sentAt":"2026-11-26T10:00:00.000Z","payload":{"requestId":"REQ-LEADER-LOST-001","tripId":"SE-001","seatId":"G01","passengerName":"Nguyen Van A"}}
+{"action":"DROP_CONNECTION","reason":"Leader node-1 crashes mid-request before persisting log"}

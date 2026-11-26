@@ -1,0 +1,2 @@
+timestamp,requestId,ticketId,action,outcome,reasonCode,latencyMs
+# BLOCKED_CANCEL: Chưa có cụm backend thật đang chạy trên LAN. Test case RealCancelTicketCheckTest được bảo vệ an toàn bởi cờ ALLOW_REAL_CANCEL_TEST=true theo AGENTS.md.
