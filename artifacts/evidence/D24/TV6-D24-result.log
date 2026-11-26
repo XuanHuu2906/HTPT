@@ -1,0 +1,493 @@
+TV6-D24 - LAN inventory and offline deployment preparation
+DATE=2026-11-26 Asia/Saigon; UTC=2026-11-26T12:37:12.7377400Z
+BASELINE_HEAD=aeea4ba7cd40077c2d3c2fceda4090d4ecafe543
+SCOPE=AcceptanceSuiteTest.java + TV6-D24-result.log + TV6-D24-notes.md
+REFERENCES=AGENTS.md; .agents/rules/agent_self_rules.md; SPEC-00/01/02/03/08/07; TV3-D23 configs/lan
+ASSIGNMENT=Laptop-6 by TV6 Monitor role supplied by user; hostname/IP independently measured on current host.
+CONFIG_FIXTURE_TESTS=PASS; DEFAULT_RUN=6 executed + 1 opt-in skipped; LOCAL_RUN=7 executed, no skip, no failure.
+These are the same suite run twice, NOT 13 distinct scenarios or any AC01-AC10 claim.
+LOCAL_INVENTORY=BLOCKED/incomplete: real address observed, firewall detailed rules access denied, Docker daemon unavailable.
+REMOTE_LAPTOPS_1_TO_5=NOT_RUN; PHYSICAL_LAN_CLUSTER=NOT_RUN; DB/RAFT/AC01-AC10=NOT_RUN
+OFFLINE_IMAGE_BUILD_SAVE_LOAD=BLOCKED; no tar archive created; preparation commands are in notes, NOT executed.
+No remote host probe, firewall mutation, Docker startup/build/pull/load, config rewrite, volume/reset or DB operation performed.
+ENVIRONMENT=Windows PowerShell 5.1.26100.9818; Windows 10.0.26200.0
+JAVA_HOME=C:\Users\dattr\.vscode\extensions\redhat.java-1.58.0-win32-x64\jre\25.0.4.1-win32-x86_64 (JDK 25 per current POM)
+MAVEN=C:\Users\dattr\AppData\Local\Temp\railway-monitor-tools\apache-maven-3.9.11\bin\mvn.cmd (3.9.11)
+SHA256 integration-tests/src/test/java/vn/nhom6/railway/tests/AcceptanceSuiteTest.java = E52AEBA5033FC35CDF8740C6DA802346BED0E56C8396E33727A5DE190A69F128
+SHA256 docs/implementation/TV6-D24-notes.md = D42763F8B18927A60BE994B7573897D5ED1FB462C663E231604F0D9D7A7E8BE6
+SHA256 pom.xml = 4E917D1BD50333F49F43E632F7325D80AF94AE63CDE4FB8BD9C777E7C7F447D6
+SHA256 docker/Dockerfile.backend = 9D1FF96109EE7702B10EB2373716FFDA9A225734F859B26D1A8427D389B8A25A
+SHA256 docker/compose.dev.yml = F57C82A5E8D5AD11AD38D030E2DDA103BF77AD0A41D6DA36DA05F219B72D44FE
+SHA256 configs/lan/PORTS.md = 70BA1050A3A4E16305900B1AB59E84EB94E7DAFCB2AB601B71925B4AA42F492C
+SHA256 configs/lan/node-1.properties = 0AE67B1A2176CC4340D999C28DE3F8D66EA6342C0594FF2A2D3BDAD28D01408E
+SHA256 configs/lan/node-2.properties = F0C768102E67592DC9FD297E5A1DEFFA6EE0483C8C4F3F59AC5CBD8C7E9ADBFD
+SHA256 configs/lan/node-3.properties = 4FF7F4C3FF582EDE94829A37EB2E6A36EF6A8B0E8A3ED06AC85C9B6F9AE0C2F8
+SHA256 configs/lan/node-4.properties = 85F1B01A37EAA3F8FD8D9A36AA30158276B4139F9E5469B69370D7C8760EEBDD
+SHA256 configs/lan/node-5.properties = CC5ABC3F114D337A9A1F5F6C701F4C0A03120A2535C39C1788A227FDFE27BFB9
+
+=== INVENTORY SUMMARY (only data observed, no placeholder promotion) ===
+Laptop-1 nodeId=node-1 raftVoter=True status=NOT_RUN hostname=NOT_RUN ipv4=NOT_RUN mask=NOT_RUN firewall=NOT_RUN docker=NOT_RUN
+Laptop-2 nodeId=node-2 raftVoter=True status=NOT_RUN hostname=NOT_RUN ipv4=NOT_RUN mask=NOT_RUN firewall=NOT_RUN docker=NOT_RUN
+Laptop-3 nodeId=node-3 raftVoter=True status=NOT_RUN hostname=NOT_RUN ipv4=NOT_RUN mask=NOT_RUN firewall=NOT_RUN docker=NOT_RUN
+Laptop-4 nodeId=node-4 raftVoter=True status=NOT_RUN hostname=NOT_RUN ipv4=NOT_RUN mask=NOT_RUN firewall=NOT_RUN docker=NOT_RUN
+Laptop-5 nodeId=node-5 raftVoter=True status=NOT_RUN hostname=NOT_RUN ipv4=NOT_RUN mask=NOT_RUN firewall=NOT_RUN docker=NOT_RUN
+Laptop-6 nodeId=NONE raftVoter=False status=BLOCKED hostname=HOANGDAT ipv4=192.168.1.50 mask=255.255.255.0 firewall=BLOCKED docker=BLOCKED
+Laptop-6 selected NIC: {"interface":"Wi-Fi","ipv4":"192.168.1.50","prefixLength":24,"gateway":"192.168.1.1","physicalUp":true,"mask":"255.255.255.0"}
+Firewall profiles observed: active Wi-Fi Public; firewall enabled, inbound Block / outbound Allow. Detailed port filter query denied; effective reachability NOT_RUN.
+Observed Docker CLI 29.4.3 / Compose v5.1.4; server and image queries exit=1 (missing dockerDesktopLinuxEngine named pipe).
+Config comparison: client 9100, peer 9200, fixed 5 voters/quorum3, five separate DB names; 192.168.10.11..15 still TEMPLATE, not observed LAN endpoints.
+Local Wi-Fi 192.168.1.50/24 differs from template subnet; no live NODE_PEERS is generated without the remaining five host measurements.
+VMware virtual interfaces and disconnected APIPA Ethernet excluded from physical candidates.
+
+=== ACTUALLY EXECUTED: fixture ===
+COMMAND=mvn.cmd -B -ntp -pl integration-tests -am -Dtest=AcceptanceSuiteTest -Dsurefire.failIfNoSpecifiedTests=false test
+ACTUAL_EXIT=0
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:2 char:249
++ ... n\mvn.cmd'; & $mavenD24 -B -ntp -pl integration-tests -am '-Dtest=Acc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO]
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.AcceptanceSuiteTest
+thg 11 26, 2026 7:36:03 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-1.properties
+thg 11 26, 2026 7:36:03 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-2.properties
+thg 11 26, 2026 7:36:03 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-3.properties
+thg 11 26, 2026 7:36:03 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-4.properties
+thg 11 26, 2026 7:36:03 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-5.properties
+TV6-D24 CONFIG_PREFLIGHT=PASS; template syntax only; PHYSICAL_LAN=NOT_RUN
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.637 s -- in vn.nhom6.railway.tests.AcceptanceSuiteTest
+[INFO]
+[INFO] Results:
+[INFO]
+[WARNING] Tests run: 7, Failures: 0, Errors: 0, Skipped: 1
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.002 s]
+[INFO] shared ............................................. SUCCESS [  0.619 s]
+[INFO] backend-node ....................................... SUCCESS [  0.097 s]
+[INFO] integration-tests .................................. SUCCESS [  1.362 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.195 s
+[INFO] Finished at: 2026-11-26T19:36:03+07:00
+[INFO] ------------------------------------------------------------------------
+
+
+=== ACTUALLY EXECUTED: local-inventory ===
+COMMAND=mvn.cmd -B -ntp -pl integration-tests -am -Dtest=AcceptanceSuiteTest -Dsurefire.failIfNoSpecifiedTests=false -Dlan.inventory.local=true -Dlan.laptop=6 test
+ACTUAL_EXIT=0
+mvn.cmd : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:2 char:676
++ ... tureExit }; & $mavenD24 -B -ntp -pl integration-tests -am '-Dtest=Acc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner
+(file:/C:/Users/dattr/AppData/Local/Temp/railway-monitor-tools/apache-maven-3.9.11/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] railway-distributed-system                                         [pom]
+[INFO] shared                                                             [jar]
+[INFO] backend-node                                                       [jar]
+[INFO] integration-tests                                                  [jar]
+[INFO]
+[INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+[INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+[INFO] Building shared 1.0.0-SNAPSHOT                                     [2/4]
+[INFO]   from shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+[INFO] skip non existing resourceDirectory D:\HTPT\shared\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+[INFO]
+[INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+[INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/4]
+[INFO]   from backend-node\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+[INFO]
+[INFO] -----------------< vn.nhom6.railway:integration-tests >-----------------
+[INFO] Building integration-tests 1.0.0-SNAPSHOT                          [4/4]
+[INFO]   from integration-tests\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ integration-tests ---
+[INFO] skip non existing resourceDirectory D:\HTPT\integration-tests\src\main\resources
+[INFO]
+[INFO] --- compiler:3.14.0:compile (default-compile) @ integration-tests ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ integration-tests ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO]
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ integration-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.2:test (default-test) @ integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running vn.nhom6.railway.tests.AcceptanceSuiteTest
+TV6-D24 LOCAL_INVENTORY_BEGIN
+{
+  "task" : "TV6-D24",
+  "mode" : "LOCAL_READ_ONLY_INVENTORY",
+  "capturedAt" : "2026-11-26T12:36:06.012418300Z",
+  "laptopAssignment" : "Laptop-6",
+  "physicalLan" : "NOT_RUN",
+  "remoteLaptops" : "NOT_RUN",
+  "note" : "JUnit PASS verifies collection/reporting only, not firewall reachability or cluster readiness.",
+  "laptops" : [ {
+    "laptop" : 1,
+    "raftVoter" : true,
+    "status" : "NOT_RUN",
+    "nodeId" : "node-1",
+    "hostname" : "NOT_RUN",
+    "ipv4" : "NOT_RUN",
+    "mask" : "NOT_RUN",
+    "firewall" : "NOT_RUN",
+    "docker" : "NOT_RUN",
+    "reason" : "No measurement from this physical laptop; template addresses are not observations."
+  }, {
+    "laptop" : 2,
+    "raftVoter" : true,
+    "status" : "NOT_RUN",
+    "nodeId" : "node-2",
+    "hostname" : "NOT_RUN",
+    "ipv4" : "NOT_RUN",
+    "mask" : "NOT_RUN",
+    "firewall" : "NOT_RUN",
+    "docker" : "NOT_RUN",
+    "reason" : "No measurement from this physical laptop; template addresses are not observations."
+  }, {
+    "laptop" : 3,
+    "raftVoter" : true,
+    "status" : "NOT_RUN",
+    "nodeId" : "node-3",
+    "hostname" : "NOT_RUN",
+    "ipv4" : "NOT_RUN",
+    "mask" : "NOT_RUN",
+    "firewall" : "NOT_RUN",
+    "docker" : "NOT_RUN",
+    "reason" : "No measurement from this physical laptop; template addresses are not observations."
+  }, {
+    "laptop" : 4,
+    "raftVoter" : true,
+    "status" : "NOT_RUN",
+    "nodeId" : "node-4",
+    "hostname" : "NOT_RUN",
+    "ipv4" : "NOT_RUN",
+    "mask" : "NOT_RUN",
+    "firewall" : "NOT_RUN",
+    "docker" : "NOT_RUN",
+    "reason" : "No measurement from this physical laptop; template addresses are not observations."
+  }, {
+    "laptop" : 5,
+    "raftVoter" : true,
+    "status" : "NOT_RUN",
+    "nodeId" : "node-5",
+    "hostname" : "NOT_RUN",
+    "ipv4" : "NOT_RUN",
+    "mask" : "NOT_RUN",
+    "firewall" : "NOT_RUN",
+    "docker" : "NOT_RUN",
+    "reason" : "No measurement from this physical laptop; template addresses are not observations."
+  }, {
+    "laptop" : 6,
+    "raftVoter" : false,
+    "status" : "BLOCKED",
+    "nodeId" : "NONE",
+    "hostname" : "HOANGDAT",
+    "ipv4" : "192.168.1.50",
+    "mask" : "255.255.255.0",
+    "firewall" : "BLOCKED",
+    "docker" : "BLOCKED",
+    "reason" : "Local observation only; port reachability and deployment NOT_RUN; see localObservation."
+  } ],
+  "commands" : [ {
+    "command" : [ "powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "$ErrorActionPreference='Stop'\n[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)\nfunction Observe([scriptblock]$Read) {\n    try { @{status='PASS'; data=@(& $Read)} }\n    catch { @{status='BLOCKED'; reason=$_.Exception.Message} }\n}\n$physical=@(Get-NetAdapter -Physical | Where-Object Status -eq 'Up' | ForEach-Object ifIndex)\n$result=[ordered]@{\n    hostname=[Environment]::MachineName\n    capturedAt=[DateTime]::UtcNow.ToString('o')\n    network=Observe {\n        Get-NetIPConfiguration | ForEach-Object {\n            $cfg=$_\n            foreach ($ip in @($cfg.IPv4Address)) {\n                if ($null -ne $ip.IPAddress) {\n                    [pscustomobject]@{\n                        interface=$cfg.InterfaceAlias\n                        ipv4=$ip.IPAddress\n                        prefixLength=$ip.PrefixLength\n                        gateway=(@($cfg.IPv4DefaultGateway.NextHop) -join ',')\n                        physicalUp=($cfg.InterfaceIndex -in $physical)\n                    }\n                }\n            }\n        }\n    }\n    connectionProfiles=Observe {\n        Get-NetConnectionProfile | Select-Object InterfaceAlias,\n            @{n='NetworkCategory';e={$_.NetworkCategory.ToString()}},\n            @{n='IPv4Connectivity';e={$_.IPv4Connectivity.ToString()}}\n    }\n    firewallProfiles=Observe {\n        Get-NetFirewallProfile -PolicyStore ActiveStore | Select-Object Name,\n            @{n='Enabled';e={$_.Enabled.ToString()}},\n            @{n='DefaultInboundAction';e={$_.DefaultInboundAction.ToString()}},\n            @{n='DefaultOutboundAction';e={$_.DefaultOutboundAction.ToString()}}\n    }\n    firewallPortRules=Observe {\n        Get-NetFirewallPortFilter -PolicyStore ActiveStore |\n            Where-Object { $_.Protocol -in @('TCP','6') -and\n                (@($_.LocalPort) -contains '9100' -or @($_.LocalPort) -contains '9200') } |\n            Get-NetFirewallRule | Select-Object DisplayName,\n                @{n='Enabled';e={$_.Enabled.ToString()}},\n                @{n='Direction';e={$_.Direction.ToString()}},\n                @{n='Action';e={$_.Action.ToString()}},\n                @{n='Profile';e={$_.Profile.ToString()}}\n    }\n}\n$result | ConvertTo-Json -Depth 8 -Compress\n" ],
+    "status" : "PASS",
+    "exitCode" : 0,
+    "timedOut" : false,
+    "output" : "{\"hostname\":\"HOANGDAT\",\"capturedAt\":\"2026-11-26T12:36:07.6330754Z\",\"network\":{\"status\":\"PASS\",\"data\":[{\"interface\":\"VMware Network Adapter VMnet2\",\"ipv4\":\"192.168.10.1\",\"prefixLength\":24,\"gateway\":\"\",\"physicalUp\":false},{\"interface\":\"VMware Network Adapter VMnet8\",\"ipv4\":\"192.168.194.1\",\"prefixLength\":24,\"gateway\":\"\",\"physicalUp\":false},{\"interface\":\"VMware Network Adapter VMnet1\",\"ipv4\":\"192.168.146.1\",\"prefixLength\":24,\"gateway\":\"\",\"physicalUp\":false},{\"interface\":\"Wi-Fi\",\"ipv4\":\"192.168.1.50\",\"prefixLength\":24,\"gateway\":\"192.168.1.1\",\"physicalUp\":true},{\"interface\":\"Ethernet\",\"ipv4\":\"169.254.134.47\",\"prefixLength\":16,\"gateway\":\"\",\"physicalUp\":false}]},\"connectionProfiles\":{\"status\":\"PASS\",\"data\":[{\"InterfaceAlias\":\"Wi-Fi\",\"NetworkCategory\":\"Public\",\"IPv4Connectivity\":\"Internet\"}]},\"firewallProfiles\":{\"status\":\"PASS\",\"data\":[{\"Name\":\"Domain\",\"Enabled\":\"True\",\"DefaultInboundAction\":\"Block\",\"DefaultOutboundAction\":\"Allow\"},{\"Name\":\"Private\",\"Enabled\":\"True\",\"DefaultInboundAction\":\"Block\",\"DefaultOutboundAction\":\"Allow\"},{\"Name\":\"Public\",\"Enabled\":\"True\",\"DefaultInboundAction\":\"Block\",\"DefaultOutboundAction\":\"Allow\"}]},\"firewallPortRules\":{\"status\":\"BLOCKED\",\"reason\":\"Access is denied. \"}}\r\n"
+  }, {
+    "command" : [ "docker", "--version" ],
+    "status" : "PASS",
+    "exitCode" : 0,
+    "timedOut" : false,
+    "output" : "Docker version 29.4.3, build 055a478\n"
+  }, {
+    "command" : [ "docker", "compose", "version" ],
+    "status" : "PASS",
+    "exitCode" : 0,
+    "timedOut" : false,
+    "output" : "Docker Compose version v5.1.4\n"
+  }, {
+    "command" : [ "docker", "version", "--format", "{{json .Server}}" ],
+    "status" : "BLOCKED",
+    "exitCode" : 1,
+    "timedOut" : false,
+    "output" : "null\nfailed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.\n"
+  }, {
+    "command" : [ "docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}} {{.ID}}" ],
+    "status" : "BLOCKED",
+    "exitCode" : 1,
+    "timedOut" : false,
+    "output" : "failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.\n"
+  } ],
+  "localObservation" : {
+    "hostname" : "HOANGDAT",
+    "capturedAt" : "2026-11-26T12:36:07.6330754Z",
+    "network" : {
+      "status" : "PASS",
+      "data" : [ {
+        "interface" : "VMware Network Adapter VMnet2",
+        "ipv4" : "192.168.10.1",
+        "prefixLength" : 24,
+        "gateway" : "",
+        "physicalUp" : false
+      }, {
+        "interface" : "VMware Network Adapter VMnet8",
+        "ipv4" : "192.168.194.1",
+        "prefixLength" : 24,
+        "gateway" : "",
+        "physicalUp" : false
+      }, {
+        "interface" : "VMware Network Adapter VMnet1",
+        "ipv4" : "192.168.146.1",
+        "prefixLength" : 24,
+        "gateway" : "",
+        "physicalUp" : false
+      }, {
+        "interface" : "Wi-Fi",
+        "ipv4" : "192.168.1.50",
+        "prefixLength" : 24,
+        "gateway" : "192.168.1.1",
+        "physicalUp" : true
+      }, {
+        "interface" : "Ethernet",
+        "ipv4" : "169.254.134.47",
+        "prefixLength" : 16,
+        "gateway" : "",
+        "physicalUp" : false
+      } ]
+    },
+    "connectionProfiles" : {
+      "status" : "PASS",
+      "data" : [ {
+        "InterfaceAlias" : "Wi-Fi",
+        "NetworkCategory" : "Public",
+        "IPv4Connectivity" : "Internet"
+      } ]
+    },
+    "firewallProfiles" : {
+      "status" : "PASS",
+      "data" : [ {
+        "Name" : "Domain",
+        "Enabled" : "True",
+        "DefaultInboundAction" : "Block",
+        "DefaultOutboundAction" : "Allow"
+      }, {
+        "Name" : "Private",
+        "Enabled" : "True",
+        "DefaultInboundAction" : "Block",
+        "DefaultOutboundAction" : "Allow"
+      }, {
+        "Name" : "Public",
+        "Enabled" : "True",
+        "DefaultInboundAction" : "Block",
+        "DefaultOutboundAction" : "Allow"
+      } ]
+    },
+    "firewallPortRules" : {
+      "status" : "BLOCKED",
+      "reason" : "Access is denied. "
+    }
+  },
+  "physicalAddressCandidates" : [ {
+    "interface" : "Wi-Fi",
+    "ipv4" : "192.168.1.50",
+    "prefixLength" : 24,
+    "gateway" : "192.168.1.1",
+    "physicalUp" : true,
+    "mask" : "255.255.255.0"
+  } ],
+  "dockerCli" : "PASS",
+  "dockerServer" : "BLOCKED",
+  "firewallPortReachability" : "NOT_RUN",
+  "offlineImageExport" : "BLOCKED",
+  "inventoryStatus" : "BLOCKED",
+  "reason" : "Only this machine was measured; no LAN cluster or complete six-laptop inventory is certified."
+}
+TV6-D24 LOCAL_INVENTORY_END; PHYSICAL_LAN=NOT_RUN; AC01-AC10=NOT_RUN
+thg 11 26, 2026 7:36:13 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-1.properties
+thg 11 26, 2026 7:36:13 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-2.properties
+thg 11 26, 2026 7:36:13 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-3.properties
+thg 11 26, 2026 7:36:13 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-4.properties
+thg 11 26, 2026 7:36:13 CH vn.nhom6.railway.networking.NodeConfig load
+INFO: Loaded configuration from file: D:\HTPT\configs\lan\node-5.properties
+TV6-D24 CONFIG_PREFLIGHT=PASS; template syntax only; PHYSICAL_LAN=NOT_RUN
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.193 s -- in vn.nhom6.railway.tests.AcceptanceSuiteTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] railway-distributed-system ......................... SUCCESS [  0.001 s]
+[INFO] shared ............................................. SUCCESS [  0.579 s]
+[INFO] backend-node ....................................... SUCCESS [  0.099 s]
+[INFO] integration-tests .................................. SUCCESS [  7.878 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.658 s
+[INFO] Finished at: 2026-11-26T19:36:13+07:00
+[INFO] ------------------------------------------------------------------------
+
+=== SUREFIRE SUMMARIES FROM EACH RUN ===
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.tests.AcceptanceSuiteTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.637 s -- in vn.nhom6.railway.tests.AcceptanceSuiteTest
+
+-------------------------------------------------------------------------------
+Test set: vn.nhom6.railway.tests.AcceptanceSuiteTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.193 s -- in vn.nhom6.railway.tests.AcceptanceSuiteTest
+
+=== BLOCKERS / FOLLOW-UP ===
+Five laptops have not been accessed; collect on each actual machine and remeasure all IPs when assembling the demo LAN.
+Run detailed firewall read with appropriate local rights and validate actual source-to-target TCP paths; rule existence is not reachability.
+Docker image export cannot run until a preparation host has a working daemon; freeze candidate, build/inspect/save, hash tar, load/inspect each target.
+compose.lan.yml absent at baseline; per-laptop deployment and image compatibility/DB/Raft integration remain NOT_RUN.
+FINAL=preparation/reporting tests PASS; partial real inventory recorded; remaining inventory and offline export BLOCKED/NOT_RUN; LAN cluster PASS NOT CLAIMED.
