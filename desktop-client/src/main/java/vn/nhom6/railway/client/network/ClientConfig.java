@@ -268,6 +268,46 @@ public final class ClientConfig {
             }
         }
 
+        // Xác định profile mục tiêu trước khi nạp profile-specific files
+        String resolvedProfile = merged.getProperty(KEY_CLUSTER_PROFILE, DEFAULT_PROFILE);
+        String envProfile = getEnvVal("CLUSTER_PROFILE", envVarsOverride);
+        if (envProfile != null && !envProfile.isBlank()) {
+            resolvedProfile = envProfile.trim();
+        }
+        String sysProfile = getSysPropVal(KEY_CLUSTER_PROFILE, sysPropsOverride);
+        if (sysProfile != null && !sysProfile.isBlank()) {
+            resolvedProfile = sysProfile.trim();
+        }
+
+        // Nếu profile là lan và không chỉ định file riêng biệt qua -Dclient.config, nạp client-lan.properties (TV1-D25)
+        if ("lan".equalsIgnoreCase(resolvedProfile) && customConfigPath == null && (sysConfigPath == null || sysConfigPath.isBlank())) {
+            Path lanFile = findFileInWorkDir("client-lan.properties", "config/client-lan.properties");
+            if (lanFile != null) {
+                try (BufferedReader reader = Files.newBufferedReader(lanFile, StandardCharsets.UTF_8)) {
+                    merged.load(reader);
+                    sourceDesc = "workdir-lan:" + lanFile.toAbsolutePath();
+                } catch (IOException ignored) {}
+            } else {
+                try (InputStream isLan = openClasspathResource("/config/client-lan.properties")) {
+                    if (isLan != null) {
+                        try (Reader reader = new InputStreamReader(isLan, StandardCharsets.UTF_8)) {
+                            merged.load(reader);
+                            sourceDesc = "classpath:/config/client-lan.properties";
+                        }
+                    } else {
+                        try (InputStream isLan2 = openClasspathResource("/client-lan.properties")) {
+                            if (isLan2 != null) {
+                                try (Reader reader = new InputStreamReader(isLan2, StandardCharsets.UTF_8)) {
+                                    merged.load(reader);
+                                    sourceDesc = "classpath:/client-lan.properties";
+                                }
+                            }
+                        }
+                    }
+                } catch (IOException ignored) {}
+            }
+        }
+
         // Áp dụng ghi đè từ Environment Variables (từng key)
         applyEnvOverride(merged, KEY_CLUSTER_PROFILE, "CLUSTER_PROFILE", envVarsOverride);
         applyEnvOverride(merged, KEY_CLIENT_MODE, "CLIENT_MODE", envVarsOverride);
@@ -410,6 +450,68 @@ public final class ClientConfig {
     // =========================================================================
     // HELPER & VALIDATION METHODS
     // =========================================================================
+
+    /**
+     * Kiểm tra xem host có phải là placeholder IP chờ TV6-D24 bàn giao hay không (TASK TV1-D25).
+     */
+    public static boolean isPlaceholderHost(String host) {
+        if (host == null || host.isBlank()) {
+            return true;
+        }
+        String h = host.trim();
+        if (h.contains("<") || h.contains(">") || h.toLowerCase().contains("placeholder")) {
+            return true;
+        }
+        // Dải IP placeholder mẫu theo docs/specs/08-DEPLOYMENT.md và configs/lan/PORTS.md
+        if (h.equals("192.168.1.101") || h.equals("192.168.1.102") || h.equals("192.168.1.103") ||
+            h.equals("192.168.1.104") || h.equals("192.168.1.105") ||
+            h.equals("192.168.10.11") || h.equals("192.168.10.12") || h.equals("192.168.10.13") ||
+            h.equals("192.168.10.14") || h.equals("192.168.10.15")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Kiểm tra xem cấu hình có chứa bất kỳ node nào sử dụng IP placeholder hay không.
+     */
+    public boolean hasPlaceholderEndpoints() {
+        for (NodeEndpoint ep : endpoints) {
+            if (isPlaceholderHost(ep.host())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Trả về danh sách định danh node và host đang ở trạng thái placeholder.
+     */
+    public List<String> getPlaceholderNodes() {
+        List<String> list = new ArrayList<>();
+        for (NodeEndpoint ep : endpoints) {
+            if (isPlaceholderHost(ep.host())) {
+                list.add(ep.nodeId() + " (" + ep.host() + ")");
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Thẩm tra fail-fast: Từ chối chạy ở chế độ socket thật nếu cấu hình còn chứa IP placeholder (TASK TV1-D25).
+     *
+     * @throws IllegalStateException nếu có ít nhất 1 node chứa IP placeholder
+     */
+    public void validateNoPlaceholders() {
+        List<String> placeholders = getPlaceholderNodes();
+        if (!placeholders.isEmpty()) {
+            throw new IllegalStateException(
+                    "Không thể kết nối LAN thật: Các Node sau đang sử dụng IP placeholder chờ TV6-D24 bàn giao: " +
+                            String.join(", ", placeholders) +
+                            ". Hãy điền IP vật lý thật vào client-lan.properties hoặc cấu hình biến môi trường."
+            );
+        }
+    }
 
     public static boolean isDockerInternalHost(String host) {
         if (host == null || host.isBlank()) {
