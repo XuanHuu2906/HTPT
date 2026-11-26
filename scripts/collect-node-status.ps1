@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Script thu thap trang thai (NODE_STATUS) va logs cua 5 Backend Node trong cum (TV6-D12).
 .DESCRIPTION
