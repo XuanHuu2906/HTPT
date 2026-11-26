@@ -1,0 +1,930 @@
+TV6-D26 - g6-lan-fault runner / independent dry-run
+DATE=2026-11-26 Asia/Saigon; UTC=2026-11-26T15:28:08.7076408Z
+BASELINE_HEAD=c13af15ca3503f45165975be042d895ea1f1c90f
+SCOPE=scripts/g6-lan-fault.ps1 + artifacts/evidence/D26/TV6-D26-result.log ONLY
+RULES_READ=AGENTS.md; .agents/rules/agent_self_rules.md; SPEC00/01/02/03, SPEC07/08; D21 stop/restart/select-leader; D25 Compose/evidence.
+SPEC=FR08/FR09/FR12, orchestration preparation for TC-AC07/08/09 and SPEC08 fault/recovery. Existing wire/SQL/backend/D21 files unchanged.
+=== NGHIỆM THU D26 / G6 TÁCH RIÊNG ===
+D26 RUNNER/DRY-RUN: ĐẠT / PASS — mặc định DryRun chạy độc lập trên cấu hình D25, không chờ 5 laptop hay PR TV2/4/5-D26.
+SELFTEST: PASS 13 ca (8 ca orchestration/recovery gồm thành công và lỗi được tiêm; 1 inventory hợp lệ; 4 inventory lỗi bị chặn).
+D25 CONFIG PREFLIGHT: PASS 5/5 cấu hình fixture qua Docker Compose CLI, 2 service backend+postgres, DB riêng không publish host port.
+EXIT CONTRACT: PASS — selftest/dryrun=0; partial fault/recovery failure=1; Live thiếu điều kiện=2.
+G6 FAULT THẬT: KHÔNG ĐẠT / CHƯA NGHIỆM THU (NOT_RUN) — thiếu inventory và quyền truy cập 5 laptop; không gán PASS AC07/08/09, Raft safety, quorum, catch-up SQL. Đây là nghiệm thu G6 riêng, không đổi kết quả PASS của runner/dry-run D26.
+NATIVE DOCKER D21 ADAPTER INTEGRATION: KHÔNG ĐẠT / BLOCKED — daemon unavailable ở lần kiểm tra D26 này; không tạo/stop/restart container hoặc sửa firewall thật.
+Kill/restart thật trên 5 laptop: KHÔNG ĐẠT / NOT_RUN — chưa có điều kiện thực hiện.
+Partition/heal mạng LAN thật và thu log 5 máy: KHÔNG ĐẠT / NOT_RUN — mới kiểm tra mô hình giả lập.
+Raft failover/quorum/safety và catch-up PostgreSQL thật: KHÔNG ĐẠT / NOT_RUN — cần cả nhóm thực hiện tại G6.
+KHÔNG ĐẠT ở các mục trên nghĩa là chưa đủ bằng chứng nghiệm thu do chưa chạy/bị chặn, không phải kết luận đã chạy và phát hiện lỗi hệ thống.
+D25 physical deploy còn BLOCKED như log D25. Đây không phải điều kiện chờ để nộp runner/dry-run D26 theo bảng nhiệm vụ.
+DRY-RUN MODEL: fake 5 nodes/status, no actual Raft algorithm/booking/SQL; initial Leader node-4 is a labeled fixture. Live selects actual Leader via D21 NODE_STATUS.
+Dry-run begins full mesh20/20, stops dynamically selected fake Leader -> replacement, restarts ->5/5, partitions3-2 with12 directed cross links blocked/8 intra open, heals20/20, collects both sides/finally.
+All failure-injection cases below are EXPECTED failures used to test propagation and recovery; they do not mark real node safety PASS.
+ENVIRONMENT=Windows PowerShell 5.1.26100.9818; Docker Compose CLI5.1.4; Docker daemon check actual exit1 while DryRun exits0.
+SHA256 scripts/g6-lan-fault.ps1 = 603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F
+SHA256 docker/lan.yml = 5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+SHA256 scripts/stop-node.ps1 = 2A1C0ABBE2FC410EB6A12AAF79BB5D138615F3DABBDA3BD22AD0126967AEF31B
+SHA256 scripts/restart-node.ps1 = 0716DEC3B4633F6C3F2B166912E5957B87CB82A8BF4AB9C7637B7C3A6622F31E
+SHA256 scripts/select-leader.ps1 = 93323281A519905EE32893BC46C2EC086B80E114C1B9358CCFB96D1E7145C8F3
+SHA256 artifacts/evidence/D25/TV6-D25-result.log = D1CE698C196063D8388B4768EBFF2670A1FE048F268E0DA658D0716BD4DB83D3
+=== LIVE PREPARATION / LIMITS (NOT EXECUTED) ===
+Live requires explicit five-host measured inventory, frozen CandidateRevision matching local/remote HEAD, matching remote D21 scripts and already running backend+PG containers with persistent volumes.
+Authenticated Windows PowerShell remoting must already be configured; no automatic TrustedHosts/WinRM/firewall setup and no credential logging.
+Stop/restart reuse D21 -ContainerName, supporting D25 backend service names. Kill phase means stop with1-second grace, not physical laptop power loss.
+Per-run firewall group blocks cross-side TCP9200 only (inbound local port, outbound remote port), never client9100/PG/management ports. Mesh is probed from backend containers; actual12 blocked/8 open and five client endpoints required or runner fails.
+Recovery journals target before mutation, attempts all relevant heals/restarts/log collectors independently, verifies PG volume identity and does not delete volumes/reset DB. Controller hard crash/remote loss may require manual recovery of the per-run firewall group; do not claim G6 recovery from fake tests.
+Live implementation path is prepared but NOT validated against five remote hosts. New TCP mesh probes and NODE_STATUS alone do not certify Raft traffic isolation, business commit/apply or SQL catch-up; full real acceptance belongs to the group G6 gate.
+=== ACTUAL COMMANDS / RAW OUTPUT ===
+
+=== CASE=selftest ===
+COMMAND=powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -Mode SelfTest -OutputDirectory <TEMP>/railway-tv6-d26/selftest
+EXPECTED_EXIT=0 ACTUAL_EXIT=0 EXIT_ASSERTION=PASS
+2026-11-26T15:25:33.9295454Z TV6-D26 mode=SelfTest baseline=c13af15ca3503f45165975be042d895ea1f1c90f
+2026-11-26T15:25:34.0466544Z ScriptSHA256=603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F D25ComposeSHA256=5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+2026-11-26T15:25:34.0852122Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.0892196Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.0907193Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.0917188Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.0917188Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.1193159Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.1423807Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.1454930Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.1474967Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.1665184Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.1690265Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.1705270Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.1715267Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.1725267Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.1735266Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.1745286Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.1755281Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.1770269Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.1780304Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.1795344Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.1810389Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.1820379Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.1830385Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.1840382Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.1855381Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.1870382Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.1880427Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.1890544Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.1900576Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.1935663Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.1965768Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.1985885Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.1995890Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2015928Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2025943Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2047028Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.2052121Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.2117556Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2152555Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2167533Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2182639Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2207691Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2219467Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2234460Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2244657Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2269437Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2279465Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2289507Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2299558Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2304547Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.2309546Z COLLECT phase=restarted attempted=5 errors=0
+2026-11-26T15:25:34.2379968Z FAKE action=Partition node=node-1 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.2395014Z FAKE action=Partition node=node-2 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.2415017Z FAKE action=Partition node=node-3 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.2420006Z FAKE action=Partition node=node-4 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:25:34.2435087Z FAKE action=Partition node=node-5 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:25:34.2450151Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.2465155Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.2480197Z FAKE action=Mesh node=node-1 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.2490245Z FAKE action=Mesh node=node-1 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.2500428Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.2510249Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.2520248Z FAKE action=Mesh node=node-2 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.2535261Z FAKE action=Mesh node=node-2 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.2545304Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.2555299Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.2565297Z FAKE action=Mesh node=node-3 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.2570296Z FAKE action=Mesh node=node-3 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.2585393Z FAKE action=Mesh node=node-4 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.2595374Z FAKE action=Mesh node=node-4 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.2605364Z FAKE action=Mesh node=node-4 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.2610370Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.2620367Z FAKE action=Mesh node=node-5 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.2630364Z FAKE action=Mesh node=node-5 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.2640363Z FAKE action=Mesh node=node-5 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.2650367Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.2655373Z MESH mode=Fake open=8 blocked=12 partition=True (transport only; no AC09 claim)
+2026-11-26T15:25:34.2665574Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.2993664Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3018694Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3038694Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3048746Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3058791Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3078852Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3088904Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3098953Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3108953Z COLLECT phase=partition-both-sides attempted=5 errors=0
+2026-11-26T15:25:34.3168988Z FAKE action=Heal node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3199093Z FAKE action=Heal node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3219084Z FAKE action=Heal node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3234137Z FAKE action=Heal node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3249111Z FAKE action=Heal node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3269082Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.3284159Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.3294164Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.3309218Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.3329200Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.3339198Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.3359203Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.3379264Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.3399356Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.3419362Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.3434403Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.3455184Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.3470183Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.3480232Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.3495275Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.3510353Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.3520322Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.3530307Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.3545805Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.3565337Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.3570321Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.3590465Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3610470Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3670454Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.3700652Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3710657Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3720632Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3730653Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3740665Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.3745651Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.3770636Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.3800805Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.3820797Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.3830807Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.3845801Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.3855804Z RUNNER PASS mode=Fake; kill/restart/partition/heal/log orchestration only; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.3920999Z SELFTEST PASS case=None
+2026-11-26T15:25:34.3944615Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.3954663Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.3959653Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.3969658Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.3989770Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.3999760Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4014922Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4029779Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4039780Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4210220Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4225221Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4235227Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4245223Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4255223Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4265211Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4270231Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4295321Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4305325Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4315318Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4320320Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4330320Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4345321Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4355314Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4365306Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4370306Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4380349Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4405408Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4415394Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4420397Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4430452Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.4435499Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4450578Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4455570Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4465593Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4470588Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4480631Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.4490682Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.4615937Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4625791Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4630784Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4640787Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4650785Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4660782Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.4665788Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.4675834Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.4684108Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.4689085Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.4699089Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.4709086Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.4729084Z EXPECTED_TEST_FAILURE Kill : INJECTED Kill after possible partial mutation
+2026-11-26T15:25:34.4739260Z SELFTEST PASS case=Kill
+2026-11-26T15:25:34.4749087Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.4759092Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.4769095Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.4784194Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.4789196Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.4799190Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4814203Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4834177Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4859187Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.4869357Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4869357Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4884495Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4894496Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4904491Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4914481Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4919518Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4929559Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4932697Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4952833Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4962858Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.4969127Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.4969127Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.4984504Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.4994513Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.4999497Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.5009508Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.5019501Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.5027595Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.5032570Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.5042589Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.5047064Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5057668Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5062666Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5067685Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5077711Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5082823Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.5087754Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.5097913Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5107740Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5122746Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5132753Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5152886Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5157747Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5162741Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5183100Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5193106Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5203103Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5208098Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.5213099Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.5223269Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.5229604Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.5238272Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.5248265Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.5263268Z EXPECTED_TEST_FAILURE Restart : INJECTED Restart after possible partial mutation
+2026-11-26T15:25:34.5268256Z SELFTEST PASS case=Restart
+2026-11-26T15:25:34.5283338Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.5288328Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.5298390Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.5303390Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.5313385Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.5323392Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5338404Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5351732Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5361702Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5366583Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.5381659Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.5391677Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.5396659Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.5401666Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.5411664Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.5416652Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.5431742Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.5441806Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.5446867Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.5456873Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.5487420Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.5497233Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.5507232Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.5517248Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.5523470Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.5528468Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.5538470Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.5546328Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.5551325Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.5559955Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.5570100Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5576267Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5581331Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5591320Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5596319Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5601322Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.5611314Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.5616319Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5631486Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5646312Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5656309Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5666334Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5681405Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5691416Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5706465Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5726475Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5731462Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5741456Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5746447Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5751457Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5756451Z COLLECT phase=restarted attempted=5 errors=0
+2026-11-26T15:25:34.5766449Z FAKE action=Heal node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5781769Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5801836Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5811831Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5821828Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5826822Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.5836830Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.5841822Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.5851824Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.5856818Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.5866832Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.5866832Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.5882212Z EXPECTED_TEST_FAILURE Partition : INJECTED Partition after possible partial mutation
+2026-11-26T15:25:34.5897241Z SELFTEST PASS case=Partition
+2026-11-26T15:25:34.5907247Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.5912252Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.5922251Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.5932306Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.5932306Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.5947828Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5962873Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.5978144Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6003644Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6013645Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6023635Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6028629Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6038637Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6041194Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6056677Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6061683Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6066888Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6076958Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6086998Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6097017Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6107012Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6117003Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6122001Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6132168Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6138376Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6143373Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6153356Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6163365Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6168347Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6168347Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.6183420Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6193421Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6198416Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6208429Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6213422Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6218414Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.6223427Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.6233424Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6243424Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6258443Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6268434Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6283522Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6293522Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6314723Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6329726Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6340399Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6350399Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6355378Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6360391Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6370382Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6370382Z COLLECT phase=restarted attempted=5 errors=0
+2026-11-26T15:25:34.6385468Z FAKE action=Partition node=node-1 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.6400467Z FAKE action=Partition node=node-2 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.6410474Z FAKE action=Partition node=node-3 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:25:34.6420458Z FAKE action=Partition node=node-4 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:25:34.6420458Z FAKE action=Partition node=node-5 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:25:34.6431543Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6447027Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6452028Z FAKE action=Mesh node=node-1 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6462014Z FAKE action=Mesh node=node-1 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6467019Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6477054Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6487108Z FAKE action=Mesh node=node-2 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6497112Z FAKE action=Mesh node=node-2 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6502283Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6515309Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6520301Z FAKE action=Mesh node=node-3 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6530311Z FAKE action=Mesh node=node-3 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6535300Z FAKE action=Mesh node=node-4 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6545304Z FAKE action=Mesh node=node-4 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6550291Z FAKE action=Mesh node=node-4 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6565307Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.6570290Z FAKE action=Mesh node=node-5 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.6580329Z FAKE action=Mesh node=node-5 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.6590391Z FAKE action=Mesh node=node-5 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.6600378Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.6605375Z MESH mode=Fake open=8 blocked=12 partition=True (transport only; no AC09 claim)
+2026-11-26T15:25:34.6615389Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6635382Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6650382Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6660372Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6670366Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6670366Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6685433Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6690434Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6700448Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6717936Z COLLECT phase=partition-both-sides attempted=5 errors=0
+2026-11-26T15:25:34.6745444Z FAKE action=Heal node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6755451Z FAKE action=Heal node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6780498Z FAKE action=Heal node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6785548Z FAKE action=Heal node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6795552Z FAKE action=Heal node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6805552Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6815549Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6825564Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6835555Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6845555Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.6850550Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.6860544Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.6870559Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.6878765Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.6888819Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.6893818Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.6908809Z EXPECTED_TEST_FAILURE Heal : INJECTED Heal after possible partial mutation
+2026-11-26T15:25:34.6923819Z SELFTEST PASS case=Heal
+2026-11-26T15:25:34.6934039Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.6938816Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.6948806Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.6958813Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.6963809Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.6973809Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.6998832Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7013815Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7023811Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7033819Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7043826Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7048813Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7058813Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7068823Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7078872Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7083921Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7093924Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7102472Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7110066Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7120108Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7125104Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7135112Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7145127Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7150106Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7160110Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7167497Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7177546Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7182594Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7192600Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7197593Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.7212622Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7217592Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7227604Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7232595Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7237592Z COLLECT phase=baseline attempted=5 errors=1
+2026-11-26T15:25:34.7252614Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7257602Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7267601Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7277653Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7282705Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7287704Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.7297690Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.7307715Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.7322709Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.7330930Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.7335919Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.7345915Z EXPECTED_TEST_FAILURE Logs : node-1 : INJECTED Logs after possible partial mutation
+2026-11-26T15:25:34.7361097Z SELFTEST PASS case=Logs
+2026-11-26T15:25:34.7366801Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.7376848Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.7381906Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.7396907Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.7401947Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.7411945Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7427025Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7432079Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7452191Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7462189Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7467187Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7477229Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7487289Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7497281Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7502278Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7512284Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7522297Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7526724Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7536818Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7547023Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7551857Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7561873Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7567148Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7577203Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7582240Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7602492Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7607239Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7617242Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7627244Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7632234Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.7637231Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7647238Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7652236Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7662242Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7667233Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7677270Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.7682308Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.7687303Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7702485Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7712306Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7717303Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7727318Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7732302Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7742301Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.7747302Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.7752313Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.7762311Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.7769449Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.7769449Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.7784555Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.7794547Z EXPECTED_TEST_FAILURE StatusTimeout : INJECTED StatusTimeout after possible partial mutation
+2026-11-26T15:25:34.7804547Z SELFTEST PASS case=StatusTimeout
+2026-11-26T15:25:34.7819564Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.7824542Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.7834548Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.7839547Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.7844543Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.7854546Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7869556Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7879616Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7889681Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.7899682Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7909681Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7919678Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7934770Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7944818Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7949890Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.7959875Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7969872Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.7969872Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.7984976Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.7994977Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.7999972Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.8008126Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.8018184Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.8023186Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.8028169Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:34.8043264Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:34.8053308Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:34.8063353Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:34.8068360Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:34.8078401Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:34.8088439Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8098456Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8108449Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8118450Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8123440Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8133442Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:34.8138435Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:34.8148475Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8163450Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.8178504Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.8188546Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:34.8208696Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8213543Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8222636Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8227618Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8243704Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:34.8248691Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:34.8258688Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:34.8267990Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:34.8267990Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:34.8283066Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:34.8288191Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:34.8298081Z EXPECTED_TEST_FAILURE RestartAlways : INJECTED persistent restart failure; RECOVERY Restart node-4 : INJECTED persistent restart failure
+2026-11-26T15:25:34.8308060Z SELFTEST PASS case=RestartAlways
+2026-11-26T15:25:34.8644078Z SELFTEST PASS count=13; fixtures only; real fault/SQL/LAN acceptance NOT_RUN
+2026-11-26T15:25:34.8659166Z FINAL mode=SelfTest exit=0; D26 runner/dry-run separate from G6. G6 fault/business/SQL acceptance: CHUA_NGHIEM_THU / NOT_RUN.
+
+
+=== CASE=dryrun ===
+COMMAND=powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1  -OutputDirectory <TEMP>/railway-tv6-d26/dryrun
+EXPECTED_EXIT=0 ACTUAL_EXIT=0 EXIT_ASSERTION=PASS
+2026-11-26T15:27:01.7160211Z TV6-D26 mode=DryRun baseline=c13af15ca3503f45165975be042d895ea1f1c90f
+2026-11-26T15:27:01.8093081Z ScriptSHA256=603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F D25ComposeSHA256=5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+2026-11-26T15:27:02.1497416Z D25_COMPOSE node-1 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:27:02.4625632Z D25_COMPOSE node-2 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:27:02.7710835Z D25_COMPOSE node-3 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:27:03.0788722Z D25_COMPOSE node-4 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:27:03.3877487Z D25_COMPOSE node-5 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:27:03.4423166Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:27:03.4454597Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:27:03.4464583Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:27:03.4469869Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:27:03.4479976Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:27:03.4666796Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.4892352Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.4917357Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.4942470Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5127759Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.5147782Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.5157762Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.5167771Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.5177817Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.5192870Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.5202913Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.5212921Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.5222918Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.5227909Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.5237908Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.5298566Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.5318567Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.5328562Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.5333558Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.5343560Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.5348560Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.5368573Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.5388694Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.5398734Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.5443853Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:27:03.5468889Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5483988Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5494019Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5504058Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5509050Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5529212Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:27:03.5534051Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:27:03.5599146Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5639420Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5654239Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5669242Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5699496Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5709347Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5724329Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5749322Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.5769486Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5779563Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5794628Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5804596Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5814603Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.5824621Z COLLECT phase=restarted attempted=5 errors=0
+2026-11-26T15:27:03.5880352Z FAKE action=Partition node=node-1 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:27:03.5895633Z FAKE action=Partition node=node-2 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:27:03.5905364Z FAKE action=Partition node=node-3 exit=0 peers=node-4,node-5 FAKE_ONLY
+2026-11-26T15:27:03.5915362Z FAKE action=Partition node=node-4 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:27:03.5930668Z FAKE action=Partition node=node-5 exit=0 peers=node-1,node-2,node-3 FAKE_ONLY
+2026-11-26T15:27:03.5946139Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.5961287Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.5981292Z FAKE action=Mesh node=node-1 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.5996280Z FAKE action=Mesh node=node-1 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6006302Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6166434Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6181528Z FAKE action=Mesh node=node-2 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6191522Z FAKE action=Mesh node=node-2 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6201528Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6211527Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6221522Z FAKE action=Mesh node=node-3 exit=1 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6231520Z FAKE action=Mesh node=node-3 exit=1 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6241519Z FAKE action=Mesh node=node-4 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6246518Z FAKE action=Mesh node=node-4 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6256532Z FAKE action=Mesh node=node-4 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6266534Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6281632Z FAKE action=Mesh node=node-5 exit=1 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6286626Z FAKE action=Mesh node=node-5 exit=1 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6296671Z FAKE action=Mesh node=node-5 exit=1 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6306675Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6311679Z MESH mode=Fake open=8 blocked=12 partition=True (transport only; no AC09 claim)
+2026-11-26T15:27:03.6321675Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6361672Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6366656Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6386928Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6401763Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6416774Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6421768Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6431805Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6431805Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6442893Z COLLECT phase=partition-both-sides attempted=5 errors=0
+2026-11-26T15:27:03.6493040Z FAKE action=Heal node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6503078Z FAKE action=Heal node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6513081Z FAKE action=Heal node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6523085Z FAKE action=Heal node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6533082Z FAKE action=Heal node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6543085Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6553084Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6563094Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6568076Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6583480Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6598477Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6608508Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6613543Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6623566Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6633564Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6638551Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6658565Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6668558Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6668558Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6683670Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6693676Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:27:03.6698667Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:27:03.6708664Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:27:03.6713667Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:27:03.6728656Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:27:03.6733654Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:27:03.6743656Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6763657Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6783740Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:27:03.6803895Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6808737Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6823748Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6828737Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6838735Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:27:03.6843734Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:27:03.6868726Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:27:03.6883821Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:27:03.6893815Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:27:03.6898815Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:27:03.6908813Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:27:03.6913810Z RUNNER PASS mode=Fake; kill/restart/partition/heal/log orchestration only; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:27:03.6918813Z DRY_RUN PASS; no remote/TCP/firewall/Docker mutations performed
+2026-11-26T15:27:03.6964197Z FINAL mode=DryRun exit=0; D26 runner/dry-run separate from G6. G6 fault/business/SQL acceptance: CHUA_NGHIEM_THU / NOT_RUN.
+
+
+=== CASE=partial-fault ===
+COMMAND=powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -InjectFailure Partition -OutputDirectory <TEMP>/railway-tv6-d26/partial-fault
+EXPECTED_EXIT=1 ACTUAL_EXIT=1 EXIT_ASSERTION=PASS
+2026-11-26T15:25:37.4488293Z TV6-D26 mode=DryRun baseline=c13af15ca3503f45165975be042d895ea1f1c90f
+2026-11-26T15:25:37.5385036Z ScriptSHA256=603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F D25ComposeSHA256=5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+2026-11-26T15:25:37.8906869Z D25_COMPOSE node-1 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:38.1969227Z D25_COMPOSE node-2 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:38.5041499Z D25_COMPOSE node-3 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:38.8139380Z D25_COMPOSE node-4 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:39.1201868Z D25_COMPOSE node-5 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:39.1728456Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:39.1758584Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:39.1768547Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:39.1778601Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:39.1788677Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:39.1994369Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.2250123Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.2280525Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.2300613Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.2513782Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:39.2533642Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:39.2543626Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:39.2553622Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:39.2563626Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:39.2568616Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:39.2583708Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:39.2598757Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:39.2608753Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:39.2618750Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:39.2628754Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:39.2698955Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:39.2713820Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:39.2723813Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:39.2733802Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:39.2738800Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:39.2753804Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:39.2768807Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:39.2808925Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:39.2828927Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:39.2863929Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:39.2894009Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.2904027Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.2914006Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.2919033Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.2934150Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.2959936Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:39.2964929Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:39.3035101Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3065086Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3085196Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3105464Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3130262Z FAKE action=Restart node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3155267Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3171573Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3186557Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:39.3211607Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3221610Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3231606Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3236600Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3261608Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3271591Z COLLECT phase=restarted attempted=5 errors=0
+2026-11-26T15:25:39.3453656Z FAKE action=Heal node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3468640Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3478677Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3488715Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3649023Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3664052Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:39.3669037Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:39.3694754Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:39.3704620Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:39.3719476Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:39.3729475Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:39.3744455Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:39.3764620Z FAIL: INJECTED Partition after possible partial mutation
+2026-11-26T15:25:39.3805032Z FINAL mode=DryRun exit=1; D26 runner/dry-run separate from G6. G6 fault/business/SQL acceptance: CHUA_NGHIEM_THU / NOT_RUN.
+
+
+=== CASE=recovery-failure ===
+COMMAND=powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -InjectFailure RestartAlways -OutputDirectory <TEMP>/railway-tv6-d26/recovery-failure
+EXPECTED_EXIT=1 ACTUAL_EXIT=1 EXIT_ASSERTION=PASS
+2026-11-26T15:25:39.6756975Z TV6-D26 mode=DryRun baseline=c13af15ca3503f45165975be042d895ea1f1c90f
+2026-11-26T15:25:39.7707884Z ScriptSHA256=603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F D25ComposeSHA256=5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+2026-11-26T15:25:40.1281509Z D25_COMPOSE node-1 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:40.4417123Z D25_COMPOSE node-2 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:40.7898539Z D25_COMPOSE node-3 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:41.1114224Z D25_COMPOSE node-4 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:41.4270681Z D25_COMPOSE node-5 exit=0 PASS; TEST-NET-2 config fixture only, no Docker up/fault/probe
+2026-11-26T15:25:41.4805981Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:41.4837963Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:41.4847820Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:41.4852819Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:41.4862835Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:41.5053112Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.5253865Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.5279318Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.5289459Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":true,"storageHealthy":true,"role":"LEADER","term":8,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":8,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.5457287Z FAKE action=Mesh node=node-1 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:41.5477426Z FAKE action=Mesh node=node-1 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:41.5487573Z FAKE action=Mesh node=node-1 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:41.5497561Z FAKE action=Mesh node=node-1 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:41.5512565Z FAKE action=Mesh node=node-2 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:41.5522552Z FAKE action=Mesh node=node-2 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:41.5527548Z FAKE action=Mesh node=node-2 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:41.5537575Z FAKE action=Mesh node=node-2 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:41.5542575Z FAKE action=Mesh node=node-3 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:41.5557584Z FAKE action=Mesh node=node-3 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:41.5627874Z FAKE action=Mesh node=node-3 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:41.5637718Z FAKE action=Mesh node=node-3 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:41.5642713Z FAKE action=Mesh node=node-4 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:41.5652734Z FAKE action=Mesh node=node-4 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:41.5662733Z FAKE action=Mesh node=node-4 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:41.5667731Z FAKE action=Mesh node=node-4 exit=0 peers=node-5 FAKE_ONLY
+2026-11-26T15:25:41.5682850Z FAKE action=Mesh node=node-5 exit=0 peers=node-1 FAKE_ONLY
+2026-11-26T15:25:41.5692828Z FAKE action=Mesh node=node-5 exit=0 peers=node-2 FAKE_ONLY
+2026-11-26T15:25:41.5702855Z FAKE action=Mesh node=node-5 exit=0 peers=node-3 FAKE_ONLY
+2026-11-26T15:25:41.5712854Z FAKE action=Mesh node=node-5 exit=0 peers=node-4 FAKE_ONLY
+2026-11-26T15:25:41.5747875Z MESH mode=Fake open=20 blocked=0 partition=False (transport only; no AC09 claim)
+2026-11-26T15:25:41.5778267Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5793398Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5803432Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5813449Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5823451Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5838453Z COLLECT phase=baseline attempted=5 errors=0
+2026-11-26T15:25:41.5868434Z TC-G6-RUNNER-KILL selectedLeader=node-4; D21 stop timeout=1; G6_ACCEPTANCE=NOT_RUN
+2026-11-26T15:25:41.5936168Z FAKE action=Kill node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.5976177Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.5991239Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.6006226Z STATUS mode=Fake [{"nodeId":"node-1","online":true,"storageHealthy":true,"role":"LEADER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-2","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-3","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-4","online":false,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43},{"nodeId":"node-5","online":true,"storageHealthy":true,"role":"FOLLOWER","term":9,"commitIndex":43,"lastApplied":43}]
+2026-11-26T15:25:41.6086517Z FAKE action=Logs node=node-1 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.6101365Z FAKE action=Logs node=node-2 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.6111350Z FAKE action=Logs node=node-3 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.6126368Z FAKE action=Logs node=node-4 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.6136349Z FAKE action=Logs node=node-5 exit=0 peers= FAKE_ONLY
+2026-11-26T15:25:41.6151357Z COLLECT phase=finally attempted=5 errors=0
+2026-11-26T15:25:41.6176477Z FAKE action=Inspect node=node-4 exit=0 peers= FAKE_PG_VOLUME_node-4
+2026-11-26T15:25:41.6191528Z FAKE action=Inspect node=node-3 exit=0 peers= FAKE_PG_VOLUME_node-3
+2026-11-26T15:25:41.6201575Z FAKE action=Inspect node=node-2 exit=0 peers= FAKE_PG_VOLUME_node-2
+2026-11-26T15:25:41.6211740Z FAKE action=Inspect node=node-5 exit=0 peers= FAKE_PG_VOLUME_node-5
+2026-11-26T15:25:41.6221579Z FAKE action=Inspect node=node-1 exit=0 peers= FAKE_PG_VOLUME_node-1
+2026-11-26T15:25:41.6246587Z FAIL: INJECTED persistent restart failure; RECOVERY Restart node-4 : INJECTED persistent restart failure
+2026-11-26T15:25:41.6286632Z FINAL mode=DryRun exit=1; D26 runner/dry-run separate from G6. G6 fault/business/SQL acceptance: CHUA_NGHIEM_THU / NOT_RUN.
+
+
+=== CASE=live-blocked ===
+COMMAND=powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -Mode Live -OutputDirectory <TEMP>/railway-tv6-d26/live-blocked
+EXPECTED_EXIT=2 ACTUAL_EXIT=2 EXIT_ASSERTION=PASS
+2026-11-26T15:25:41.8942281Z TV6-D26 mode=Live baseline=c13af15ca3503f45165975be042d895ea1f1c90f
+2026-11-26T15:25:41.9860195Z ScriptSHA256=603304A1BAEAF91A810983EA9FCA6DEE45E2D6B6360F1B299A5A477EB44C9E0F D25ComposeSHA256=5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+2026-11-26T15:25:41.9983682Z BLOCKED: Live requires measured five-host InventoryPath and frozen CandidateRevision; D25 physical hosts are not yet available.
+2026-11-26T15:25:41.9999113Z FINAL mode=Live exit=2; D26 runner/dry-run separate from G6. G6 fault/business/SQL acceptance: CHUA_NGHIEM_THU / NOT_RUN.
+
+=== NATIVE DOCKER PREREQUISITE CHECK / DRY-RUN INDEPENDENCE ===
+COMMAND=docker version --format {{json .Server}}; ACTUAL_EXIT=1
+COMMAND=docker image inspect --format {{.Id}} railway-backend-node:tv6-d25-6addad37e7ff; ACTUAL_EXIT=1
+null
+docker : failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is
+correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file
+specified.
+At line:2 char:49
++ ... y-tv6-d26'; docker version --format '{{json .Server}}' *> "$d26Temp\n ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (failed to conne...file specified.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+docker : failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is
+correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file
+specified.
+At line:2 char:198
++ ... aemonExit"; docker image inspect --format '{{.Id}}' railway-backend-n ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (failed to conne...file specified.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+Subsequent default DryRun ACTUAL_EXIT=0 (raw output above); only Compose config rendering is required, not an Engine or physical nodes. Native adapter runtime test NOT_RUN/BLOCKED.
+=== REPRODUCTION ===
+powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -Mode SelfTest
+powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1
+powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -InjectFailure Partition   # expected1, recovery attempted
+powershell.exe -NoProfile -NonInteractive -File scripts/g6-lan-fault.ps1 -Mode Live                # expected2, no inventory/candidate
+Formal G6 later: prepare all five deployed machines and inventory described in script help; use -Mode Live -InventoryPath <local.json> -CandidateRevision <frozenSHA> with authorized remoting credentials, collect real fault + BOOK/requestId + committed/applied SQL evidence separately.
+FINAL: D26 runner/dry-run ĐẠT / PASS. Adapter Docker thật KHÔNG ĐẠT / BLOCKED. G6 real faults / five physical laptops / Raft booking safety / SQL acceptance KHÔNG ĐẠT / CHƯA NGHIỆM THU (NOT_RUN); nghiệm thu G6 riêng.
