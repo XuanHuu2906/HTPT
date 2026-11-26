@@ -19,7 +19,10 @@ import java.util.logging.Logger;
  * across real multi-node TCP clusters without terminating JVM processes or unbinding sockets
  * (in strict compliance with AGENTS.md §0, §5 and SPEC-07 TC-RAFT-06).
  */
-public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, RaftRpcClient.RpcFilterHook {
+public class TestNetworkFilter implements
+        MessageDispatcher.MessageFilterHook,
+        MessageDispatcher.ResponseFilterHook,
+        RaftRpcClient.RpcFilterHook {
 
     private static final Logger LOGGER = Logger.getLogger(TestNetworkFilter.class.getName());
 
@@ -46,8 +49,12 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
     // Custom predicates for selective message dropping (e.g. drop only REQUEST_VOTE)
     private final List<BiPredicate<DirectedLink, MessageEnvelope<?>>> customDropPredicates = new CopyOnWriteArrayList<>();
 
+    // Custom predicates for dropping outbound responses after request processing (response lost simulation)
+    private final List<BiPredicate<DirectedLink, MessageEnvelope<?>>> responseDropPredicates = new CopyOnWriteArrayList<>();
+
     // Telemetry and Metrics
     private final AtomicLong totalDroppedCount = new AtomicLong(0);
+    private final AtomicLong totalResponseDroppedCount = new AtomicLong(0);
     private final AtomicLong totalDeliveredCount = new AtomicLong(0);
     private final ConcurrentMap<DirectedLink, AtomicLong> droppedByLink = new ConcurrentHashMap<>();
 
@@ -99,6 +106,36 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
                 + " [type=" + (message != null ? message.getType() : "null")
                 + ", msgId=" + (message != null ? message.getMessageId() : "null")
                 + "] Reason: " + reason);
+    }
+
+    @Override
+    public boolean shouldSendResponse(
+            String responderNodeId,
+            String senderId,
+            MessageEnvelope<com.fasterxml.jackson.databind.JsonNode> request,
+            MessageEnvelope<?> response) {
+        if (responderNodeId == null || senderId == null) {
+            return true;
+        }
+        DirectedLink returnLink = new DirectedLink(responderNodeId, senderId);
+
+        if (isolatedNodes.contains(responderNodeId) || isolatedNodes.contains(senderId)) {
+            totalResponseDroppedCount.incrementAndGet();
+            droppedByLink.computeIfAbsent(returnLink, k -> new AtomicLong(0)).incrementAndGet();
+            return false;
+        }
+
+        for (BiPredicate<DirectedLink, MessageEnvelope<?>> predicate : responseDropPredicates) {
+            if (predicate.test(returnLink, response)) {
+                totalResponseDroppedCount.incrementAndGet();
+                droppedByLink.computeIfAbsent(returnLink, k -> new AtomicLong(0)).incrementAndGet();
+                LOGGER.info(() -> "[TestNetworkFilter] RESPONSE DROPPED: " + responderNodeId + " -> " + senderId
+                        + " [type=" + (response != null ? response.getType() : "null")
+                        + ", corrId=" + (response != null ? response.getCorrelationId() : "null") + "]");
+                return false;
+            }
+        }
+        return true;
     }
 
     // =========================================================================
@@ -205,6 +242,7 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
         blockedLinks.clear();
         isolatedNodes.clear();
         customDropPredicates.clear();
+        responseDropPredicates.clear();
         LOGGER.info("[TestNetworkFilter] Network fully HEALED: all drop rules and partitions cleared");
     }
 
@@ -242,6 +280,33 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
         customDropPredicates.add(predicate);
     }
 
+    /**
+     * Drops outbound responses of a specific {@link MessageType} (after handler execution)
+     * to simulate response packet loss on the TCP return path.
+     */
+    public void dropResponseType(MessageType responseType) {
+        Objects.requireNonNull(responseType, "responseType must not be null");
+        responseDropPredicates.add((link, resp) -> resp != null && resp.getType() == responseType);
+        LOGGER.info(() -> "[TestNetworkFilter] Added rule: drop outbound response type " + responseType);
+    }
+
+    /**
+     * Drops outbound responses sent to a specific client/peer {@code recipientId}.
+     */
+    public void dropResponsesTo(String recipientId) {
+        Objects.requireNonNull(recipientId, "recipientId must not be null");
+        responseDropPredicates.add((link, resp) -> recipientId.equals(link.to()));
+        LOGGER.info(() -> "[TestNetworkFilter] Added rule: drop outbound responses to " + recipientId);
+    }
+
+    /**
+     * Drops outbound responses matching a custom predicate.
+     */
+    public void addResponseDropPredicate(BiPredicate<DirectedLink, MessageEnvelope<?>> predicate) {
+        Objects.requireNonNull(predicate, "predicate must not be null");
+        responseDropPredicates.add(predicate);
+    }
+
     // =========================================================================
     // Cluster Wiring Utilities
     // =========================================================================
@@ -253,9 +318,11 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
         Objects.requireNonNull(node, "node must not be null");
         if (node.getRaftDispatcher() != null) {
             node.getRaftDispatcher().setFilterHook(this);
+            node.getRaftDispatcher().setResponseFilterHook(this);
         }
         if (node.getClientDispatcher() != null) {
             node.getClientDispatcher().setFilterHook(this);
+            node.getClientDispatcher().setResponseFilterHook(this);
         }
     }
 
@@ -276,9 +343,11 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
         for (NodeMain node : cluster.values()) {
             if (node.getRaftDispatcher() != null) {
                 node.getRaftDispatcher().setFilterHook(null);
+                node.getRaftDispatcher().setResponseFilterHook(null);
             }
             if (node.getClientDispatcher() != null) {
                 node.getClientDispatcher().setFilterHook(null);
+                node.getClientDispatcher().setResponseFilterHook(null);
             }
         }
         LOGGER.info("[TestNetworkFilter] Detached from cluster nodes");
@@ -310,6 +379,10 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
         return totalDroppedCount.get();
     }
 
+    public long getResponseDroppedCount() {
+        return totalResponseDroppedCount.get();
+    }
+
     public long getDeliveredCount() {
         return totalDeliveredCount.get();
     }
@@ -329,6 +402,7 @@ public class TestNetworkFilter implements MessageDispatcher.MessageFilterHook, R
 
     public void resetMetrics() {
         totalDroppedCount.set(0);
+        totalResponseDroppedCount.set(0);
         totalDeliveredCount.set(0);
         droppedByLink.clear();
     }
