@@ -1,0 +1,2 @@
+{"protocolVersion":1,"messageId":"trace-msg-03","correlationId":"corr-03","type":"BOOK_TICKET","senderId":"client-laptop6","sentAt":"2026-11-26T10:00:02.000Z","payload":{"requestId":"REQ-REDIRECT-001","tripId":"SE-001","seatId":"G03","passengerName":"Le Thi C"}}
+{"protocolVersion":1,"messageId":"trace-resp-03","correlationId":"trace-msg-03","type":"ERROR_RESPONSE","senderId":"node-1","sentAt":"2026-11-26T10:00:02.010Z","payload":{"errorCode":"NOT_LEADER","message":"Node is follower in term 3","leaderHint":"node-2","appliedLogIndex":100,"requestId":"REQ-REDIRECT-001"}}
