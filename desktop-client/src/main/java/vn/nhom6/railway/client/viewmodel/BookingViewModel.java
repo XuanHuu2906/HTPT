@@ -166,6 +166,13 @@ public class BookingViewModel {
         this.scheduler = scheduler;
         this.submitTimeoutMs = (submitTimeoutMs > 0) ? submitTimeoutMs : DEFAULT_SUBMIT_TIMEOUT_MS;
 
+        BookingClient unwrapped = (bookingClient instanceof JournalingBookingClient jbc) ? jbc.getDelegate() : bookingClient;
+        if (unwrapped instanceof vn.nhom6.railway.client.network.SocketBookingClient
+                || unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient) {
+            this.mock.set(false);
+            this.message.set("Hệ thống sẵn sàng kết nối cụm máy chủ (SE-001).");
+        }
+
         // Mặc định UiDispatcher chuyển về JavaFX Application Thread
         this.uiDispatcher = action -> {
             if (Platform.isFxApplicationThread()) {
@@ -1046,7 +1053,7 @@ public class BookingViewModel {
         runOnUi(() -> {
             busy.set(true);
             uiState.set(UiState.LOADING);
-            message.set("Đang tải dữ liệu sơ đồ ghế chuyến " + tripId + "... [MOCK]");
+            message.set("Đang tải dữ liệu sơ đồ ghế chuyến " + tripId + "..." + (mock.get() ? " [MOCK]" : ""));
         });
 
         CompletableFuture<GetSeatsResponseDto> completionFuture = new CompletableFuture<>();
@@ -1060,8 +1067,9 @@ public class BookingViewModel {
             }
             mock.set(result.isMock());
             uiState.set(UiState.IDLE);
+            String modeSuffix = result.isMock() ? " [MOCK]" : "";
             message.set("Đã cập nhật danh sách " + result.getSeats().size() + " ghế (Leader: " +
-                    (result.getLeaderId() != null ? result.getLeaderId() : "N/A") + ") [MOCK]");
+                    (result.getLeaderId() != null ? result.getLeaderId() : "N/A") + ")" + modeSuffix);
             completionFuture.complete(result);
         }));
 

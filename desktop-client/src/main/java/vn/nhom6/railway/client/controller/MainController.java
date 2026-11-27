@@ -151,7 +151,10 @@ public class MainController {
             if (rootBorderPane != null) {
                 rootBorderPane.setCenter(cachedTicketStatusView);
                 highlightNavButton(navMyTicketsBtn);
-                updateStatusMessage("Đang ở màn hình Tra cứu & Quản lý vé MOCK (D06).");
+                ClientConfig cfg = ClientConfig.loadDefault();
+                updateStatusMessage(cfg.isSocketMode()
+                        ? "Đang ở màn hình Tra cứu & Quản lý vé (Cụm 5 Node)."
+                        : "Đang ở màn hình Tra cứu & Quản lý vé MOCK (D06).");
             }
         } catch (IOException e) {
             updateStatusMessage("Lỗi khi nạp giao diện ticket-status.fxml: " + e.getMessage());
