@@ -66,6 +66,9 @@ public class FakeNodeServer implements AutoCloseable {
     // Lưu trữ kết quả đặt vé theo requestId để bảo đảm tính idempotent (SPEC-03 §4.2, §4.4)
     private final Map<String, StoredBooking> storedBookings = new ConcurrentHashMap<>();
 
+    // Lưu trữ kết quả hủy vé theo requestId để bảo đảm tính idempotent (SPEC-03 §4.3, §4.4)
+    private final Map<String, StoredCancel> storedCancels = new ConcurrentHashMap<>();
+
     // Đếm số vé ACTIVE trên mỗi ghế (phục vụ assert: retry nhiều lần chỉ có đúng 1 vé ACTIVE)
     private final Map<String, Integer> activeTicketsPerSeat = new ConcurrentHashMap<>();
 
@@ -97,6 +100,7 @@ public class FakeNodeServer implements AutoCloseable {
     private volatile String forcedErrorCode = null;
     private volatile String forcedErrorMessage = null;
     private volatile boolean simulateTimeoutOnBook = false;
+    private volatile boolean simulateTimeoutOnCancel = false;
     private volatile long timeoutSleepMs = 10000;
 
     // Mở rộng cho kịch bản tranh chấp 6 Client cùng ghế (TASK TV1-D18 — FAKE SERVER, không phải Raft)
@@ -129,6 +133,14 @@ public class FakeNodeServer implements AutoCloseable {
             String passengerName,
             BookTicketResponseDto responseDto,
             boolean isConflict
+    ) {}
+
+    public static record StoredCancel(
+            String requestId,
+            String ticketId,
+            String outcome,
+            String reasonCode,
+            Long appliedLogIndex
     ) {}
 
     /**
@@ -248,6 +260,8 @@ public class FakeNodeServer implements AutoCloseable {
     public synchronized void resetForNewRound() {
         initDefaultSeats();
         storedBookings.clear();
+        storedCancels.clear();
+        simulateTimeoutOnCancel = false;
         droppedRequestIds.clear();
         dropResponseForRequestIds.clear();
         pendingRequestIds.clear();
@@ -518,6 +532,7 @@ public class FakeNodeServer implements AutoCloseable {
             case NODE_STATUS -> handleNodeStatus(reqMessageId);
             case GET_SEATS -> handleGetSeats(reqMessageId, payload);
             case BOOK_TICKET -> handleBookTicket(reqMessageId, senderId, payload);
+            case CANCEL_TICKET -> handleCancelTicket(reqMessageId, senderId, payload);
             case GET_REQUEST_RESULT -> handleGetRequestResult(reqMessageId, payload);
             default -> createErrorResponse(reqMessageId, "INVALID_REQUEST",
                     "Loại bản tin chưa hỗ trợ trên FakeNodeServer: " + type, null);
@@ -567,6 +582,11 @@ public class FakeNodeServer implements AutoCloseable {
 
     public void setSimulateTimeoutOnBook(boolean simulate, long sleepMs) {
         this.simulateTimeoutOnBook = simulate;
+        this.timeoutSleepMs = sleepMs;
+    }
+
+    public void setSimulateTimeoutOnCancel(boolean simulate, long sleepMs) {
+        this.simulateTimeoutOnCancel = simulate;
         this.timeoutSleepMs = sleepMs;
     }
 
@@ -950,6 +970,21 @@ public class FakeNodeServer implements AutoCloseable {
                     resultPayload.get("state").asText(),
                     "Lookup resolved from server storage"
             ));
+        } else if (requestId != null && storedCancels.containsKey(requestId)) {
+            StoredCancel sc = storedCancels.get(requestId);
+            if ("CONFIRMED".equalsIgnoreCase(sc.outcome())) {
+                resultPayload.put("state", "APPLIED_SUCCESS");
+                resultPayload.put("commandType", "CANCEL_TICKET");
+                resultPayload.put("ticketId", sc.ticketId());
+                resultPayload.putNull("reasonCode");
+                resultPayload.put("appliedLogIndex", sc.appliedLogIndex());
+            } else {
+                resultPayload.put("state", "APPLIED_REJECTED");
+                resultPayload.put("commandType", "CANCEL_TICKET");
+                resultPayload.put("ticketId", sc.ticketId());
+                resultPayload.put("reasonCode", sc.reasonCode());
+                resultPayload.put("appliedLogIndex", sc.appliedLogIndex());
+            }
         } else {
             resultPayload.put("state", "UNKNOWN");
             resultPayload.putNull("commandType");
@@ -978,6 +1013,92 @@ public class FakeNodeServer implements AutoCloseable {
                 nodeId,
                 resultPayload
         );
+    }
+
+    private synchronized MessageEnvelope<?> handleCancelTicket(String correlationId, String senderId, JsonNode payload) {
+        if (payload == null) {
+            return createErrorResponse(correlationId, "INVALID_REQUEST", "Payload hủy vé không được null", null);
+        }
+        String requestId = payload.hasNonNull("requestId") ? payload.get("requestId").asText() : null;
+        String ticketId = payload.hasNonNull("ticketId") ? payload.get("ticketId").asText() : null;
+        if (requestId == null || requestId.isBlank() || ticketId == null || ticketId.isBlank()) {
+            return createErrorResponse(correlationId, "INVALID_REQUEST", "Thiếu requestId hoặc ticketId", requestId);
+        }
+
+        requestAttempts.merge(requestId, 1, Integer::sum);
+
+        if (forcedErrorCode != null) {
+            return createErrorResponse(correlationId, forcedErrorCode,
+                    forcedErrorMessage != null ? forcedErrorMessage : "Lỗi giả lập: " + forcedErrorCode, requestId);
+        }
+        if (forceNotLeader) {
+            ErrorResponseDto errorDto = new ErrorResponseDto("NOT_LEADER",
+                    "Node " + nodeId + " không phải là Leader", notLeaderHint, notLeaderTerm, requestId);
+            return MessageEnvelope.createResponse(correlationId, MessageType.ERROR_RESPONSE, nodeId, errorDto);
+        }
+
+        if (simulateTimeoutOnCancel) {
+            try {
+                Thread.sleep(timeoutSleepMs);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            return null;
+        }
+
+        if (storedCancels.containsKey(requestId)) {
+            StoredCancel existing = storedCancels.get(requestId);
+            if (!Objects.equals(existing.ticketId(), ticketId)) {
+                return createErrorResponse(correlationId, "REQUEST_ID_CONFLICT",
+                        "Xung đột requestId hủy vé: ticketId khác lần đầu", requestId);
+            }
+            return buildCancelEnvelope(correlationId, existing);
+        }
+
+        String matchedSeatId = null;
+        for (Map.Entry<String, SeatState> entry : seatStates.entrySet()) {
+            SeatState s = entry.getValue();
+            if ("BOOKED".equalsIgnoreCase(s.status()) && Objects.equals(ticketId, s.ticketId())) {
+                matchedSeatId = entry.getKey();
+                break;
+            }
+        }
+
+        long appliedIndex = logIndexSequence.incrementAndGet();
+        boolean shouldDrop = dropResponseForRequestIds.contains(requestId) && droppedRequestIds.add(requestId);
+
+        StoredCancel decision;
+        if (matchedSeatId != null) {
+            seatStates.put(matchedSeatId, new SeatState(matchedSeatId, "AVAILABLE", null));
+            activeTicketsPerSeat.put(matchedSeatId, 0);
+            decision = new StoredCancel(requestId, ticketId, "CONFIRMED", null, appliedIndex);
+        } else {
+            decision = new StoredCancel(requestId, ticketId, "REJECTED", "TICKET_NOT_ACTIVE", appliedIndex);
+        }
+        storedCancels.put(requestId, decision);
+
+        if (shouldDrop) {
+            return DROP_RESPONSE_SENTINEL;
+        }
+        return buildCancelEnvelope(correlationId, decision);
+    }
+
+    private MessageEnvelope<ObjectNode> buildCancelEnvelope(String correlationId, StoredCancel decision) {
+        ObjectNode out = MessageCodec.getMapper().createObjectNode();
+        out.put("requestId", decision.requestId());
+        out.put("outcome", decision.outcome());
+        out.put("ticketId", decision.ticketId());
+        if (decision.reasonCode() != null) {
+            out.put("reasonCode", decision.reasonCode());
+        } else {
+            out.putNull("reasonCode");
+        }
+        if (decision.appliedLogIndex() != null) {
+            out.put("appliedLogIndex", decision.appliedLogIndex());
+        } else {
+            out.putNull("appliedLogIndex");
+        }
+        return MessageEnvelope.createResponse(correlationId, MessageType.CANCEL_TICKET_RESPONSE, nodeId, out);
     }
 
     private MessageEnvelope<ErrorResponseDto> createErrorResponse(String correlationId, String errorCode, String message, String requestId) {
