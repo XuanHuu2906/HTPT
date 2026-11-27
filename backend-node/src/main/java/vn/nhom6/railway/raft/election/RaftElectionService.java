@@ -161,10 +161,12 @@ public final class RaftElectionService implements ElectionService {
     private final Runnable onStepDown;
     private final CandidateElection.VoteTransport transport;
 
+    private record TermedAck(long term, Instant timestamp) { }
+
     private volatile WriteAvailabilityPolicy writeAvailabilityPolicy;
     private volatile Clock clock = Clock.systemUTC();
     private final Set<String> currentGrants = new CopyOnWriteArraySet<>();
-    private final Map<String, Instant> peerAckTimes = new ConcurrentHashMap<>();
+    private final Map<String, TermedAck> peerAckTimes = new ConcurrentHashMap<>();
     private final Map<String, Instant> peerPingTimes = new ConcurrentHashMap<>();
     private final Set<String> partitionIsolatedPeers = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArrayList<TermLogEntry> termLog = new CopyOnWriteArrayList<>();
@@ -215,19 +217,27 @@ public final class RaftElectionService implements ElectionService {
                 node,
                 state,
                 (peer, req, reply) -> {
-                    if (partitionIsolatedPeers.contains(peer)) {
-                        // Drop RPC across simulated partition boundary
+                    if (failed || stopped || partitionIsolatedPeers.contains(peer)) {
+                        // Drop RPC across simulated partition boundary or inactive node
                         return;
                     }
                     this.transport.requestVote(peer, req, response -> {
-                        if (response != null && response.voteGranted() && response.term() == this.state.currentTerm()) {
-                            currentGrants.add(peer);
+                        if (failed || stopped || partitionIsolatedPeers.contains(peer)) {
+                            return;
                         }
-                        reply.receive(response);
+                        try {
+                            reply.receive(response);
+                            syncGrantsFromCandidate();
+                        } catch (RaftStorageException | RuntimeException failure) {
+                            failClosed();
+                            throw failure;
+                        }
                     });
                 },
                 termHandler,
                 () -> {
+                    syncGrantsFromCandidate();
+                    clearPeerAcks();
                     recordTermEvent(
                             EVENT_LEADER_ELECTED,
                             this.state.currentTerm(),
@@ -314,13 +324,36 @@ public final class RaftElectionService implements ElectionService {
     @Override
     public long startElection() throws RaftStorageException {
         requireHealthy();
+        if (state.role() == Role.LEADER) {
+            throw new IllegalStateException("a leader cannot start an election");
+        }
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
+        int insertIndex = termLog.size();
+        clearPeerAcks();
         currentGrants.clear();
-        currentGrants.add(localId);
-        long newTerm = candidateElection.startElection();
-        recordTermEvent(EVENT_ELECTION_STARTED, prevTerm, prevRole, "Started election campaign for term " + newTerm);
-        return newTerm;
+        try {
+            long newTerm = candidateElection.startElection();
+            syncGrantsFromCandidate();
+            TermLogEntry startedEntry = new TermLogEntry(
+                    clock.instant(),
+                    localId,
+                    EVENT_ELECTION_STARTED,
+                    prevTerm,
+                    newTerm,
+                    prevRole,
+                    Role.CANDIDATE,
+                    null,
+                    localId,
+                    state.commitIndex(),
+                    state.lastLogIndex(),
+                    "Started election campaign for term " + newTerm);
+            termLog.add(Math.min(insertIndex, termLog.size()), startedEntry);
+            return newTerm;
+        } catch (RaftStorageException | RuntimeException failure) {
+            failClosed();
+            throw failure;
+        }
     }
 
     @Override
@@ -332,14 +365,40 @@ public final class RaftElectionService implements ElectionService {
     public RequestVoteResponse handleRequestVote(RequestVoteRequestDto request) throws RaftStorageException {
         requireHealthy();
         Objects.requireNonNull(request, "request").validate();
+        if (!isVoter(request.getCandidateId())) {
+            throw new IllegalArgumentException("candidate is not a voter");
+        }
         if (partitionIsolatedPeers.contains(request.getCandidateId())) {
             // Drop or deny vote request from isolated candidate
             return new RequestVoteResponse(state.currentTerm(), false);
         }
+        long prevTerm = state.currentTerm();
         Role prevRole = state.role();
-        RequestVoteResponse response = candidateElection.handleRequestVote(request);
-        if (prevRole == Role.LEADER && state.role() == Role.FOLLOWER) {
+        RequestVoteResponse response;
+        try {
+            response = candidateElection.handleRequestVote(request);
+        } catch (RaftStorageException failure) {
+            failClosed();
+            throw failure;
+        }
+        boolean steppedDownHigherTerm = state.currentTerm() > prevTerm;
+        if (steppedDownHigherTerm) {
+            currentGrants.clear();
+            clearPeerAcks();
+            if (prevRole == Role.LEADER || prevRole == Role.CANDIDATE) {
+                onStepDown.run();
+            }
+            recordTermEvent(EVENT_HIGHER_TERM_STEP_DOWN, prevTerm, prevRole,
+                    "Observed higher term " + state.currentTerm() + " from RequestVote("
+                            + request.getCandidateId() + ") -> stepped down to FOLLOWER");
+        } else if (prevRole == Role.LEADER && state.role() == Role.FOLLOWER) {
+            currentGrants.clear();
+            clearPeerAcks();
             onStepDown.run();
+        }
+        if (response.voteGranted()) {
+            recordTermEvent(EVENT_VOTE_GRANTED, prevTerm, prevRole,
+                    "Granted vote to " + request.getCandidateId() + " for term " + state.currentTerm());
         }
         if (response.term() > state.currentTerm()) {
             observeHigherTerm(response.term());
@@ -356,16 +415,16 @@ public final class RaftElectionService implements ElectionService {
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
         ElectionOutcome outcome = candidateElection.recordVoteResponse(voterId, term, granted);
+        syncGrantsFromCandidate();
         if (outcome instanceof ElectionService.Won) {
-            currentGrants.add(voterId);
             recordTermEvent(EVENT_VOTE_GRANTED, prevTerm, prevRole,
                     "Vote granted by " + voterId + " (quorum reached: " + currentGrants.size() + "/" + CLUSTER_SIZE + ")");
         } else if (outcome instanceof ElectionService.VoteProgress) {
-            currentGrants.add(voterId);
             recordTermEvent(EVENT_VOTE_GRANTED, prevTerm, prevRole,
                     "Vote granted by " + voterId + " (" + currentGrants.size() + "/" + CLUSTER_SIZE + ")");
         } else if (outcome instanceof ElectionService.SteppedDown steppedDown) {
             currentGrants.clear();
+            clearPeerAcks();
             try {
                 observeHigherTerm(steppedDown.observedTerm());
             } catch (RaftStorageException e) {
@@ -381,7 +440,9 @@ public final class RaftElectionService implements ElectionService {
         requireHealthy();
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
+        clearPeerAcks();
         candidateElection.promoteToLeader(leaderPeers);
+        syncGrantsFromCandidate();
         recordTermEvent(EVENT_LEADER_ELECTED, prevTerm, prevRole,
                 "Promoted to leader with " + currentGrants.size() + "/" + CLUSTER_SIZE + " votes");
     }
@@ -408,6 +469,10 @@ public final class RaftElectionService implements ElectionService {
      * Current count of votes granted for the active campaign (including self vote).
      */
     public int grantedVoteCount() {
+        if (failed || stopped || state.role() == Role.FOLLOWER) {
+            return 0;
+        }
+        syncGrantsFromCandidate();
         return currentGrants.size();
     }
 
@@ -415,6 +480,10 @@ public final class RaftElectionService implements ElectionService {
      * Unmodifiable set of voters that granted votes in the current campaign.
      */
     public Set<String> grantedVoters() {
+        if (failed || stopped || state.role() == Role.FOLLOWER) {
+            return Set.of();
+        }
+        syncGrantsFromCandidate();
         return Collections.unmodifiableSet(new TreeSet<>(currentGrants));
     }
 
@@ -422,7 +491,8 @@ public final class RaftElectionService implements ElectionService {
      * Returns true if the active campaign has reached majority quorum (>= 3 votes).
      */
     public boolean hasWonElection() {
-        return currentGrants.size() >= REQUIRED_VOTES;
+        return !failed && !stopped && state.role() != Role.FOLLOWER
+                && grantedVoteCount() >= REQUIRED_VOTES;
     }
 
     /**
@@ -437,13 +507,20 @@ public final class RaftElectionService implements ElectionService {
             long prevTerm = state.currentTerm();
             Role prevRole = state.role();
             currentGrants.clear();
+            candidateElection.clearCampaignOnStepDown();
+            clearPeerAcks();
             onStepDown.run();
-            if (node instanceof PersistentRaftNode durable) {
-                durable.observeHigherTerm(higherTerm);
-            } else if (persistence != null) {
-                persistence.observeHigherTerm(higherTerm);
-            } else {
-                state.becomeFollower(higherTerm);
+            try {
+                if (node instanceof PersistentRaftNode durable) {
+                    durable.observeHigherTerm(higherTerm);
+                } else if (persistence != null) {
+                    persistence.observeHigherTerm(higherTerm);
+                } else {
+                    state.becomeFollower(higherTerm);
+                }
+            } catch (RaftStorageException | RuntimeException failure) {
+                failClosed();
+                throw failure;
             }
             recordTermEvent(EVENT_HIGHER_TERM_STEP_DOWN, prevTerm, prevRole,
                     "Observed higher term " + higherTerm + " -> stepped down to FOLLOWER");
@@ -557,7 +634,14 @@ public final class RaftElectionService implements ElectionService {
      * Records a verified AppendEntries commit acknowledgment from a peer.
      */
     public void recordPeerAck(String peerId, long matchIndex, Instant timestamp) {
-        peerAckTimes.put(peerId, timestamp);
+        if (peerId == null || !peers.contains(peerId)) {
+            throw new IllegalArgumentException("unknown remote peer: " + peerId);
+        }
+        Objects.requireNonNull(timestamp, "timestamp");
+        if (failed || stopped || state.role() != Role.LEADER || partitionIsolatedPeers.contains(peerId)) {
+            return;
+        }
+        peerAckTimes.put(peerId, new TermedAck(state.currentTerm(), timestamp));
         if (writeAvailabilityPolicy != null) {
             writeAvailabilityPolicy.recordPeerAck(peerId, matchIndex, timestamp);
         }
@@ -567,6 +651,10 @@ public final class RaftElectionService implements ElectionService {
      * Records a peer ping (proves peer connectivity, but NOT commit ACK).
      */
     public void recordPeerPing(String peerId, Instant timestamp) {
+        if (peerId == null || !peers.contains(peerId)) {
+            throw new IllegalArgumentException("unknown remote peer: " + peerId);
+        }
+        Objects.requireNonNull(timestamp, "timestamp");
         peerPingTimes.put(peerId, timestamp);
         if (writeAvailabilityPolicy != null) {
             writeAvailabilityPolicy.recordPeerPing(peerId, timestamp);
@@ -625,17 +713,20 @@ public final class RaftElectionService implements ElectionService {
     }
 
     private int activeVoterCountFallback(Instant now) {
-        if (state.role() != Role.LEADER) {
+        if (failed || stopped || state.role() != Role.LEADER) {
             return 0;
         }
+        long currentTerm = state.currentTerm();
         int count = 1; // local leader
         Duration window = WriteAvailabilityPolicy.DEFAULT_FRESHNESS_WINDOW;
         for (String peer : peers) {
             if (partitionIsolatedPeers.contains(peer)) {
                 continue;
             }
-            Instant ack = peerAckTimes.get(peer);
-            if (ack != null && !ack.isBefore(now.minus(window))) {
+            TermedAck ack = peerAckTimes.get(peer);
+            if (ack != null && ack.term() == currentTerm
+                    && !ack.timestamp().isAfter(now)
+                    && !ack.timestamp().isBefore(now.minus(window))) {
                 count++;
             }
         }
@@ -656,10 +747,7 @@ public final class RaftElectionService implements ElectionService {
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
         PersistentState loaded = storage.load();
-        if (loaded.currentTerm() < state.currentTerm()) {
-            throw new RaftStorageException("term regression in storage: stored="
-                    + loaded.currentTerm() + ", state=" + state.currentTerm());
-        }
+        validateDurableState(loaded, state.currentTerm());
         recordTermEvent(EVENT_RECOVERY_RESTORED, prevTerm, prevRole,
                 "Recovered durable state term=" + loaded.currentTerm()
                         + ", votedFor=" + loaded.votedFor()
@@ -677,6 +765,10 @@ public final class RaftElectionService implements ElectionService {
     public void isolatePeer(String peer) {
         if (peers.contains(peer)) {
             partitionIsolatedPeers.add(peer);
+            peerAckTimes.remove(peer);
+            if (writeAvailabilityPolicy != null) {
+                writeAvailabilityPolicy.markPeerUnresponsive(peer);
+            }
             recordTermEvent(EVENT_PARTITION_APPLIED, state.currentTerm(), state.role(),
                     "Isolated peer " + peer + " (isolated=" + isolatedPeers() + ")");
         }
@@ -700,6 +792,10 @@ public final class RaftElectionService implements ElectionService {
         for (String p : isolatedPeers) {
             if (peers.contains(p)) {
                 partitionIsolatedPeers.add(p);
+                peerAckTimes.remove(p);
+                if (writeAvailabilityPolicy != null) {
+                    writeAvailabilityPolicy.markPeerUnresponsive(p);
+                }
             }
         }
         recordTermEvent(EVENT_PARTITION_APPLIED, state.currentTerm(), state.role(),
@@ -821,6 +917,8 @@ public final class RaftElectionService implements ElectionService {
         stopped = true;
         partitionIsolatedPeers.addAll(peers);
         currentGrants.clear();
+        candidateElection.clearCampaignOnStepDown();
+        clearPeerAcks();
         onStepDown.run();
         recordTermEvent(EVENT_STOP_LEADER_EXECUTED, prevTerm, prevRole,
                 "Simulated stop-leader executed on " + localId + " at term=" + prevTerm
@@ -838,7 +936,8 @@ public final class RaftElectionService implements ElectionService {
     }
 
     /**
-     * Restarts a previously stopped node, validating durable storage (if attached) without regressing term.
+     * Restarts a previously stopped node, validating durable storage (if attached) without regressing term
+     * or wiping the persisted {@code votedFor} record.
      */
     public PersistentState simulateRestartAfterStop() throws RaftStorageException {
         if (!stopped) {
@@ -849,15 +948,50 @@ public final class RaftElectionService implements ElectionService {
         PersistentState loaded = null;
         if (storage != null) {
             loaded = storage.load();
-            if (loaded.currentTerm() < prevTerm) {
-                throw new RaftStorageException("Term regression detected on restart for " + localId
-                        + ": stored=" + loaded.currentTerm() + " < previous=" + prevTerm);
+            validateDurableState(loaded, prevTerm);
+            long restoredTerm = loaded.currentTerm();
+            String persistedVote = loaded.votedFor();
+            if (restoredTerm > state.currentTerm()) {
+                state.becomeFollower(restoredTerm);
+                if (persistedVote != null) {
+                    boolean restored = state.grantVote(
+                            restoredTerm, persistedVote, state.lastLogIndex(), state.lastLogTerm());
+                    if (!restored || !persistedVote.equals(state.votedFor())) {
+                        failClosed();
+                        throw new RaftStorageException("Failed to restore persisted votedFor=" + persistedVote
+                                + " for term " + restoredTerm + " on " + localId);
+                    }
+                }
+            } else {
+                state.becomeFollower(restoredTerm);
+                if (persistedVote != null) {
+                    if (state.votedFor() == null) {
+                        boolean restored = state.grantVote(
+                                restoredTerm, persistedVote, state.lastLogIndex(), state.lastLogTerm());
+                        if (!restored || !persistedVote.equals(state.votedFor())) {
+                            failClosed();
+                            throw new RaftStorageException("Failed to restore persisted votedFor=" + persistedVote
+                                    + " for term " + restoredTerm + " on " + localId);
+                        }
+                    } else if (!persistedVote.equals(state.votedFor())) {
+                        failClosed();
+                        throw new RaftStorageException("Divergent vote on restart for " + localId
+                                + " at term " + restoredTerm + ": memory=" + state.votedFor()
+                                + ", storage=" + persistedVote);
+                    }
+                } else if (state.votedFor() != null) {
+                    failClosed();
+                    throw new RaftStorageException("Unpersisted in-memory vote detected on restart for " + localId
+                            + " at term " + restoredTerm + ": memory=" + state.votedFor() + ", storage=null");
+                }
             }
+        } else {
+            state.becomeFollower(prevTerm);
         }
-        long restoredTerm = loaded != null ? loaded.currentTerm() : prevTerm;
-        state.becomeFollower(restoredTerm);
         partitionIsolatedPeers.clear();
         currentGrants.clear();
+        candidateElection.clearCampaignOnStepDown();
+        clearPeerAcks();
         stopped = false;
         recordTermEvent(EVENT_NODE_RESTARTED, prevTerm, prevRole,
                 "Node " + localId + " restarted as FOLLOWER at term=" + state.currentTerm()
@@ -935,6 +1069,7 @@ public final class RaftElectionService implements ElectionService {
         Objects.requireNonNull(entries, "entries");
         Map<String, Long> maxTermByNode = new LinkedHashMap<>();
         Map<Long, String> leaderByTerm = new LinkedHashMap<>();
+        Map<String, String> voteByNodeTerm = new LinkedHashMap<>();
         List<String> violations = new ArrayList<>();
 
         for (int i = 0; i < entries.size(); i++) {
@@ -945,6 +1080,16 @@ public final class RaftElectionService implements ElectionService {
                         + " (" + prev + " -> " + entry.currentTerm() + ")");
             } else {
                 maxTermByNode.put(entry.nodeId(), entry.currentTerm());
+            }
+
+            if (entry.votedFor() != null) {
+                String nodeTermKey = entry.nodeId() + "@" + entry.currentTerm();
+                String priorVote = voteByNodeTerm.putIfAbsent(nodeTermKey, entry.votedFor());
+                if (priorVote != null && !priorVote.equals(entry.votedFor())) {
+                    violations.add("Entry " + i + ": Vote-once-per-term violated on " + entry.nodeId()
+                            + " at term " + entry.currentTerm()
+                            + " (votedFor=" + priorVote + " then " + entry.votedFor() + ")");
+                }
             }
 
             if (EVENT_LEADER_ELECTED.equals(entry.eventType()) || entry.currentRole() == Role.LEADER) {
@@ -1078,6 +1223,46 @@ public final class RaftElectionService implements ElectionService {
         return storage;
     }
 
+    private void syncGrantsFromCandidate() {
+        Set<String> snapshot = candidateElection.grantedVotersSnapshot();
+        currentGrants.retainAll(snapshot);
+        currentGrants.addAll(snapshot);
+    }
+
+    private void clearPeerAcks() {
+        peerAckTimes.clear();
+        if (writeAvailabilityPolicy != null) {
+            writeAvailabilityPolicy.clearPeerActivity();
+        }
+    }
+
+    private void validateDurableState(PersistentState loaded, long minTerm) throws RaftStorageException {
+        if (loaded == null) {
+            failClosed();
+            throw new RaftStorageException("storage returned null PersistentState for " + localId);
+        }
+        if (loaded.currentTerm() < minTerm) {
+            throw new RaftStorageException("term regression in storage: stored="
+                    + loaded.currentTerm() + ", expected>=" + minTerm);
+        }
+        if (loaded.currentTerm() == 0L && loaded.votedFor() != null) {
+            failClosed();
+            throw new RaftStorageException("invalid durable state: votedFor=" + loaded.votedFor()
+                    + " cannot exist at term 0 on " + localId);
+        }
+        if (loaded.votedFor() != null && !isVoter(loaded.votedFor())) {
+            failClosed();
+            throw new RaftStorageException("invalid durable state: non-voter votedFor=" + loaded.votedFor()
+                    + " on " + localId);
+        }
+        try {
+            RaftState.restore(loaded.currentTerm(), loaded.votedFor(), loaded.log(), loaded.lastApplied());
+        } catch (IllegalArgumentException corrupt) {
+            failClosed();
+            throw new RaftStorageException("corrupt durable state for " + localId + ": " + corrupt.getMessage(), corrupt);
+        }
+    }
+
     private void requireHealthy() {
         if (failed) {
             throw new IllegalStateException("RaftElectionService failed closed; reload storage before reuse");
@@ -1090,5 +1275,7 @@ public final class RaftElectionService implements ElectionService {
     private void failClosed() {
         failed = true;
         currentGrants.clear();
+        candidateElection.clearCampaignOnStepDown();
+        clearPeerAcks();
     }
 }

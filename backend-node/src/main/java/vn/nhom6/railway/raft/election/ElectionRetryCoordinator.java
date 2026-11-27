@@ -138,7 +138,7 @@ public final class ElectionRetryCoordinator implements AutoCloseable {
             if (running && !closed) {
                 if (node.role() == Role.LEADER) {
                     stop();
-                } else {
+                } else if (generation == null) {
                     arm(); // A split vote starts another campaign with a fresh interval.
                 }
             }
