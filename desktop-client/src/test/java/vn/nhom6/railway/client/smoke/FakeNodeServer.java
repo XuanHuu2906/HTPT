@@ -627,6 +627,10 @@ public class FakeNodeServer implements AutoCloseable {
     }
 
     private MessageEnvelope<?> handleGetSeats(String correlationId, JsonNode payload) {
+        if (forcedErrorCode != null) {
+            return createErrorResponse(correlationId, forcedErrorCode,
+                    forcedErrorMessage != null ? forcedErrorMessage : "Lỗi giả lập: " + forcedErrorCode, null);
+        }
         if (forceNotLeader) {
             ErrorResponseDto errorDto = new ErrorResponseDto("NOT_LEADER",
                     "Node " + nodeId + " không phải là Leader", notLeaderHint, notLeaderTerm, null);
@@ -1038,12 +1042,8 @@ public class FakeNodeServer implements AutoCloseable {
         }
 
         if (simulateTimeoutOnCancel) {
-            try {
-                Thread.sleep(timeoutSleepMs);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-            return null;
+            this.dropResponseHoldMs = timeoutSleepMs;
+            return DROP_RESPONSE_SENTINEL;
         }
 
         if (storedCancels.containsKey(requestId)) {

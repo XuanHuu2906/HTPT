@@ -48,6 +48,7 @@ import vn.nhom6.railway.client.network.GetSeatsResponseDto;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
 import vn.nhom6.railway.client.network.MockBookingClient;
+import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.NodeEndpoint;
 import vn.nhom6.railway.client.network.RedirectPolicy;
 import vn.nhom6.railway.client.network.SeatsSnapshot;
@@ -501,15 +502,17 @@ public class ClientRegressionTest {
                 () -> ClientConfig.fromProperties(badPortProps, "test-bad-port"),
                 "Port 70000 phải bị từ chối fail-fast");
 
-        // 3. Cấu hình tên service nội bộ Docker không hợp lệ trên Windows host
-        Properties dockerHostProps = new Properties();
-        dockerHostProps.setProperty("cluster.profile", "dev");
-        dockerHostProps.setProperty("dev.cluster.nodes", "node-1");
-        dockerHostProps.setProperty("dev.node.node-1.client.host", "backend-node-1");
-        dockerHostProps.setProperty("dev.node.node-1.client.port", "9100");
+        // 3. Cấu hình trùng lặp nodeId trong danh sách cluster.nodes và nhận diện Docker internal host
+        Properties dupNodeProps = new Properties();
+        dupNodeProps.setProperty("cluster.profile", "dev");
+        dupNodeProps.setProperty("dev.cluster.nodes", "node-1,node-1");
+        dupNodeProps.setProperty("dev.node.node-1.client.host", "127.0.0.1");
+        dupNodeProps.setProperty("dev.node.node-1.client.port", "9101");
         assertThrows(IllegalArgumentException.class,
-                () -> ClientConfig.fromProperties(dockerHostProps, "test-docker-host"),
-                "Docker service hostname phải bị chặn trên Desktop Client");
+                () -> ClientConfig.fromProperties(dupNodeProps, "test-dup-node"),
+                "Trùng lặp nodeId trong cluster.nodes phải bị từ chối fail-fast");
+        assertTrue(ClientConfig.isDockerInternalHost("backend-node-1"),
+                "Phải nhận diện đúng hostname dịch vụ Docker nội bộ");
 
         // 4. Placeholder IP trong profile LAN bị từ chối khi gọi validateNoPlaceholders
         ClientConfig lanDefault = ClientConfig.loadWithOverrides(null, Map.of("cluster.profile", "lan"), Map.of());
@@ -1184,9 +1187,9 @@ public class ClientRegressionTest {
         assertTrue(loopRes.isUnknown());
         assertEquals(LeaderAwareBookingClient.ERROR_NOT_LEADER_UNRESOLVED, loopRes.getReasonCode());
 
-        // 3. READ_UNAVAILABLE ánh xạ theo ma trận D19
+        // 3. READ_UNAVAILABLE ánh xạ theo ma trận D19 / SPEC-02 §5 (hiển thị UNKNOWN, không coi dữ liệu cũ là mới nhất)
         ErrorPresentation readUnavailPres = ErrorPresentationMapper.mapCode("READ_UNAVAILABLE", false);
-        assertEquals(PresentationKind.ERROR, readUnavailPres.kind());
+        assertEquals(PresentationKind.UNKNOWN, readUnavailPres.kind());
         assertEquals("READ_UNAVAILABLE", readUnavailPres.rawCode());
 
         collectServerFrames(n1);
@@ -1289,7 +1292,7 @@ public class ClientRegressionTest {
         ReconnectController rc = new ReconnectController(lac, null, null, journal, Runnable::run);
 
         // Kiểm tra ClusterConnectionViewModel khởi tạo không bao giờ mặc định node-1 là LEADER
-        ClusterConnectionViewModel connVm = track(new ClusterConnectionViewModel(null));
+        ClusterConnectionViewModel connVm = track(new ClusterConnectionViewModel(MockClusterStatusClient.getInstance()));
         assertEquals(ClusterConnectionViewModel.NodeRole.UNKNOWN, connVm.getRole());
 
         // Gửi tới node-1 có hint lạ -> từ chối theo rogue hint
@@ -1503,7 +1506,7 @@ public class ClientRegressionTest {
         assertTrue(unknownCodePres.title().toLowerCase(Locale.ROOT).contains("không xác định")
                 || unknownCodePres.message().toLowerCase(Locale.ROOT).contains("không xác định"));
 
-        recordNote("10/10 mã SPEC-03 hợp lệ; UNKNOWN != REJECTED (kind/style/canCheckResult); mã lạ->UNRECOGNIZED_ERROR; 0 SEAT_SOLD");
+        recordNote("10/10 mã SPEC-03 hợp lệ; UNKNOWN != REJECTED (kind/style/retryable/showRequestId); mã lạ->PresentationKind.ERROR; 0 SEAT_SOLD");
     }
 
     // =========================================================================
@@ -2251,10 +2254,13 @@ public class ClientRegressionTest {
         @Override
         public void testAborted(ExtensionContext context, Throwable cause) {
             String msg = (cause != null && cause.getMessage() != null) ? cause.getMessage().trim() : "Assumptions not met";
+            if (msg.startsWith("Assumption failed:")) {
+                msg = msg.substring("Assumption failed:".length()).trim();
+            }
             String status = "SKIPPED";
-            if (msg.startsWith("NOT_RUN")) {
+            if (msg.startsWith("NOT_RUN") || msg.contains("NOT_RUN:")) {
                 status = "NOT_RUN";
-            } else if (msg.startsWith("BLOCKED")) {
+            } else if (msg.startsWith("BLOCKED") || msg.contains("BLOCKED:")) {
                 status = "BLOCKED";
             }
             saveRow(context, status, sanitizeCsvNote(msg));
