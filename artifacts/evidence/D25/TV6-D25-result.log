@@ -1,0 +1,827 @@
+TV6-D25 - one Backend + one independent PostgreSQL per LAN laptop
+DATE=2026-11-26 Asia/Saigon; UTC=2026-11-26T12:56:06.4048981Z
+BASELINE_HEAD=6addad37e7ff9605b9b96a8f98a5b638aaf51837
+SCOPE=docker/lan.yml + artifacts/evidence/D25/TV6-D25-result.log ONLY
+RULES_READ=AGENTS.md, .agents/rules/agent_self_rules.md, SPEC-00/01/02/03 then 08/07/05, TV6-D24 inventory, TV3-D23 configs and existing migrations.
+SPEC=08 sections1/2/3/3.1/6/7; prepares FR06/FR12 and TC-DEPLOY-01/02/03. Wire contracts/migrations/backend source unchanged.
+USER_CLARIFICATION=No IP/access to the five laptops; prepare config and explicitly mark blocked machines.
+DELIVERY=Compose configuration and local validation completed. PHYSICAL_5_LAPTOP_DEPLOY=BLOCKED, NOT completed. G6 connectivity/Raft/AC01-AC10=NOT_RUN.
+CRITERION each laptop tried deployment with its actual exit code/log is NOT yet satisfied for physical laptops1..5.
+=== NGHIỆM THU D25 ===
+KẾT LUẬN: CHƯA ĐẠT tiêu chí nghiệm thu D25 đầy đủ.
+ĐÃ ĐẠT: cấu hình một Backend + PostgreSQL riêng, 23 ca kiểm tra cấu hình, build image và thử cặp container thực trên máy TV6; có exit code/log.
+CHƯA ĐẠT: thử deploy trên từng laptop 1–5 và thu exit code/log thực tế của từng máy. Hiện 0/5 laptop mục tiêu đã được thử; trạng thái BLOCKED do chưa có IP/quyền truy cập.
+Laptop 1 / node-1: CHƯA ĐẠT — BLOCKED; deploy chưa chạy, exit code/log triển khai NOT_RUN.
+Laptop 2 / node-2: CHƯA ĐẠT — BLOCKED; deploy chưa chạy, exit code/log triển khai NOT_RUN.
+Laptop 3 / node-3: CHƯA ĐẠT — BLOCKED; deploy chưa chạy, exit code/log triển khai NOT_RUN.
+Laptop 4 / node-4: CHƯA ĐẠT — BLOCKED; deploy chưa chạy, exit code/log triển khai NOT_RUN.
+Laptop 5 / node-5: CHƯA ĐẠT — BLOCKED; deploy chưa chạy, exit code/log triển khai NOT_RUN.
+G6: CHƯA NGHIỆM THU / NOT_RUN — liên thông Raft 5/5 thuộc G6, không phải điều kiện PASS D25.
+Điều kiện hoàn tất D25: phối hợp người giữ từng laptop, thực sự thử deploy và lưu lệnh, exit code, log cùng kết quả xử lý lỗi từng máy; không dùng smoke local thay cho 5 lần thử trên máy thật.
+=== END NGHIỆM THU D25 ===
+Do not substitute five config renders or one local container pair for five physical deployment attempts.
+ENVIRONMENT=Windows PowerShell 5.1.26100.9818; Docker Desktop 4.74.0; Engine29.4.3 linux/amd64; Composev5.1.4; Python3.14.
+Docker Desktop initially unavailable; docker desktop start was invoked; subsequent docker desktop status returned running and image/build/deploy commands succeeded. No remote host was accessed.
+SHA256 docker/lan.yml = 5F98928A8F764C85D7DDC640235621B834CB1378ABA63873376644E3DC3F4C41
+SHA256 docker/Dockerfile.backend = 9D1FF96109EE7702B10EB2373716FFDA9A225734F859B26D1A8427D389B8A25A
+SHA256 docker/entrypoint-backend.sh = 8202ECD2CA6B0E8C0083BE20927017B5D279A28F8325E36612018DBB4C3533EE
+SHA256 database/migration/V1__schema.sql = 3920B42F43E0DEA214A6FC0403ADAB8DAF52722F7EC54C62F6F7AC3983417C01
+SHA256 database/migration/V2__seed.sql = 98376C6DCE2946A1B6A404DE5ACB239212EF05C2336D039E966FEDC9C7B4E3B1
+SHA256 artifacts/evidence/D24/TV6-D24-result.log = BEAA5C7752C2430A4F0E3831B2F86DCD7A66893223DCBDECCCF5AD0119772F1E
+BACKEND_CANDIDATE=railway-backend-node:tv6-d25-6addad37e7ff
+BACKEND_IMAGE_ID=sha256:465ce6b6fed373c8c31e59fd2f9d8839d781c437aa2964e81deaa78429f67e2b linux/amd64
+POSTGRES_IMAGE=postgres:16-alpine; imageID=sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36 linux/amd64; actual local server16.15.
+The older railway-backend-node:dev image is used ONLY as a POSIX shell for isolated guard cases; the local real Java test uses the freshly built candidate above.
+=== PER PHYSICAL LAPTOP / ACTUAL DEPLOYMENT ===
+Laptop-1 node-1 hostname=NOT_RUN ipv4=NOT_RUN deploy=BLOCKED deployExitCode=NOT_RUN logs=NOT_RUN; reason=no measured IP or local/remote access. No deployment command executed on this laptop.
+Laptop-2 node-2 hostname=NOT_RUN ipv4=NOT_RUN deploy=BLOCKED deployExitCode=NOT_RUN logs=NOT_RUN; reason=no measured IP or local/remote access. No deployment command executed on this laptop.
+Laptop-3 node-3 hostname=NOT_RUN ipv4=NOT_RUN deploy=BLOCKED deployExitCode=NOT_RUN logs=NOT_RUN; reason=no measured IP or local/remote access. No deployment command executed on this laptop.
+Laptop-4 node-4 hostname=NOT_RUN ipv4=NOT_RUN deploy=BLOCKED deployExitCode=NOT_RUN logs=NOT_RUN; reason=no measured IP or local/remote access. No deployment command executed on this laptop.
+Laptop-5 node-5 hostname=NOT_RUN ipv4=NOT_RUN deploy=BLOCKED deployExitCode=NOT_RUN logs=NOT_RUN; reason=no measured IP or local/remote access. No deployment command executed on this laptop.
+Laptop-6 / HOANGDAT: Client/Monitor non-voter. Local loopback Docker smoke only, not reassigned as a production node1 host.
+D24 measured Laptop-6 Wi-Fi192.168.1.50/24 is not a substitute address for node1..5. No config with invented live peer IPs was deployed.
+=== DESIGN / EXPECTATIONS ===
+Exactly two services without profiles: backend + postgres. Host binds LAN_IP:9100/9200; PostgreSQL has no published host port and an internal per-project DB network.
+Default project railway-lan-node-N gives a distinct persistent pgdata volume. One local DB service per host, DB_HOST=postgres DB_PORT=5432; never localhost inside backend.
+Existing V1/V2 migrations mounted read-only; only fresh volumes initialize. Existing recovery volumes are preserved, not reseeded. No volume deletion.
+Required operator values: NODE_ID, LAN_IP, NODE_PEERS, DB_NAME, DB_PASSWORD, BACKEND_IMAGE. Password stays in local ignored env file; images already loaded (pull_policy=never).
+POSIX startup guards: IDs1..5, matching DB name, exactly five unique voter entries at9200 including own LAN_IP. Calls real NodeMain directly; no idle tail fallback.
+Backend health checks are LOCAL TCP listeners ONLY; postgres readiness and DB observations do not prove quorum or G6 PASS.
+=== EXECUTED BUILD ===
+COMMAND=docker build -f docker/Dockerfile.backend -t railway-backend-node:tv6-d25-6addad37e7ff .
+ACTUAL_EXIT=0; existing Dockerfile compiles Java21 override; build skipped Maven tests, no unit-test claim.
+docker : #0 building with "desktop-linux" instance using docker driver
+At line:2 char:141
++ ... AD).Trim(); docker build -f docker/Dockerfile.backend -t $candidateTa ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (#0 building wit...g docker driver:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+#1 [internal] load build definition from Dockerfile.backend
+#1 transferring dockerfile: 3.17kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#3 DONE 1.7s
+
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#2 DONE 2.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 143B 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [builder  1/11] FROM docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219
+466211c805f6d5728c3c9c7614661b
+#6 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d
+5728c3c9c7614661b 0.1s done
+#6 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 2.13MB 0.1s done
+#5 DONE 0.1s
+
+#7 [builder  5/11] COPY backend-node/pom.xml backend-node/
+#7 CACHED
+
+#8 [builder  2/11] WORKDIR /build
+#8 CACHED
+
+#9 [builder  3/11] COPY pom.xml ./
+#9 CACHED
+
+#10 [builder  4/11] COPY shared/pom.xml shared/
+#10 CACHED
+
+#11 [builder  6/11] COPY desktop-client/pom.xml desktop-client/
+#11 CACHED
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae
+958313c4ce70 0.1s done
+#12 ...
+
+#13 [builder  7/11] COPY desktop-monitor/pom.xml desktop-monitor/
+#13 DONE 0.2s
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 sha256:2db787ed6893691295d0621cc1eef284322e32579d35485522037222b0656ad6 0B / 2.46kB 0.2s
+#12 sha256:7c3a5aabfc1c1e68cd531da3cbb8ebaaafc5555be34c42d4b28a6c8759d6f17b 0B / 127B 0.2s
+#12 ...
+
+#14 [builder  8/11] COPY integration-tests/pom.xml integration-tests/
+#14 DONE 0.1s
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 0B / 53.39MB 0.2s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 0B / 19.45MB 0.2s
+#12 sha256:2db787ed6893691295d0621cc1eef284322e32579d35485522037222b0656ad6 2.46kB / 2.46kB 0.3s done
+#12 ...
+
+#15 [builder  9/11] COPY shared/src shared/src
+#15 DONE 0.2s
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 ...
+
+#16 [builder 10/11] COPY backend-node/src backend-node/src
+#16 DONE 0.2s
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 sha256:7c3a5aabfc1c1e68cd531da3cbb8ebaaafc5555be34c42d4b28a6c8759d6f17b 127B / 127B 0.5s done
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 1.05MB / 19.45MB 1.2s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 3.15MB / 53.39MB 1.5s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 2.10MB / 19.45MB 1.5s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 3.15MB / 19.45MB 1.7s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 4.19MB / 19.45MB 2.0s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 5.24MB / 19.45MB 2.3s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 6.29MB / 19.45MB 2.6s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 7.34MB / 19.45MB 2.9s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 8.39MB / 19.45MB 3.2s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 6.29MB / 53.39MB 3.6s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 9.44MB / 19.45MB 3.5s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 10.49MB / 19.45MB 3.8s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 11.53MB / 19.45MB 3.9s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 12.58MB / 19.45MB 4.1s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 13.63MB / 19.45MB 4.5s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 14.68MB / 19.45MB 5.0s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 15.73MB / 19.45MB 5.3s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 9.44MB / 53.39MB 5.7s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 16.78MB / 19.45MB 5.6s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 17.83MB / 19.45MB 5.7s
+#12 sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 19.45MB / 19.45MB 6.0s done
+#12 extracting sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 12.58MB / 53.39MB 6.6s
+#12 extracting sha256:cb99678e5a4c511e3ce1704bb2dab11f55fdcb4884a6cb5f7f1d0331af55ebda 0.4s done
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 15.73MB / 53.39MB 7.1s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 18.87MB / 53.39MB 8.1s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 22.02MB / 53.39MB 8.6s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 25.17MB / 53.39MB 9.0s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 28.31MB / 53.39MB 9.5s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 31.46MB / 53.39MB 10.1s
+#12 ...
+
+#17 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&
+mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#17 2.309 [INFO] Scanning for projects...
+#17 2.436 [INFO] ------------------------------------------------------------------------
+#17 2.436 [INFO] Reactor Build Order:
+#17 2.436 [INFO]
+#17 2.438 [INFO] railway-distributed-system                                         [pom]
+#17 2.438 [INFO] shared                                                             [jar]
+#17 2.438 [INFO] backend-node                                                       [jar]
+#17 2.454 [INFO]
+#17 2.454 [INFO] ------------< vn.nhom6.railway:railway-distributed-system >-------------
+#17 2.454 [INFO] Building railway-distributed-system 1.0.0-SNAPSHOT                 [1/3]
+#17 2.454 [INFO]   from pom.xml
+#17 2.454 [INFO] --------------------------------[ pom ]---------------------------------
+#17 4.599 [INFO]
+#17 4.599 [INFO] --- clean:3.2.0:clean (default-clean) @ railway-distributed-system ---
+#17 5.732 [INFO]
+#17 5.732 [INFO] --- install:3.1.4:install (default-install) @ railway-distributed-system ---
+#17 7.266 [INFO] Installing /build/pom.xml to /root/.m2/repository/vn/nhom6/railway/railway-distributed-system/1.0.0-SN
+APSHOT/railway-distributed-system-1.0.0-SNAPSHOT.pom
+#17 7.273 [INFO]
+#17 7.273 [INFO] ----------------------< vn.nhom6.railway:shared >-----------------------
+#17 7.273 [INFO] Building shared 1.0.0-SNAPSHOT                                     [2/3]
+#17 7.273 [INFO]   from shared/pom.xml
+#17 7.273 [INFO] --------------------------------[ jar ]---------------------------------
+#17 ...
+
+#12 [stage-1 1/7] FROM
+docker.io/library/eclipse-temurin:21-jre-alpine@sha256:5d7689f47d670aca766b9503a70bccc2d73b4eb9221ae8f714ae958313c4ce70
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 34.60MB / 53.39MB 11.1s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 38.80MB / 53.39MB 11.6s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 41.94MB / 53.39MB 12.0s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 45.09MB / 53.39MB 12.3s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 48.23MB / 53.39MB 12.8s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 51.38MB / 53.39MB 13.2s
+#12 sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 53.39MB / 53.39MB 13.5s done
+#12 extracting sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15
+#12 extracting sha256:89406ef15e5060d1ed62be38f450c33ae6a7bee6e62288d1224878fb28ecee15 0.7s done
+#12 extracting sha256:7c3a5aabfc1c1e68cd531da3cbb8ebaaafc5555be34c42d4b28a6c8759d6f17b
+#12 extracting sha256:7c3a5aabfc1c1e68cd531da3cbb8ebaaafc5555be34c42d4b28a6c8759d6f17b 0.0s done
+#12 extracting sha256:2db787ed6893691295d0621cc1eef284322e32579d35485522037222b0656ad6 0.0s done
+#12 DONE 14.8s
+
+#18 [stage-1 2/7] WORKDIR /app
+#18 DONE 0.4s
+
+#17 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&
+mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#17 10.54 [INFO]
+#17 10.54 [INFO] --- clean:3.2.0:clean (default-clean) @ shared ---
+#17 10.54 [INFO]
+#17 10.54 [INFO] --- resources:3.4.0:resources (default-resources) @ shared ---
+#17 12.68 [INFO] skip non existing resourceDirectory /build/shared/src/main/resources
+#17 12.68 [INFO]
+#17 12.68 [INFO] --- compiler:3.14.0:compile (default-compile) @ shared ---
+#17 14.47 [INFO] Recompiling the module because of changed source code.
+#17 14.49 [INFO] Compiling 17 source files with javac [debug release 21] to target/classes
+#17 15.78 [INFO]
+#17 15.78 [INFO] --- resources:3.4.0:testResources (default-testResources) @ shared ---
+#17 15.79 [INFO] Copying 3 resources from src/test/resources to target/test-classes
+#17 15.79 [INFO]
+#17 15.79 [INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ shared ---
+#17 15.80 [INFO] Recompiling the module because of changed dependency.
+#17 15.80 [INFO] Compiling 7 source files with javac [debug release 21] to target/test-classes
+#17 ...
+
+#19 [stage-1 3/7] RUN apk add --no-cache bash netcat-openbsd
+#19 1.494 (1/5) Installing readline (8.3.3-r1)
+#19 1.547 (2/5) Installing bash (5.3.9-r1)
+#19 1.652   Executing bash-5.3.9-r1.post-install
+#19 1.657 (3/5) Installing libmd (1.2.0-r0)
+#19 1.723 (4/5) Installing libbsd (0.12.2-r0)
+#19 1.784 (5/5) Installing netcat-openbsd (1.234.1-r0)
+#19 1.823 Executing busybox-1.37.0-r31.trigger
+#19 1.833 OK: 42.7 MiB in 78 packages
+#19 DONE 1.9s
+
+#17 [builder 11/11] RUN mvn -B -ntp clean install -pl backend-node -am -DskipTests -Dmaven.compiler.release=21 &&
+mvn -B -ntp dependency:copy-dependencies -pl backend-node -DoutputDirectory=target/lib
+#17 16.53 [INFO]
+#17 16.53 [INFO] --- surefire:3.5.2:test (default-test) @ shared ---
+#17 19.23 [INFO] Tests are skipped.
+#17 19.23 [INFO]
+#17 19.23 [INFO] --- jar:3.5.0:jar (default-jar) @ shared ---
+#17 23.64 [INFO] Building jar: /build/shared/target/shared-1.0.0-SNAPSHOT.jar
+#17 23.69 [INFO]
+#17 23.69 [INFO] --- install:3.1.4:install (default-install) @ shared ---
+#17 23.69 [INFO] Installing /build/shared/pom.xml to
+/root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.pom
+#17 23.70 [INFO] Installing /build/shared/target/shared-1.0.0-SNAPSHOT.jar to
+/root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.jar
+#17 23.70 [INFO]
+#17 23.70 [INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+#17 23.70 [INFO] Building backend-node 1.0.0-SNAPSHOT                               [3/3]
+#17 23.70 [INFO]   from backend-node/pom.xml
+#17 23.70 [INFO] --------------------------------[ jar ]---------------------------------
+#17 24.77 [INFO]
+#17 24.77 [INFO] --- clean:3.2.0:clean (default-clean) @ backend-node ---
+#17 24.77 [INFO]
+#17 24.77 [INFO] --- resources:3.4.0:resources (default-resources) @ backend-node ---
+#17 24.77 [INFO] Copying 1 resource from src/main/resources to target/classes
+#17 24.77 [INFO]
+#17 24.77 [INFO] --- compiler:3.14.0:compile (default-compile) @ backend-node ---
+#17 24.78 [INFO] Recompiling the module because of changed dependency.
+#17 24.78 [INFO] Compiling 84 source files with javac [debug release 21] to target/classes
+#17 27.18 [INFO]
+#17 27.18 [INFO] --- resources:3.4.0:testResources (default-testResources) @ backend-node ---
+#17 27.18 [INFO] Copying 5 resources from src/test/resources to target/test-classes
+#17 27.18 [INFO]
+#17 27.18 [INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ backend-node ---
+#17 27.20 [INFO] Recompiling the module because of changed dependency.
+#17 27.20 [INFO] Compiling 108 source files with javac [debug release 21] to target/test-classes
+#17 31.04 [INFO] /build/backend-node/src/test/java/vn/nhom6/railway/raft/election/RaftElectionLanTest.java:
+/build/backend-node/src/test/java/vn/nhom6/railway/raft/election/RaftElectionLanTest.java uses or overrides a
+deprecated API.
+#17 31.04 [INFO] /build/backend-node/src/test/java/vn/nhom6/railway/raft/election/RaftElectionLanTest.java: Recompile
+with -Xlint:deprecation for details.
+#17 31.04 [INFO]
+#17 31.04 [INFO] --- surefire:3.5.2:test (default-test) @ backend-node ---
+#17 31.04 [INFO] Tests are skipped.
+#17 31.04 [INFO]
+#17 31.04 [INFO] --- jar:3.5.0:jar (default-jar) @ backend-node ---
+#17 31.07 [INFO] Building jar: /build/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar
+#17 31.11 [INFO]
+#17 31.11 [INFO] --- install:3.1.4:install (default-install) @ backend-node ---
+#17 31.11 [INFO] Installing /build/backend-node/pom.xml to
+/root/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.pom
+#17 31.11 [INFO] Installing /build/backend-node/target/backend-node-1.0.0-SNAPSHOT.jar to
+/root/.m2/repository/vn/nhom6/railway/backend-node/1.0.0-SNAPSHOT/backend-node-1.0.0-SNAPSHOT.jar
+#17 31.11 [INFO] ------------------------------------------------------------------------
+#17 31.11 [INFO] Reactor Summary for railway-distributed-system 1.0.0-SNAPSHOT:
+#17 31.11 [INFO]
+#17 31.11 [INFO] railway-distributed-system ......................... SUCCESS [  4.820 s]
+#17 31.11 [INFO] shared ............................................. SUCCESS [ 16.427 s]
+#17 31.11 [INFO] backend-node ....................................... SUCCESS [  7.412 s]
+#17 31.11 [INFO] ------------------------------------------------------------------------
+#17 31.11 [INFO] BUILD SUCCESS
+#17 31.11 [INFO] ------------------------------------------------------------------------
+#17 31.11 [INFO] Total time:  28.851 s
+#17 31.11 [INFO] Finished at: 2026-11-26T12:51:06Z
+#17 31.11 [INFO] ------------------------------------------------------------------------
+#17 32.26 [INFO] Scanning for projects...
+#17 33.25 [INFO]
+#17 33.25 [INFO] -------------------< vn.nhom6.railway:backend-node >--------------------
+#17 33.25 [INFO] Building backend-node 1.0.0-SNAPSHOT
+#17 33.25 [INFO]   from pom.xml
+#17 33.25 [INFO] --------------------------------[ jar ]---------------------------------
+#17 33.33 [INFO]
+#17 33.33 [INFO] --- dependency:3.7.0:copy-dependencies (default-cli) @ backend-node ---
+#17 45.02 [INFO] Copying artifact 'vn.nhom6.railway:shared:jar:1.0.0-SNAPSHOT:compile'
+(/root/.m2/repository/vn/nhom6/railway/shared/1.0.0-SNAPSHOT/shared-1.0.0-SNAPSHOT.jar) to
+/build/backend-node/target/lib/shared-1.0.0-SNAPSHOT.jar
+#17 45.03 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-databind:jar:2.19.2:compile'
+(/root/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar) to
+/build/backend-node/target/lib/jackson-databind-2.19.2.jar
+#17 45.03 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-annotations:jar:2.19.2:compile'
+(/root/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar) to
+/build/backend-node/target/lib/jackson-annotations-2.19.2.jar
+#17 45.03 [INFO] Copying artifact 'com.fasterxml.jackson.core:jackson-core:jar:2.19.2:compile'
+(/root/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar) to
+/build/backend-node/target/lib/jackson-core-2.19.2.jar
+#17 45.04 [INFO] Copying artifact 'org.postgresql:postgresql:jar:42.7.7:compile'
+(/root/.m2/repository/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar) to
+/build/backend-node/target/lib/postgresql-42.7.7.jar
+#17 45.04 [INFO] Copying artifact 'org.checkerframework:checker-qual:jar:3.49.3:runtime'
+(/root/.m2/repository/org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar) to
+/build/backend-node/target/lib/checker-qual-3.49.3.jar
+#17 45.04 [INFO] Copying artifact 'org.slf4j:slf4j-api:jar:2.0.16:compile'
+(/root/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar) to
+/build/backend-node/target/lib/slf4j-api-2.0.16.jar
+#17 45.04 [INFO] Copying artifact 'ch.qos.logback:logback-classic:jar:1.5.16:compile'
+(/root/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar) to
+/build/backend-node/target/lib/logback-classic-1.5.16.jar
+#17 45.04 [INFO] Copying artifact 'ch.qos.logback:logback-core:jar:1.5.16:compile'
+(/root/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar) to
+/build/backend-node/target/lib/logback-core-1.5.16.jar
+#17 45.04 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter:jar:5.11.4:test'
+(/root/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.4/junit-jupiter-5.11.4.jar) to
+/build/backend-node/target/lib/junit-jupiter-5.11.4.jar
+#17 45.05 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-api:jar:5.11.4:test'
+(/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.4/junit-jupiter-api-5.11.4.jar) to
+/build/backend-node/target/lib/junit-jupiter-api-5.11.4.jar
+#17 45.05 [INFO] Copying artifact 'org.opentest4j:opentest4j:jar:1.3.0:test'
+(/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar) to
+/build/backend-node/target/lib/opentest4j-1.3.0.jar
+#17 45.05 [INFO] Copying artifact 'org.junit.platform:junit-platform-commons:jar:1.11.4:test'
+(/root/.m2/repository/org/junit/platform/junit-platform-commons/1.11.4/junit-platform-commons-1.11.4.jar) to
+/build/backend-node/target/lib/junit-platform-commons-1.11.4.jar
+#17 45.05 [INFO] Copying artifact 'org.apiguardian:apiguardian-api:jar:1.1.2:test'
+(/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar) to
+/build/backend-node/target/lib/apiguardian-api-1.1.2.jar
+#17 45.05 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-params:jar:5.11.4:test'
+(/root/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.4/junit-jupiter-params-5.11.4.jar) to
+/build/backend-node/target/lib/junit-jupiter-params-5.11.4.jar
+#17 45.05 [INFO] Copying artifact 'org.junit.jupiter:junit-jupiter-engine:jar:5.11.4:test'
+(/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.4/junit-jupiter-engine-5.11.4.jar) to
+/build/backend-node/target/lib/junit-jupiter-engine-5.11.4.jar
+#17 45.05 [INFO] Copying artifact 'org.junit.platform:junit-platform-engine:jar:1.11.4:test'
+(/root/.m2/repository/org/junit/platform/junit-platform-engine/1.11.4/junit-platform-engine-1.11.4.jar) to
+/build/backend-node/target/lib/junit-platform-engine-1.11.4.jar
+#17 45.05 [INFO] ------------------------------------------------------------------------
+#17 45.05 [INFO] BUILD SUCCESS
+#17 45.05 [INFO] ------------------------------------------------------------------------
+#17 45.05 [INFO] Total time:  12.802 s
+#17 45.05 [INFO] Finished at: 2026-11-26T12:51:20Z
+#17 45.05 [INFO] ------------------------------------------------------------------------
+#17 DONE 45.1s
+
+#20 [stage-1 4/7] COPY --from=builder /build/backend-node/target/*.jar /app/backend-node.jar
+#20 DONE 0.1s
+
+#21 [stage-1 5/7] COPY --from=builder /build/backend-node/target/lib /app/lib
+#21 DONE 0.1s
+
+#22 [stage-1 6/7] COPY docker/entrypoint-backend.sh /app/entrypoint-backend.sh
+#22 DONE 0.1s
+
+#23 [stage-1 7/7] RUN sed -i 's/\r$//' /app/entrypoint-backend.sh && chmod +x /app/entrypoint-backend.sh
+#23 DONE 0.4s
+
+#24 exporting to image
+#24 exporting layers
+#24 exporting layers 1.0s done
+#24 exporting manifest sha256:c1276972e0d78e176a85b7e27fcc7d592af2cde11f38831868bed9021468809c 0.0s done
+#24 exporting config sha256:eb9c048e8cbbeeec4e71cad01d8fec1b31fcddee00349fa6b3d49e77f1d9e825 0.0s done
+#24 exporting attestation manifest sha256:d7d79767c6ebfb8f5f281ac4acd418b1530c5862703f88cba4ed2a8946cdb7bc
+#24 exporting attestation manifest sha256:d7d79767c6ebfb8f5f281ac4acd418b1530c5862703f88cba4ed2a8946cdb7bc 0.1s done
+#24 exporting manifest list sha256:465ce6b6fed373c8c31e59fd2f9d8839d781c437aa2964e81deaa78429f67e2b 0.0s done
+#24 naming to docker.io/library/railway-backend-node:tv6-d25-6addad37e7ff
+#24 naming to docker.io/library/railway-backend-node:tv6-d25-6addad37e7ff done
+#24 unpacking to docker.io/library/railway-backend-node:tv6-d25-6addad37e7ff
+#24 unpacking to docker.io/library/railway-backend-node:tv6-d25-6addad37e7ff 0.3s done
+#24 DONE 1.5s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "DB_PASSWORD") (line 50)
+
+=== EXECUTED CONFIG + GUARD TESTS ===
+COMMAND=python <TEMP>/railway-tv6-d25/verify_lan.py; ACTUAL_EXIT=0
+5 valid config renders + 6 missing-required-variable failures + 12 shell guard cases = 23 assertions/cases passed.
+TEST-NET-2 198.51.100.* values are documentation fixtures only. Shell guard containers have no network/ports/volumes and never start Java.
+Harness corrected Compose JSON dollar unescape before final successful run; no lan.yml change needed. Final raw output follows.
+TV6-D25 CONFIG/GUARD VALIDATION ONLY; all 198.51.100.* addresses are TEST-NET-2 fixtures, not observed hosts.
+SOURCE_SHA256=5f98928a8f764c85d7ddc640235621b834cb1378aba63873376644e3dc3f4c41
+CONFIG node-1 exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN
+CONFIG node-2 exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN
+CONFIG node-3 exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN
+CONFIG node-4 exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN
+CONFIG node-5 exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN
+MISSING_REQUIRED NODE_ID exit=1 EXPECTED_NONZERO=PASS
+MISSING_REQUIRED LAN_IP exit=1 EXPECTED_NONZERO=PASS
+MISSING_REQUIRED NODE_PEERS exit=1 EXPECTED_NONZERO=PASS
+MISSING_REQUIRED DB_NAME exit=1 EXPECTED_NONZERO=PASS
+MISSING_REQUIRED DB_PASSWORD exit=1 EXPECTED_NONZERO=PASS
+MISSING_REQUIRED BACKEND_IMAGE exit=1 EXPECTED_NONZERO=PASS
+GUARD_ONLY_IMAGE=sha256:f378d75f7285debe8c336ac829153d375246375947ee3c7097285228c20c326e; uses shell only, no Java/DB/cluster started
+GUARD valid-node-1 exit=0 expected=0 PASS; output=GUARD_ONLY_PASS_RUNTIME_NOT_STARTED
+GUARD valid-node-2 exit=0 expected=0 PASS; output=GUARD_ONLY_PASS_RUNTIME_NOT_STARTED
+GUARD valid-node-3 exit=0 expected=0 PASS; output=GUARD_ONLY_PASS_RUNTIME_NOT_STARTED
+GUARD valid-node-4 exit=0 expected=0 PASS; output=GUARD_ONLY_PASS_RUNTIME_NOT_STARTED
+GUARD valid-node-5 exit=0 expected=0 PASS; output=GUARD_ONLY_PASS_RUNTIME_NOT_STARTED
+GUARD reject-sixth-voter exit=2 expected=2 PASS; output=Invalid NODE_ID
+GUARD reject-wrong-db exit=2 expected=2 PASS; output=DB_NAME must match NODE_ID
+GUARD reject-duplicate-voter exit=2 expected=2 PASS; output=NODE_PEERS IDs/ports invalid
+GUARD reject-four-voters exit=2 expected=2 PASS; output=NODE_PEERS must contain five voters
+GUARD reject-six-voters exit=2 expected=2 PASS; output=NODE_PEERS must contain five voters
+GUARD reject-self-address-mismatch exit=2 expected=2 PASS; output=Self peer must match LAN_IP
+GUARD reject-client-port-in-peer-map exit=2 expected=2 PASS; output=NODE_PEERS IDs/ports invalid
+FINAL CONFIG_GUARDS=PASS; config cases=5, missing variable cases=6, shell guard cases=12. PHYSICAL_5_LAPTOP_DEPLOY=NOT_RUN; G6=NOT_RUN
+
+=== EXECUTED REAL LOCAL PAIR ===
+COMMAND=python <TEMP>/railway-tv6-d25/local_pair.py; ACTUAL_EXIT=0
+Loopback bind127.0.0.1 with random isolated Compose project; one real Java backend + PostgreSQL, fresh volume, readonly SQL + framed TCP NODE_STATUS. No BOOK/query needing quorum, no five-laptop acceptance.
+Per-command exit codes and actual logs below. Random temporary password only in child env, redacted from evidence.
+MODE=LOCAL_PAIR_SMOKE_ON_LAPTOP6; NOT a deployment on physical laptops1..5; no quorum or booking claim.
+PROJECT=tv6-d25-local-7d6ba214; loopback binds only; other peers use documentation TEST-NET-2 addresses, not real inventory.
+SOURCE_SHA256=5f98928a8f764c85d7ddc640235621b834cb1378aba63873376644e3dc3f4c41
+COMMAND up-local-pair: docker compose -p tv6-d25-local-7d6ba214 --env-file C:\Users\dattr\AppData\Local\Temp\railway-tv6-d25\empty.env -f D:\HTPT\docker\lan.yml up -d --wait --wait-timeout 90
+EXIT up-local-pair=0
+ Network tv6-d25-local-7d6ba214_lan Creating
+ Network tv6-d25-local-7d6ba214_lan Created
+ Network tv6-d25-local-7d6ba214_database Creating
+ Network tv6-d25-local-7d6ba214_database Created
+ Volume tv6-d25-local-7d6ba214_pgdata Creating
+ Volume tv6-d25-local-7d6ba214_pgdata Created
+ Container tv6-d25-local-7d6ba214-postgres-1 Creating
+ Container tv6-d25-local-7d6ba214-postgres-1 Created
+ Container tv6-d25-local-7d6ba214-backend-1 Creating
+ Container tv6-d25-local-7d6ba214-backend-1 Created
+ Container tv6-d25-local-7d6ba214-postgres-1 Starting
+ Container tv6-d25-local-7d6ba214-postgres-1 Started
+ Container tv6-d25-local-7d6ba214-postgres-1 Waiting
+ Container tv6-d25-local-7d6ba214-postgres-1 Healthy
+ Container tv6-d25-local-7d6ba214-backend-1 Starting
+ Container tv6-d25-local-7d6ba214-backend-1 Started
+ Container tv6-d25-local-7d6ba214-backend-1 Waiting
+ Container tv6-d25-local-7d6ba214-postgres-1 Waiting
+ Container tv6-d25-local-7d6ba214-postgres-1 Healthy
+ Container tv6-d25-local-7d6ba214-backend-1 Healthy
+
+COMMAND ps-local-pair: docker compose -p tv6-d25-local-7d6ba214 --env-file C:\Users\dattr\AppData\Local\Temp\railway-tv6-d25\empty.env -f D:\HTPT\docker\lan.yml ps --all --format json
+EXIT ps-local-pair=0
+{"Command":"\"/bin/sh -ec 'case \\\"�\"","CreatedAt":"2026-11-26 19:54:16 +0700 +07","ExitCode":0,"Health":"healthy","ID":"1ce700e58291","Image":"railway-backend-node:tv6-d25-6addad37e7ff","Labels":"com.docker.compose.image=sha256:465ce6b6fed373c8c31e59fd2f9d8839d781c437aa2964e81deaa78429f67e2b,com.docker.compose.project.config_files=D:\\HTPT\\docker\\lan.yml,com.docker.compose.project.environment_file=C:\\Users\\dattr\\AppData\\Local\\Temp\\railway-tv6-d25\\empty.env,com.docker.compose.version=5.1.4,desktop.docker.io/ports.scheme=v2,desktop.docker.io/ports/9100/tcp=127.0.0.1:9100,desktop.docker.io/ports/9200/tcp=127.0.0.1:9200,com.docker.compose.container-number=1,com.docker.compose.depends_on=postgres:service_healthy:false,com.docker.compose.oneoff=False,com.docker.compose.project=tv6-d25-local-7d6ba214,com.docker.compose.project.working_dir=D:\\HTPT\\docker,com.docker.compose.service=backend,com.docker.compose.config-hash=388e30d67e37af7fcf0beac0a2dcc7cbe98d1a7207a13b7b3dff01e35a39da46","LocalVolumes":"0","Mounts":"","Name":"tv6-d25-local-7d6ba214-backend-1","Names":"tv6-d25-local-7d6ba214-backend-1","Networks":"tv6-d25-local-7d6ba214_database,tv6-d25-local-7d6ba214_lan","Ports":"127.0.0.1:9100-\u003e9100/tcp, 127.0.0.1:9200-\u003e9200/tcp","Project":"tv6-d25-local-7d6ba214","Publishers":[{"URL":"127.0.0.1","TargetPort":9100,"PublishedPort":9100,"Protocol":"tcp"},{"URL":"127.0.0.1","TargetPort":9200,"PublishedPort":9200,"Protocol":"tcp"}],"RunningFor":"12 seconds ago","Service":"backend","Size":"0B","State":"running","Status":"Up 6 seconds (healthy)"}
+{"Command":"\"docker-entrypoint.s�\"","CreatedAt":"2026-11-26 19:54:15 +0700 +07","ExitCode":0,"Health":"healthy","ID":"29f3d48e24af","Image":"postgres:16-alpine","Labels":"com.docker.compose.config-hash=d606c8cad8f3366737f1c97ffe5403b60757d6a7438bb4a361fba9839f2c62f6,com.docker.compose.project=tv6-d25-local-7d6ba214,com.docker.compose.version=5.1.4,desktop.docker.io/mounts/0/Target=/docker-entrypoint-initdb.d,desktop.docker.io/ports.scheme=v2,com.docker.compose.project.config_files=D:\\HTPT\\docker\\lan.yml,com.docker.compose.project.environment_file=C:\\Users\\dattr\\AppData\\Local\\Temp\\railway-tv6-d25\\empty.env,com.docker.compose.service=postgres,desktop.docker.io/mounts/0/Source=D:\\HTPT\\database\\migration,desktop.docker.io/mounts/0/SourceKind=hostFile,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.oneoff=False,com.docker.compose.project.working_dir=D:\\HTPT\\docker,com.docker.compose.image=sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36","LocalVolumes":"1","Mounts":"tv6-d25-local-�,/run/desktop/m�","Name":"tv6-d25-local-7d6ba214-postgres-1","Names":"tv6-d25-local-7d6ba214-postgres-1","Networks":"tv6-d25-local-7d6ba214_database","Ports":"5432/tcp","Project":"tv6-d25-local-7d6ba214","Publishers":[{"URL":"","TargetPort":5432,"PublishedPort":0,"Protocol":"tcp"}],"RunningFor":"13 seconds ago","Service":"postgres","Size":"0B","State":"running","Status":"Up 12 seconds (healthy)"}
+
+COMMAND sql-readonly: docker compose -p tv6-d25-local-7d6ba214 --env-file C:\Users\dattr\AppData\Local\Temp\railway-tv6-d25\empty.env -f D:\HTPT\docker\lan.yml exec -T postgres psql -X -qAt -v ON_ERROR_STOP=1 -U railway -d railway_node1 -c "BEGIN TRANSACTION READ ONLY; SELECT json_build_object('database',current_database(),'seats',(SELECT count(*) FROM seats WHERE trip_id='SE-001'),'seatIds',(SELECT json_agg(seat_id ORDER BY seat_id) FROM seats WHERE trip_id='SE-001'),'tickets',(SELECT count(*) FROM tickets),'requests',(SELECT count(*) FROM request_results),'lastApplied',(SELECT last_applied FROM raft_apply_progress WHERE singleton=1),'raftRows',(SELECT count(*) FROM raft_meta)); COMMIT;"
+EXIT sql-readonly=0
+{"database" : "railway_node1", "seats" : 10, "seatIds" : ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10"], "tickets" : 0, "requests" : 0, "lastApplied" : 0, "raftRows" : 1}
+
+REAL_LOCAL_NODE_STATUS={"protocolVersion": 1, "messageId": "46ef1755-d69c-405d-9cef-9c2fd927fe1a", "correlationId": "31bb8044-7ad1-4fc1-bc70-ba3742cb712a", "type": "NODE_STATUS_RESPONSE", "senderId": "node-1", "sentAt": "2026-11-26T12:54:29.289Z", "payload": {"nodeId": "node-1", "role": "CANDIDATE", "term": 7, "leaderId": null, "lastLogIndex": 0, "commitIndex": 0, "lastApplied": 0, "storageHealthy": true, "peerConnectivity": {"node-2": false, "node-3": false, "node-4": false, "node-5": false}, "observedAt": "2026-11-26T12:54:29.289Z"}}
+LOCAL_STARTUP_MIGRATION_TCP=PASS; PostgreSQL and Java process real; physical five-laptop deploy and G6=NOT_RUN
+COMMAND logs-local-pair: docker compose -p tv6-d25-local-7d6ba214 --env-file C:\Users\dattr\AppData\Local\Temp\railway-tv6-d25\empty.env -f D:\HTPT\docker\lan.yml logs --no-color --timestamps --tail 160
+EXIT logs-local-pair=0
+postgres-1  | 2026-11-26T12:54:16.765938594Z The files belonging to this database system will be owned by user "postgres".
+backend-1   | 2026-11-26T12:54:23.887515084Z Nov 26, 2026 12:54:23 PM vn.nhom6.railway.persistence.DbStateLoader load
+postgres-1  | 2026-11-26T12:54:16.765979314Z This user must also own the server process.
+postgres-1  | 2026-11-26T12:54:16.765981615Z
+postgres-1  | 2026-11-26T12:54:16.766738941Z The database cluster will be initialized with locale "en_US.utf8".
+postgres-1  | 2026-11-26T12:54:16.766747804Z The default database encoding has accordingly been set to "UTF8".
+postgres-1  | 2026-11-26T12:54:16.766749205Z The default text search configuration will be set to "english".
+postgres-1  | 2026-11-26T12:54:16.766750412Z
+postgres-1  | 2026-11-26T12:54:16.766751345Z Data page checksums are disabled.
+postgres-1  | 2026-11-26T12:54:16.766752328Z
+backend-1   | 2026-11-26T12:54:23.887573094Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+backend-1   | 2026-11-26T12:54:23.976990411Z ================================================================================
+backend-1   | 2026-11-26T12:54:23.977022660Z  RAILWAY DISTRIBUTED SYSTEM - BACKEND NODE RUNTIME
+backend-1   | 2026-11-26T12:54:23.977025953Z ================================================================================
+backend-1   | 2026-11-26T12:54:23.977208911Z   Node ID          : node-1
+backend-1   | 2026-11-26T12:54:23.977219417Z   Cluster ID       : railway-demo-5
+backend-1   | 2026-11-26T12:54:23.979823174Z   Client Port      : 9100 (Host: 0.0.0.0)
+postgres-1  | 2026-11-26T12:54:16.766753265Z fixing permissions on existing directory /var/lib/postgresql/data ... ok
+postgres-1  | 2026-11-26T12:54:16.769017831Z creating subdirectories ... ok
+backend-1   | 2026-11-26T12:54:23.979931680Z   Raft Peer Port   : 9200 (Host: 0.0.0.0)
+postgres-1  | 2026-11-26T12:54:16.769035814Z selecting dynamic shared memory implementation ... posix
+backend-1   | 2026-11-26T12:54:23.983322797Z   Database Target  : railway@postgres:5432/railway_node1
+backend-1   | 2026-11-26T12:54:23.983350216Z ================================================================================
+postgres-1  | 2026-11-26T12:54:16.788306885Z selecting default max_connections ... 100
+postgres-1  | 2026-11-26T12:54:16.801841700Z selecting default shared_buffers ... 128MB
+backend-1   | 2026-11-26T12:54:24.024654050Z Nov 26, 2026 12:54:24 PM vn.nhom6.railway.persistence.DbStateLoader load
+backend-1   | 2026-11-26T12:54:24.024683527Z INFO: DbStateLoader successfully loaded startup state: currentTerm=0, votedFor=null, lastLogIndex=0, lastLogTerm=0, lastApplied=0, initialCommitIndex=0, bootstrapType=GENESIS
+backend-1   | 2026-11-26T12:54:24.032632590Z Nov 26, 2026 12:54:24 PM vn.nhom6.railway.networking.TcpServer start
+postgres-1  | 2026-11-26T12:54:16.894912326Z selecting default time zone ... UTC
+postgres-1  | 2026-11-26T12:54:16.896186482Z creating configuration files ... ok
+backend-1   | 2026-11-26T12:54:24.032665525Z INFO: TcpServer started on port 9100 (maxThreads=32, soTimeout=15000ms)
+backend-1   | 2026-11-26T12:54:24.037850126Z Nov 26, 2026 12:54:24 PM vn.nhom6.railway.networking.TcpServer start
+backend-1   | 2026-11-26T12:54:24.037878899Z INFO: TcpServer started on port 9200 (maxThreads=32, soTimeout=15000ms)
+backend-1   | 2026-11-26T12:54:24.041837836Z [READY] node-1 client=9100 raft=9200
+postgres-1  | 2026-11-26T12:54:17.017839687Z running bootstrap script ... ok
+backend-1   | 2026-11-26T12:54:24.042828542Z Nov 26, 2026 12:54:24 PM vn.nhom6.railway.networking.NodeMain start
+postgres-1  | 2026-11-26T12:54:17.180123908Z sh: locale: not found
+postgres-1  | 2026-11-26T12:54:17.180210053Z 2026-11-26 12:54:17.180 UTC [35] WARNING:  no usable system locales were found
+postgres-1  | 2026-11-26T12:54:17.519185850Z performing post-bootstrap initialization ... ok
+postgres-1  | 2026-11-26T12:54:18.083617314Z initdb: warning: enabling "trust" authentication for local connections
+postgres-1  | 2026-11-26T12:54:18.083649720Z initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+backend-1   | 2026-11-26T12:54:24.042841542Z INFO: Backend Node [node-1] initialized and ready for traffic.
+postgres-1  | 2026-11-26T12:54:18.083619198Z syncing data to disk ... ok
+postgres-1  | 2026-11-26T12:54:18.083655178Z
+postgres-1  | 2026-11-26T12:54:18.083656326Z
+postgres-1  | 2026-11-26T12:54:18.083657346Z Success. You can now start the database server using:
+postgres-1  | 2026-11-26T12:54:18.083658316Z
+postgres-1  | 2026-11-26T12:54:18.083659128Z     pg_ctl -D /var/lib/postgresql/data -l logfile start
+postgres-1  | 2026-11-26T12:54:18.083660052Z
+postgres-1  | 2026-11-26T12:54:18.123407510Z waiting for server to start....2026-11-26 12:54:18.123 UTC [41] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+postgres-1  | 2026-11-26T12:54:18.130733297Z 2026-11-26 12:54:18.130 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2026-11-26T12:54:18.148917714Z 2026-11-26 12:54:18.148 UTC [44] LOG:  database system was shut down at 2026-11-26 12:54:17 UTC
+postgres-1  | 2026-11-26T12:54:18.157341493Z 2026-11-26 12:54:18.157 UTC [41] LOG:  database system is ready to accept connections
+postgres-1  | 2026-11-26T12:54:18.200664140Z  done
+postgres-1  | 2026-11-26T12:54:18.200691794Z server started
+postgres-1  | 2026-11-26T12:54:18.271450173Z CREATE DATABASE
+postgres-1  | 2026-11-26T12:54:18.271815231Z
+postgres-1  | 2026-11-26T12:54:18.273167333Z
+postgres-1  | 2026-11-26T12:54:18.273178026Z /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V1__schema.sql
+postgres-1  | 2026-11-26T12:54:18.295960730Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.299417454Z INSERT 0 1
+postgres-1  | 2026-11-26T12:54:18.318061142Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.327937487Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.331075085Z INSERT 0 1
+postgres-1  | 2026-11-26T12:54:18.340643009Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.352085725Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.365688894Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.374954036Z CREATE INDEX
+postgres-1  | 2026-11-26T12:54:18.392195070Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.408106260Z CREATE TABLE
+postgres-1  | 2026-11-26T12:54:18.409088209Z
+postgres-1  | 2026-11-26T12:54:18.409095341Z
+postgres-1  | 2026-11-26T12:54:18.409096630Z /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/V2__seed.sql
+postgres-1  | 2026-11-26T12:54:18.417970179Z INSERT 0 1
+postgres-1  | 2026-11-26T12:54:18.422984130Z INSERT 0 10
+postgres-1  | 2026-11-26T12:54:18.423863578Z
+postgres-1  | 2026-11-26T12:54:18.423871726Z
+postgres-1  | 2026-11-26T12:54:18.424599585Z waiting for server to shut down....2026-11-26 12:54:18.424 UTC [41] LOG:  received fast shutdown request
+postgres-1  | 2026-11-26T12:54:18.430231741Z 2026-11-26 12:54:18.430 UTC [41] LOG:  aborting any active transactions
+postgres-1  | 2026-11-26T12:54:18.431931238Z 2026-11-26 12:54:18.431 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+postgres-1  | 2026-11-26T12:54:18.432075737Z 2026-11-26 12:54:18.431 UTC [42] LOG:  shutting down
+postgres-1  | 2026-11-26T12:54:18.437789949Z 2026-11-26 12:54:18.437 UTC [42] LOG:  checkpoint starting: shutdown immediate
+postgres-1  | 2026-11-26T12:54:18.773838622Z 2026-11-26 12:54:18.773 UTC [42] LOG:  checkpoint complete: wrote 953 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.024 s, sync=0.293 s, total=0.342 s; sync files=324, longest=0.009 s, average=0.001 s; distance=4420 kB, estimate=4420 kB; lsn=0/19481C8, redo lsn=0/19481C8
+postgres-1  | 2026-11-26T12:54:18.778411654Z 2026-11-26 12:54:18.778 UTC [41] LOG:  database system is shut down
+postgres-1  | 2026-11-26T12:54:18.825240061Z  done
+postgres-1  | 2026-11-26T12:54:18.825263907Z server stopped
+postgres-1  | 2026-11-26T12:54:18.826263993Z
+postgres-1  | 2026-11-26T12:54:18.826278248Z PostgreSQL init process complete; ready for start up.
+postgres-1  | 2026-11-26T12:54:18.826280947Z
+postgres-1  | 2026-11-26T12:54:18.852582008Z 2026-11-26 12:54:18.852 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+postgres-1  | 2026-11-26T12:54:18.853562821Z 2026-11-26 12:54:18.853 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2026-11-26T12:54:18.864114491Z 2026-11-26 12:54:18.863 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2026-11-26T12:54:18.877233031Z 2026-11-26 12:54:18.877 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2026-11-26T12:54:18.890676986Z 2026-11-26 12:54:18.890 UTC [61] LOG:  database system was shut down at 2026-11-26 12:54:18 UTC
+postgres-1  | 2026-11-26T12:54:18.900460488Z 2026-11-26 12:54:18.900 UTC [1] LOG:  database system is ready to accept connections
+
+COMMAND down-local-pair-KEEP-VOLUME: docker compose -p tv6-d25-local-7d6ba214 --env-file C:\Users\dattr\AppData\Local\Temp\railway-tv6-d25\empty.env -f D:\HTPT\docker\lan.yml down --timeout 15
+EXIT down-local-pair-KEEP-VOLUME=0
+ Container tv6-d25-local-7d6ba214-backend-1 Stopping
+ Container tv6-d25-local-7d6ba214-backend-1 Stopped
+ Container tv6-d25-local-7d6ba214-backend-1 Removing
+ Container tv6-d25-local-7d6ba214-backend-1 Removed
+ Container tv6-d25-local-7d6ba214-postgres-1 Stopping
+ Container tv6-d25-local-7d6ba214-postgres-1 Stopped
+ Container tv6-d25-local-7d6ba214-postgres-1 Removing
+ Container tv6-d25-local-7d6ba214-postgres-1 Removed
+ Network tv6-d25-local-7d6ba214_lan Removing
+ Network tv6-d25-local-7d6ba214_database Removing
+ Network tv6-d25-local-7d6ba214_lan Removed
+ Network tv6-d25-local-7d6ba214_database Removed
+
+RETAINED_VOLUME exit=0 tv6-d25-local-7d6ba214_pgdata
+FINAL_LOCAL_PAIR=PASS; PHYSICAL_5_LAPTOP_DEPLOY=BLOCKED; G6=NOT_RUN
+
+=== REPRODUCTION HARNESS SOURCES EXECUTED IN TEMP ONLY ===
+HARNESS verify_lan.py SHA256=912DEC58365383204F22D74D3F1B988891F371333927050974B5234F4446A030
+import copy
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+repo = Path(r'D:\HTPT')
+temporary = Path(__file__).parent
+empty = temporary / 'empty.env'
+empty.write_text('', encoding='utf-8')
+compose = ['docker', 'compose', '--env-file', str(empty), '-f', str(repo / 'docker/lan.yml')]
+clean = os.environ.copy()
+variables = ['NODE_ID', 'LAN_IP', 'NODE_PEERS', 'DB_NAME', 'DB_PASSWORD', 'DB_USER', 'BACKEND_IMAGE',
+             'POSTGRES_IMAGE', 'CLUSTER_ID', 'COMPOSE_PROJECT_NAME', 'COMPOSE_FILE', 'COMPOSE_PROFILES',
+             'RAFT_ELECTION_TIMEOUT_MIN_MS', 'RAFT_ELECTION_TIMEOUT_MAX_MS', 'RAFT_HEARTBEAT_INTERVAL_MS',
+             'TCP_CONNECT_TIMEOUT_MS', 'TCP_RESPONSE_DEADLINE_MS']
+for key in variables:
+    clean.pop(key, None)
+
+def base(number):
+    return dict(clean, NODE_ID=f'node-{number}', LAN_IP=f'198.51.100.{10+number}',
+                NODE_PEERS=','.join(f'node-{n}@198.51.100.{10+n}:9200' for n in range(1, 6)),
+                DB_NAME=f'railway_node{number}', DB_PASSWORD='CONFIG_ONLY_NOT_A_REAL_CREDENTIAL',
+                BACKEND_IMAGE='railway-backend-node:d25-config-only', POSTGRES_IMAGE='postgres:16-alpine')
+
+def run(command, environment, timeout=30):
+    return subprocess.run(command, env=environment, cwd=repo, capture_output=True,
+                          text=True, encoding='utf-8', errors='replace', timeout=timeout)
+
+print('TV6-D25 CONFIG/GUARD VALIDATION ONLY; all 198.51.100.* addresses are TEST-NET-2 fixtures, not observed hosts.', flush=True)
+print('SOURCE_SHA256=' + hashlib.sha256((repo/'docker/lan.yml').read_bytes()).hexdigest(), flush=True)
+configs = []
+for number in range(1, 6):
+    result = run(compose + ['config', '--format', 'json'], base(number))
+    assert result.returncode == 0, result.stderr
+    config = json.loads(result.stdout)
+    assert config['name'] == f'railway-lan-node-{number}'
+    assert set(config['services']) == {'backend', 'postgres'}
+    backend, pg = config['services']['backend'], config['services']['postgres']
+    assert backend['environment']['NODE_ID'] == f'node-{number}'
+    assert backend['environment']['DB_NAME'] == pg['environment']['POSTGRES_DB'] == f'railway_node{number}'
+    assert backend['environment']['DB_HOST'] == 'postgres'
+    assert backend['environment']['DB_PORT'] == '5432'
+    assert not pg.get('ports'), 'PostgreSQL must not publish a host port'
+    assert {(p['target'], int(p['published']), p['host_ip']) for p in backend['ports']} == {
+        (9100, 9100, f'198.51.100.{10+number}'), (9200, 9200, f'198.51.100.{10+number}')}
+    assert config['networks']['database']['internal'] is True
+    assert set(pg['networks']) == {'database'}
+    assert set(backend['networks']) == {'database', 'lan'}
+    assert backend['depends_on']['postgres']['condition'] == 'service_healthy'
+    assert backend['pull_policy'] == pg['pull_policy'] == 'never'
+    assert backend['entrypoint'] == ['/bin/sh', '-ec']
+    assert 'exec java -cp' in backend['command'][0] and 'tail -f' not in backend['command'][0]
+    assert 'vn.nhom6.railway.node.NodeMain' in backend['command'][0]
+    assert config['volumes']['pgdata']['name'] == f'railway-lan-node-{number}_pgdata'
+    mounts = pg['volumes']
+    assert any(m['type'] == 'volume' and m['source'] == 'pgdata' for m in mounts)
+    migration = next(m for m in mounts if m['target'] == '/docker-entrypoint-initdb.d')
+    assert migration['read_only'] is True and migration['bind']['create_host_path'] is False
+    assert Path(migration['source']).resolve() == (repo/'database/migration').resolve()
+    assert not backend.get('profiles') and not pg.get('profiles')
+    configs.append(config)
+    print(f'CONFIG node-{number} exit=0 ASSERTIONS=PASS; services=2 independentVolume=true; ACTUAL_LAPTOP_DEPLOY=NOT_RUN', flush=True)
+
+for key in ['NODE_ID', 'LAN_IP', 'NODE_PEERS', 'DB_NAME', 'DB_PASSWORD', 'BACKEND_IMAGE']:
+    environment = base(1)
+    environment.pop(key)
+    result = run(compose + ['config', '--quiet'], environment)
+    assert result.returncode != 0, f'Missing {key} incorrectly accepted'
+    print(f'MISSING_REQUIRED {key} exit={result.returncode} EXPECTED_NONZERO=PASS', flush=True)
+
+# Existing cached image is used ONLY for /bin/sh guard tests with no network,
+# ports or volumes. It is NOT assumed to be the current backend candidate.
+image = run(['docker', 'image', 'inspect', '--format', '{{.Id}}', 'railway-backend-node:dev'], clean)
+assert image.returncode == 0, image.stderr
+shell_image = image.stdout.strip()
+print(f'GUARD_ONLY_IMAGE={shell_image}; uses shell only, no Java/DB/cluster started', flush=True)
+
+def guard(label, environment, expected):
+    # config JSON preserves $$ for round trips; compose unescapes it at create.
+    # This test uses docker run, so apply that final unescape explicitly.
+    code = configs[0]['services']['backend']['command'][0].replace('$$', '$')
+    assert code.count('exec java -cp') == 1
+    code = code.split('exec java -cp', 1)[0] + "printf 'GUARD_ONLY_PASS_RUNTIME_NOT_STARTED\\n'\n"
+    command = ['docker', 'run', '--rm', '--pull', 'never', '--network', 'none', '--entrypoint', '/bin/sh']
+    for key in ['NODE_ID', 'LAN_IP', 'NODE_PEERS', 'DB_NAME']:
+        command += ['--env', f'{key}={environment[key]}']
+    command += [shell_image, '-ec', code]
+    result = run(command, clean)
+    assert result.returncode == expected, (label, result.returncode, result.stdout, result.stderr)
+    print(f'GUARD {label} exit={result.returncode} expected={expected} PASS; output={(result.stdout+result.stderr).strip()}', flush=True)
+
+for number in range(1, 6):
+    guard(f'valid-node-{number}', base(number), 0)
+bad = base(1); bad['NODE_ID'] = 'node-6'; guard('reject-sixth-voter', bad, 2)
+bad = base(1); bad['DB_NAME'] = 'railway_node2'; guard('reject-wrong-db', bad, 2)
+bad = base(1); bad['NODE_PEERS'] = bad['NODE_PEERS'].replace('node-5@', 'node-4@'); guard('reject-duplicate-voter', bad, 2)
+bad = base(1); bad['NODE_PEERS'] = ','.join(bad['NODE_PEERS'].split(',')[:4]); guard('reject-four-voters', bad, 2)
+bad = base(1); bad['NODE_PEERS'] += ',node-6@198.51.100.16:9200'; guard('reject-six-voters', bad, 2)
+bad = base(1); bad['LAN_IP'] = '198.51.100.99'; guard('reject-self-address-mismatch', bad, 2)
+bad = base(1); bad['NODE_PEERS'] = bad['NODE_PEERS'].replace(':9200', ':9100'); guard('reject-client-port-in-peer-map', bad, 2)
+print('FINAL CONFIG_GUARDS=PASS; config cases=5, missing variable cases=6, shell guard cases=12. PHYSICAL_5_LAPTOP_DEPLOY=NOT_RUN; G6=NOT_RUN', flush=True)
+
+HARNESS local_pair.py SHA256=C125F608394FD1847DDD094C8A6E7A40F9F489EE8CE3B691A3973F70A0D6B127
+import hashlib
+import json
+import os
+from pathlib import Path
+import secrets
+import socket
+import struct
+import subprocess
+import time
+import uuid
+from datetime import datetime, timezone
+
+repo = Path(r'D:\HTPT')
+temporary = Path(__file__).parent
+project = 'tv6-d25-local-' + uuid.uuid4().hex[:8]
+password = secrets.token_hex(24)
+environment = os.environ.copy()
+environment.update(NODE_ID='node-1', LAN_IP='127.0.0.1', DB_NAME='railway_node1',
+                   DB_USER='railway', DB_PASSWORD=password,
+                   BACKEND_IMAGE='railway-backend-node:tv6-d25-6addad37e7ff',
+                   POSTGRES_IMAGE='postgres:16-alpine',
+                   NODE_PEERS='node-1@127.0.0.1:9200,' + ','.join(f'node-{n}@198.51.100.{10+n}:9200' for n in range(2,6)))
+for key in ['COMPOSE_FILE', 'COMPOSE_PROFILES', 'COMPOSE_PROJECT_NAME', 'CLUSTER_ID',
+            'RAFT_ELECTION_TIMEOUT_MIN_MS', 'RAFT_ELECTION_TIMEOUT_MAX_MS', 'RAFT_HEARTBEAT_INTERVAL_MS',
+            'TCP_CONNECT_TIMEOUT_MS', 'TCP_RESPONSE_DEADLINE_MS']:
+    environment.pop(key, None)
+command = ['docker', 'compose', '-p', project, '--env-file', str(temporary/'empty.env'), '-f', str(repo/'docker/lan.yml')]
+
+def run(label, args, timeout=25, required=True):
+    print('COMMAND ' + label + ': ' + subprocess.list2cmdline(command + args), flush=True)
+    response = subprocess.run(command + args, cwd=repo, env=environment, capture_output=True,
+                              text=True, encoding='utf-8', errors='replace', timeout=timeout)
+    output = (response.stdout + response.stderr).replace(password, '<REDACTED>')
+    print(f'EXIT {label}={response.returncode}\n{output}', flush=True)
+    if required and response.returncode != 0:
+        raise RuntimeError(f'{label} failed with exit={response.returncode}')
+    return response
+
+def read_exact(connection, size):
+    response = b''
+    while len(response) < size:
+        block = connection.recv(size - len(response))
+        if not block:
+            raise RuntimeError('incomplete frame')
+        response += block
+    return response
+
+print('MODE=LOCAL_PAIR_SMOKE_ON_LAPTOP6; NOT a deployment on physical laptops1..5; no quorum or booking claim.', flush=True)
+print('PROJECT=' + project + '; loopback binds only; other peers use documentation TEST-NET-2 addresses, not real inventory.', flush=True)
+print('SOURCE_SHA256=' + hashlib.sha256((repo/'docker/lan.yml').read_bytes()).hexdigest(), flush=True)
+success = False
+try:
+    run('up-local-pair', ['up', '-d', '--wait', '--wait-timeout', '90'], timeout=120)
+    states = run('ps-local-pair', ['ps', '--all', '--format', 'json']).stdout
+    containers = [json.loads(line) for line in states.splitlines() if line.strip()]
+    if len(containers) == 1 and isinstance(containers[0], list):
+        containers = containers[0]
+    assert {c['Service'] for c in containers} == {'backend', 'postgres'}
+    assert all(c['State'] == 'running' and c['Health'] == 'healthy' for c in containers)
+    sql = "BEGIN TRANSACTION READ ONLY; SELECT json_build_object('database',current_database(),'seats',(SELECT count(*) FROM seats WHERE trip_id='SE-001'),'seatIds',(SELECT json_agg(seat_id ORDER BY seat_id) FROM seats WHERE trip_id='SE-001'),'tickets',(SELECT count(*) FROM tickets),'requests',(SELECT count(*) FROM request_results),'lastApplied',(SELECT last_applied FROM raft_apply_progress WHERE singleton=1),'raftRows',(SELECT count(*) FROM raft_meta)); COMMIT;"
+    actual = run('sql-readonly', ['exec', '-T', 'postgres', 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1',
+                                '-U', 'railway', '-d', 'railway_node1', '-c', sql]).stdout
+    row = json.loads(next(line for line in actual.splitlines() if line.startswith('{')))
+    assert row['database'] == 'railway_node1' and row['seats'] == 10
+    assert row['seatIds'] == [f'G{n:02d}' for n in range(1,11)]
+    assert row['tickets'] == row['requests'] == row['lastApplied'] == 0 and row['raftRows'] == 1
+    message_id = str(uuid.uuid4())
+    request = dict(protocolVersion=1, messageId=message_id, correlationId=None, type='NODE_STATUS',
+                   senderId='monitor-tv6-d25-local', sentAt=datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00','Z'), payload={})
+    body = json.dumps(request).encode('utf-8')
+    with socket.create_connection(('127.0.0.1', 9100), timeout=3) as connection:
+        connection.settimeout(3)
+        connection.sendall(struct.pack('!I', len(body)) + body)
+        size = struct.unpack('!I', read_exact(connection, 4))[0]
+        assert 0 < size <= 1048576
+        response = json.loads(read_exact(connection, size))
+    print('REAL_LOCAL_NODE_STATUS=' + json.dumps(response), flush=True)
+    assert response['correlationId'] == message_id and response['type'] == 'NODE_STATUS_RESPONSE'
+    assert response['senderId'] == response['payload']['nodeId'] == 'node-1'
+    assert response['payload']['storageHealthy'] is True
+    assert response['payload']['commitIndex'] == response['payload']['lastApplied'] == 0
+    print('LOCAL_STARTUP_MIGRATION_TCP=PASS; PostgreSQL and Java process real; physical five-laptop deploy and G6=NOT_RUN', flush=True)
+    success = True
+finally:
+    # Keep collecting/cleanup independent even when startup/verification fails.
+    for label, arguments in [('logs-local-pair', ['logs', '--no-color', '--timestamps', '--tail', '160']),
+                             ('down-local-pair-KEEP-VOLUME', ['down', '--timeout', '15'])]:
+        try:
+            result = run(label, arguments, timeout=45, required=False)
+            if result.returncode:
+                success = False
+        except Exception as problem:
+            print(f'CLEANUP_FAILURE {label}: {problem}', flush=True)
+            success = False
+    result = subprocess.run(['docker', 'volume', 'inspect', '--format', '{{.Name}}', project+'_pgdata'],
+                            capture_output=True, text=True, timeout=15)
+    print(f'RETAINED_VOLUME exit={result.returncode} {result.stdout.strip()}', flush=True)
+    if result.returncode:
+        success = False
+print('FINAL_LOCAL_PAIR=' + ('PASS' if success else 'FAIL') + '; PHYSICAL_5_LAPTOP_DEPLOY=BLOCKED; G6=NOT_RUN', flush=True)
+raise SystemExit(0 if success else 1)
+
+=== HOW TO FINISH ON EACH PHYSICAL LAPTOP (NOT EXECUTED THERE) ===
+1. Measure/confirm actual IP+hostname from D24, firewall scopes and access on each laptop1..5. Do not use fixture IPs.
+2. Load same frozen backend/PG image IDs on all targets; copy repo migration files. Set per-host local.env with NODE_ID=node-N, LAN_IP=actual local IPv4, DB_NAME=railway_nodeN, local DB_PASSWORD, BACKEND_IMAGE=frozen image and identical complete NODE_PEERS on all five.
+3. On each corresponding host from repository root:
+   docker compose --env-file <local.env> -f docker/lan.yml config --quiet
+   docker compose --env-file <local.env> -f docker/lan.yml up -d --wait --wait-timeout 90
+   docker compose --env-file <local.env> -f docker/lan.yml ps -a
+   docker compose --env-file <local.env> -f docker/lan.yml logs --no-color --timestamps --tail 200
+Record actual exit code immediately after EACH command plus hostname/time/imageID/status; collect even when up fails. Never print docker compose config without --quiet into shared evidence (it resolves passwords).
+4. Inspect local schema/10-seat seed with readonly SQL. For a returning node keep its existing volume/project and wait for catch-up, do not reset/reseed.
+5. G6 separately verifies actual client/peer paths, NODE_STATUS, Raft election/replication/quorum and committed/applied SQL across five physical hosts.
+=== FINAL ===
+NGHIỆM THU D25: CHƯA ĐẠT — còn thiếu thử deploy và exit code/log trên laptop 1–5; chưa báo hoàn thành D25.
+PASS: Compose checks23/23, current candidate image build, real local pair startup/migration/TCP, local cleanup exit0 with volume retained.
+BLOCKED: physical deployment attempts on Laptop1..5 (no IP/access). G6 and real five-host Raft connectivity NOT_RUN. Do not report D25 physical deployment complete.
