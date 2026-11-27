@@ -1,0 +1,119 @@
+TV5-D27 validation evidence
+===========================
+
+Task: TV5-D27 Review election safety (Raft Election + Recovery — Rà vote once/term, stale log eligibility, higher term stepdown, timer races, quorum and restart; sửa P0/P1; mỗi safety property có test tự động và log tên rõ)
+Date: 2026-11-27
+Base Commit: c92e280 (branch Huu, synced with origin/main)
+Environment:
+- Host OS: Linux 7.3.4-300.fc45.x86_64
+- JDK: openjdk version "25.0.5" 2026-10-20
+- Maven: Apache Maven 3.9.11 (Red Hat 3.9.11-16)
+- Execution Mode: Deterministic in-memory / fake-storage / virtual-scheduler / real RaftElectionComponent & VoteRpcAdapter JUnit 5 suites (independent safety review without waiting for TV4-D27; optional PostgreSQL JDBC tests marked SKIPPED because RAILWAY_TEST_JDBC_URL is not set in this shell)
+
+Scope & Ownership Boundary (AGENTS.md §0, §3, §5, §6; SPEC-04 §2-§3, §5-§6, §8-§10; SPEC-07):
+- Audited all election classes under backend-node/src/main/java/vn/nhom6/railway/raft/election/ and cross-checked interactions with raft/core (RaftState, PersistentRaftNode) and raft/replication (AppendEntriesHandler).
+- Fixed all discovered P0/P1 election safety defects strictly within TV5-owned files under raft/election/**; preserved all shared wire DTOs (SPEC-03) and raft/core public contracts (ready for TV4 end-of-day review without blocking on TV4-D27).
+- Real PostgreSQL JDBC tests: SKIPPED (5 in election suite, 25 across full raft.** suite) due to unset RAILWAY_TEST_JDBC_URL; real 5-laptop physical LAN run remains Gate G6.
+
+P0 / P1 Defects Found & Fixed:
+1. [P0-1][RESTART_RECOVERY / VOTE_ONCE_PER_TERM] RaftElectionService.simulateRestartAfterStop() & recoverFromStorage():
+   - Issue: simulateRestartAfterStop() called state.becomeFollower(restoredTerm), which wiped persisted votedFor to null whenever durable storage term exceeded previous memory term, and did not reconcile/validate RaftState.restore(...) invariants (allowing double-vote across restart or silent acceptance of corrupt logs/checkpoints).
+   - Fix: Added validateDurableState() enforcing term monotonicity, no term-0 vote, voter-only votedFor, and full RaftState.restore(...) invariants (fail-closed RaftStorageException). simulateRestartAfterStop() now faithfully restores persisted votedFor and fails closed on same-term memory/storage divergence.
+2. [P0-2][VOTE_ONCE_PER_TERM] RaftElectionService.currentGrants & CandidateElection.handleRequestVote():
+   - Issue: RaftElectionService maintained a separate currentGrants set updated before CandidateElection validated requestTerm == campaignTerm / activeCampaign() / partition isolation, and never cleared currentGrants on higher-term RequestVote step-down or leader-startElection precondition failure.
+   - Fix: Exposed package-private CandidateElection.grantedVotersSnapshot() and clearCampaignOnStepDown() as single source of truth; RaftElectionService drops late replies from isolated peers, clears grants/ACKs on step-down and handleRequestVote term advances, checks Role.LEADER before mutating grants in startElection(), and guards grantedVoteCount()/hasWonElection() against FOLLOWER/stopped/failed states.
+3. [P0-3][HIGHER_TERM_STEPDOWN] CandidateElection.startElection() synchronous re-entrant reply crash:
+   - Issue: Calling voteRequestFor(expectedTerm).orElseThrow() inside the peer send loop threw NoSuchElementException and triggered failClosed() if a synchronous transport delivered a higher-term step-down or immediate 3/5 quorum win before the loop finished all 4 peers.
+   - Fix: Guarded the peer loop with if (!activeCampaign()) break and Optional check before invoking transport.requestVote(); ordered EVENT_ELECTION_STARTED before synchronous EVENT_LEADER_ELECTED / EVENT_HIGHER_TERM_STEP_DOWN in RaftElectionService.termLog.
+4. [P0-4][HIGHER_TERM_STEPDOWN] RaftElectionService fail-closed gap on RaftStorageException:
+   - Issue: observeHigherTerm(), startElection(), handleRequestVote(), and transport vote callbacks did not set RaftElectionService.failed = true when storage persistence threw RaftStorageException.
+   - Fix: Caught storage/runtime failures across all durable transitions in RaftElectionService, invoked failClosed() (clearing grants, campaign state, and peer ACKs), and rethrew.
+5. [P0-5][QUORUM_SAFETY] WriteAvailabilityPolicy & RaftElectionService stale-term ACK reuse & partition propagation:
+   - Issue: Peer ACKs were stored without term scoping (allowing term-1 ACKs to grant false 3/5 quorum in term 3 within freshnessWindow), accepted while FOLLOWER or from non-voters/future timestamps, and RaftElectionService.partition()/isolatePeer() did not mark isolated peers unresponsive in an attached WriteAvailabilityPolicy.
+   - Fix: Scoped ACKs to TermedAck(term, timestamp) in both WriteAvailabilityPolicy and RaftElectionService, ignored non-leader/isolated ACKs, rejected future-dated ACKs and non-voter peerIds, cleared ACKs on term/role transitions, and propagated partition()/isolatePeer() directly to WriteAvailabilityPolicy.markPeerUnresponsive().
+6. [P1-1][TIMER_RACES] ElectionRetryCoordinator.expire() double-arm race:
+   - Issue: If startElection() synchronously triggered onValidAppendEntries/onVoteDecision (already arming a fresh deadline generation), expire() unconditionally called arm() again, cancelling the fresh timer.
+   - Fix: Rearm in expire() only when generation == null.
+7. [P1-2][TIMER_RACES] RaftElectionComponent shutdown race with late vote response:
+   - Issue: Late vote responses arriving concurrently with RaftElectionComponent.close() called raw loop.execute(...) without catching RejectedExecutionException, falsely invoking onFailure.
+   - Fix: Guarded with closed/failed checks and caught RejectedExecutionException when closed, matching execute(Runnable).
+8. [P1-3][VOTE_ONCE_PER_TERM] RaftElectionService.auditTermLog():
+   - Issue: auditTermLog() checked term monotonicity and at-most-one-leader-per-term, but did not audit vote-once-per-term across logged votedFor entries.
+   - Fix: Added per-(nodeId, currentTerm) votedFor uniqueness check to auditTermLog().
+
+Modified / Added Files:
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionService.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/CandidateElection.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/WriteAvailabilityPolicy.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/ElectionRetryCoordinator.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionComponent.java
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionSafetyReviewTest.java (10 automated tests across all 6 safety properties)
+- artifacts/evidence/D27/TV5-D27-result.log (this evidence file)
+- docs/implementation/TV5-D27-notes.md
+
+Automated Safety Property Matrix (ElectionSafetyReviewTest — 10/10 PASS):
+- PROP-01A [VOTE_ONCE_PER_TERM]    prop01_voteOncePerTerm_singleVoteIdempotentRetryAndAuditDetection -> PASS
+- PROP-01B [VOTE_ONCE_PER_TERM]    prop01_voteOncePerTerm_duplicateDelayedPostStepDownAndPartitionedRepliesCannotPolluteGrants -> PASS
+- PROP-02  [STALE_LOG_ELIGIBILITY] prop02_staleLogEligibility_preventsStaleCandidateFromWinningAndLogsHigherTermStepDown -> PASS
+- PROP-03A [HIGHER_TERM_STEPDOWN]  prop03_higherTermStepDown_allRpcPathsAndStorageFailClosed -> PASS
+- PROP-03B [HIGHER_TERM_STEPDOWN]  prop03_higherTermStepDown_synchronousReplyMidStartElectionLoopIsSafe -> PASS
+- PROP-04A [TIMER_RACES]           prop04_timerRaces_staleCallbacksResetRulesDoubleArmGuardAndHeartbeatGeneration -> PASS
+- PROP-04B [TIMER_RACES]           prop04_timerRaces_componentShutdownAndVoteRpcAdapterTimeoutVsHigherTerm -> PASS
+- PROP-05  [QUORUM_SAFETY]         prop05_quorumSafety_strictMajorityNoStaleTermAcksAndPartitionPropagation -> PASS
+- PROP-06A [RESTART_RECOVERY]      prop06_restartRecovery_preservesPersistedVoteAndFailsClosedOnCorruptStorage -> PASS
+- PROP-06B [RESTART_RECOVERY]      prop06_restartRecovery_fullComponentRestartPreservesLogAndCheckpoints -> PASS
+
+--- Suite 1: Targeted Election Safety Review Suite ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="ElectionSafetyReviewTest" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Actual Property-Named Logs:
+[SAFETY-PROPERTY][PROP-05][QUORUM_SAFETY] PASS - 3/5 strict majority enforced; single ping rejected; partition & term-scoped ACK isolation verified; minority leader audit failed closed
+[SAFETY-PROPERTY][PROP-04A][TIMER_RACES] PASS - stale election/heartbeat callbacks blocked by generation tokens; sync double-arm race fixed; reset matrix verified
+[SAFETY-PROPERTY][PROP-01B][VOTE_ONCE_PER_TERM] PASS - duplicate voter, delayed old-campaign reply, post-partition reply, and post-stepdown reply all blocked
+[SAFETY-PROPERTY][PROP-02][STALE_LOG_ELIGIBILITY] PASS - lower-term longer log (1/5) and equal-term shorter log (2/5) denied; fresh log node-2 elected at term 7
+[SAFETY-PROPERTY][PROP-06A][RESTART_RECOVERY] PASS - simulateRestartAfterStop preserves votedFor across same/higher stored term; corrupt storage fails closed
+[SAFETY-PROPERTY][PROP-03B][HIGHER_TERM_STEPDOWN] PASS - synchronous higher-term step-down and immediate sync quorum win mid-startElection loop stay healthy
+[SAFETY-PROPERTY][PROP-03A][HIGHER_TERM_STEPDOWN] PASS - AppendEntries/HeartbeatReply/observeHigherTerm/handleRequestVote step down durably and fail closed on storage error
+[SAFETY-PROPERTY][PROP-04B][TIMER_RACES] PASS - component shutdown race cleanly ignores late vote reply; VoteRpcAdapter drops timed-out grant but delivers late higher term
+[SAFETY-PROPERTY][PROP-01A][VOTE_ONCE_PER_TERM] PASS - single vote enforced across retries/rivals/non-voters; auditTermLog rejects same-term double vote
+[SAFETY-PROPERTY][PROP-06B][RESTART_RECOVERY] PASS - RaftElectionComponent restart restores FOLLOWER, commitIndex=lastApplied<lastLogIndex, single-vote & log freshness intact
+
+Results:
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time: 7.176 s
+
+--- Suite 2: Full Raft Election Package Regression ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.election.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[WARNING] Tests run: 345, Failures: 0, Errors: 0, Skipped: 5 (optional PostgreSQL JDBC tests skipped when RAILWAY_TEST_JDBC_URL is unset)
+[INFO] BUILD SUCCESS
+[INFO] Total time: 6.550 s
+
+--- Suite 3: Full Raft Regression (Core + Election + Replication, incl. TV4-D25 PartitionReplicationTest) ---
+
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="vn.nhom6.railway.raft.**.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+
+Exit Code: 0
+
+Results:
+[WARNING] Tests run: 797, Failures: 0, Errors: 0, Skipped: 25 (optional PostgreSQL JDBC tests skipped when RAILWAY_TEST_JDBC_URL is unset)
+[INFO] BUILD SUCCESS
+[INFO] Total time: 23.899 s
+
+=== SUMMARY ===
+- Independent Election Safety Review & P0/P1 Fixes (6 safety properties, 10 new automated tests): PASS
+- Full Raft Election Regression (340 executed, 5 optional JDBC skipped): PASS
+- Full Raft Core + Election + Replication Regression (772 executed, 25 optional JDBC skipped): PASS
+- Optional Real-PostgreSQL JDBC tests: SKIPPED in this run (no RAILWAY_TEST_JDBC_URL configured)
+- TV4 End-of-Day Cross-Review Status: READY (no breaking changes to raft/core, raft/replication, or shared DTOs)

@@ -90,9 +90,16 @@ public final class CandidateElection implements ElectionService {
             grants.add(localId);
             campaigning = true;
             for (String peer : VOTERS) {
+                if (!activeCampaign()) {
+                    break;
+                }
                 if (peers.contains(peer)) {
+                    Optional<RequestVoteRequestDto> voteRequest = voteRequestFor(expectedTerm);
+                    if (voteRequest.isEmpty()) {
+                        break;
+                    }
                     // Capture immutable correlation context, not the mutable wire DTO.
-                    transport.requestVote(peer, voteRequestFor(expectedTerm).orElseThrow(),
+                    transport.requestVote(peer, voteRequest.get(),
                             response -> receiveReply(peer, expectedTerm, response));
                 }
             }
@@ -120,9 +127,14 @@ public final class CandidateElection implements ElectionService {
         if (!isVoter(request.getCandidateId())) {
             throw new IllegalArgumentException("candidate is not a voter");
         }
+        long previousTerm = state.currentTerm();
         try {
-            return node.handleRequestVote(new RequestVoteRequest(request.getTerm(),
+            RequestVoteResponse response = node.handleRequestVote(new RequestVoteRequest(request.getTerm(),
                     request.getCandidateId(), request.getLastLogIndex(), request.getLastLogTerm()));
+            if (state.currentTerm() > previousTerm || state.role() == Role.FOLLOWER) {
+                clearCampaignOnStepDown();
+            }
+            return response;
         } catch (RaftStorageException failure) {
             failClosed();
             throw failure;
@@ -200,6 +212,18 @@ public final class CandidateElection implements ElectionService {
     private boolean activeCampaign() {
         return !failed && campaigning && state.role() == Role.CANDIDATE
                 && state.currentTerm() == campaignTerm && localId.equals(state.votedFor());
+    }
+
+    Set<String> grantedVotersSnapshot() {
+        if (failed || state.role() == Role.FOLLOWER || state.currentTerm() != campaignTerm) {
+            return Set.of();
+        }
+        return Set.copyOf(grants);
+    }
+
+    void clearCampaignOnStepDown() {
+        campaigning = false;
+        grants.clear();
     }
 
     private void requireHealthy() {

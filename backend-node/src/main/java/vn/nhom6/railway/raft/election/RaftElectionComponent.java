@@ -85,11 +85,16 @@ public final class RaftElectionComponent implements AutoCloseable {
 
         election = new CandidateElection(localId, core, state, (peer, request, reply) ->
                 transport.requestVote(peer, request, response -> {
-                    if (!closed) loop.execute(() -> {
-                        if (failed) return;
-                        try { reply.receive(response); }
-                        catch (Exception failure) { fail(failure); }
-                    });
+                    if (closed) return;
+                    try {
+                        loop.execute(() -> {
+                            if (closed || failed) return;
+                            try { reply.receive(response); }
+                            catch (Exception failure) { fail(failure); }
+                        });
+                    } catch (java.util.concurrent.RejectedExecutionException shutdown) {
+                        if (!closed) throw shutdown;
+                    }
                 }), higherTermHandler, () -> {
                     timerStop();
                     System.out.println("[RAFT] node=" + localId + " role=LEADER term=" + state.currentTerm());

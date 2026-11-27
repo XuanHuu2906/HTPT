@@ -60,7 +60,9 @@ public final class WriteAvailabilityPolicy {
     private final LeadershipGuard guard;
     private final Duration freshnessWindow;
 
-    private final Map<String, Instant> peerLastAckTimes = new ConcurrentHashMap<>();
+    private record TermedAck(long term, Instant timestamp) { }
+
+    private final Map<String, TermedAck> peerLastAcks = new ConcurrentHashMap<>();
     private final Map<String, Instant> peerLastPingTimes = new ConcurrentHashMap<>();
 
     /**
@@ -269,10 +271,10 @@ public final class WriteAvailabilityPolicy {
     public void recordPeerAck(String peerId, long matchIndex, Instant timestamp) {
         requireKnownPeer(peerId);
         Objects.requireNonNull(timestamp, "timestamp");
-        peerLastAckTimes.put(peerId, timestamp);
         peerLastPingTimes.put(peerId, timestamp);
 
         if (state.role() == Role.LEADER) {
+            peerLastAcks.put(peerId, new TermedAck(state.currentTerm(), timestamp));
             tracker.recordSuccess(peerId, matchIndex);
         }
     }
@@ -309,7 +311,7 @@ public final class WriteAvailabilityPolicy {
      */
     public void markPeerUnresponsive(String peerId) {
         requireKnownPeer(peerId);
-        peerLastAckTimes.remove(peerId);
+        peerLastAcks.remove(peerId);
         peerLastPingTimes.remove(peerId);
     }
 
@@ -317,7 +319,7 @@ public final class WriteAvailabilityPolicy {
      * Clears all peer acknowledgment history (e.g. on role change or term step-down).
      */
     public void clearPeerActivity() {
-        peerLastAckTimes.clear();
+        peerLastAcks.clear();
         peerLastPingTimes.clear();
     }
 
@@ -326,17 +328,19 @@ public final class WriteAvailabilityPolicy {
      * relative to {@code now}.
      *
      * <p>Leader counts as 1 (when {@code role == Role.LEADER}). Followers count only if their
-     * verified ACK is fresh within the window.
+     * verified ACK belongs to the Leader's current term and is fresh within the window.
      */
     public int activeVoterCount(Instant now) {
         if (state.role() != Role.LEADER) {
             return 0;
         }
+        long currentTerm = state.currentTerm();
         int count = 1; // local leader
         for (String peer : peers) {
-            Instant lastAck = peerLastAckTimes.get(peer);
-            if (lastAck != null && !Duration.between(lastAck, now).isNegative()
-                    && Duration.between(lastAck, now).compareTo(freshnessWindow) <= 0) {
+            TermedAck lastAck = peerLastAcks.get(peer);
+            if (lastAck != null && lastAck.term() == currentTerm
+                    && !Duration.between(lastAck.timestamp(), now).isNegative()
+                    && Duration.between(lastAck.timestamp(), now).compareTo(freshnessWindow) <= 0) {
                 count++;
             }
         }
