@@ -1,0 +1,70 @@
+TV3-D27 Protocol Framing Fuzz, Timeout/Retry & Concurrency Regression Evidence
+=================================================================================
+
+Task ID       : tv3-d27
+Date (Local)  : 2026-11-27 15:16:18 +07:00
+Base Commit   : f15cd99bc1948017fffb12b9397c12ffde97c71a (branch feat/tv3-d27)
+Environment   : Linux 7.3.4-1-cachyos (amd64), OpenJDK 27.0.1.0.3, Apache Maven 3.10.0
+
+Deliverables & SHA256:
+- backend-node/src/main/java/vn/nhom6/railway/networking/MessageDispatcher.java
+  SHA256=5f7e5a2fee8f2134c75fa88cbcfee888552275eae5d73764e43d3b171a5f61be
+- backend-node/src/main/java/vn/nhom6/railway/networking/TcpServer.java
+  SHA256=ec3c95ea17f83ca9bc53aec6576fcc285342b2d75857c93ec1315afbcc75f09a
+- backend-node/src/test/java/vn/nhom6/railway/networking/ProtocolFuzzAndConcurrencyRegressionTest.java
+  SHA256=a48077d3b0100066c0d6654ab2fb833f5311943157aae86f09e40c56496e84e7
+- docs/implementation/TV3-D27-notes.md
+
+=================================================================================
+1. TARGETED PROTOCOL, FRAMING FUZZ, CONCURRENCY & FAULT REGRESSION SUITE
+=================================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test -pl shared,backend-node \
+    -Dtest="MessageCodecNegativeTest,ProtocolContractTest,MessageEnvelopeTest,PayloadDtoTest,ProtocolFuzzAndConcurrencyRegressionTest,FramingTest,TcpLoadTest,TcpPacketLossTimeoutIntegrationTest,ConnectionManagerTcpIntegrationTest,PeerConnectionManagerTest,LeaderRedirectionTcpIntegrationTest,MessageDispatcherTest,RpcCorrelationRegistryTest,TcpClusterSmokeTest" \
+    -Dsurefire.failIfNoSpecifiedTests=false
+
+Result: BUILD SUCCESS (Total time: 29.154 s)
+Total : 110 tests run, 0 failures, 0 errors, 0 skipped
+
+Shared module breakdown (28/28 PASS):
+  - MessageCodecNegativeTest : Tests run:  9, Failures: 0, Errors: 0, Skipped: 0 (0.335 s)
+  - MessageEnvelopeTest      : Tests run:  8, Failures: 0, Errors: 0, Skipped: 0 (0.065 s)
+  - PayloadDtoTest           : Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 (0.054 s)
+  - ProtocolContractTest     : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (0.065 s)
+
+Backend-node module breakdown (82/82 PASS):
+  - ConnectionManagerTcpIntegrationTest    : Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 (0.708 s)
+  - FramingTest                            : Tests run:  8, Failures: 0, Errors: 0, Skipped: 0 (0.033 s)
+  - LeaderRedirectionTcpIntegrationTest    : Tests run:  9, Failures: 0, Errors: 0, Skipped: 0 (0.161 s)
+  - MessageDispatcherTest                  : Tests run: 28, Failures: 0, Errors: 0, Skipped: 0 (0.191 s)
+  - PeerConnectionManagerTest              : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (0.180 s)
+  - ProtocolFuzzAndConcurrencyRegressionTest: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 (15.53 s)
+      * TC-D27-01 Framing fuzz across 5 nodes (negative/0/oversize > 1 MiB/truncated/corrupt JSON): PASS
+      * TC-D27-02 12 concurrent connections mixed with malformed frames preserve correlation & requestId: PASS
+      * TC-D27-03 Concurrent timeout, response-lost retry & GET_REQUEST_RESULT preserve requestId: PASS
+      * TC-D27-04 Per-node exception & log audit (node-2, node-4): PASS
+  - RpcCorrelationRegistryTest             : Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 (0.077 s)
+  - TcpClusterSmokeTest                    : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (0.233 s)
+  - TcpLoadTest                            : Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 (1.466 s)
+  - TcpPacketLossTimeoutIntegrationTest    : Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 (1.152 s)
+
+Sample Verified Per-Node Malformed-Frame & Exception Logs:
+  WARNING: [port=40721] Malformed frame received from /127.0.0.1:45838: Frame length out of bounds: -50, allowed: [1, 1048576]
+  WARNING: [port=40721] Malformed frame received from /127.0.0.1:45900: Frame length out of bounds: 1052672, allowed: [1, 1048576]
+  WARNING: [node-2] Exception while handling GET_SEATS (messageId=..., requestId=null): Injected fault in node-2 handler
+  WARNING: [node-4] Rejected request (CLIENT, errorCode=INVALID_REQUEST, ...): Raft RPC messages are not allowed on client channel
+  WARNING: [node-4] Rejected request (PEER, errorCode=INVALID_REQUEST, ...): SenderId is not an allowed remote peer on PEER channel
+
+=================================================================================
+2. FULL SHARED & BACKEND-NODE MODULE REGRESSION
+=================================================================================
+Command:
+  mvn -B -ntp -o -Daether.syncContext.named.factory=noop test -pl backend-node -am
+
+Result: BUILD SUCCESS (Total time: 01:14 min)
+Module breakdown:
+  - shared       : Tests run:   38, Failures: 0, Errors: 0, Skipped:   0 ( 1.996 s)
+  - backend-node : Tests run: 1329, Failures: 0, Errors: 0, Skipped: 146 (01:12 min)
+
+Note on skipped tests: The 146 skipped tests in backend-node are external PostgreSQL/Docker/LAN-gated
+suites requiring live PostgreSQL/Docker/LAN hosts.
