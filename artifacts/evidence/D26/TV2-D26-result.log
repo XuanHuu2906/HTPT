@@ -1,0 +1,175 @@
+﻿================================================================================
+TV2-D26 — EVIDENCE LOG: SQL CHECKER HAU RECOVERY (database/compare-5db.ps1)
+Date/Time: 2026-11-27 15:24:09 +07:00
+Command: powershell -ExecutionPolicy Bypass -File database\compare-5db.ps1
+psql Version: psql (PostgreSQL) 15.17
+PostgreSQL Version: PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Evidence Level: LOCAL (5 PostgreSQL 16-alpine containers port 5433..5437 + fixture schema phu)
+G6 Integration Status: BLOCKED_INTEGRATION (chua chay sau fault that tren cum 5 node TV4/TV5/TV6)
+================================================================================
+
+================================================================================
+SCENARIO 1 (RUN 1/2): Baseline D25 5 node trong (public)
+Expected: CONSISTENT (exit=0)
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=public, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets Results StateHash Checks
+----   --------                     ------ ----------- ------- -----    ------- ------- --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS
+
+CONCLUSION: CONSISTENT (exit=0)
+Actual Exit Code: 0
+
+================================================================================
+SCENARIO 7 (RUN 2/2): Baseline D25 5 node trong — kiem tra idempotent & chi doc
+Expected: CONSISTENT (exit=0), output giong het Run 1
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=public, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets Results StateHash Checks
+----   --------                     ------ ----------- ------- -----    ------- ------- --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK               0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS
+
+CONCLUSION: CONSISTENT (exit=0)
+Actual Exit Code: 0
+SCENARIO 1 & 7 CHECK: Idempotent_Identical_Output=PASS
+
+================================================================================
+SCENARIO 2: 5 node co cung du lieu (BOOK + CANCEL + REJECTED, last_applied=5)
+Expected: CONSISTENT (exit=0)
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=d26_fix_test, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets  Results  StateHash Checks
+----   --------                     ------ ----------- ------- -----    -------  -------  --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS
+
+CONCLUSION: CONSISTENT (exit=0)
+Actual Exit Code: 0
+
+================================================================================
+SCENARIO 3A: node-5 thieu 2 log cuoi (last_applied=3 < 5)
+Expected: LAG_UNRESOLVED (exit=3), khong bao DIVERGENCE
+================================================================================
+[POLL 1/2] Phat hien LAG (minLastApplied=3, maxLastApplied=5), cho 1s...
+[POLL 2/2] Phat hien LAG (minLastApplied=3, maxLastApplied=5), cho 1s...
+
+=== COMPARE-5DB SUMMARY (schema=d26_fix_test, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets  Results  StateHash Checks
+----   --------                     ------ ----------- ------- -----    -------  -------  --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-5 127.0.0.1:5437/railway_node5 LAG              3       3 5626eee2 358629f5 22a507d2 aca5402e  PASS
+--- LAG DETAILS ---
+  * node-5: last_applied=3 < max=5 (khong so state_hash voi node tien xa hon)
+
+CONCLUSION: LAG_UNRESOLVED (exit=3)
+Actual Exit Code: 3
+
+================================================================================
+SCENARIO 3B: Sau khi node-5 catch-up du (last_applied=5)
+Expected: CONSISTENT (exit=0)
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=d26_fix_test, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets  Results  StateHash Checks
+----   --------                     ------ ----------- ------- -----    -------  -------  --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS
+
+CONCLUSION: CONSISTENT (exit=0)
+Actual Exit Code: 0
+
+================================================================================
+SCENARIO 4: node-4 cung last_applied=5 nhung khac du lieu (G05 thay vi G02)
+Expected: DIVERGENCE (exit=2), chi ro node-4 va bang lech
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=d26_fix_test, nodes=5) ===
+
+Node   Endpoint                     Status LastApplied Entries Seats    Tickets  Results  StateHash Checks
+----   --------                     ------ ----------- ------- -----    -------  -------  --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK               5       5 1eeebed7 deee80f7 adb6ecdb 4f7247da  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK               5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS
+--- DIVERGENCE DETAILS ---
+  * last_applied=5: lech bang [seats, tickets] giua: node-1(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-2(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-3(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-4(state=4f7247da,seats=1eeebed7,tickets=deee80f7,results=adb6ecdb); node-5(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb)
+
+CONCLUSION: DIVERGENCE (exit=2)
+Actual Exit Code: 2
+
+================================================================================
+SCENARIO 5: node-3 thieu index ux_one_active_ticket_per_seat va ghe G06 BOOKED khong co ve ACTIVE
+Expected: CHECK_FAILED (exit=5)
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=d26_fix_test, nodes=5) ===
+
+Node   Endpoint                     Status       LastApplied Entries Seats    Tickets  Results  StateHash Checks
+----   --------                     ------       ----------- ------- -----    -------  -------  --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK                     5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK                     5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-3 127.0.0.1:5435/railway_node3 CHECK_FAILED           5       5 bb307011 45c0e18f adb6ecdb e28e763c  FAIL  
+node-4 127.0.0.1:5436/railway_node4 OK                     5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS  
+node-5 127.0.0.1:5437/railway_node5 OK                     5       5 53f25e93 45c0e18f adb6ecdb bd98d32b  PASS
+--- LOCAL CHECK / INDEX FAILURES ---
+  * node-3: SEATS_MATCH_ACTIVE_TICKETS (Found 1 mismatch issues between seats and tickets); INDEX_MISSING (ux_one_active_ticket_per_seat)
+--- DIVERGENCE DETAILS ---
+  * last_applied=5: lech bang [seats] giua: node-1(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-2(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-3(state=e28e763c,seats=bb307011,tickets=45c0e18f,results=adb6ecdb); node-4(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb); node-5(state=bd98d32b,seats=53f25e93,tickets=45c0e18f,results=adb6ecdb)
+
+CONCLUSION: CHECK_FAILED (exit=5)
+Actual Exit Code: 5
+
+================================================================================
+SCENARIO 6: node-5 khong ket noi duoc (port 5499); 4 node con lai van duoc so
+Expected: UNREACHABLE (exit=4)
+================================================================================
+
+=== COMPARE-5DB SUMMARY (schema=public, nodes=5) ===
+
+Node   Endpoint                     Status      LastApplied Entries Seats    Tickets Results StateHash Checks
+----   --------                     ------      ----------- ------- -----    ------- ------- --------- ------
+node-1 127.0.0.1:5433/railway_node1 OK                    0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-2 127.0.0.1:5434/railway_node2 OK                    0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-3 127.0.0.1:5435/railway_node3 OK                    0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-4 127.0.0.1:5436/railway_node4 OK                    0       0 2f5d99e5 EMPTY   EMPTY   f3b37d79  PASS  
+node-5 127.0.0.1:5499/railway_node5 UNREACHABLE           -       - -        -       -       -         ERR
+--- UNREACHABLE NODES ---
+  * node-5 (127.0.0.1:5499/railway_node5): psql: error: connection to server at "127.0.0.1", port 5499 failed: timeout expired
+
+CONCLUSION: UNREACHABLE (exit=4)
+Actual Exit Code: 4
+
+================================================================================
+POST-CHECK: REMAINING USER SCHEMAS ON 5 CONTAINERS & BASELINE INTEGRITY
+================================================================================
+node-1 schemas: public
+node-2 schemas: public
+node-3 schemas: public
+node-4 schemas: public
+node-5 schemas: public
