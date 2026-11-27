@@ -940,7 +940,15 @@ public class BookingViewModel {
             for (PendingEntry pEntry : unresolved) {
                 // Không hủy vé khi yêu cầu BOOK sinh ra vé đó còn UNKNOWN/chưa có ticketId
                 if ("BOOK_TICKET".equals(pEntry.getCommandType())) {
-                    if (pEntry.getPayload() != null && pEntry.getPayload().contains(request.getTicketId())) {
+                    String targetTicket = request.getTicketId().trim();
+                    String bookReqId = pEntry.getRequestId();
+                    String reqPrefix = (bookReqId != null && bookReqId.length() >= 8)
+                            ? bookReqId.substring(0, 8).toLowerCase()
+                            : null;
+                    boolean matchesOriginBook = (pEntry.getPayload() != null && pEntry.getPayload().contains(targetTicket))
+                            || targetTicket.equalsIgnoreCase(bookReqId)
+                            || (reqPrefix != null && targetTicket.toLowerCase().contains(reqPrefix));
+                    if (matchesOriginBook) {
                         isSubmittingAtomic.set(false);
                         CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
                         rejected.completeExceptionally(new IllegalStateException(
