@@ -166,6 +166,13 @@ public class BookingViewModel {
         this.scheduler = scheduler;
         this.submitTimeoutMs = (submitTimeoutMs > 0) ? submitTimeoutMs : DEFAULT_SUBMIT_TIMEOUT_MS;
 
+        BookingClient unwrapped = (bookingClient instanceof JournalingBookingClient jbc) ? jbc.getDelegate() : bookingClient;
+        if (unwrapped instanceof vn.nhom6.railway.client.network.SocketBookingClient
+                || unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient) {
+            this.mock.set(false);
+            this.message.set("Hệ thống sẵn sàng kết nối cụm máy chủ (SE-001).");
+        }
+
         // Mặc định UiDispatcher chuyển về JavaFX Application Thread
         this.uiDispatcher = action -> {
             if (Platform.isFxApplicationThread()) {
@@ -578,11 +585,12 @@ public class BookingViewModel {
         errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
 
         if (presentation.clientErrorKind() == ClientErrorKind.FAILED_NOT_SENT
-                || presentation.clientErrorKind() == ClientErrorKind.CONNECTION_FAILED
                 || ErrorPresentationMapper.CODE_FAILED_NOT_SENT.equals(presentation.rawCode())) {
             uiState.set(UiState.DISCONNECTED);
-            // Theo SPEC-03 / TV1-D19: Lỗi kết nối trước khi gửi (FAILED_NOT_SENT) -> GHẾ KHÔNG ĐỔI!
-            // Tuyệt đối không đổi trạng thái ghế sang UNKNOWN
+            // Theo SPEC-03 / TV1-D19: Lỗi kết nối trước khi gửi (FAILED_NOT_SENT) -> GHẾ KHÔNG ĐỔI, journal ghi FAILED_NOT_SENT
+            markJournalFailedNotSent(reqId);
+        } else if (presentation.clientErrorKind() == ClientErrorKind.CONNECTION_FAILED) {
+            uiState.set(UiState.DISCONNECTED);
             ensureJournalPending(reqId);
         } else if (presentation.kind() == PresentationKind.DISCONNECTED) {
             uiState.set(UiState.DISCONNECTED);
@@ -704,6 +712,39 @@ public class BookingViewModel {
                 pvm.reloadFromJournal();
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    private void markJournalFailedNotSent(String reqId) {
+        PersistentPendingJournal j = getJournal();
+        if (j != null && reqId != null && !reqId.isBlank()) {
+            try {
+                Optional<PendingEntry> opt = j.get(reqId);
+                if (opt.isPresent()) {
+                    if (opt.get().getState() != PendingState.RESOLVED && opt.get().getState() != PendingState.FAILED_NOT_SENT) {
+                        j.markFailedNotSent(reqId, "FAILED_NOT_SENT");
+                    }
+                } else if (activeRequest != null) {
+                    String payload = String.format("{\"requestId\":\"%s\",\"tripId\":\"%s\",\"seatId\":\"%s\",\"passengerName\":\"%s\"}",
+                            activeRequest.getRequestId(), activeRequest.getTripId(), activeRequest.getSeatId(), activeRequest.getPassengerName());
+                    PendingEntry entry = new PendingEntry(
+                            reqId,
+                            "BOOK_TICKET",
+                            payload,
+                            PendingEntry.computePayloadHash(payload),
+                            PendingState.FAILED_NOT_SENT,
+                            Instant.now(),
+                            null,
+                            0,
+                            null,
+                            null,
+                            1
+                    );
+                    j.recordPrepared(entry);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi cập nhật FAILED_NOT_SENT cho requestId=" + reqId, e);
+            }
         }
     }
 
@@ -906,7 +947,15 @@ public class BookingViewModel {
             for (PendingEntry pEntry : unresolved) {
                 // Không hủy vé khi yêu cầu BOOK sinh ra vé đó còn UNKNOWN/chưa có ticketId
                 if ("BOOK_TICKET".equals(pEntry.getCommandType())) {
-                    if (pEntry.getPayload() != null && pEntry.getPayload().contains(request.getTicketId())) {
+                    String targetTicket = request.getTicketId().trim();
+                    String bookReqId = pEntry.getRequestId();
+                    String reqPrefix = (bookReqId != null && bookReqId.length() >= 8)
+                            ? bookReqId.substring(0, 8).toLowerCase()
+                            : null;
+                    boolean matchesOriginBook = (pEntry.getPayload() != null && pEntry.getPayload().contains(targetTicket))
+                            || targetTicket.equalsIgnoreCase(bookReqId)
+                            || (reqPrefix != null && targetTicket.toLowerCase().contains(reqPrefix));
+                    if (matchesOriginBook) {
                         isSubmittingAtomic.set(false);
                         CompletableFuture<CancelTicketResponseDto> rejected = new CompletableFuture<>();
                         rejected.completeExceptionally(new IllegalStateException(
@@ -1004,7 +1053,7 @@ public class BookingViewModel {
         runOnUi(() -> {
             busy.set(true);
             uiState.set(UiState.LOADING);
-            message.set("Đang tải dữ liệu sơ đồ ghế chuyến " + tripId + "... [MOCK]");
+            message.set("Đang tải dữ liệu sơ đồ ghế chuyến " + tripId + "..." + (mock.get() ? " [MOCK]" : ""));
         });
 
         CompletableFuture<GetSeatsResponseDto> completionFuture = new CompletableFuture<>();
@@ -1018,8 +1067,9 @@ public class BookingViewModel {
             }
             mock.set(result.isMock());
             uiState.set(UiState.IDLE);
+            String modeSuffix = result.isMock() ? " [MOCK]" : "";
             message.set("Đã cập nhật danh sách " + result.getSeats().size() + " ghế (Leader: " +
-                    (result.getLeaderId() != null ? result.getLeaderId() : "N/A") + ") [MOCK]");
+                    (result.getLeaderId() != null ? result.getLeaderId() : "N/A") + ")" + modeSuffix);
             completionFuture.complete(result);
         }));
 

@@ -48,11 +48,14 @@ public class App extends Application {
         });
         primaryStage.show();
 
-        // Tự động lưu ảnh chụp giao diện làm bằng chứng kiểm thử D01
+        // Chỉ lưu ảnh chụp giao diện khi được yêu cầu tường minh qua cờ bằng chứng kiểm thử
         Platform.runLater(() -> {
-            captureEvidenceSnapshot(scene);
-            if (getParameters().getUnnamed().contains("--exit-after-capture")
-                    || Boolean.getBoolean("exitAfterCapture")) {
+            boolean exitAfter = getParameters().getUnnamed().contains("--exit-after-capture")
+                    || Boolean.getBoolean("exitAfterCapture");
+            if (exitAfter || Boolean.getBoolean("ui.evidence")) {
+                captureEvidenceSnapshot(scene);
+            }
+            if (exitAfter) {
                 primaryStage.close();
             }
         });

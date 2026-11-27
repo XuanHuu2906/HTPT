@@ -1,0 +1,219 @@
+================================================================================
+TV1-D27 — BÁO CÁO & BẰNG CHỨNG CHẠY REGRESSION TOÀN BỘ DESKTOP CLIENT
+================================================================================
+
+1. THÔNG TIN MÔI TRƯỜNG & SNAPSHOT THỰC ĐO
+--------------------------------------------------------------------------------
+- Mã tác vụ             : TV1-D27 (Chạy regression toàn bộ Desktop Client)
+- Thành viên phụ trách  : TV1 (Khoa — package vn.nhom6.railway.client)
+- Bàn giao cho          : TV6 (phục vụ kiểm thử chấp nhận tổng hợp AC01–AC10)
+- Thời điểm đo          : 2026-11-27T23:02:50+07:00
+- Hệ điều hành          : Microsoft Windows 11 Home Single Language (10.0.26300.0, amd64)
+- Java trên PATH        : OpenJDK 21.0.12.1 LTS (64-Bit Server VM)
+- Java chạy Maven       : Eclipse Adoptium OpenJDK 21.0.13.9-hotspot (release target = 21)
+- Apache Maven          : Apache Maven 3.10.0
+- Nhánh Git             : feature/UI
+- Release Snapshot gốc  : c92e280d9012c11047bc442d1e55d2b9da2b181e (Merge PR #144, baseline cuối D26)
+- Commit mã nguồn D27   :
+  * b0da050 : test(desktop-client): thêm ClientRegressionTest với bộ chạy và báo cáo kết quả theo lớp fixture (D27)
+  * 836d99d : test(desktop-client): thêm lớp regression thật có bảo vệ môi trường, ngân sách ghế và thao tác chỉ-đọc (D27)
+  * 7ea3664 : fix(desktop-client): xử lý tra cứu requestId ngoài journal và ghi nhận FAILED_NOT_SENT [BUG-D27-01, BUG-D27-02] (D27)
+  * c470eac : fix(desktop-client): chặn hủy vé khi lệnh BOOK_TICKET gốc còn UNKNOWN [BUG-D27-03] (D27)
+  * f504279 : fix(desktop-client): tách bạch nhãn nguồn REAL và MOCK khi khởi tạo và làm mới ghế [BUG-D27-04] (D27)
+  * a68ad81 : test(desktop-client): đồng bộ FakeNodeServer và phân loại trạng thái CSV trong ClientRegressionTest (D27)
+
+================================================================================
+2. KIỂM KÊ BASELINE (D01–D26) & 5 ĐIỀU KIỆN TIÊN QUYẾT LỚP REAL
+================================================================================
+
+2.1. Kiểm kê các lớp test hồi quy nền tảng trong desktop-client/src/test:
+  - Đã có mặt đầy đủ và chạy thực:
+    * BookingFormValidatorTest (27 tests)
+    * SocketBookingClientTest (16 tests), LeaderAwareBookingClientTest (15 tests), ClusterNodeSelectorTest (11 tests)
+    * BookingViewModelTest [root & viewmodel] (16 + 9 tests), SeatViewModelTest (11 tests), TicketViewModelTest (6 tests)
+    * SeatsRefreshServiceTest (10 tests), ErrorPresentationMapperTest (21 tests), BookingErrorFlowTest (14 tests)
+    * BookingUiAcceptanceTest (9 tests), SixClientContentionTest (5 tests)
+    * PersistentPendingJournalTest (13 tests), PendingRequestRetryTest (12 tests)
+    * ReconnectControllerTest (10 tests), ClusterConnectionViewModelTest (9 tests)
+    * TicketLookupFlowTest (16 tests), RealCancelTicketCheckTest (3 tests)
+    * ClientLanConfigTest (5 tests), LanEndpointMappingSocketTest (4 tests), LanFaultUiScenarioTest (14 tests), LanFaultObserverTest (1 test)
+    * MockBookingServiceTest (9 tests), MockUiFlowTest (12 tests), MockBookingClientTest (8 tests), SingleNodeSmokeTest (7 tests)
+  - Ghi chú trung thực về CancelBookingFlowTest:
+    * Trong kho mã đầu vào cuối D26 KHÔNG có tệp tên `CancelBookingFlowTest.java` riêng lẻ; độ phủ hủy vé trước D27 nằm phân tán ở `RealCancelTicketCheckTest`, `SocketBookingClientTest`, `BookingUiAcceptanceTest` và `PendingRequestRetryTest`.
+    * Trong D27, toàn bộ luồng hủy vé (3 nhánh `CONFIRMED` / `REJECTED` / `UNKNOWN`, kiểm chứng đúng `requestId`, và chặn hủy khi `BOOK_TICKET` gốc còn `SENT_UNRESOLVED`) đã được hợp nhất kiểm chứng đầy đủ tại Nhóm D (`REG-D01`, `REG-D02`) của `ClientRegressionTest`.
+
+2.2. Đánh giá 5 điều kiện tiên quyết trước khi chạm Lớp REAL (@Tag("real")):
+  [1] Trạng thái cụm 5 Node thật (127.0.0.1:9101..9105)         : THIẾU (0/5 cổng mở — toàn bộ DOWN, chưa có cụm chạy nền)
+  [2] Xác nhận khóa lịch cụm dành riêng từ TV6                  : THIẾU (chưa có `docs/implementation/TV6-D27-notes.md`, biến `TV6_SCHEDULE_CONFIRMED` chưa đặt)
+  [3] Cờ opt-in tường minh `ALLOW_REAL_REGRESSION=true`         : THIẾU (mặc định tắt để bảo vệ cụm nghiệm thu chung)
+  [4] Ngân sách ghế `REGRESSION_SEATS` (loại trừ G02, G05)      : THIẾU (chưa được cấp danh sách ghế riêng)
+  [5] Handler Backend cho `CANCEL_TICKET` / `GET_TICKET_HISTORY`: THIẾU (`BookingRequestHandler.java:108-109` mới đăng ký `BOOK_TICKET` và `GET_SEATS` -> `BLOCKED_CANCEL`; `GET_TICKET_HISTORY` chưa có contract -> `BLOCKED` P1)
+
+  => KẾT LUẬN CỔNG AN TOÀN: Lớp `REAL` bắt buộc dừng tại `Assumptions.assumeTrue(...)`, ghi nhận trung thực `NOT_RUN` cho cả 11 mục `@Tag("real")`, gửi 0 khung tin tới dải cổng cụm thật và tiêu thụ 0 ghế.
+
+================================================================================
+3. BẢNG ÁNH XẠ MA TRẬN REGRESSION (REG-A01..M01 ↔ FR/AC ↔ FIXTURE ↔ REAL)
+================================================================================
+
+| Mã REG  | Nhóm | Liên hệ SPEC (FR / AC tham chiếu)      | Lớp FIXTURE | Nguồn FIXTURE    | Lớp REAL | Ghi chú kiểm chứng chính (không tuyên bố AC PASS) |
+|---------|------|----------------------------------------|-------------|------------------|----------|---------------------------------------------------|
+| REG-A01 | A    | FR-01 (AC01 tham chiếu giao diện ghế)  | PASS        | FAKE             | NOT_RUN  | Đủ 10 ghế G01–G10 đúng thứ tự; chọn/bỏ chọn G01; khóa G02 BOOKED |
+| REG-A02 | A    | FR-01, SPEC-06 §4 (4 trạng thái & nhãn)| PASS        | FAKE             | -        | Phân biệt AVAILABLE/BOOKED/PENDING/UNKNOWN; nhãn "Chưa xác minh" |
+| REG-A03 | A    | FR-01, FR-08 (GET_SEATS & mất đọc)     | PASS        | FAKE             | NOT_RUN  | Refresh cập nhật G06->BOOKED; READ_UNAVAILABLE chuyển 10 ghế sang UNKNOWN |
+| REG-B01 | B    | FR-02, SPEC-03 §4.2 (validate tên)     | PASS        | FAKE             | -        | Chặn tên null/rỗng/>50 ký tự/số/ký tự lạ tại Client; 0 frame TCP |
+| REG-B02 | B    | SPEC-03 §3, SPEC-08 (validate ID/port) | PASS        | FAKE             | -        | Chặn requestId sai UUID, port=70000, trùng nodeId, Docker host, LAN placeholder |
+| REG-B03 | B    | FR-02 (chặn chưa chọn ghế)             | PASS        | FAKE             | -        | validateSeats từ chối null/rỗng; 0 frame gửi qua mạng |
+| REG-C01 | C    | FR-02 (luồng đặt vé chuẩn)             | PASS        | FAKE             | NOT_RUN  | SUBMITTING -> CONFIRMED đúng requestId; G01=BOOKED; refresh 1 lần; journal RESOLVED |
+| REG-C02 | C    | FR-02, SPEC-03 (SEAT_ALREADY_BOOKED)   | PASS        | FAKE             | -        | REJECTED hiển thị rõ ràng, tách biệt hoàn toàn với UNKNOWN |
+| REG-C03 | C    | FR-04, SPEC-06 (chống double-submit)   | PASS        | FAKE             | -        | 5 lệnh gọi liên tiếp khi đang gửi -> chặn 4 lần trùng, đúng 1 frame trên dây |
+| REG-C04 | C    | FR-04 (cùng ý định / đổi ghế / retry)  | PASS        | FAKE             | NOT_RUN  | Giữ nguyên requestId cho cùng ý định; cảnh báo khi đổi ghế; retry idempotent |
+| REG-D01 | D    | FR-05 (P1 hủy vé 3 nhánh phản hồi)     | PASS        | FAKE             | NOT_RUN  | CANCEL đủ UNKNOWN/REJECTED/CONFIRMED; chỉ CONFIRMED đúng ID mới trả G08 AVAILABLE |
+| REG-D02 | D    | FR-04, FR-05 (chặn hủy khi gốc UNKNOWN)| PASS        | FAKE             | -        | Chặn CANCEL khi BOOK_TICKET gốc còn SENT_UNRESOLVED; 0 frame gửi đi [BUG-D27-03] |
+| REG-E01 | E    | FR-04, SPEC-03 §4.4 (GET_REQUEST_RESULT)| PASS       | FAKE             | NOT_RUN  | Đủ 4 state PENDING/APPLIED_SUCCESS/APPLIED_REJECTED/UNKNOWN; 0 frame ghi [BUG-D27-01] |
+| REG-E02 | E    | FR-06 (P1 lịch sử & bảo vệ Follower)   | PASS        | FAKE             | NOT_RUN  | NOT_LEADER từ Follower không xóa journal; lịch sử vé khóa BLOCKED/P1 (0 vé giả) |
+| REG-F01 | F    | FR-03 (quan sát 6 Client tranh 1 ghế)  | PASS        | FAKE             | NOT_RUN  | 6 Client tranh G05 (có 1 rơi phản hồi -> lookup): 1 CONFIRMED, 5 REJECTED, 1 ACTIVE |
+| REG-G01 | G    | FR-04, SPEC-03 (timeout sau vs trước)  | PASS        | FAKE             | NOT_RUN  | Sau gửi -> UNKNOWN/SENT_UNRESOLVED; trước gửi -> FAILED_NOT_SENT [BUG-D27-02] |
+| REG-G02 | G    | FR-04 (journal bền vững qua restart)   | PASS        | FAKE             | -        | Restart nạp lại journal khớp SHA-256 payload; retry cùng requestId -> 1 vé ACTIVE |
+| REG-G03 | G    | FR-07, FR-08 (NO_QUORUM / loop redirect)| PASS       | RECORDED-FIXTURE | -        | Phát lại trace: NO_QUORUM không gán BOOKED; quá 5 redirect dừng ở NOT_LEADER_UNRESOLVED |
+| REG-H01 | H    | FR-07 (SEARCHING_LEADER & dò đường)    | PASS        | FAKE             | NOT_RUN  | Mất kết nối bật banner, khóa đặt mới, giữ pending, reconnect chỉ gửi PING/STATUS |
+| REG-H02 | H    | FR-07, SPEC-02 (chuyển hướng Leader)   | PASS        | FAKE             | -        | Bỏ qua leaderHint lạ ngoài cấu hình; quét tìm đúng node-3, không ép node-1 |
+| REG-I01 | I    | FR-04, SPEC-03 §3.2 (requestId/msgId)  | PASS        | FAKE             | -        | Kiểm tra tự động 35 frames (26 requestIds): 100% bất biến SHA-256 payload, messageId duy nhất |
+| REG-I02 | I    | SPEC-03 §5 (REQUEST_ID_CONFLICT)       | PASS        | FAKE             | -        | Client chặn đổi payload cùng requestId (0 frame); Server trả CONFLICT -> retryable=false |
+| REG-J01 | J    | SPEC-03 §5 (10 mã lỗi chuẩn)           | PASS        | FAKE             | -        | Đủ 10 mã SPEC-03; UNKNOWN != REJECTED; mã lạ -> PresentationKind.ERROR; 0 SEAT_SOLD |
+| REG-K01 | K    | SPEC-08 (profile dev/lan & override)   | PASS        | FAKE             | NOT_RUN  | Nạp đúng dev(9101..9105) & lan(9100); chặn placeholder; nạp file ngoài không sửa Java |
+| REG-L01 | L    | AGENTS.md §0, §4, §5 (bất biến tĩnh)   | PASS        | FAKE             | -        | Quét 62 tệp Java trong src/main: 0 vi phạm kiến trúc, luồng UI hay gọi lệnh hệ thống |
+| REG-M01 | M    | SPEC-06 (FXML/CSS & tách nhãn nguồn)   | PASS        | FAKE             | -        | Đủ 8 FXML/CSS & 10 ghế; tách sạch nhãn Socket vs Mock [BUG-D27-04]; chụp 3 ảnh PNG |
+
+================================================================================
+4. LỆNH KIỂM THỬ ĐÃ THỰC SỰ CHẠY & KẾT QUẢ ĐẦU RA
+================================================================================
+
+4.1. Chạy toàn bộ unit + integration/UI baseline + D27 (`shared` + `desktop-client`):
+  - Lệnh:
+      mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"
+  - Exit code : 0 (BUILD SUCCESS)
+  - Thời gian : 40.220 s (Hoàn tất lúc 2026-11-27T23:01:18+07:00)
+  - Kết quả từng module:
+      * shared         : Tests run:  38, Failures: 0, Errors: 0, Skipped:  0
+      * desktop-client : Tests run: 337, Failures: 0, Errors: 0, Skipped: 31
+        (Trong đó 306 bài chạy thực đạt PASS 100%; 31 bài Skipped là 20 bài real/UI opt-in của D16–D26 và 11 bài `@Tag("real")` của D27 được cổng bảo vệ dừng an toàn).
+
+4.2. Chạy riêng Lớp FIXTURE kèm xuất bằng chứng ảnh giao diện JavaFX:
+  - Lệnh:
+      mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=fixture" "-Dui.evidence=true" "-Dmaven.compiler.release=21"
+  - Exit code : 0 (BUILD SUCCESS)
+  - Thời gian : 15.537 s (ClientRegressionTest: 8.725 s, hoàn tất lúc 2026-11-27T23:01:36+07:00)
+  - Kết quả   : Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 (26/26 PASS)
+  - Ảnh chụp giao diện JavaFX thực tế (`Node.snapshot()` + `ImageIO.write()`):
+      * artifacts/evidence/D27/TV1-D27-ui-seats.png           (33,290 bytes)
+      * artifacts/evidence/D27/TV1-D27-ui-unknown-pending.png (37,731 bytes)
+      * artifacts/evidence/D27/TV1-D27-ui-lookup.png          (30,555 bytes)
+
+4.3. Chạy riêng Lớp REAL để kiểm chứng cổng bảo vệ môi trường & ngân sách ghế:
+  - Lệnh:
+      mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=real" "-Dmaven.compiler.release=21"
+  - Exit code : 0 (BUILD SUCCESS)
+  - Thời gian : 11.533 s (ClientRegressionTest: 0.232 s, hoàn tất lúc 2026-11-27T23:01:49+07:00)
+  - Kết quả   : Tests run: 11, Failures: 0, Errors: 0, Skipped: 11 (11/11 ghi nhận `NOT_RUN` trong CSV)
+
+================================================================================
+5. KẾT QUẢ QUÉT BẤT BIẾN TĨNH TRÊN MÃ NGUỒN (REG-L01 — GIT GREP THỰC TẾ)
+================================================================================
+
+[Grep 1] Kiểm tra import `java.net.*` hoặc `java.sql.*` trong `controller` & `viewmodel`:
+  - Lệnh    : git grep -n -E "^import java\.(net|sql)\." -- desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel
+  - Kết quả : Exit code 1 — 0 dòng khớp (ĐẠT).
+
+[Grep 2] Kiểm tra thư viện Web/HTTP/REST/WebSocket/Spring/JDBC bị cấm trong `desktop-client/src/main`:
+  - Lệnh    : git grep -n -E "(java\.net\.http|HttpClient|OkHttp|Retrofit|WebSocket|RestTemplate|SpringApplication|JdbcTemplate|DriverManager)" -- desktop-client/src/main
+  - Kết quả : Exit code 1 — 0 dòng khớp (ĐẠT).
+
+[Grep 3] Kiểm tra chuỗi lỗi tự chế `SEAT_SOLD` trong `desktop-client/src/main`:
+  - Lệnh    : git grep -n "SEAT_SOLD" -- desktop-client/src/main
+  - Kết quả : 1 dòng duy nhất nằm trong chú thích Javadoc giải thích quy tắc cấm:
+      `desktop-client/src/main/java/vn/nhom6/railway/client/controller/ErrorPresentationMapper.java:21: * 4. Không dùng chuỗi tự chế SEAT_SOLD...`
+      -> 0 dòng mã thực thi sử dụng `SEAT_SOLD` (ĐẠT).
+
+[Grep 4] Kiểm tra lệnh chặn luồng UI (`Thread.sleep`, `.join()`, `.get(...TimeUnit)`) trong `controller` & `viewmodel`:
+  - Lệnh    : git grep -n -E "(Thread\.sleep|\.join\s*\(\)|\.get\s*\([^)]*TimeUnit)" -- desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel
+  - Kết quả : 1 dòng duy nhất nằm trong chú thích Javadoc:
+      `desktop-client/src/main/java/vn/nhom6/railway/client/controller/ReconnectController.java:28: * ... (không chặn JavaFX thread, không dùng {@code .get()} hay {@code Thread.sleep}).`
+      -> 0 dòng mã thực thi chặn luồng JavaFX Application Thread (ĐẠT).
+
+[Grep 5] Kiểm tra lệnh gọi tiến trình ngoài / Docker (`ProcessBuilder`, `Runtime.exec`, `docker ...`) trong `desktop-client/src/main`:
+  - Lệnh    : git grep -n -E "(ProcessBuilder|Runtime\.getRuntime\(\)\.exec|docker\s+(compose|stop|kill|restart|rm))" -- desktop-client/src/main
+  - Kết quả : Exit code 1 — 0 dòng khớp (ĐẠT — Desktop Client không bao giờ tự dừng/khởi động lại hay reset cụm).
+
+================================================================================
+6. BẢNG TỔNG HỢP THEO LỚP × NHÓM & KIỂM TOÁN NGÂN SÁCH GHẾ LỚP REAL
+================================================================================
+
+Tệp dữ liệu máy đọc: `artifacts/evidence/D27/TV1-D27-regression-results.csv` (37 dòng kiểm thử)
+
+  Lớp     | Nhóm   | PASS | FAIL | SKIPPED | NOT_RUN | BLOCKED
+  --------+--------+------+------+---------+---------+--------
+  FIXTURE | Nhóm A |    3 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm B |    3 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm C |    4 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm D |    2 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm E |    2 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm F |    1 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm G |    3 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm H |    2 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm I |    2 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm J |    1 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm K |    1 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm L |    1 |    0 |       0 |       0 |       0
+  FIXTURE | Nhóm M |    1 |    0 |       0 |       0 |       0
+  --------+--------+------+------+---------+---------+--------
+  TỔNG FIXTURE     |   26 |    0 |       0 |       0 |       0
+  --------+--------+------+------+---------+---------+--------
+  REAL    | Nhóm A |    0 |    0 |       0 |       2 |       0
+  REAL    | Nhóm K |    0 |    0 |       0 |       1 |       0
+  REAL    | Nhóm E |    0 |    0 |       0 |       2 |       0
+  REAL    | Nhóm H |    0 |    0 |       0 |       1 |       0
+  REAL    | Nhóm C |    0 |    0 |       0 |       2 |       0
+  REAL    | Nhóm F |    0 |    0 |       0 |       1 |       0
+  REAL    | Nhóm G |    0 |    0 |       0 |       1 |       0
+  REAL    | Nhóm D |    0 |    0 |       0 |       1 |       0
+  --------+--------+------+------+---------+---------+--------
+  TỔNG REAL        |    0 |    0 |       0 |      11 |       0
+
+Kiểm toán tác động lên cụm thật:
+  - Số ghế tiêu thụ trên cụm thật : 0 ghế.
+  - Hai ghế dành riêng cho TV6    : `G02`, `G05` được khóa cứng trong `RESERVED_ACCEPTANCE_SEATS` (cổng bảo vệ tự động chặn nếu cấu hình phạm vào).
+  - Bảo mật dữ liệu nhạy cảm      : 0 họ tên hành khách thô, 0 dòng journal thô được in vào CSV hoặc log (chỉ lưu mã băm SHA-256 rút gọn và độ dài byte).
+  - Tác động hạ tầng              : KHÔNG reset DB, KHÔNG restart container/node, KHÔNG can thiệp phiên acceptance của nhóm.
+
+================================================================================
+7. TÓM TẮT LỖI ĐÃ SỬA & BÀN GIAO CHO TV6
+================================================================================
+
+Chi tiết đầy đủ xem tại: `artifacts/evidence/D27/TV1-D27-bug-list.md`
+
+- 4 lỗi thực tế thuộc Desktop Client đã được phát hiện qua bộ regression D27 và sửa dứt điểm (Owner: TV1):
+  1. `BUG-D27-01` (P0, commit `7ea3664`): Sửa lỗi `NoSuchElementException` trong `JournalingBookingClient.getRequestResult` khi tra cứu `requestId` không nằm trong journal cục bộ.
+  2. `BUG-D27-02` (P1, commit `7ea3664`): Ghi nhận đúng `FAILED_NOT_SENT` và giữ ghế `AVAILABLE` khi gặp `FailedNotSentException` trước khi ghi byte lên socket.
+  3. `BUG-D27-03` (P1, commit `c470eac`): Chặn gửi lệnh `CANCEL_TICKET` khi giao dịch `BOOK_TICKET` gốc của vé dẫn xuất vẫn còn `SENT_UNRESOLVED` (`UNKNOWN`).
+  4. `BUG-D27-04` (P1, commit `f504279`): Tách bạch chính xác nhãn nguồn `TCP Socket` so với `MOCK` trên `BookingViewModel`/`MainController` và ngưng ghi đè ảnh bằng chứng D01 mặc định trong `App`.
+
+- 3 phụ thuộc ngoài phạm vi Desktop Client bàn giao lại đúng Owner (TV1 không sửa sang module khác):
+  1. `DEP-D27-01` (Owner: TV2, TV3): Chưa đăng ký TCP handler cho `CANCEL_TICKET` trên `BookingRequestHandler` và chưa có DTO hủy vé trong `shared` (`BLOCKED_CANCEL` ở lớp `REAL`).
+  2. `DEP-D27-02` (Owner: TV2, TV3): Chưa có contract/handler P1 cho `GET_TICKET_HISTORY` (Desktop khóa UI an toàn `BLOCKED/P1`, 0 dữ liệu giả).
+  3. `DEP-D27-03` (Owner: TV6): Cụm 5 Node thật chưa chạy và chưa có khóa lịch + `REGRESSION_SEATS` dành riêng -> lớp `REAL` giữ ở `NOT_RUN`.
+
+- Lệnh bàn giao cho TV6 khi muốn kích hoạt Lớp REAL trên cụm test riêng (trước hoặc tách biệt khỏi đợt chạy AC01–AC10):
+    mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=real" `
+      "-Dallow.real.regression=true" `
+      "-Dcluster.profile=dev" `
+      "-Dtv6.schedule.confirmed=TV6-DEDICATED-WINDOW" `
+      "-Dregression.seats=G09,G10" `
+      "-Dmaven.compiler.release=21"
+
+================================================================================
+8. KẾT LUẬN TRUNG THỰC (THEO AGENTS.MD)
+================================================================================
+- Lớp `FIXTURE` của Desktop Client (`FakeNodeServer` + `RecordedTraceReplayServer` trên TCP loopback) đạt **26/26 PASS**, cùng toàn bộ suite hồi quy nền `desktop-client` (306 bài thực thi PASS, 0 FAIL, 0 ERROR).
+- Lớp `REAL` ghi nhận trung thực **11/11 NOT_RUN** do cụm 5 Node thật chưa bật và chưa có xác nhận khóa lịch / ngân sách ghế từ TV6; cụm chung hoàn toàn nguyên vẹn (0 ghế tiêu thụ).
+- Kết quả regression Desktop Client tại TV1-D27 **KHÔNG thay thế** kiểm thử chấp nhận hệ thống `AC01–AC10`, Raft hay LAN 5 máy; quyền đánh giá và công bố kết quả `AC01–AC10` thuộc về TV6 trên cụm thật.
+================================================================================

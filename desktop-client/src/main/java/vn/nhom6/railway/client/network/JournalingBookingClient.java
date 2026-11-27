@@ -100,7 +100,16 @@ public class JournalingBookingClient implements BookingClient, Closeable {
         // BƯỚC 3: Gửi qua delegate client
         return delegate.book(request).whenComplete((response, throwable) -> {
             if (throwable != null) {
-                // Lỗi mạng, timeout, hoặc ngắt kết nối: Giữ nguyên SENT_UNRESOLVED trong journal
+                if (isFailedNotSent(throwable)) {
+                    try {
+                        journal.markFailedNotSent(request.getRequestId(), "FAILED_NOT_SENT");
+                        LOGGER.info(String.format("[JOURNAL-CLIENT] Lỗi trước khi gửi requestId=%s -> markFailedNotSent", request.getRequestId()));
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể cập nhật FAILED_NOT_SENT: " + e.getMessage(), e);
+                    }
+                    return;
+                }
+                // Lỗi mạng, timeout, hoặc ngắt kết nối sau gửi: Giữ nguyên SENT_UNRESOLVED trong journal
                 LOGGER.info(String.format("[JOURNAL-CLIENT] Gửi thất bại/timeout requestId=%s, giữ SENT_UNRESOLVED", request.getRequestId()));
                 return;
             }
@@ -193,18 +202,22 @@ public class JournalingBookingClient implements BookingClient, Closeable {
             if (response != null) {
                 String state = response.getState();
                 if ("APPLIED_SUCCESS".equals(state)) {
-                    try {
-                        journal.markResolved(requestId, "CONFIRMED");
-                        LOGGER.info(String.format("[JOURNAL-CLIENT] Tra cứu thành công requestId=%s -> APPLIED_SUCCESS (CONFIRMED)", requestId));
-                    } catch (IOException e) {
-                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể markResolved: " + e.getMessage(), e);
+                    if (journal.get(requestId).isPresent()) {
+                        try {
+                            journal.markResolved(requestId, "CONFIRMED");
+                            LOGGER.info(String.format("[JOURNAL-CLIENT] Tra cứu thành công requestId=%s -> APPLIED_SUCCESS (CONFIRMED)", requestId));
+                        } catch (IOException e) {
+                            LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể markResolved: " + e.getMessage(), e);
+                        }
                     }
                 } else if ("APPLIED_REJECTED".equals(state)) {
-                    try {
-                        journal.markResolved(requestId, "REJECTED");
-                        LOGGER.info(String.format("[JOURNAL-CLIENT] Tra cứu hoàn tất requestId=%s -> APPLIED_REJECTED (REJECTED)", requestId));
-                    } catch (IOException e) {
-                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể markResolved: " + e.getMessage(), e);
+                    if (journal.get(requestId).isPresent()) {
+                        try {
+                            journal.markResolved(requestId, "REJECTED");
+                            LOGGER.info(String.format("[JOURNAL-CLIENT] Tra cứu hoàn tất requestId=%s -> APPLIED_REJECTED (REJECTED)", requestId));
+                        } catch (IOException e) {
+                            LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể markResolved: " + e.getMessage(), e);
+                        }
                     }
                 } else {
                     // PENDING hoặc UNKNOWN: giữ nguyên trạng thái pending trong journal
@@ -264,6 +277,15 @@ public class JournalingBookingClient implements BookingClient, Closeable {
         // BƯỚC 3: Gửi qua delegate client
         return delegate.cancel(request).whenComplete((response, throwable) -> {
             if (throwable != null) {
+                if (isFailedNotSent(throwable)) {
+                    try {
+                        journal.markFailedNotSent(requestId, "FAILED_NOT_SENT");
+                        LOGGER.info(String.format("[JOURNAL-CLIENT] Lỗi trước khi gửi hủy vé requestId=%s -> markFailedNotSent", requestId));
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "[JOURNAL-CLIENT] Không thể cập nhật FAILED_NOT_SENT: " + e.getMessage(), e);
+                    }
+                    return;
+                }
                 LOGGER.info(String.format("[JOURNAL-CLIENT] Gửi hủy vé thất bại/timeout requestId=%s, giữ SENT_UNRESOLVED", requestId));
                 return;
             }
@@ -335,6 +357,18 @@ public class JournalingBookingClient implements BookingClient, Closeable {
                 }
             }
         });
+    }
+
+    private static boolean isFailedNotSent(Throwable throwable) {
+        Throwable cur = throwable;
+        int depth = 0;
+        while (cur != null && depth++ < 8) {
+            if (cur instanceof FailedNotSentException) {
+                return true;
+            }
+            cur = (cur.getCause() != cur) ? cur.getCause() : null;
+        }
+        return false;
     }
 
     @Override
