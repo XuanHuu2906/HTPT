@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,6 +87,8 @@ public class TcpServer implements AutoCloseable {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Set<Socket> activeSockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final AtomicLong malformedFrameCount = new AtomicLong(0);
+    private final AtomicLong socketTimeoutCount = new AtomicLong(0);
     private volatile int boundPort = -1;
 
     public TcpServer(int port) {
@@ -199,14 +203,25 @@ public class TcpServer implements AutoCloseable {
                 try {
                     framePayload = FrameCodec.readFrame(in);
                 } catch (EOFException eof) {
-                    // Clean EOF: client closed socket gracefully
+                    if (eof.getMessage() != null && eof.getMessage().contains("Premature EOF")) {
+                        malformedFrameCount.incrementAndGet();
+                        LOGGER.log(Level.WARNING, "[port=" + boundPort + "] Truncated/malformed frame EOF from "
+                                + socket.getRemoteSocketAddress() + ": " + eof.getMessage());
+                    }
+                    break;
+                } catch (SocketTimeoutException timeoutEx) {
+                    socketTimeoutCount.incrementAndGet();
+                    LOGGER.log(Level.WARNING, "[port=" + boundPort + "] Socket read timeout from "
+                            + socket.getRemoteSocketAddress() + ": " + timeoutEx.getMessage());
                     break;
                 } catch (SocketException se) {
                     // Client disconnected or connection reset
                     break;
-                } catch (IllegalArgumentException malformed) {
-                    // Framing bounds violated (length > 1 MiB or <= 0): close per SPEC-03 Section 2
-                    LOGGER.log(Level.WARNING, "Malformed frame received from " + socket.getRemoteSocketAddress() + ": " + malformed.getMessage());
+                } catch (IllegalArgumentException | IOException malformed) {
+                    // Framing bounds violated (length > 1 MiB or <= 0) or malformed stream: close per SPEC-03 Section 2
+                    malformedFrameCount.incrementAndGet();
+                    LOGGER.log(Level.WARNING, "[port=" + boundPort + "] Malformed frame received from "
+                            + socket.getRemoteSocketAddress() + ": " + malformed.getMessage());
                     break;
                 }
 
@@ -234,7 +249,9 @@ public class TcpServer implements AutoCloseable {
                             }
                         }
                     } catch (Exception ex) {
-                        LOGGER.log(Level.WARNING, "Failed to process message envelope: " + ex.getMessage(), ex);
+                        malformedFrameCount.incrementAndGet();
+                        LOGGER.log(Level.WARNING, "[port=" + boundPort + "] Malformed envelope/JSON from "
+                                + socket.getRemoteSocketAddress() + ": " + ex.getMessage(), ex);
                         // Malformed envelope: close connection per SPEC-03 Section 2
                         break;
                     }
@@ -269,6 +286,20 @@ public class TcpServer implements AutoCloseable {
      */
     public int getActiveConnectionCount() {
         return activeSockets.size();
+    }
+
+    /**
+     * Returns the count of malformed/truncated/invalid-JSON frames rejected and closed on this server.
+     */
+    public long getMalformedFrameCount() {
+        return malformedFrameCount.get();
+    }
+
+    /**
+     * Returns the count of client socket read timeouts recorded on this server.
+     */
+    public long getSocketTimeoutCount() {
+        return socketTimeoutCount.get();
     }
 
     /**

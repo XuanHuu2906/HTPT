@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -128,6 +130,18 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     ) {}
 
     /**
+     * Thread-safe per-node diagnostics metrics snapshot for protocol/concurrency regression checks.
+     */
+    public record DispatcherMetrics(
+            long completedCount,
+            long rejectedCount,
+            long exceptionCount,
+            long droppedCount,
+            int peakInFlightCount,
+            int currentInFlightCount
+    ) {}
+
+    /**
      * Hook interface for filtering or dropping messages in test environments (e.g. simulated network partitions).
      */
     @FunctionalInterface
@@ -176,6 +190,11 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     private volatile Set<String> allowedPeerIds;
 
     private final ConcurrentMap<String, InFlightContext> activeInFlight = new ConcurrentHashMap<>();
+    private final AtomicLong completedCount = new AtomicLong(0);
+    private final AtomicLong rejectedCount = new AtomicLong(0);
+    private final AtomicLong exceptionCount = new AtomicLong(0);
+    private final AtomicLong droppedCount = new AtomicLong(0);
+    private final AtomicInteger peakInFlightCount = new AtomicInteger(0);
 
     public MessageDispatcher(HandlerRegistry registry) {
         this(registry, ChannelType.ALL, "node-server", null, DEFAULT_MAX_IN_FLIGHT);
@@ -230,58 +249,55 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
         // 1. Enforce Protocol Version (SPEC-03 Section 3.0)
         if (request.getProtocolVersion() != MessageEnvelope.CURRENT_PROTOCOL_VERSION) {
-            LOGGER.warning(() -> "Unsupported protocolVersion: " + request.getProtocolVersion() + ", messageId=" + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Unsupported protocolVersion: " + request.getProtocolVersion() + ", expected: " + MessageEnvelope.CURRENT_PROTOCOL_VERSION, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Unsupported protocolVersion: " + request.getProtocolVersion() + ", expected: " + MessageEnvelope.CURRENT_PROTOCOL_VERSION,
+                    requestId);
         }
 
         // 2. Check for missing type
         if (type == null) {
-            LOGGER.warning("Missing or null message type in request: " + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or null message type", requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST", "Missing or null message type", requestId);
         }
 
         // 3. Reject response messages arriving on the request dispatcher (SPEC-03 Section 3.1)
         if (type.isResponse()) {
-            LOGGER.warning(() -> "Unexpected response message type arriving on request dispatcher: " + type + ", messageId=" + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Unexpected response message type on request dispatcher: " + type, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Unexpected response message type on request dispatcher: " + type, requestId);
         }
 
         // 4. Enforce null correlationId on Requests (SPEC-03 Section 3.0)
         if (request.getCorrelationId() != null) {
-            LOGGER.warning(() -> "Request envelope must have null correlationId, got: " + request.getCorrelationId() + ", messageId=" + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Request envelope must have null correlationId", requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Request envelope must have null correlationId, got: " + request.getCorrelationId(), requestId);
         }
 
         // 5. Check for missing or blank senderId
         if (request.getSenderId() == null || request.getSenderId().isBlank()) {
-            LOGGER.warning(() -> "Missing or blank senderId in request: " + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or blank senderId", requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST", "Missing or blank senderId", requestId);
         }
 
         // 6. Check for missing or blank sentAt
         if (request.getSentAt() == null || request.getSentAt().isBlank()) {
-            LOGGER.warning(() -> "Missing or blank sentAt in request: " + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing or blank sentAt", requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST", "Missing or blank sentAt", requestId);
         }
 
         // 7. Check for missing payload
         if (request.getPayload() == null) {
-            LOGGER.warning(() -> "Missing payload in request: " + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Missing payload in request", requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST", "Missing payload in request", requestId);
         }
 
         // 8. Enforce Channel / Port Isolation (SPEC-08 Section 64 & SPEC-07 TC-TCP-04)
         if (channelType == ChannelType.CLIENT && type.isRaftRpc()) {
-            LOGGER.warning(() -> "Raft RPC rejected on CLIENT channel: " + type + " from sender=" + request.getSenderId());
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Raft RPC messages are not allowed on client channel: " + type, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Raft RPC messages are not allowed on client channel: " + type + " from sender=" + request.getSenderId(), requestId);
         }
         if (channelType == ChannelType.PEER && !type.isRaftRpc()) {
-            LOGGER.warning(() -> "Non-Raft message rejected on PEER channel: " + type + " from sender=" + request.getSenderId());
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Non-Raft messages are not allowed on peer channel: " + type, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Non-Raft messages are not allowed on peer channel: " + type + " from sender=" + request.getSenderId(), requestId);
         }
         if (channelType == ChannelType.MONITOR && type != MessageType.NODE_STATUS) {
-            LOGGER.warning(() -> "Non-monitor message rejected on MONITOR channel: " + type + " from sender=" + request.getSenderId());
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Only NODE_STATUS messages are allowed on monitor channel: " + type, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST",
+                    "Only NODE_STATUS messages are allowed on monitor channel: " + type + " from sender=" + request.getSenderId(), requestId);
         }
 
         // 8a-peer. Optional Peer Sender Allowlist Check (SPEC-08 §3.1 configuration sanity guard; NOT cryptographic auth)
@@ -289,14 +305,14 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         if (channelType == ChannelType.PEER && peerAllowlist != null) {
             String sender = request.getSenderId().strip();
             if (this.nodeId.equals(sender) || !peerAllowlist.contains(sender)) {
-                LOGGER.warning(() -> "[" + this.nodeId + "] Rejected PEER Raft RPC from unconfigured/self senderId=" + sender);
-                return createErrorResponse(messageId, "INVALID_REQUEST",
+                return logAndCreateError(messageId, "INVALID_REQUEST",
                         "SenderId is not an allowed remote peer on PEER channel: " + sender, requestId);
             }
         }
 
         // 8a. Test Network Filter Hook (Network Partition & Fault Simulation - TV3-D21)
         if (filterHook != null && !filterHook.shouldDeliver(request.getSenderId(), this.nodeId, request)) {
+            droppedCount.incrementAndGet();
             LOGGER.info(() -> "[" + this.nodeId + "] Message dropped by TestNetworkFilter: from=" 
                     + request.getSenderId() + " to=" + this.nodeId + " type=" + type + ", messageId=" + messageId);
             return null; // Silently drop, simulating network partition packet loss
@@ -304,15 +320,15 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
         // 8b. Enforce In-Flight Tracking and Limits (SPEC-03 §1, §3.0 & TV3-D18)
         if (activeInFlight.containsKey(messageId)) {
-            LOGGER.warning(() -> "Duplicate in-flight messageId rejected: " + messageId);
-            return createErrorResponse(messageId, "INVALID_REQUEST", "Duplicate in-flight messageId: " + messageId, requestId);
+            return logAndCreateError(messageId, "INVALID_REQUEST", "Duplicate in-flight messageId: " + messageId, requestId);
         }
         if (activeInFlight.size() >= maxInFlightRequests) {
-            LOGGER.warning(() -> "Server in-flight request limit reached (" + maxInFlightRequests + "), rejecting messageId: " + messageId);
-            return createErrorResponse(messageId, "INTERNAL_ERROR", "Server in-flight request limit reached (" + maxInFlightRequests + ")", requestId);
+            return logAndCreateError(messageId, "INTERNAL_ERROR",
+                    "Server in-flight request limit reached (" + maxInFlightRequests + ")", requestId);
         }
 
         activeInFlight.put(messageId, new InFlightContext(messageId, requestId, type, request.getSenderId(), System.nanoTime()));
+        updatePeakInFlight(activeInFlight.size());
         try {
             // 9. Enforce Leader Authority / Redirection for write commands per SPEC-02 §4 and SPEC-03 §7 (TV3-D17)
             if (leaderRouter != null && isLeaderOnlyRequest(type)) {
@@ -323,10 +339,12 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
                         if (redirectResponse != null) {
                             LOGGER.info(() -> "[" + nodeId + "] Intercepted write request " + type + " for leader redirect; returning "
                                     + redirectResponse.getType() + " (correlationId=" + redirectResponse.getCorrelationId() + ")");
+                            completedCount.incrementAndGet();
                             return finalizeResponse(redirectResponse, request, messageId, requestId);
                         }
                     }
                 } catch (Exception ex) {
+                    exceptionCount.incrementAndGet();
                     LOGGER.log(Level.WARNING, "[" + nodeId + "] Leader routing check failed for " + type + ", messageId=" + messageId + ": " + ex.getMessage(), ex);
                     return createErrorResponse(messageId, "INTERNAL_ERROR", "Leader routing failed: " + ex.getMessage(), requestId);
                 }
@@ -335,15 +353,18 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
             // 10. Lookup handler in registry
             HandlerRegistry.RequestHandler handler = registry.getHandler(type);
             if (handler == null) {
-                LOGGER.warning(() -> "No handler registered for message type: " + type);
-                return createErrorResponse(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
+                return logAndCreateError(messageId, "INVALID_REQUEST", "No handler registered for message type: " + type, requestId);
             }
 
             // 11. Execute handler and catch any exceptions safely
             try {
                 MessageEnvelope<?> response = handler.handle(request);
+                completedCount.incrementAndGet();
                 return finalizeResponse(response, request, messageId, requestId);
             } catch (Throwable t) {
+                exceptionCount.incrementAndGet();
+                LOGGER.log(Level.WARNING, "[" + nodeId + "] Exception while handling " + type
+                        + " (messageId=" + messageId + ", requestId=" + requestId + "): " + t.getMessage(), t);
                 MessageEnvelope<ErrorResponseDto> errorResponse = ResponseMapper.mapThrowable(
                         messageId, nodeId, requestId, t, leaderRouter
                 );
@@ -393,12 +414,33 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         }
         ResponseFilterHook outboundHook = this.responseFilterHook;
         if (outboundHook != null && !outboundHook.shouldSendResponse(this.nodeId, request.getSenderId(), request, correlated)) {
+            droppedCount.incrementAndGet();
             LOGGER.info(() -> "[" + this.nodeId + "] Response dropped by ResponseFilterHook: to="
                     + request.getSenderId() + " type=" + correlated.getType()
                     + ", correlationId=" + correlated.getCorrelationId());
             return null;
         }
         return correlated;
+    }
+
+    private void updatePeakInFlight(int currentSize) {
+        int prev;
+        do {
+            prev = peakInFlightCount.get();
+            if (currentSize <= prev) {
+                return;
+            }
+        } while (!peakInFlightCount.compareAndSet(prev, currentSize));
+    }
+
+    private MessageEnvelope<ErrorResponseDto> logAndCreateError(
+            String requestMessageId,
+            String errorCode,
+            String reason,
+            String requestId) {
+        LOGGER.warning(() -> "[" + nodeId + "] Rejected request (" + channelType + ", errorCode=" + errorCode
+                + ", messageId=" + requestMessageId + ", requestId=" + requestId + "): " + reason);
+        return createErrorResponse(requestMessageId, errorCode, reason, requestId);
     }
 
     private MessageEnvelope<?> ensureStrictCorrelation(MessageEnvelope<?> response, String expectedCorrelationId, String requestId) {
@@ -420,6 +462,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     }
 
     private MessageEnvelope<ErrorResponseDto> createErrorResponse(String requestMessageId, String errorCode, String message, String requestId) {
+        rejectedCount.incrementAndGet();
         return MessageCodec.createErrorResponse(requestMessageId, errorCode, message, null, null, requestId, nodeId);
     }
 
@@ -515,5 +558,20 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
 
     public int getMaxInFlightRequests() {
         return maxInFlightRequests;
+    }
+
+    /**
+     * Returns an immutable per-node telemetry snapshot of dispatched, rejected, failed, dropped,
+     * and peak concurrent in-flight requests.
+     */
+    public DispatcherMetrics getMetrics() {
+        return new DispatcherMetrics(
+                completedCount.get(),
+                rejectedCount.get(),
+                exceptionCount.get(),
+                droppedCount.get(),
+                peakInFlightCount.get(),
+                activeInFlight.size()
+        );
     }
 }
