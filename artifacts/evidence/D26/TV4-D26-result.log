@@ -1,0 +1,42 @@
+TV4-D26 Catch-up replication before G6
+Environment: Windows, JDK 25.0.2, Maven 3.10.2
+Code SHA: 47f209fa068a1f569abcf5f0edca99213bd1690d
+Merged base: origin/main 47f209fa068a1f569abcf5f0edca99213bd1690d
+PostgreSQL/Docker: NOT_RUN (Docker daemon unavailable; no local PG smoke database confirmed)
+
+[D26-A Fake catch-up]
+Command: mvn -B -ntp -pl backend-node -am '-Dtest=FollowerCatchupTest,PartitionReplicationTest,RaftCrashConsistencyTest,StaleLeaderLogTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+FollowerCatchupTest: 13 run, 0 failures, 0 errors, 0 skipped
+PartitionReplicationTest: 9 run, 0 failures, 0 errors, 0 skipped
+RaftCrashConsistencyTest: 10 run, 0 failures, 0 errors, 5 skipped (JDBC/PostgreSQL)
+StaleLeaderLogTest: 10 run, 0 failures, 0 errors, 0 skipped
+Aggregate targeted: 42 run, 0 failures, 0 errors, 5 skipped
+D21-12: seed=53 oldMatch=24 oldCommit=24 finalMatch=24 finalCommit=24 nextIndex=25 followerLog=0 rpc=28
+
+[D26-A Full verify]
+Command: mvn -B -ntp -pl backend-node -am clean verify
+Shared module: 38 tests, 0 failures, 0 errors
+Backend-node aggregate: 1348 tests, 0 failures, 0 errors, 146 skipped
+Reactor: BUILD SUCCESS
+
+[D26-B Live snapshot]
+Docker: NOT_RUN - docker version failed to connect to npipe:////./pipe/dockerDesktopLinuxEngine
+Compose used: none
+docker ps: NOT_RUN
+Leader selection: NOT_RUN
+Live booking: NOT_RUN
+PG raft_log/last_applied: NOT_RUN
+Stop/restart follower: NOT_RUN
+Catch-up timing/AppendEntries count: NOT_RUN
+
+[D26-Wiring]
+ElectionRuntime.java wires CommitAdvancer, RaftReplicationService, AppendRetryCoordinator, and RaftReadBarrier.
+No fixed production Leader was inferred from this review.
+
+[D26-Production]
+RaftReplicationService.java: unchanged; no behavior or payload logging changed.
+No code commit was made for D26.
+
+Limit:
+- Fake/in-memory assertions do not replace G6 5-node Docker/LAN evidence.
+- Live snapshot is NOT_RUN and G6 remains not accepted.
