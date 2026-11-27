@@ -578,11 +578,12 @@ public class BookingViewModel {
         errorCode.set(presentation.rawCode() != null ? presentation.rawCode() : "");
 
         if (presentation.clientErrorKind() == ClientErrorKind.FAILED_NOT_SENT
-                || presentation.clientErrorKind() == ClientErrorKind.CONNECTION_FAILED
                 || ErrorPresentationMapper.CODE_FAILED_NOT_SENT.equals(presentation.rawCode())) {
             uiState.set(UiState.DISCONNECTED);
-            // Theo SPEC-03 / TV1-D19: Lỗi kết nối trước khi gửi (FAILED_NOT_SENT) -> GHẾ KHÔNG ĐỔI!
-            // Tuyệt đối không đổi trạng thái ghế sang UNKNOWN
+            // Theo SPEC-03 / TV1-D19: Lỗi kết nối trước khi gửi (FAILED_NOT_SENT) -> GHẾ KHÔNG ĐỔI, journal ghi FAILED_NOT_SENT
+            markJournalFailedNotSent(reqId);
+        } else if (presentation.clientErrorKind() == ClientErrorKind.CONNECTION_FAILED) {
+            uiState.set(UiState.DISCONNECTED);
             ensureJournalPending(reqId);
         } else if (presentation.kind() == PresentationKind.DISCONNECTED) {
             uiState.set(UiState.DISCONNECTED);
@@ -704,6 +705,39 @@ public class BookingViewModel {
                 pvm.reloadFromJournal();
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    private void markJournalFailedNotSent(String reqId) {
+        PersistentPendingJournal j = getJournal();
+        if (j != null && reqId != null && !reqId.isBlank()) {
+            try {
+                Optional<PendingEntry> opt = j.get(reqId);
+                if (opt.isPresent()) {
+                    if (opt.get().getState() != PendingState.RESOLVED && opt.get().getState() != PendingState.FAILED_NOT_SENT) {
+                        j.markFailedNotSent(reqId, "FAILED_NOT_SENT");
+                    }
+                } else if (activeRequest != null) {
+                    String payload = String.format("{\"requestId\":\"%s\",\"tripId\":\"%s\",\"seatId\":\"%s\",\"passengerName\":\"%s\"}",
+                            activeRequest.getRequestId(), activeRequest.getTripId(), activeRequest.getSeatId(), activeRequest.getPassengerName());
+                    PendingEntry entry = new PendingEntry(
+                            reqId,
+                            "BOOK_TICKET",
+                            payload,
+                            PendingEntry.computePayloadHash(payload),
+                            PendingState.FAILED_NOT_SENT,
+                            Instant.now(),
+                            null,
+                            0,
+                            null,
+                            null,
+                            1
+                    );
+                    j.recordPrepared(entry);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi cập nhật FAILED_NOT_SENT cho requestId=" + reqId, e);
+            }
         }
     }
 
