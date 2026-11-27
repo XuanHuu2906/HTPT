@@ -1,6 +1,8 @@
 package vn.nhom6.railway.raft.replication;
 
 import java.time.Duration;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -12,6 +14,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 
@@ -129,6 +135,48 @@ class RaftInvariantReviewTest {
         assertEquals(1L, state.lastApplied());
         assertEquals(2L, state.lastLogIndex());
         assertTrue(state.commitIndex() <= state.lastLogIndex());
+    }
+
+    @Test
+    void structuredReplicationLogIsReadableAndDoesNotContainPayload() {
+        Logger logger = Logger.getLogger(RaftReplicationService.class.getName());
+        Level previousLevel = logger.getLevel();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(MessageFormat.format(record.getMessage(), record.getParameters()));
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        handler.setLevel(Level.ALL);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        try {
+            RaftState state = leaderState(2L, 1);
+            RaftReplicationService service = replicationService(state);
+            RaftNode.AppendEntriesRequest request = new RaftNode.AppendEntriesRequest(
+                    2L, LOCAL, 0L, 0L, List.of(state.entryAt(1L)), 0L);
+            service.handleAppendResult("node-2", request,
+                    new RaftTransportAdapter.Replied("node-2", request,
+                            new RaftNode.AppendEntriesResponse(2L, true, 1L)));
+
+            assertTrue(messages.stream().anyMatch(message ->
+                    message.startsWith("RAFT-REPL|") && message.contains("event=ACK")
+                            && message.contains("peer=node-2") && message.contains("matchIndex=1")));
+            assertTrue(messages.stream().noneMatch(message ->
+                    message.contains("supersecret") || message.contains("{\"requestId\"")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+        }
     }
 
     private static RaftState leaderState(long term, int entries) {
