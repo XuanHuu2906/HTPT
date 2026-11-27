@@ -12,6 +12,7 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -37,7 +38,11 @@ import vn.nhom6.railway.client.network.BookingClientReadAdapter;
 import vn.nhom6.railway.client.network.CancelTicketRequestDto;
 import vn.nhom6.railway.client.network.CancelTicketResponseDto;
 import vn.nhom6.railway.client.network.ClientConfig;
+import vn.nhom6.railway.client.network.ClusterConnectivityCheck;
+import vn.nhom6.railway.client.network.ClusterConnectivityCheck.ClusterCheckSummary;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
+import vn.nhom6.railway.client.network.ClusterNodeSelector;
+import vn.nhom6.railway.client.network.DataSource;
 import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
 import vn.nhom6.railway.client.network.GetSeatsResponseDto;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
@@ -1775,6 +1780,435 @@ public class ClientRegressionTest {
     }
 
     // =========================================================================
+    // LỚP REAL (@Tag("real")) — BẢO VỆ MÔI TRƯỜNG, NGÂN SÁCH GHẾ & CHỈ-ĐỌC TRƯỚC
+    // =========================================================================
+
+    private static final Set<String> RESERVED_ACCEPTANCE_SEATS = Set.of("G02", "G05");
+    private static final Pattern SEAT_CODE_PATTERN = Pattern.compile("^G(0[1-9]|10)$");
+    private static final List<String> ALLOCATED_SEAT_QUEUE = new CopyOnWriteArrayList<>();
+    private static final AtomicInteger NEXT_SEAT_CURSOR = new AtomicInteger(0);
+    private static final Map<String, RealBookedRecord> OWN_ISSUED_TICKETS = new ConcurrentHashMap<>();
+    private static final List<String> CONSUMED_SEAT_LOGS = new CopyOnWriteArrayList<>();
+    private static volatile String lastRealBookReqId = null;
+    private static volatile String lastRealBookSeat = null;
+
+    private record RealBookedRecord(String seatId, String requestId, String ticketId) {}
+
+    private static String envOrProp(String envKey, String propKey) {
+        String p = System.getProperty(propKey);
+        if (p != null && !p.isBlank()) {
+            return p.trim();
+        }
+        String e = System.getenv(envKey);
+        if (e != null && !e.isBlank()) {
+            return e.trim();
+        }
+        return null;
+    }
+
+    /**
+     * Cổng kiểm tra an toàn bắt buộc trước mọi thao tác thuộc lớp REAL (Mục 2.3):
+     * 1. ALLOW_REAL_REGRESSION=true
+     * 2. CLUSTER_PROFILE=dev|lan hợp lệ và không chứa IP placeholder
+     * 3. Có xác nhận khóa lịch cụm dành riêng từ TV6 (TV6_SCHEDULE_CONFIRMED hoặc docs/implementation/TV6-D27-notes.md)
+     * 4. Thăm dò chỉ-đọc ClusterConnectivityCheck đạt tối thiểu 3/5 Node UP và đúng 1 Leader ổn định.
+     */
+    private ClientConfig assumeRealClusterReadReady() throws IOException {
+        String allow = envOrProp("ALLOW_REAL_REGRESSION", "allow.real.regression");
+        Assumptions.assumeTrue("true".equalsIgnoreCase(allow),
+                "NOT_RUN: Chưa bật opt-in ALLOW_REAL_REGRESSION=true cho lớp REAL");
+
+        String profile = envOrProp("CLUSTER_PROFILE", "cluster.profile");
+        Assumptions.assumeTrue(profile != null && ("dev".equalsIgnoreCase(profile) || "lan".equalsIgnoreCase(profile)),
+                "NOT_RUN: Chưa chỉ định tường minh CLUSTER_PROFILE=dev|lan cho lớp REAL");
+
+        String tv6Confirm = envOrProp("TV6_SCHEDULE_CONFIRMED", "tv6.schedule.confirmed");
+        Path tv6NotesPath = resolveProjectPath("docs/implementation/TV6-D27-notes.md");
+        boolean hasNotesConfirm = Files.exists(tv6NotesPath)
+                && Files.readString(tv6NotesPath, StandardCharsets.UTF_8).contains("CONFIRMED");
+        Assumptions.assumeTrue((tv6Confirm != null && !tv6Confirm.isBlank()) || hasNotesConfirm,
+                "NOT_RUN: Chưa có xác nhận khóa lịch cụm test dành riêng từ TV6 (thiếu TV6_SCHEDULE_CONFIRMED / TV6-D27-notes.md)");
+
+        ClientConfig cfg = ClientConfig.loadWithOverrides(null, Map.of("cluster.profile", profile.toLowerCase(Locale.ROOT)), Map.of());
+        Assumptions.assumeFalse(cfg.hasPlaceholderEndpoints(),
+                "BLOCKED: Cấu hình profile '" + profile + "' vẫn chứa IP placeholder: " + cfg.getPlaceholderNodes());
+
+        ClusterCheckSummary summary = ClusterConnectivityCheck.checkCluster(cfg.getEndpoints(), 1500, DataSource.REAL);
+        Assumptions.assumeTrue(summary.reachableNodes() >= 3,
+                "NOT_RUN: Cụm thật chưa đủ đa số Node UP (" + summary.reachableNodes() + "/5 reachable)");
+        Assumptions.assumeTrue(summary.leaderCount() == 1,
+                "BLOCKED: Số Leader quan sát được khác 1 (" + summary.leaderCount() + "), dừng để tránh đụng phiên test khác");
+
+        return cfg;
+    }
+
+    private synchronized String claimRegressionSeat(LeaderAwareBookingClient client, String regId) throws Exception {
+        String rawSeats = envOrProp("REGRESSION_SEATS", "regression.seats");
+        Assumptions.assumeTrue(rawSeats != null && !rawSeats.isBlank(),
+                "NOT_RUN: Chưa cấp ngân sách ghế qua REGRESSION_SEATS -> bỏ qua test ghi thật (" + regId + ")");
+
+        if (ALLOCATED_SEAT_QUEUE.isEmpty()) {
+            List<String> parsed = new ArrayList<>();
+            for (String token : rawSeats.split(",")) {
+                String s = token.trim().toUpperCase(Locale.ROOT);
+                if (s.isEmpty()) {
+                    continue;
+                }
+                Assumptions.assumeTrue(SEAT_CODE_PATTERN.matcher(s).matches(),
+                        "BLOCKED: Mã ghế trong REGRESSION_SEATS không hợp lệ: " + s);
+                Assumptions.assumeFalse(RESERVED_ACCEPTANCE_SEATS.contains(s),
+                        "BLOCKED: REGRESSION_SEATS chứa ghế " + s + " dành riêng cho bộ acceptance của TV6 (G02/G05)");
+                if (!parsed.contains(s)) {
+                    parsed.add(s);
+                }
+            }
+            Assumptions.assumeFalse(parsed.isEmpty(), "NOT_RUN: Danh sách REGRESSION_SEATS rỗng");
+            ALLOCATED_SEAT_QUEUE.addAll(parsed);
+        }
+
+        int idx = NEXT_SEAT_CURSOR.getAndIncrement();
+        Assumptions.assumeTrue(idx < ALLOCATED_SEAT_QUEUE.size(),
+                "NOT_RUN: Đã hết ngân sách ghế trong REGRESSION_SEATS cho mục " + regId);
+
+        String candidateSeat = ALLOCATED_SEAT_QUEUE.get(idx);
+        GetSeatsResponseDto currentSeats = client.getSeats(new GetSeatsRequestDto("SE-001")).get(4, TimeUnit.SECONDS);
+        boolean alreadyBooked = currentSeats.getSeats().stream()
+                .anyMatch(s -> candidateSeat.equalsIgnoreCase(s.getSeatId()) && "BOOKED".equalsIgnoreCase(s.getStatus()));
+        Assumptions.assumeFalse(alreadyBooked,
+                "BLOCKED: Ghế regression " + candidateSeat + " đã ở trạng thái BOOKED trên cụm (nghi ngờ cụm chưa sạch hoặc đang dùng chung)");
+
+        return candidateSeat;
+    }
+
+    private LeaderAwareBookingClient createRealClusterClient(ClientConfig cfg, String senderId) {
+        ClusterNodeSelector selector = new ClusterNodeSelector(cfg);
+        ClusterEndpoints endpoints = ClusterEndpoints.fromSelector(selector);
+        RedirectPolicy policy = new RedirectPolicy(cfg.getMaxRedirects(), cfg.getConnectTimeoutMs(), cfg.getReadTimeoutMs());
+        return track(new LeaderAwareBookingClient(
+                endpoints,
+                ep -> track(new SocketBookingClient(ep.host(), ep.port(), cfg.getConnectTimeoutMs(), cfg.getReadTimeoutMs(), senderId)),
+                policy,
+                null,
+                cfg.getPreferredNode(),
+                selector
+        ));
+    }
+
+    // --- PHA 1 (REAL): CHỈ-ĐỌC TRƯỚC (STATUS, GET_SEATS, LOOKUP ID LẠ) ---
+
+    @Test
+    @Order(200)
+    @Tag("real")
+    @RegMeta(id = "REG-A03", group = "A", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-A03 [REAL]: Chỉ-đọc GET_SEATS từ Node thật, gắn nhãn Chưa xác minh, 0 ghế tiêu thụ")
+    void regA03_Real_ReadOnlySeatsUnverified(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-a03");
+        PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+        ObservableList<SeatViewModel> seats = createCleanTenSeats();
+        SeatsRefreshService srs = track(new SeatsRefreshService(new BookingClientReadAdapter(client), seats, journal));
+
+        SeatsSnapshot snap = srs.refreshNow().get(5, TimeUnit.SECONDS);
+        assertNotNull(snap);
+        assertEquals(DataSource.REAL, srs.getDataSource());
+        assertEquals(VerificationLevel.UNVERIFIED, srs.getVerification());
+        assertEquals("Chưa xác minh", srs.getVerification().getDisplayName());
+        recordNote("GET_SEATS chỉ-đọc trên cụm thật thành công; nhãn Chưa xác minh; 0 ghế tiêu thụ");
+    }
+
+    @Test
+    @Order(201)
+    @Tag("real")
+    @RegMeta(id = "REG-A01", group = "A", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-A01 [REAL]: Đọc danh sách ghế chuyến SE-001 từ cụm thật có đủ 10 ghế G01–G10")
+    void regA01_Real_ReadOnlyTenSeats(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-a01");
+        GetSeatsResponseDto res = client.getSeats(new GetSeatsRequestDto("SE-001")).get(5, TimeUnit.SECONDS);
+        assertNotNull(res);
+        assertEquals(10, res.getSeats().size(), "Cụm thật phải trả đủ đúng 10 ghế G01–G10");
+        assertFalse(res.isMock());
+        recordNote("Cụm thật trả đủ 10 ghế G01-G10 (leader=" + res.getLeaderId() + "); 0 ghế tiêu thụ");
+    }
+
+    @Test
+    @Order(202)
+    @Tag("real")
+    @RegMeta(id = "REG-K01", group = "K", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-K01 [REAL]: Xác thực cấu hình profile thực tế đủ 5 Node và không chứa placeholder")
+    void regK01_Real_ValidateActiveClusterConfig() throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        cfg.validateNoPlaceholders();
+        assertEquals(5, cfg.getEndpoints().size());
+        recordNote("Profile thực tế '" + cfg.getProfile() + "' hợp lệ, đủ 5 voter, 0 placeholder");
+    }
+
+    @Test
+    @Order(203)
+    @Tag("real")
+    @RegMeta(id = "REG-E01", group = "E", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-E01 [REAL]: GET_REQUEST_RESULT chỉ-đọc với requestId lạ trên cụm thật -> UNKNOWN, 0 tác dụng phụ")
+    void regE01_Real_ReadOnlyLookupStrangerRequestId(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-e01");
+        PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+        TicketLookupViewModel lookupVm = new TicketLookupViewModel(client, journal, Runnable::run, null);
+
+        String strangerReqId = UUID.randomUUID().toString();
+        recordRequestId(strangerReqId);
+        GetRequestResultResponseDto res = lookupVm.lookup(strangerReqId).get(5, TimeUnit.SECONDS);
+        assertNotNull(res);
+        assertEquals("UNKNOWN", res.getState());
+        recordNote("GET_REQUEST_RESULT chỉ-đọc với requestId lạ trả state=UNKNOWN đúng SPEC-03 §4.4");
+    }
+
+    @Test
+    @Order(204)
+    @Tag("real")
+    @RegMeta(id = "REG-E02", group = "E", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-E02 [REAL]: GET_TICKET_HISTORY ở chế độ thật bị khóa BLOCKED/P1 khi chưa có contract")
+    void regE02_Real_HistoryBlockedInRealMode(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-e02");
+        PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+        String prev = System.getProperty("booking.client");
+        try {
+            System.setProperty("booking.client", "socket");
+            TicketLookupViewModel lookupVm = new TicketLookupViewModel(client, journal, Runnable::run, null);
+            assertFalse(lookupVm.isHistoryEnabled());
+            assertEquals(0, lookupVm.getDisplayedTickets().size());
+            Assumptions.assumeTrue(false, "BLOCKED: GET_TICKET_HISTORY chưa có contract/handler P1 trên Backend (0 dữ liệu giả)");
+        } finally {
+            if (prev == null) {
+                System.clearProperty("booking.client");
+            } else {
+                System.setProperty("booking.client", prev);
+            }
+        }
+    }
+
+    @Test
+    @Order(205)
+    @Tag("real")
+    @RegMeta(id = "REG-H01", group = "H", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-H01 [REAL]: Quan sát thụ động Reconnect (Desktop không tự gây fault -> mặc định NOT_RUN)")
+    void regH01_Real_PassiveReconnectObservation() throws Exception {
+        assumeRealClusterReadReady();
+        String faultWindow = envOrProp("OBSERVE_LIVE_FAULT_WINDOW", "observe.live.fault.window");
+        Assumptions.assumeTrue("true".equalsIgnoreCase(faultWindow),
+                "NOT_RUN: Desktop tuyệt đối không tự dừng Node/gây fault; chỉ quan sát khi TV5/TV6 mở OBSERVE_LIVE_FAULT_WINDOW=true");
+        recordNote("Đã bật cửa sổ quan sát thụ động sự cố do TV5/TV6 điều khiển");
+    }
+
+    // --- PHA 2 (REAL): GHI TRONG NGÂN SÁCH GHẾ REGRESSION_SEATS ---
+
+    @Test
+    @Order(220)
+    @Tag("real")
+    @RegMeta(id = "REG-C01", group = "C", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-C01 [REAL]: Đặt 1 ghế từ ngân sách REGRESSION_SEATS qua Raft/TCP thật và đối chiếu lookup")
+    void regC01_Real_BookAllocatedSeat(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-c01");
+        String seatId = claimRegressionSeat(client, "REG-C01");
+
+        PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+        JournalingBookingClient jbc = track(new JournalingBookingClient(client, journal));
+        BookingViewModel vm = new BookingViewModel(jbc, journal, null, null, 8000);
+        vm.setSyncMode(true);
+
+        String reqId = UUID.randomUUID().toString();
+        recordRequestId(reqId);
+        BookTicketResponseDto res = vm.submit(new BookTicketRequestDto(reqId, "SE-001", seatId, "Khach Regression Mot"))
+                .get(10, TimeUnit.SECONDS);
+        assertTrue(res.isConfirmed(), "Kỳ vọng CONFIRMED trên ghế ngân sách " + seatId + ", nhận: " + res.getOutcome());
+
+        lastRealBookReqId = reqId;
+        lastRealBookSeat = seatId;
+        OWN_ISSUED_TICKETS.put(seatId, new RealBookedRecord(seatId, reqId, res.getTicketId()));
+        CONSUMED_SEAT_LOGS.add("Ghế " + seatId + " (requestId=" + reqId + ", ticketId=" + res.getTicketId() + ") tiêu thụ bởi REG-C01");
+
+        GetRequestResultResponseDto lookup = client.getRequestResult(reqId).get(5, TimeUnit.SECONDS);
+        assertEquals("APPLIED_SUCCESS", lookup.getState());
+        recordNote("Đặt thành công ghế ngân sách " + seatId + " (ticketId=" + res.getTicketId() + "), lookup=APPLIED_SUCCESS");
+    }
+
+    @Test
+    @Order(221)
+    @Tag("real")
+    @RegMeta(id = "REG-C04", group = "C", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-C04 [REAL]: Gửi lại cùng requestId vừa đặt trên ghế ngân sách -> idempotent không tốn thêm ghế")
+    void regC04_Real_IdempotentReplayOnSameSeat() throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        Assumptions.assumeTrue(lastRealBookReqId != null && lastRealBookSeat != null,
+                "NOT_RUN: Chưa có giao dịch gốc từ REG-C01 (thiếu REGRESSION_SEATS)");
+
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-c04");
+        recordRequestId(lastRealBookReqId);
+        BookTicketResponseDto replay = client.book(
+                new BookTicketRequestDto(lastRealBookReqId, "SE-001", lastRealBookSeat, "Khach Regression Mot"))
+                .get(8, TimeUnit.SECONDS);
+        assertTrue(replay.isConfirmed());
+        assertEquals(OWN_ISSUED_TICKETS.get(lastRealBookSeat).ticketId(), replay.getTicketId(),
+                "Retry cùng requestId trên cụm thật phải trả lại đúng ticketId ban đầu");
+        recordNote("Idempotent replay cùng requestId trên ghế " + lastRealBookSeat + " giữ nguyên ticketId, 0 ghế phát sinh thêm");
+    }
+
+    @Test
+    @Order(225)
+    @Tag("real")
+    @RegMeta(id = "REG-F01", group = "F", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-F01 [REAL]: 6 Client tranh 1 ghế thuộc REGRESSION_SEATS (Quan sát regression, KHÔNG thay AC03 của TV6)")
+    void regF01_Real_SixClientsContentionObservation(@TempDir Path tempDir) throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        LeaderAwareBookingClient probeClient = createRealClusterClient(cfg, "d27-real-f01-probe");
+        String targetSeat = claimRegressionSeat(probeClient, "REG-F01");
+
+        int n = 6;
+        ExecutorService pool = Executors.newFixedThreadPool(n);
+        CountDownLatch gate = new CountDownLatch(1);
+        List<CompletableFuture<BookTicketResponseDto>> futures = new ArrayList<>();
+        List<LeaderAwareBookingClient> clients = new ArrayList<>();
+        List<String> reqIds = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            LeaderAwareBookingClient c = createRealClusterClient(cfg, "d27-real-f01-c" + i);
+            clients.add(c);
+            String rid = UUID.randomUUID().toString();
+            reqIds.add(rid);
+            recordRequestId(rid);
+            final int idx = i;
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    gate.await(3, TimeUnit.SECONDS);
+                    return c.book(new BookTicketRequestDto(rid, "SE-001", targetSeat, "Khach Dua " + idx))
+                            .get(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    return new BookTicketResponseDto(rid, "UNKNOWN", null, "SE-001", targetSeat, "TIMEOUT_UNKNOWN", null, false, null, e.getMessage());
+                }
+            }, pool));
+        }
+        gate.countDown();
+
+        int confirmed = 0;
+        int rejected = 0;
+        String winReqId = null;
+        String winTicketId = null;
+        for (int i = 0; i < n; i++) {
+            BookTicketResponseDto r = futures.get(i).get(12, TimeUnit.SECONDS);
+            if (r.isUnknown()) {
+                GetRequestResultResponseDto lk = clients.get(i).getRequestResult(reqIds.get(i)).get(5, TimeUnit.SECONDS);
+                if ("APPLIED_SUCCESS".equals(lk.getState())) {
+                    confirmed++;
+                    winReqId = reqIds.get(i);
+                    winTicketId = lk.getTicketId();
+                } else if ("APPLIED_REJECTED".equals(lk.getState())) {
+                    rejected++;
+                }
+            } else if (r.isConfirmed()) {
+                confirmed++;
+                winReqId = reqIds.get(i);
+                winTicketId = r.getTicketId();
+            } else if (r.isRejected()) {
+                rejected++;
+            }
+        }
+        pool.shutdownNow();
+
+        assertEquals(1, confirmed, "Quan sát regression trên ghế " + targetSeat + " phải có đúng 1 CONFIRMED");
+        assertEquals(5, rejected, "5 Client còn lại phải nhận REJECTED");
+        OWN_ISSUED_TICKETS.put(targetSeat, new RealBookedRecord(targetSeat, winReqId, winTicketId));
+        CONSUMED_SEAT_LOGS.add("Ghế " + targetSeat + " (requestId=" + winReqId + ", ticketId=" + winTicketId + ") tiêu thụ bởi REG-F01");
+
+        recordNote("Quan sát regression (KHÔNG thay AC03 của TV6) trên ghế " + targetSeat + ": 1 CONFIRMED, 5 REJECTED");
+    }
+
+    @Test
+    @Order(226)
+    @Tag("real")
+    @RegMeta(id = "REG-G01", group = "G", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-G01 [REAL]: Tùy chọn ép readTimeout ngắn -> UNKNOWN -> Lookup cùng requestId trên ghế REGRESSION_SEATS")
+    void regG01_Real_OptionalShortTimeoutDrill() throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        String drillOptIn = envOrProp("ALLOW_REAL_TIMEOUT_DRILL", "allow.real.timeout.drill");
+        Assumptions.assumeTrue("true".equalsIgnoreCase(drillOptIn),
+                "NOT_RUN: Tùy chọn tốn ghế ALLOW_REAL_TIMEOUT_DRILL chưa bật (bảo vệ ngân sách 10 ghế)");
+
+        LeaderAwareBookingClient normalClient = createRealClusterClient(cfg, "d27-real-g01-lookup");
+        String seatId = claimRegressionSeat(normalClient, "REG-G01");
+
+        NodeEndpoint firstEp = cfg.getEndpoints().get(0);
+        String reqId = UUID.randomUUID().toString();
+        recordRequestId(reqId);
+
+        try (SocketBookingClient tinyReadSocket = new SocketBookingClient(firstEp.host(), firstEp.port(), cfg.getConnectTimeoutMs(), 5, "d27-real-g01-short")) {
+            BookTicketResponseDto firstTry = tinyReadSocket.book(
+                    new BookTicketRequestDto(reqId, "SE-001", seatId, "Khach Timeout That")).get(5, TimeUnit.SECONDS);
+            if (firstTry.isConfirmed()) {
+                OWN_ISSUED_TICKETS.put(seatId, new RealBookedRecord(seatId, reqId, firstTry.getTicketId()));
+            }
+        }
+
+        GetRequestResultResponseDto resolved = normalClient.getRequestResult(reqId).get(5, TimeUnit.SECONDS);
+        if ("APPLIED_SUCCESS".equals(resolved.getState())) {
+            OWN_ISSUED_TICKETS.put(seatId, new RealBookedRecord(seatId, reqId, resolved.getTicketId()));
+        }
+        CONSUMED_SEAT_LOGS.add("Ghế " + seatId + " (requestId=" + reqId + ") đã dùng cho drill timeout REG-G01 -> lookup=" + resolved.getState());
+        recordNote("Drill timeout trên ghế " + seatId + " hoàn tất tra cứu cùng requestId -> state=" + resolved.getState());
+    }
+
+    // --- PHA 3 (REAL): DỌN DẸP VÉ DO CHÍNH REGRESSION TẠO (NẾU BACKEND HỖ TRỢ CANCEL) ---
+
+    @Test
+    @Order(240)
+    @Tag("real")
+    @RegMeta(id = "REG-D01", group = "D", layer = "REAL", dataSource = "REAL")
+    @DisplayName("REG-D01 [REAL]: Dọn dẹp vé do chính regression D27 tạo; phân loại PASS_CANCEL_REAL / BLOCKED_CANCEL")
+    void regD01_Real_CancelOwnRegressionTicketsIfSupported() throws Exception {
+        ClientConfig cfg = assumeRealClusterReadReady();
+        Assumptions.assumeFalse(OWN_ISSUED_TICKETS.isEmpty(),
+                "NOT_RUN: Không có vé nào do regression D27 tạo cần hủy (chưa chạy pha ghi hoặc thiếu REGRESSION_SEATS)");
+
+        LeaderAwareBookingClient client = createRealClusterClient(cfg, "d27-real-d01-cleanup");
+        List<String> uncleanedSeats = new ArrayList<>();
+        int cleanedCount = 0;
+
+        for (RealBookedRecord rec : OWN_ISSUED_TICKETS.values()) {
+            if (rec.ticketId() == null || rec.ticketId().isBlank()) {
+                uncleanedSeats.add(rec.seatId());
+                continue;
+            }
+            String cancelReqId = UUID.randomUUID().toString();
+            recordRequestId(cancelReqId);
+            CancelTicketResponseDto cancelRes = client.cancel(new CancelTicketRequestDto(cancelReqId, rec.ticketId()))
+                    .get(8, TimeUnit.SECONDS);
+            if (cancelRes.isConfirmed()) {
+                GetSeatsResponseDto afterSeats = client.getSeats(new GetSeatsRequestDto("SE-001")).get(5, TimeUnit.SECONDS);
+                boolean freed = afterSeats.getSeats().stream()
+                        .anyMatch(s -> rec.seatId().equalsIgnoreCase(s.getSeatId()) && "AVAILABLE".equalsIgnoreCase(s.getStatus()));
+                if (freed) {
+                    cleanedCount++;
+                    CONSUMED_SEAT_LOGS.add("Ghế " + rec.seatId() + " đã hủy thành công (PASS_CANCEL_REAL)");
+                } else {
+                    uncleanedSeats.add(rec.seatId());
+                    CONSUMED_SEAT_LOGS.add("Ghế " + rec.seatId() + " phản hồi CONFIRMED nhưng chưa thấy AVAILABLE (PASS_RESPONSE_ONLY) -> cần TV2/TV6 kiểm tra");
+                }
+            } else {
+                uncleanedSeats.add(rec.seatId());
+                CONSUMED_SEAT_LOGS.add("Ghế " + rec.seatId() + " bị tiêu thụ bởi regression D27 (BLOCKED_CANCEL: "
+                        + cancelRes.getReasonCode() + "), cần TV2/TV6 reset sau");
+            }
+        }
+
+        if (!uncleanedSeats.isEmpty()) {
+            Assumptions.assumeTrue(false,
+                    "BLOCKED: BLOCKED_CANCEL — Backend chưa hoàn tất hủy vé cho ghế " + uncleanedSeats
+                            + "; ghế bị tiêu thụ bởi regression D27, cần TV2/TV6 reset sau");
+        }
+        recordNote("PASS_CANCEL_REAL: Đã hủy và giải phóng sạch " + cleanedCount + " ghế regression");
+    }
+
+    // =========================================================================
     // JUNIT 5 TEST WATCHER & BỘ XUẤT CSV TỰ ĐỘNG (KHÔNG THÊM DEPENDENCY)
     // =========================================================================
 
@@ -1978,6 +2412,13 @@ public class ClientRegressionTest {
                 int[] c = e.getValue();
                 System.out.printf("%s | %4d | %4d | %7d | %7d | %7d%n",
                         e.getKey(), c[0], c[1], c[2], c[3], c[4]);
+            }
+            if (!CONSUMED_SEAT_LOGS.isEmpty()) {
+                System.out.println("--------------------------------------------------------------------------------");
+                System.out.println("[TV1-D27] NHẬT KÝ TIÊU THỤ / DỌN DẸP GHẾ LỚP REAL:");
+                for (String log : CONSUMED_SEAT_LOGS) {
+                    System.out.println("  - " + log);
+                }
             }
             System.out.println("================================================================================");
         }
