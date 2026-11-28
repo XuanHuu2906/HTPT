@@ -113,6 +113,91 @@ class ProtocolContractTest {
         assertTrue(bookRespEnv.getPayload().isConfirmed());
         assertEquals("ticket-uuid", bookRespEnv.getPayload().getTicketId());
         assertEquals(43L, bookRespEnv.getPayload().getAppliedLogIndex());
+
+        // 7. Complete frozen v1 fixtures for all remaining MessageTypes (TV3-D28)
+        MessageEnvelope<GetSeatsResponseDto> seatsRespEnv = MessageCodec.decode(
+                fixturesRoot.get("getSeatsResponse").toString(), GetSeatsResponseDto.class
+        );
+        seatsRespEnv.validate();
+        seatsRespEnv.getPayload().validate();
+        assertEquals(MessageType.GET_SEATS_RESPONSE, seatsRespEnv.getType());
+        assertEquals(10, seatsRespEnv.getPayload().getSeats().size());
+
+        MessageEnvelope<GetRequestResultRequestDto> reqResultReqEnv = MessageCodec.decode(
+                fixturesRoot.get("getRequestResultRequest").toString(), GetRequestResultRequestDto.class
+        );
+        reqResultReqEnv.validate();
+        reqResultReqEnv.getPayload().validate();
+        assertEquals(MessageType.GET_REQUEST_RESULT, reqResultReqEnv.getType());
+
+        MessageEnvelope<GetRequestResultResponseDto> reqResultRespEnv = MessageCodec.decode(
+                fixturesRoot.get("getRequestResultResponse").toString(), GetRequestResultResponseDto.class
+        );
+        reqResultRespEnv.validate();
+        reqResultRespEnv.getPayload().validate();
+        assertEquals(MessageType.GET_REQUEST_RESULT_RESPONSE, reqResultRespEnv.getType());
+        assertEquals(GetRequestResultResponseDto.STATE_APPLIED_SUCCESS, reqResultRespEnv.getPayload().getState());
+
+        MessageEnvelope<NodeStatusDto> nodeStatusRespEnv = MessageCodec.decode(
+                fixturesRoot.get("nodeStatusResponse").toString(), NodeStatusDto.class
+        );
+        nodeStatusRespEnv.validate();
+        nodeStatusRespEnv.getPayload().validate();
+        assertEquals(MessageType.NODE_STATUS_RESPONSE, nodeStatusRespEnv.getType());
+        assertEquals(NodeStatusDto.ROLE_LEADER, nodeStatusRespEnv.getPayload().getRole());
+
+        MessageEnvelope<RequestVoteResponseDto> voteRespEnv = MessageCodec.decode(
+                fixturesRoot.get("requestVoteResponse").toString(), RequestVoteResponseDto.class
+        );
+        voteRespEnv.validate();
+        voteRespEnv.getPayload().validate();
+        assertEquals(MessageType.REQUEST_VOTE_RESPONSE, voteRespEnv.getType());
+        assertTrue(voteRespEnv.getPayload().isVoteGranted());
+
+        MessageEnvelope<AppendEntriesResponseDto> appendRespEnv = MessageCodec.decode(
+                fixturesRoot.get("appendEntriesResponse").toString(), AppendEntriesResponseDto.class
+        );
+        appendRespEnv.validate();
+        appendRespEnv.getPayload().validate();
+        assertEquals(MessageType.APPEND_ENTRIES_RESPONSE, appendRespEnv.getType());
+        assertTrue(appendRespEnv.getPayload().isSuccess());
+
+        MessageEnvelope<ErrorResponseDto> errorRespEnv = MessageCodec.decode(
+                fixturesRoot.get("errorResponse").toString(), ErrorResponseDto.class
+        );
+        errorRespEnv.validate();
+        errorRespEnv.getPayload().validate();
+        assertEquals(MessageType.ERROR_RESPONSE, errorRespEnv.getType());
+        assertEquals("NOT_LEADER", errorRespEnv.getPayload().getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Protocol v1 freeze: protocol-v1.json covers all 17 MessageTypes and passes two-phase FrameCodec + MessageCodec")
+    void testAllMessageTypesCoveredInFrozenV1Fixtures() throws Exception {
+        java.util.Set<MessageType> coveredTypes = java.util.EnumSet.noneOf(MessageType.class);
+        var fields = fixturesRoot.fields();
+        while (fields.hasNext()) {
+            var entry = fields.next();
+            JsonNode fixtureNode = entry.getValue();
+            byte[] jsonBytes = fixtureNode.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] framed = FrameCodec.frame(jsonBytes);
+
+            byte[] unframed = FrameCodec.readFrame(new java.io.ByteArrayInputStream(framed));
+            MessageEnvelope<JsonNode> env = MessageCodec.decode(unframed);
+            env.validate();
+            assertEquals(MessageEnvelope.CURRENT_PROTOCOL_VERSION, env.getProtocolVersion(),
+                    "Fixture " + entry.getKey() + " must freeze protocolVersion=1");
+            assertNotNull(env.getType(), "Fixture " + entry.getKey() + " must have a non-null MessageType");
+            if (env.getType().isResponse()) {
+                assertNotNull(env.getCorrelationId(), "Response fixture " + entry.getKey() + " must carry correlationId");
+            } else {
+                assertNull(env.getCorrelationId(), "Request fixture " + entry.getKey() + " must have null correlationId");
+            }
+            coveredTypes.add(env.getType());
+        }
+
+        assertEquals(java.util.EnumSet.allOf(MessageType.class), coveredTypes,
+                "protocol-v1.json must contain golden examples for all 17 MessageTypes");
     }
 
     @Test
