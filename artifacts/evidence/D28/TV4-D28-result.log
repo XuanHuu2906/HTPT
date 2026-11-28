@@ -1,0 +1,48 @@
+TV4-D28 Raft replication freeze
+Environment: Windows, JDK 25.0.2, Maven 3.10.2
+Merged base: 47f209fa068a1f569abcf5f0edca99213bd1690d
+Code SHA: 55e19daf9ddf6f5d5bf0f52ecfd8af0cf4cf3c0a
+
+[Regression]
+Command: mvn -B -ntp -pl backend-node -am clean verify
+Shared: 38 tests, 0 failures, 0 errors
+Backend-node: 1354 tests, 0 failures, 0 errors, 146 skipped
+Reactor: BUILD SUCCESS
+
+Command: mvn -B -ntp -pl backend-node -am '-Dtest=RaftInvariantReviewTest,FollowerCatchupTest,PartitionReplicationTest,RaftCrashConsistencyTest,StaleLeaderLogTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+Aggregate: 48 tests, 0 failures, 0 errors, 5 skipped
+RaftInvariantReviewTest: 6 tests, 0 failures, 0 errors
+
+Regression fixed:
+- Logging used undefined Failed.failureKind(); changed to record accessor kind().
+- No behavior regression; key replication suites pass after fix.
+
+[Fixed-Leader audit]
+ElectionRuntime.java - dynamic election, no fixed production Leader.
+NodeMain.java - builds runtime from election/config; no fixed Leader.
+BookingRequestHandler.java - routes through Raft role; no fixed Leader.
+NodeConfig.java - node-1 is identity fallback only.
+configs/* - node.id/node.peers are deployment identity and peer set.
+docker/* - node-1..node-5 instances and peer addresses.
+LeaderRouter.RoleProvider.fixed(...) - test-only usages in src/test; propose TV3 move to test fixture.
+scripts/cluster-fault.ps1, g6-lan-fault.ps1 - fake/dev observability/fault harness.
+Conclusion: no fixed Leader in TV4 replication code or production election composition.
+
+[Structured log samples]
+RAFT-REPL|node=node-1 term=1 event=ACK peer=node-2 matchIndex=1
+RAFT-COMMIT|node=LEADER term=1 event=ADVANCE commitIndex=3
+RAFT-APPLY|term=1 event=APPLIED index=2
+No payload/secret captured by the log test.
+
+[Frozen files]
+- backend-node/src/main/java/vn/nhom6/railway/raft/replication/RaftReplicationService.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/replication/CommitAdvancer.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/core/RaftStateMachineApplier.java
+- backend-node/src/main/java/vn/nhom6/railway/raft/replication/LogReplayCoordinator.java
+Frozen after SHA 55e19da.
+
+[Limits]
+- Docker daemon unavailable; G5/G6 live cluster not run.
+- PostgreSQL/JDBC cases may remain skipped if RAILWAY_TEST_* is absent.
+- No live 5-node LAN evidence in this task.
+- Lost-disk policy and awaitIndex follow-up remain open.

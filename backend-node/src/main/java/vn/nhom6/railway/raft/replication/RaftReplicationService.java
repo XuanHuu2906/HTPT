@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import vn.nhom6.railway.raft.core.RaftLogEntry;
 import vn.nhom6.railway.raft.core.RaftNode;
@@ -40,6 +42,8 @@ import vn.nhom6.railway.raft.election.LeadershipGuard;
  * replication/commit task described in SPEC-04 section 5.
  */
 public final class RaftReplicationService {
+
+    private static final Logger LOGGER = Logger.getLogger(RaftReplicationService.class.getName());
 
     private static final Set<String> VALID_VOTERS = Set.of(
             "node-1", "node-2", "node-3", "node-4", "node-5");
@@ -143,6 +147,11 @@ public final class RaftReplicationService {
         List<RaftLogEntry> entries = entriesToSend(peerId, nextIndex);
         RaftNode.AppendEntriesRequest request = new RaftNode.AppendEntriesRequest(
                 state.currentTerm(), localId, prevLogIndex, prevLogTerm, entries, state.commitIndex());
+        if (!entries.isEmpty()) {
+            LOGGER.log(Level.FINE,
+                    "RAFT-REPL|node={0} term={1} event=SEND peer={2} prevIndex={3} nextIndex={4} entries={5}",
+                    new Object[]{localId, request.term(), peerId, prevLogIndex, nextIndex, entries.size()});
+        }
 
         inFlight.put(peerId, Boolean.TRUE);
         transport.sendAppendEntries(peerId, request, result -> {
@@ -213,6 +222,10 @@ public final class RaftReplicationService {
             return;
         }
         if (!replied.response().success()) {
+            LOGGER.log(Level.INFO,
+                    "RAFT-REPL|node={0} term={1} event=REJECT peer={2} nextIndex={3} matchIndex={4}",
+                    new Object[]{localId, request.term(), peerId,
+                            state.nextIndexOf(peerId), state.matchIndexOf(peerId)});
             hooks.onRejected(peerId, request);
             if (retryCoordinator != null) {
                 retryCoordinator.onRejected(peerId, request, replied.response());
@@ -232,6 +245,9 @@ public final class RaftReplicationService {
             return;
         }
         state.advanceMatchIndex(peerId, expected);
+        LOGGER.log(Level.FINE,
+                "RAFT-REPL|node={0} term={1} event=ACK peer={2} matchIndex={3}",
+                new Object[]{localId, request.term(), peerId, expected});
         hooks.onMatchIndexAdvanced(peerId, expected);
         consecutiveFailures.remove(peerId);
         resetRetry(peerId);
@@ -248,6 +264,9 @@ public final class RaftReplicationService {
         int failures = consecutiveFailures.getOrDefault(peerId, 0) + 1;
         consecutiveFailures.put(peerId, failures);
         long delayMs = backoff.delayFor(failures);
+        LOGGER.log(Level.INFO,
+                "RAFT-REPL|node={0} term={1} event=FAIL peer={2} reason={3} retryMs={4}",
+                new Object[]{localId, request.term(), peerId, failed.kind(), delayMs});
         scheduleRetry(peerId, delayMs);
     }
 

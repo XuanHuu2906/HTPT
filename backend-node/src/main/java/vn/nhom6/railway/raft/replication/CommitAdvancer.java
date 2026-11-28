@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import vn.nhom6.railway.raft.core.RaftState;
 import vn.nhom6.railway.raft.core.Role;
@@ -26,6 +28,8 @@ import vn.nhom6.railway.raft.core.Role;
  * {@code commitIndex} never decreases and can never exceed {@code lastLogIndex}.
  */
 public final class CommitAdvancer {
+
+    private static final Logger LOGGER = Logger.getLogger(CommitAdvancer.class.getName());
 
     private final RaftState state;
     private final ReplicationTracker tracker;
@@ -67,6 +71,10 @@ public final class CommitAdvancer {
         if (!state.advanceCommitIndex(candidate)) {
             return OptionalLong.empty();
         }
+        LOGGER.log(Level.INFO,
+                "RAFT-COMMIT|node={0} term={1} event=ADVANCE commitIndex={2}",
+                new Object[]{state.leaderId() == null ? "LEADER" : state.leaderId(),
+                        state.currentTerm(), candidate});
         return OptionalLong.of(candidate);
     }
 }

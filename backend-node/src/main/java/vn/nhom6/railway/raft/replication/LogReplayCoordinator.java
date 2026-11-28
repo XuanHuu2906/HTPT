@@ -1,6 +1,8 @@
 package vn.nhom6.railway.raft.replication;
 
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import vn.nhom6.railway.booking.BookingRepository;
 import vn.nhom6.railway.raft.core.RaftState;
@@ -65,6 +67,8 @@ import vn.nhom6.railway.raft.core.RaftStorage;
  * kills a real process, database or Docker container.
  */
 public final class LogReplayCoordinator {
+
+    private static final Logger LOGGER = Logger.getLogger(LogReplayCoordinator.class.getName());
 
     /**
      * Read-only view of the durable state-machine apply checkpoint, normally
@@ -338,6 +342,13 @@ public final class LogReplayCoordinator {
             int redelivered,
             String reason,
             long uncommittedSuffixLength) {
+        Level level = outcome == Outcome.FAILED_CLOSED
+                ? Level.SEVERE
+                : outcome == Outcome.RETRYABLE_FAILURE ? Level.WARNING : Level.INFO;
+        LOGGER.log(level,
+                "RAFT-REPLAY|node=LOCAL term={0} event={1} lastApplied={2} commitFloor={3} from={4} to={5}",
+                new Object[]{state.currentTerm(), outcome, state.lastApplied(), commitFloor,
+                        replayedFrom, replayedTo});
         return new ReplayReport(outcome, state.lastApplied(), durable, commitFloor,
                 state.lastLogIndex(), replayedFrom, replayedTo, redelivered,
                 uncommittedSuffixLength, reason);

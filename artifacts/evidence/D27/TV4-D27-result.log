@@ -1,0 +1,43 @@
+TV4-D27 Raft invariant review
+Environment: Windows, JDK 25.0.2, Maven 3.10.2
+Merged base: 47f209fa068a1f569abcf5f0edca99213bd1690d
+Code SHA: 38802633be4ce7b80f6d4c84b7bcf3fc9fb11ce7
+
+Invariant table
+1 Term: ĐẠT - term không lùi tại RaftState.becomeFollower 186-215; reply term cũ được bỏ qua tại RaftReplicationService.handleAppendResult 196-220; test late old-term reply pass. No P0 found.
+2 votedFor: ĐẠT - grant/vote bền tại PersistentElectionState 54-79, RaftState.grantVote 241-270; replication không ghi votedFor. No P0 found.
+3 Log Matching: ĐẠT - prevLog/conflict/committed-prefix guards tại AppendEntriesHandler 185-301 và RaftState.truncateSuffixFrom 333-357/verifyIncomingEntry 359-391. Existing FollowerCatchup/Partition/Crash/Stale tests pass.
+4 commitIndex: ĐẠT - majority/current-term rule tại CommitAdvancer 42-70; follower cap tại AppendEntriesHandler 227-229; monotonic restore at RaftState.restore 286-314 and advanceCommitIndex 396-415.
+5 lastApplied: ĐẠT - contiguous apply and sink-before-mark at RaftStateMachineApplier 153-214; mark guards at RaftState.markApplied 420-438. Existing crash/applier tests pass.
+6 Concurrent callbacks: KHÔNG KẾT LUẬN production concurrency - RaftState and ReplicationTracker classes document serialized Raft event loop and are not thread-safe. RaftReadBarrier pending set/CAS and leadership-loss path at RaftReadBarrier 183-192/239-277 have test evidence. P1: verify runtime callbacks stay serialized; no P0 fix evidence.
+7 Crash safety: ĐẠT for in-memory tiers - persist-before-ACK and apply-before-mark/replay at PersistentRaftNode 98-137, RaftStateMachineApplier 153-214. PostgreSQL JDBC tier NOT_RUN in this environment due absent RAILWAY_TEST_*.
+8 Leader no-op: CÓ KẾT LUẬN - ElectionRuntime appends NO_OP at becomeLeader 409-412 and read barrier 513. P1 follow-up: verify all production Leader transitions call same term path and no stale term append remains.
+9 Lost disk/awaitIndex: P1/P2 open - Follower lost-disk case characterized in D21-12; policy re-seed vs replacement requires TV5/TV6 decision. AwaitIndex timeout/cancellation in RaftApplyAdapter 304-340; verify post-timeout waiter removal and retry lifecycle.
+
+Commands
+mvn -B -ntp -pl backend-node -am '-Dtest=RaftInvariantReviewTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+RaftInvariantReviewTest: 5 run, 0 failures, 0 errors, 0 skipped
+
+mvn -B -ntp -pl backend-node -am clean verify
+Shared: 38 tests, 0 failures, 0 errors
+Backend-node: 1353 tests, 0 failures, 0 errors, 146 skipped
+Reactor: BUILD SUCCESS
+
+Findings
+P0: none reproduced in TV4 replication scope.
+P1: RaftState/RaftReadBarrier/ElectionRuntime callback serialization must remain on one serialized loop; production wiring evidence is at networking/ElectionRuntime.java:224-405. Transfer to TV5/runtime owner if a callback bypass is found.
+P1: lost-disk follower keeps old matchIndex and needs re-seed/replacement policy; no production mutation made.
+P1: Leader NO_OP availability and read-barrier term/role behavior needs TV5 wiring review.
+P1: RaftApplyAdapter.awaitIndex waiter cancellation/release needs follow-up test from TV2/TV4.
+P2: D27 stress test file is fake/in-memory; not TCP, Docker or PostgreSQL evidence.
+
+Trao đổi TV5 cuối ngày
+- ElectionRuntime callback ownership and leader step-down serialization.
+- NO_OP appended on every becomeLeader and read barrier behavior.
+- Higher-term response cannot advance old replication state.
+- Lost-disk policy and matchIndex semantics.
+
+Limits
+- 146 skipped tests include PostgreSQL/JDBC/Docker cases not configured in this environment.
+- No P0 production fix was made because no P0 was reproduced.
+- Review does not claim live 5-node TCP/Docker or G6 acceptance.

@@ -2,6 +2,8 @@ package vn.nhom6.railway.raft.core;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import vn.nhom6.railway.booking.BookingCommand;
 import vn.nhom6.railway.booking.BookingRepository;
@@ -57,6 +59,8 @@ import vn.nhom6.railway.booking.CommittedCommandApplier;
  * apply after a commit advance belongs to the follow-up integration task.
  */
 public final class RaftStateMachineApplier implements RaftNode.CommitListener {
+
+    private static final Logger LOGGER = Logger.getLogger(RaftStateMachineApplier.class.getName());
 
     /**
      * Decodes the opaque Raft entry into a domain command.
@@ -210,6 +214,9 @@ public final class RaftStateMachineApplier implements RaftNode.CommitListener {
                     break;
                 }
                 applied++;
+                LOGGER.log(Level.INFO,
+                        "RAFT-APPLY|term={0} event=APPLIED index={1}",
+                        new Object[]{entry.term(), entry.index()});
 
                 try {
                     hooks.onApplied(entry, outcome);
