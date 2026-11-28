@@ -1,0 +1,114 @@
+TV5-D28 validation evidence
+===========================
+
+Task: TV5-D28 Đóng băng Election & Recovery (Raft Election + Recovery — Loại mock election ở production mode, hoàn thiện event logs và config timeout; chạy lại G4–G6)
+Date: 2026-11-28
+Base Commit: 123a83934530229263085d5845d376bdd8654691 (branch Huu)
+Environment:
+- Host OS: Linux 7.3.4-300.fc45.x86_64
+- JDK: openjdk version "25.0.5" 2026-10-20
+- Maven: Apache Maven 3.9.11 (Red Hat 3.9.11-16)
+- Real PostgreSQL: Docker postgres:16 ephemeral container (127.0.0.1:15433/railway_node1) initialized with database/migration/V1__schema.sql & V2__seed.sql
+- Python: Python 3 (stdlib only)
+
+Scope & Ownership Boundary (AGENTS.md §0, §3, §5, §6; SPEC-02 §8; SPEC-04 §3, §9-§10; SPEC-07; SPEC-08 §3.1):
+- Worked strictly from Election regression D27 + Raft/protocol snapshot cuối D27 (`123a83934530229263085d5845d376bdd8654691`), without waiting for TV4/TV3-D28 freeze.
+- Modified/added code strictly within TV5 ownership (`backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionService.java` and `backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionFreezeTest.java`).
+- Preserved all wire DTOs (`shared/**`), `raft/core/**`, and `raft/replication/**` public contracts.
+- Release candidate Election checks executed separately; G7 common release tag remains after group merge.
+
+Key Changes in RaftElectionService.java (TV5-D28 Freeze):
+1. [NO_MOCK_IN_PRODUCTION] RuntimeMode (PRODUCTION | TEST_SIMULATION) & Fail-Closed Production Enforcement:
+   - Added `RuntimeMode`, `RaftElectionService.production(...)` factories, `RaftElectionService.fromEnvironment(...)`, `resolveRuntimeMode(...)`, and `isProductionModeConfigured()`.
+   - In `RuntimeMode.PRODUCTION`: requires non-null durable `RaftStorage`, `PersistentRaftNode` (rejects mock `RaftNode`), real `VoteTransport` (rejects null or `NO_OP_TRANSPORT`), and validated `TimeoutConfig`; auto-wires real `WriteAvailabilityPolicy` (`ReplicationTracker` + `CommitAdvancer`) upon LEADER promotion; rejects fallback mock quorum counting.
+   - Blocks all simulation/mock methods in `PRODUCTION` mode with `UnsupportedOperationException` + WARNING log: `isolatePeer()`, `healPeer()`, `partition()`, `healAll()`, `simulateStopLeader()`, `simulateRestartAfterStop()`, `setClock()`, `clearTermLog()`.
+   - Rejects the 4-argument no-transport test constructor when `RAFT_MODE` / `RAILWAY_MODE` / `railway.raft.mode` is set to `production`.
+2. [COMPLETE_EVENT_LOGS] Structured Election & Recovery Event Logging:
+   - Added lifecycle/safety event constants: `EVENT_NODE_STARTED`, `EVENT_TIMEOUT_CONFIGURED`, `EVENT_VOTE_DENIED`, `EVENT_STEP_DOWN`, `EVENT_RECOVERY_FAILED`, `EVENT_FAIL_CLOSED` (alongside D25 constants).
+   - `recordTermEvent()` sets effective `leaderId` (`localId` when `Role.LEADER`), emits structured `[RAFT-ELECTION]` records to `java.util.logging.Logger` (INFO/WARNING/SEVERE) with `mode`, `lastApplied`, `commitIndex`, `lastLogIndex`, `term`, `role`, `leader`, `votedFor`, and notifies registered listeners (`addEventListener`/`removeEventListener`).
+   - Records `VOTE_GRANTED` / `VOTE_DENIED` on incoming `VoteTransport` replies (preserving chronological order before synchronous `LEADER_ELECTED`), `handleRequestVote()` denials, `recordVoteResponse()` denials/ignores, same-term `STEP_DOWN`, `RECOVERY_FAILED`, and `FAIL_CLOSED` (including storage term regression in `validateDurableState()`).
+   - Added `TermLogEntry.toDetailedLogLine(lastApplied, mode)` and `exportEventLogs()`.
+3. [TIMEOUT_CONFIG] Validated Election & Quorum Timeout Configuration:
+   - Added `TimeoutConfig(ElectionConfig electionConfig, Duration rpcTimeout, Duration quorumFreshnessWindow)` with `defaults()`, `lanProductionDefaults()`, `fromEnvironment(env, props)` (reads `RAFT_HEARTBEAT_INTERVAL_MS`, `RAFT_ELECTION_TIMEOUT_MIN_MS`, `RAFT_ELECTION_TIMEOUT_MAX_MS`, `RAFT_RPC_TIMEOUT_MS` / `TCP_RESPONSE_DEADLINE_MS`, `RAFT_QUORUM_FRESHNESS_MS`), and `validateForProduction()` enforcing `electionMin >= 3 * heartbeat`, `electionMax - electionMin >= heartbeat`, `rpcTimeout <= electionMax`, and `quorumFreshness >= 3 * heartbeat`.
+   - Propagates `quorumFreshnessWindow` to `WriteAvailabilityPolicy` and `ElectionConfig` to `ElectionTimeoutPolicy` (`nextElectionTimeoutMillis()`).
+
+Deliverables:
+- backend-node/src/main/java/vn/nhom6/railway/raft/election/RaftElectionService.java
+- backend-node/src/test/java/vn/nhom6/railway/raft/election/ElectionFreezeTest.java (4 freeze verification tests)
+- artifacts/evidence/D28/TV5-D28-result.log (this evidence file)
+- docs/implementation/TV5-D28-notes.md
+
+=== ACTUAL TEST EXECUTION LOG ===
+
+--- Suite 1: TV5-D28 Freeze + TV5-D27 Election Safety Review ---
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="ElectionFreezeTest,ElectionSafetyReviewTest" -Dsurefire.failIfNoSpecifiedTests=false
+Exit Code: 0
+Results:
+- ElectionFreezeTest: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+- ElectionSafetyReviewTest: Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+Total: Tests run: 14, Failures: 0, Errors: 0, Skipped: 0 (Time: 5.439 s, BUILD SUCCESS)
+
+--- Suite 2: Full Raft Regression (Core + Election + Replication) WITH Real PostgreSQL 16 ---
+Command:
+RAILWAY_TEST_JDBC_URL="jdbc:postgresql://127.0.0.1:15433/railway_node1" \
+RAILWAY_TEST_DB_USER="railway" \
+RAILWAY_TEST_DB_PASSWORD="railway_secret_local_only" \
+mvn -B -ntp -pl backend-node -am test -Drailway.requirePostgres=true -Dtest="vn.nhom6.railway.raft.**.*Test" -Dsurefire.failIfNoSpecifiedTests=false
+Exit Code: 0
+Results:
+- Raft Core (5 classes, incl. RaftStateMachineApplierJdbcTest 3/3): 124 run, 0 failed, 0 errors, 0 skipped
+- Raft Election (28 classes, incl. ElectionRestartTest$RealPostgreSqlElectionRestartTests 18/18, ElectionChaosTest 3/3, ElectionFreezeTest 4/4, ElectionSafetyReviewTest 10/10, RaftElectionLanTest 15/15): 349 run, 0 failed, 0 errors, 0 skipped
+- Raft Replication (21 classes, incl. JdbcRaftStorageIntegrationTest 7/7, LogReplayCoordinatorJdbcTest 5/5, RaftCrashConsistencyTest 10/10): 328 run, 0 failed, 0 errors, 0 skipped
+Total: Tests run: 801, Failures: 0, Errors: 0, Skipped: 0 (Time: 27.215 s, BUILD SUCCESS)
+
+--- Suite 3: G4-G5 Live 5-Node Real-TCP Consensus & Networking Regression ---
+Command:
+mvn -B -ntp -pl backend-node -am test -Dtest="FiveNodeTcpConsensusIntegrationTest,LanConfigPreflightTest,LanLivePreflightAndIsolationTest,TcpPacketLossTimeoutIntegrationTest,ProtocolFuzzAndConcurrencyRegressionTest" -Dsurefire.failIfNoSpecifiedTests=false
+Exit Code: 0
+Results:
+- FiveNodeTcpConsensusIntegrationTest: 1 run, 0 failed, 0 errors, 0 skipped (2.865 s)
+- LanConfigPreflightTest: 7 run, 0 failed, 0 errors, 0 skipped (0.021 s)
+- LanLivePreflightAndIsolationTest: 4 run, 0 failed, 0 errors, 0 skipped (0.043 s)
+- ProtocolFuzzAndConcurrencyRegressionTest: 4 run, 0 failed, 0 errors, 0 skipped (15.44 s)
+- TcpPacketLossTimeoutIntegrationTest: 6 run, 0 failed, 0 errors, 0 skipped (1.146 s)
+Total: Tests run: 22, Failures: 0, Errors: 0, Skipped: 0 (Time: 20.380 s, BUILD SUCCESS)
+
+--- Suite 4: G4-G6 Integration-Tests Module + Node1 Real PostgreSQL 16 ---
+Command:
+NODE1_DB_HOST="127.0.0.1" NODE1_DB_PORT="15433" NODE1_DB_NAME="railway_node1" NODE1_DB_USER="railway" NODE1_DB_PASSWORD="railway_secret_local_only" \
+mvn -B -ntp -pl integration-tests -am test -Dtest="Node1DatabaseIntegrationTest,ClusterSmokeTest,ConcurrentBookingRunner,ReadBarrierAndRetryTest,PartitionHarness,AcceptanceSuiteTest" -Dsurefire.failIfNoSpecifiedTests=false
+Exit Code: 0
+Results:
+- PartitionHarness: 8 run, 0 failed, 0 errors, 0 skipped (5.492 s)
+- AcceptanceSuiteTest: 7 run, 0 failed, 0 errors, 1 skipped (0.379 s; 1 skipped = Windows host local inventory -Dlan.inventory.local)
+- ClusterSmokeTest: 9 run, 0 failed, 0 errors, 2 skipped (0.033 s; 2 skipped = opt-in -Dcluster.smoke / -Dcluster.g4.leader Compose tests)
+- ConcurrentBookingRunner: 8 run, 0 failed, 0 errors, 0 skipped (0.552 s)
+- Node1DatabaseIntegrationTest: 1 run, 0 failed, 0 errors, 0 skipped (0.114 s; real PostgreSQL 16)
+- ReadBarrierAndRetryTest: 14 run, 0 failed, 0 errors, 0 skipped (1.261 s)
+Total: Tests run: 47, Failures: 0, Errors: 0, Skipped: 3 (Time: 9.867 s, BUILD SUCCESS)
+
+--- Suite 5: Shared Protocol Contract Regression ---
+Command:
+mvn -B -ntp -pl shared test
+Exit Code: 0
+Results:
+Tests run: 38, Failures: 0, Errors: 0, Skipped: 0 (Time: 1.051 s, BUILD SUCCESS)
+
+--- Suite 6: G6 LAN Failover Runner (Fake TCP v1 + Recorded Trace Replay + Placeholder Guard) ---
+Commands & Results:
+- python3 scripts/test-election-lan.py --mode fake
+  Exit Code: 0 -> [TV5-D25][RESULT] FAKE_LAN_ENDPOINT_DRILL=PASS | PHYSICAL_5_LAPTOP_FAILOVER=NOT_RUN (G6)
+- python3 scripts/test-election-lan.py --mode replay --trace backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-leader-failover-4of5.json
+  Exit Code: 0 -> [TV5-D25][AUDIT] passed=True leaderByTerm={5: 'node-3', 6: 'node-1'}
+- python3 scripts/test-election-lan.py --mode replay --trace backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-3of5-and-2of5-quorum-loss.json
+  Exit Code: 0 -> [TV5-D25][AUDIT] passed=True leaderByTerm={2: 'node-5', 3: 'node-2', 6: 'node-3'}
+- python3 scripts/test-election-lan.py --mode replay --trace backend-node/src/test/resources/fixtures/lan-failover/recorded-trace-partition-3-2-heal.json
+  Exit Code: 0 -> [TV5-D25][AUDIT] passed=True leaderByTerm={3: 'node-2', 4: 'node-4'}
+- python3 scripts/test-election-lan.py --mode live --inventory backend-node/src/test/resources/fixtures/lan-failover/lan-inventory-placeholder.json --dry-run
+  Exit Code: 2 -> [TV5-D25][LIVE][BLOCKED] Inventory contains placeholder IP (192.168.10.11:9100) (expected fail-closed)
+
+=== HONESTY & GATE BOUNDARY (AGENTS.md §0, §6, §7) ===
+- G4-G5 Java/TCP/PostgreSQL automated gates (real 5-node TCP consensus, real PostgreSQL 16 JDBC restart/replay/storage/schema, partition harness, concurrent booking, read barrier, LAN config preflight): PASS.
+- PowerShell runners (`scripts/g5-acceptance.ps1`, `scripts/g6-lan-fault.ps1`), Docker Compose `cluster.smoke`/`cluster.g4.leader` (needs prebuilt `railway-backend-node:d13-election` image), and physical 5-laptop + Laptop 6 LAN G6 execution: NOT_RUN / BLOCKED_ENV on this Linux workstation (no pwsh/Windows laptops).
+- G7 common release tag: PENDING merge of TV1–TV5 freeze PRs and TV6-D28 release tagging.
