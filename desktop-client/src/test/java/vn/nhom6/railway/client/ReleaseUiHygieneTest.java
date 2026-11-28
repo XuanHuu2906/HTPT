@@ -387,6 +387,20 @@ public class ReleaseUiHygieneTest {
         }
     }
 
+    private static boolean isJavaFxDisplayAvailable() {
+        if (GraphicsEnvironment.isHeadless() || Boolean.parseBoolean(System.getenv("HEADLESS"))) {
+            return false;
+        }
+        if ("Monocle".equalsIgnoreCase(System.getProperty("glass.platform", ""))) {
+            try {
+                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Test
     @DisplayName("4. Kích thước cửa sổ tối thiểu >= 1040x720 và bố cục FXML nạp sạch ở khung tối thiểu")
     void windowLayout_MinDimensionsAtLeast1040x720() throws Exception {
@@ -395,7 +409,7 @@ public class ReleaseUiHygieneTest {
         assertTrue(App.DEFAULT_WIDTH >= App.MIN_WIDTH);
         assertTrue(App.DEFAULT_HEIGHT >= App.MIN_HEIGHT);
 
-        if (GraphicsEnvironment.isHeadless()) {
+        if (!isJavaFxDisplayAvailable()) {
             return;
         }
         try {

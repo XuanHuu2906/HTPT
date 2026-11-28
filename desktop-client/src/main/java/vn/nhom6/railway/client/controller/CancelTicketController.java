@@ -100,6 +100,8 @@ public class CancelTicketController {
 
     private Stage dialogStage;
     private TicketViewModel ticket;
+    private volatile String lastResultTitle = "";
+    private volatile String lastResultDetail = "";
 
     @FXML
     public void initialize() {
@@ -158,9 +160,13 @@ public class CancelTicketController {
             return;
         }
 
-        confirmCancelBtn.disableProperty().unbind();
-        confirmCancelBtn.setDisable(true);
-        confirmCheckBox.setDisable(true);
+        if (confirmCancelBtn != null) {
+            confirmCancelBtn.disableProperty().unbind();
+            confirmCancelBtn.setDisable(true);
+        }
+        if (confirmCheckBox != null) {
+            confirmCheckBox.setDisable(true);
+        }
         if (mockOutcomeCombo != null) {
             mockOutcomeCombo.setDisable(true);
         }
@@ -209,7 +215,7 @@ public class CancelTicketController {
         }
 
         ClientFactory.getBookingViewModel().cancel(ticket.getTicketId())
-                .whenComplete((res, ex) -> Platform.runLater(() -> {
+                .whenComplete((res, ex) -> runOnFxOrInline(() -> {
                     if (ex != null) {
                         Throwable cause = (ex instanceof CompletionException && ex.getCause() != null)
                                 ? ex.getCause()
@@ -231,20 +237,35 @@ public class CancelTicketController {
                 }));
     }
 
+    private static void runOnFxOrInline(Runnable action) {
+        if (Platform.isFxApplicationThread()) {
+            action.run();
+        } else {
+            try {
+                Platform.runLater(action);
+            } catch (IllegalStateException e) {
+                action.run();
+            }
+        }
+    }
+
     private void applyPreSendCancelError(Throwable cause) {
         if (resultProgress != null) {
             resultProgress.setVisible(false);
             resultProgress.setManaged(false);
         }
         setBoxStyle(resultBox, "cancel-box-rejected");
+        String title = "⛔ KHÔNG THỂ GỬI YÊU CẦU HỦY VÉ";
+        this.lastResultTitle = title;
         if (resultTitleLabel != null) {
-            resultTitleLabel.setText("⛔ KHÔNG THỂ GỬI YÊU CẦU HỦY VÉ");
+            resultTitleLabel.setText(title);
             setLabelStyle(resultTitleLabel, "cancel-title-rejected");
         }
+        String msg = (cause != null && cause.getMessage() != null && !cause.getMessage().isBlank())
+                ? cause.getMessage()
+                : "Yêu cầu chưa được gửi đi do điều kiện tiền kiểm tra không đạt.";
+        this.lastResultDetail = msg;
         if (resultDetailLabel != null) {
-            String msg = (cause != null && cause.getMessage() != null && !cause.getMessage().isBlank())
-                    ? cause.getMessage()
-                    : "Yêu cầu chưa được gửi đi do điều kiện tiền kiểm tra không đạt.";
             resultDetailLabel.setText(msg);
             setLabelStyle(resultDetailLabel, "cancel-detail-rejected");
         }
@@ -284,13 +305,17 @@ public class CancelTicketController {
                 ticket.setReasonCode("HỦY ĐÃ XÁC NHẬN");
 
                 setBoxStyle(resultBox, "cancel-box-success");
+                String t = "✓ HỦY VÉ THÀNH CÔNG!";
+                String d = "Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId()
+                        + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế đã được giải phóng trên sơ đồ.";
+                this.lastResultTitle = t;
+                this.lastResultDetail = d;
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("✓ HỦY VÉ THÀNH CÔNG!");
+                    resultTitleLabel.setText(t);
                     setLabelStyle(resultTitleLabel, "cancel-title-success");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText("Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId()
-                            + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế đã được giải phóng trên sơ đồ.");
+                    resultDetailLabel.setText(d);
                     setLabelStyle(resultDetailLabel, "cancel-detail-success");
                 }
             }
@@ -298,12 +323,16 @@ public class CancelTicketController {
                 ErrorPresentation p = ErrorPresentationMapper.mapCode(
                         ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE, !isRealSocket);
                 setBoxStyle(resultBox, "cancel-box-rejected");
+                String t = "⛔ TỪ CHỐI HỦY VÉ (REJECTED: " + p.rawCode() + ")!";
+                String d = "Lý do: " + p.message() + " Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.";
+                this.lastResultTitle = t;
+                this.lastResultDetail = d;
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("⛔ TỪ CHỐI HỦY VÉ (REJECTED: " + p.rawCode() + ")!");
+                    resultTitleLabel.setText(t);
                     setLabelStyle(resultTitleLabel, "cancel-title-rejected");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText("Lý do: " + p.message() + " Trạng thái vé giữ nguyên ĐÃ XÁC NHẬN.");
+                    resultDetailLabel.setText(d);
                     setLabelStyle(resultDetailLabel, "cancel-detail-rejected");
                 }
             }
@@ -311,12 +340,16 @@ public class CancelTicketController {
                 ErrorPresentation p = ErrorPresentationMapper.mapCode(
                         ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, !isRealSocket);
                 setBoxStyle(resultBox, "cancel-box-unknown");
+                String t = "⚠ " + p.title().toUpperCase() + "!";
+                String d = p.message() + " Vui lòng tra cứu lại theo mã Request ID!";
+                this.lastResultTitle = t;
+                this.lastResultDetail = d;
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("⚠ " + p.title().toUpperCase() + "!");
+                    resultTitleLabel.setText(t);
                     setLabelStyle(resultTitleLabel, "cancel-title-unknown");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText(p.message() + " Vui lòng tra cứu lại theo mã Request ID!");
+                    resultDetailLabel.setText(d);
                     setLabelStyle(resultDetailLabel, "cancel-detail-unknown");
                 }
             }
@@ -377,5 +410,13 @@ public class CancelTicketController {
 
     public Button getConfirmCancelBtn() {
         return confirmCancelBtn;
+    }
+
+    public String getLastResultTitle() {
+        return lastResultTitle;
+    }
+
+    public String getLastResultDetail() {
+        return lastResultDetail;
     }
 }

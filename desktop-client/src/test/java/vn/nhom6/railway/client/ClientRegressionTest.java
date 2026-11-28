@@ -1768,16 +1768,33 @@ public class ClientRegressionTest {
         }
     }
 
+    private static boolean isJavaFxDisplayAvailable() {
+        if (GraphicsEnvironment.isHeadless() || Boolean.parseBoolean(System.getenv("HEADLESS"))) {
+            return false;
+        }
+        if ("Monocle".equalsIgnoreCase(System.getProperty("glass.platform", ""))) {
+            try {
+                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Test
     @Order(42)
     @Tag("fixture")
     @RegMeta(id = "REG-D03", group = "D", layer = "FIXTURE", dataSource = "FAKE")
     @DisplayName("REG-D03 [FIXTURE]: CancelTicketController ở chế độ Socket không chạm MockBookingClient và không nuốt lỗi chặn hủy vé thành UNKNOWN [BUG-D28-02]")
     void regD03_Fixture_CancelControllerNoMockLeakAndPreservesPreSendBlock(@TempDir Path tempDir) throws Exception {
-        try {
-            Platform.startup(() -> {});
-            Platform.setImplicitExit(false);
-        } catch (IllegalStateException ignored) {
+        boolean fxAvailable = isJavaFxDisplayAvailable();
+        if (fxAvailable) {
+            try {
+                Platform.startup(() -> {});
+                Platform.setImplicitExit(false);
+            } catch (IllegalStateException ignored) {
+            }
         }
 
         String prevMode = System.getProperty("client.mode");
@@ -1805,35 +1822,44 @@ public class ClientRegressionTest {
                     bookReqId, derivedTicketId, "G06", "SE-001", "—", "2026-11-28", "1.250.000 VNĐ",
                     TicketStatus.CONFIRMED, null, "REAL");
 
-            CountDownLatch latch = new CountDownLatch(1);
             AtomicReference<String> statusAfterAttempt = new AtomicReference<>();
             AtomicReference<TicketStatus> ticketStatusAfter = new AtomicReference<>();
 
-            Platform.runLater(() -> {
-                try {
-                    FXMLLoader loader = new FXMLLoader(App.class.getResource("/fxml/cancel-ticket-dialog.fxml"));
-                    Parent root = loader.load();
-                    CancelTicketController ctrl = loader.getController();
-                    ctrl.setTicket(pendingDerivedTicket);
-                    ctrl.getConfirmCheckBox().setSelected(true);
-                    ctrl.onConfirmCancelClicked();
+            if (fxAvailable) {
+                CountDownLatch latch = new CountDownLatch(1);
+                Platform.runLater(() -> {
+                    try {
+                        FXMLLoader loader = new FXMLLoader(App.class.getResource("/fxml/cancel-ticket-dialog.fxml"));
+                        Parent root = loader.load();
+                        CancelTicketController ctrl = loader.getController();
+                        ctrl.setTicket(pendingDerivedTicket);
+                        ctrl.getConfirmCheckBox().setSelected(true);
+                        ctrl.onConfirmCancelClicked();
 
-                    // Chờ callback Platform.runLater bên trong onConfirmCancelClicked chạy xong
-                    Platform.runLater(() -> {
-                        Node titleNode = root.lookup("#resultTitleLabel");
-                        String titleTxt = (titleNode instanceof javafx.scene.control.Label lbl) ? lbl.getText() : "";
-                        statusAfterAttempt.set(titleTxt);
-                        ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+                        Platform.runLater(() -> {
+                            Node titleNode = root.lookup("#resultTitleLabel");
+                            String titleTxt = (titleNode instanceof javafx.scene.control.Label lbl) ? lbl.getText() : ctrl.getLastResultTitle();
+                            statusAfterAttempt.set(titleTxt);
+                            ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+                            latch.countDown();
+                        });
+                    } catch (Exception e) {
+                        statusAfterAttempt.set("EX:" + e.getMessage());
                         latch.countDown();
-                    });
-                } catch (Exception e) {
-                    statusAfterAttempt.set("EX:" + e.getMessage());
-                    latch.countDown();
-                }
-            });
+                    }
+                });
+                assertTrue(latch.await(5, TimeUnit.SECONDS));
+            } else {
+                // Môi trường CI headless / thiếu Monocle: kiểm chứng trực tiếp controller mà không gọi Platform.startup
+                CancelTicketController ctrl = new CancelTicketController();
+                ctrl.setTicket(pendingDerivedTicket);
+                ctrl.onConfirmCancelClicked();
+                statusAfterAttempt.set(ctrl.getLastResultTitle());
+                ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+            }
 
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
             assertEquals(TicketStatus.CONFIRMED, ticketStatusAfter.get(), "Vé không được tự chuyển sang CANCELLED");
+            assertFalse(statusAfterAttempt.get().isBlank(), "Phải có tiêu đề phản hồi chặn hủy trước khi gửi");
             assertFalse(statusAfterAttempt.get().contains("TIMEOUT_UNKNOWN"),
                     "Lỗi chặn hủy trước khi gửi (IllegalStateException) không được nuốt thành TIMEOUT_UNKNOWN: " + statusAfterAttempt.get());
             assertFalse(statusAfterAttempt.get().contains("MOCK"),

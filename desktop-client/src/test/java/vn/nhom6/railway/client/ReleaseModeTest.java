@@ -289,10 +289,24 @@ public class ReleaseModeTest {
         }
     }
 
+    private static boolean isJavaFxDisplayAvailable() {
+        if (GraphicsEnvironment.isHeadless() || Boolean.parseBoolean(System.getenv("HEADLESS"))) {
+            return false;
+        }
+        if ("Monocle".equalsIgnoreCase(System.getProperty("glass.platform", ""))) {
+            try {
+                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Test
     @DisplayName("4. Giao diện RELEASE: 0 node MOCK/DEMO trên Scene Graph, hiển thị version/mode/profile/nodeId và màn hình lỗi cấu hình fail-fast")
     void releaseMode_JavaFxSceneGraphExcludesMockNodesAndRendersMetadataAndConfigErrorScreen(@TempDir Path tempDir) throws Exception {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (!isJavaFxDisplayAvailable()) {
             return;
         }
         try {
