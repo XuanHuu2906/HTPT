@@ -334,6 +334,23 @@ public class SeatViewModel {
     }
 
     /**
+     * Tạo danh sách 10 ghế G01–G10 ở trạng thái UNKNOWN (chưa xác minh) khi khởi động chế độ Socket/Release
+     * trước khi nhận phản hồi GET_SEATS đầu tiên (SPEC-06 §8: không mặc định ghế trống hay nạp dữ liệu giả).
+     */
+    public static ObservableList<SeatViewModel> createInitialUnverifiedSeats() {
+        ObservableList<SeatViewModel> list = FXCollections.observableArrayList(
+                seat -> new Observable[]{seat.statusProperty()}
+        );
+        for (int i = 1; i <= MockSeatSource.TOTAL_SEATS; i++) {
+            String seatId = String.format("G%02d", i);
+            SeatViewModel vm = new SeatViewModel(seatId, SeatStatus.UNKNOWN);
+            vm.setVerification(VerificationLevel.UNVERIFIED);
+            list.add(vm);
+        }
+        return list;
+    }
+
+    /**
      * Tạo danh sách ghế MOCK từ nguồn MOCK duy nhất.
      */
     public static ObservableList<SeatViewModel> createMockSeats() {

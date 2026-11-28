@@ -134,6 +134,14 @@ public class CancelTicketController {
             mockOutcomeCombo.setDisable(true);
         }
 
+        boolean socketMode = false;
+        try {
+            socketMode = vn.nhom6.railway.client.network.ClientConfig.loadDefault().isSocketMode()
+                    && !ClientFactory.getBookingViewModel().isMock();
+        } catch (Exception ignored) {
+        }
+        final boolean isRealSocket = socketMode;
+
         // Hiển thị trạng thái đang xử lý
         if (resultBox != null) {
             resultBox.setVisible(true);
@@ -145,7 +153,9 @@ public class CancelTicketController {
             resultProgress.setManaged(true);
         }
         if (resultTitleLabel != null) {
-            resultTitleLabel.setText("Đang gửi yêu cầu hủy vé tới cụm máy chủ (Mô phỏng)...");
+            resultTitleLabel.setText(isRealSocket
+                    ? "Đang gửi yêu cầu hủy vé tới cụm máy chủ..."
+                    : "Đang gửi yêu cầu hủy vé tới cụm máy chủ (Mô phỏng)...");
             setLabelStyle(resultTitleLabel, "cancel-title-info");
         }
         if (resultDetailLabel != null) {
@@ -157,33 +167,81 @@ public class CancelTicketController {
             dialogStage.sizeToScene();
         }
 
-        CancelMockOutcome outcome = (mockOutcomeCombo != null && mockOutcomeCombo.getValue() != null)
-                ? mockOutcomeCombo.getValue()
-                : CancelMockOutcome.CANCELLED_SUCCESS;
+        if (!isRealSocket) {
+            CancelMockOutcome outcome = (mockOutcomeCombo != null && mockOutcomeCombo.getValue() != null)
+                    ? mockOutcomeCombo.getValue()
+                    : CancelMockOutcome.CANCELLED_SUCCESS;
 
-        // Cấu hình kịch bản tiếp theo cho MockBookingClient
-        switch (outcome) {
-            case CANCELLED_SUCCESS -> MockBookingClient.getInstance().setNextScenario(MockScenario.SUCCESS);
-            case REJECTED_TICKET_NOT_ACTIVE -> MockBookingClient.getInstance().setNextScenario(MockScenario.SEAT_ALREADY_BOOKED);
-            case UNKNOWN_TIMEOUT -> MockBookingClient.getInstance().setNextScenario(MockScenario.UNKNOWN);
+            // Chỉ cấu hình kịch bản cho MockBookingClient khi đang chạy ở chế độ MOCK
+            switch (outcome) {
+                case CANCELLED_SUCCESS -> MockBookingClient.getInstance().setNextScenario(MockScenario.SUCCESS);
+                case REJECTED_TICKET_NOT_ACTIVE -> MockBookingClient.getInstance().setNextScenario(MockScenario.SEAT_ALREADY_BOOKED);
+                case UNKNOWN_TIMEOUT -> MockBookingClient.getInstance().setNextScenario(MockScenario.UNKNOWN);
+            }
         }
 
         // Gọi bất đồng bộ qua BookingViewModel (TASK D07 - Không treo UI)
         ClientFactory.getBookingViewModel().cancel(ticket.getTicketId())
                 .whenComplete((res, ex) -> Platform.runLater(() -> {
                     if (ex != null) {
-                        applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT);
+                        Throwable cause = (ex instanceof java.util.concurrent.CompletionException && ex.getCause() != null)
+                                ? ex.getCause()
+                                : ex;
+                        if (cause instanceof IllegalStateException
+                                || cause instanceof IllegalArgumentException
+                                || cause instanceof vn.nhom6.railway.client.network.FailedNotSentException) {
+                            applyPreSendCancelError(cause, isRealSocket);
+                        } else {
+                            applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT, isRealSocket);
+                        }
                     } else if (res.isConfirmed()) {
-                        applyCancelOutcome(CancelMockOutcome.CANCELLED_SUCCESS);
+                        applyCancelOutcome(CancelMockOutcome.CANCELLED_SUCCESS, isRealSocket);
                     } else if (res.isRejected()) {
-                        applyCancelOutcome(CancelMockOutcome.REJECTED_TICKET_NOT_ACTIVE);
+                        applyCancelOutcome(CancelMockOutcome.REJECTED_TICKET_NOT_ACTIVE, isRealSocket);
                     } else {
-                        applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT);
+                        applyCancelOutcome(CancelMockOutcome.UNKNOWN_TIMEOUT, isRealSocket);
                     }
                 }));
     }
 
+    private void applyPreSendCancelError(Throwable cause, boolean isRealSocket) {
+        if (resultProgress != null) {
+            resultProgress.setVisible(false);
+            resultProgress.setManaged(false);
+        }
+        setBoxStyle(resultBox, "cancel-box-rejected");
+        if (resultTitleLabel != null) {
+            resultTitleLabel.setText("⛔ KHÔNG THỂ GỬI YÊU CẦU HỦY VÉ" + (isRealSocket ? "" : " [MOCK]"));
+            setLabelStyle(resultTitleLabel, "cancel-title-rejected");
+        }
+        if (resultDetailLabel != null) {
+            String msg = (cause != null && cause.getMessage() != null && !cause.getMessage().isBlank())
+                    ? cause.getMessage()
+                    : "Yêu cầu chưa được gửi đi do điều kiện tiền kiểm tra không đạt.";
+            resultDetailLabel.setText(msg);
+            setLabelStyle(resultDetailLabel, "cancel-detail-rejected");
+        }
+        if (closeBtn != null) {
+            closeBtn.setText("Đóng");
+            closeBtn.getStyleClass().clear();
+            closeBtn.getStyleClass().add("btn-primary");
+        }
+        if (dialogStage != null) {
+            dialogStage.sizeToScene();
+        }
+    }
+
     public void applyCancelOutcome(CancelMockOutcome outcome) {
+        boolean socketMode = false;
+        try {
+            socketMode = vn.nhom6.railway.client.network.ClientConfig.loadDefault().isSocketMode()
+                    && !ClientFactory.getBookingViewModel().isMock();
+        } catch (Exception ignored) {
+        }
+        applyCancelOutcome(outcome, socketMode);
+    }
+
+    private void applyCancelOutcome(CancelMockOutcome outcome, boolean isRealSocket) {
         if (resultProgress != null) {
             resultProgress.setVisible(false);
             resultProgress.setManaged(false);
@@ -193,21 +251,25 @@ public class CancelTicketController {
             case CANCELLED_SUCCESS -> {
                 // Hủy thành công: cập nhật model sang CANCELLED, UI tự động đồng bộ qua binding
                 ticket.setStatus(TicketStatus.CANCELLED);
-                ticket.setReasonCode("HỦY BỞI KHÁCH HÀNG (MOCK)");
+                ticket.setReasonCode(isRealSocket ? "HỦY ĐÃ XÁC NHẬN" : "HỦY BỞI KHÁCH HÀNG (MOCK)");
 
                 setBoxStyle(resultBox, "cancel-box-success");
                 if (resultTitleLabel != null) {
-                    resultTitleLabel.setText("✓ HỦY VÉ THÀNH CÔNG (MOCK D08)!");
+                    resultTitleLabel.setText(isRealSocket
+                            ? "✓ HỦY VÉ THÀNH CÔNG!"
+                            : "✓ HỦY VÉ THÀNH CÔNG (MOCK D08)!");
                     setLabelStyle(resultTitleLabel, "cancel-title-success");
                 }
                 if (resultDetailLabel != null) {
-                    resultDetailLabel.setText("Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId() + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế được giải phóng trên sơ đồ (MOCK).");
+                    resultDetailLabel.setText("Vé " + ticket.getTicketId() + " (Ghế " + ticket.getSeatId()
+                            + ") đã chuyển sang trạng thái ĐÃ HỦY. Ghế đã được giải phóng trên sơ đồ"
+                            + (isRealSocket ? "." : " (MOCK)."));
                     setLabelStyle(resultDetailLabel, "cancel-detail-success");
                 }
             }
             case REJECTED_TICKET_NOT_ACTIVE -> {
                 // Từ chối hủy: vé giữ nguyên CONFIRMED
-                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE, true);
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TICKET_NOT_ACTIVE, !isRealSocket);
                 setBoxStyle(resultBox, "cancel-box-rejected");
                 if (resultTitleLabel != null) {
                     resultTitleLabel.setText("⛔ TỪ CHỐI HỦY VÉ (REJECTED: " + p.rawCode() + ")!");
@@ -220,7 +282,7 @@ public class CancelTicketController {
             }
             case UNKNOWN_TIMEOUT -> {
                 // SPEC-06: UNKNOWN/timeout không được hiển thị như đã hủy thành công và không được tự đổi trạng thái vé thành CANCELLED
-                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, true);
+                ErrorPresentation p = ErrorPresentationMapper.mapCode(ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN, !isRealSocket);
                 setBoxStyle(resultBox, "cancel-box-unknown");
                 if (resultTitleLabel != null) {
                     resultTitleLabel.setText("⚠ " + p.title().toUpperCase() + "!");

@@ -124,8 +124,16 @@ public class TicketLookupViewModel {
             }
         };
 
-        this.mockMode = (bookingClient instanceof MockBookingClient)
-                || "mock".equalsIgnoreCase(System.getProperty("booking.client", "socket"));
+        BookingClient unwrapped = (bookingClient instanceof vn.nhom6.railway.client.network.JournalingBookingClient jbc)
+                ? jbc.getDelegate()
+                : bookingClient;
+        boolean isRealTransport = (unwrapped instanceof vn.nhom6.railway.client.network.SocketBookingClient)
+                || (unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient);
+        this.mockMode = !isRealTransport && (
+                (unwrapped instanceof MockBookingClient)
+                        || "mock".equalsIgnoreCase(System.getProperty("client.mode", ""))
+                        || "mock".equalsIgnoreCase(System.getProperty("booking.client", ""))
+        );
 
         // Lịch sử nâng cao GET_TICKET_HISTORY: BLOCKED/P1 khi ở chế độ socket
         this.historyEnabled.set(this.mockMode);
@@ -161,15 +169,32 @@ public class TicketLookupViewModel {
         try {
             List<PendingEntry> entries = journal.getAll();
             for (PendingEntry entry : entries) {
-                if (entry.getState() == PendingState.RESOLVED && "BOOK_TICKET".equals(entry.getCommandType())) {
+                if (entry.getState() == PendingState.RESOLVED
+                        && "BOOK_TICKET".equals(entry.getCommandType())
+                        && (entry.getFinalOutcome() == null || "CONFIRMED".equalsIgnoreCase(entry.getFinalOutcome()))) {
                     String reqId = entry.getRequestId();
                     boolean exists = allConfirmedTickets.stream().anyMatch(t -> reqId.equals(t.getRequestId()));
                     if (!exists) {
+                        String parsedSeat = "—";
+                        String parsedTrip = "SE-001";
+                        if (entry.getPayload() != null && !entry.getPayload().isBlank()) {
+                            try {
+                                com.fasterxml.jackson.databind.JsonNode node =
+                                        vn.nhom6.railway.protocol.codec.MessageCodec.getMapper().readTree(entry.getPayload());
+                                if (node.hasNonNull("seatId")) {
+                                    parsedSeat = node.get("seatId").asText();
+                                }
+                                if (node.hasNonNull("tripId")) {
+                                    parsedTrip = node.get("tripId").asText();
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
                         TicketViewModel tvm = new TicketViewModel(
                                 reqId,
                                 "TCK-" + reqId.substring(0, Math.min(8, reqId.length())),
-                                "—",
-                                "SE-001",
+                                parsedSeat,
+                                parsedTrip,
                                 "—",
                                 entry.getCreatedAt().toString(),
                                 "1.250.000 VNĐ",

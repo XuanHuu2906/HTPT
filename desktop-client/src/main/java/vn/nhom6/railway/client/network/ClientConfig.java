@@ -321,9 +321,11 @@ public final class ClientConfig {
 
         // Áp dụng ghi đè từ System Properties (từng key - mức ưu tiên cao nhất)
         applySysPropOverride(merged, KEY_CLUSTER_PROFILE, sysPropsOverride);
-        applySysPropOverride(merged, KEY_CLIENT_MODE, sysPropsOverride);
+        String explicitClientMode = getSysPropVal(KEY_CLIENT_MODE, sysPropsOverride);
         String sysBookingClient = getSysPropVal("booking.client", sysPropsOverride);
-        if (sysBookingClient != null && !sysBookingClient.isBlank()) {
+        if (explicitClientMode != null && !explicitClientMode.isBlank()) {
+            merged.setProperty(KEY_CLIENT_MODE, explicitClientMode.trim());
+        } else if (sysBookingClient != null && !sysBookingClient.isBlank()) {
             merged.setProperty(KEY_CLIENT_MODE, sysBookingClient.trim());
         }
         applySysPropOverride(merged, KEY_CONNECT_TIMEOUT_MS, sysPropsOverride);

@@ -119,8 +119,8 @@ public class TicketStatusController {
     @FXML
     private Button cancelTicketBtn;
 
-    // Nguồn dữ liệu MOCK dùng chung fallback
-    private final ObservableList<TicketViewModel> allTickets = MockTicketSource.getSharedTickets();
+    // Nguồn dữ liệu MOCK chỉ nạp khi thực sự ở chế độ Mock (không nạp ở chế độ Socket/Release)
+    private final ObservableList<TicketViewModel> allTickets = FXCollections.observableArrayList();
     private final ObservableList<TicketViewModel> displayedTickets = FXCollections.observableArrayList();
 
     // ViewModel tra cứu TV1-D24
@@ -209,11 +209,13 @@ public class TicketStatusController {
             }
         } else {
             // Fallback mock
+            allTickets.setAll(MockTicketSource.getSharedTickets());
             if (mockBadgeLabel != null) {
                 mockBadgeLabel.setText(MockTicketSource.MOCK_NOTICE);
             }
             displayedTickets.setAll(allTickets);
-            allTickets.addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
+            MockTicketSource.getSharedTickets().addListener((javafx.collections.ListChangeListener<TicketViewModel>) c -> {
+                allTickets.setAll(MockTicketSource.getSharedTickets());
                 displayedTickets.setAll(allTickets);
                 if (ticketTableView != null) {
                     ticketTableView.refresh();
@@ -552,7 +554,8 @@ public class TicketStatusController {
             dialogController.setTicket(ticket);
 
             Stage dialogStage = new Stage();
-            dialogStage.setTitle("Xác nhận hủy vé — MOCK D08");
+            boolean isMock = (lookupViewModel != null) ? lookupViewModel.isMockMode() : false;
+            dialogStage.setTitle(isMock ? "Xác nhận hủy vé — MOCK" : "Xác nhận hủy vé — SE-001");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
 
             Window owner = null;

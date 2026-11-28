@@ -154,8 +154,18 @@ public class SeatGridController {
     @FXML
     private Button mockResetDefaultBtn;
 
-    // Nguồn dữ liệu ObservableList 10 ghế (G01–G10) sinh từ MockSeatSource duy nhất
-    private final ObservableList<SeatViewModel> seats = MockSeatSource.createMockSeats();
+    // Nguồn dữ liệu ObservableList 10 ghế (G01–G10): chế độ Socket khởi tạo UNKNOWN (SPEC-06 §8), chế độ Mock dùng MockSeatSource
+    private final ObservableList<SeatViewModel> seats = createInitialSeatsByConfig();
+
+    private static ObservableList<SeatViewModel> createInitialSeatsByConfig() {
+        try {
+            if (ClientConfig.loadDefault().isSocketMode()) {
+                return SeatViewModel.createInitialUnverifiedSeats();
+            }
+        } catch (Exception ignored) {
+        }
+        return MockSeatSource.createMockSeats();
+    }
 
     // Danh sách ghế đang chọn được suy ra trực tiếp từ seats qua FilteredList
     // (không giữ bản sao thủ công)
@@ -218,6 +228,9 @@ public class SeatGridController {
 
         // 6. Khởi tạo và liên kết SeatsRefreshService (TASK D15)
         initSeatsRefreshService();
+        if (cfg.isSocketMode() && seatsRefreshService != null) {
+            seatsRefreshService.refreshNow();
+        }
     }
 
     /**
@@ -803,9 +816,15 @@ public class SeatGridController {
         if (outcome == null)
             return;
 
+        boolean socketMode = false;
+        try {
+            socketMode = ClientConfig.loadDefault().isSocketMode();
+        } catch (Exception ignored) {
+        }
+
         List<String> affectedSeats = getSelectedSeats();
         String finalName = (passengerName != null && !passengerName.isBlank()) ? passengerName.trim()
-                : "Khách hàng MOCK";
+                : (socketMode ? "Hành khách" : "Khách hàng MOCK");
         String nowTime = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
@@ -817,21 +836,23 @@ public class SeatGridController {
                     if (vm != null) {
                         vm.setStatus(SeatStatus.BOOKED);
                     }
-                    // Tự động tạo vé mới trong MockTicketSource để hiển thị ngay trong "Vé của tôi"
-                    TicketViewModel newTicket = new TicketViewModel(
-                            refCode,
-                            "TCK-SE001-" + seatId,
-                            seatId,
-                            "SE-001",
-                            finalName,
-                            nowTime,
-                            "1.250.000 VNĐ",
-                            TicketStatus.CONFIRMED,
-                            null);
-                    MockTicketSource.addTicket(newTicket);
+                    if (!socketMode) {
+                        // Chỉ đồng bộ vào MockTicketSource khi đang chạy chế độ MOCK
+                        TicketViewModel newTicket = new TicketViewModel(
+                                refCode,
+                                "TCK-SE001-" + seatId,
+                                seatId,
+                                "SE-001",
+                                finalName,
+                                nowTime,
+                                "1.250.000 VNĐ",
+                                TicketStatus.CONFIRMED,
+                                null);
+                        MockTicketSource.addTicket(newTicket);
+                    }
                 }
-                String msg = "Đặt vé thành công! Mã: " + refCode + " (Ghế: " + String.join(", ", affectedSeats) +
-                        ") - Khách: " + finalName + ". Vé đã được lưu vào 'Vé của tôi'.";
+                String msg = "Đặt vé thành công! Mã vé: " + refCode + " (Ghế: " + String.join(", ", affectedSeats)
+                        + "). Vé đã được ghi nhận vào mục 'Vé của tôi'.";
                 updateStatus(msg);
                 screenStateModel.setState(ScreenState.IDLE, msg);
             }
@@ -840,23 +861,25 @@ public class SeatGridController {
                         outcome.getReasonCode() != null ? outcome.getReasonCode()
                                 : ErrorPresentationMapper.CODE_SEAT_ALREADY_BOOKED,
                         outcome.getMessage(),
-                        false);
+                        !socketMode);
                 for (String seatId : affectedSeats) {
                     SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null && p.needsSeatRefresh()) {
                         vm.setStatus(SeatStatus.BOOKED);
                     }
-                    TicketViewModel rejectedTicket = new TicketViewModel(
-                            "REQ-" + (System.currentTimeMillis() % 1000000),
-                            "",
-                            seatId,
-                            "SE-001",
-                            finalName,
-                            nowTime,
-                            "1.250.000 VNĐ",
-                            TicketStatus.REJECTED,
-                            p.rawCode());
-                    MockTicketSource.addTicket(rejectedTicket);
+                    if (!socketMode) {
+                        TicketViewModel rejectedTicket = new TicketViewModel(
+                                "REQ-" + (System.currentTimeMillis() % 1000000),
+                                "",
+                                seatId,
+                                "SE-001",
+                                finalName,
+                                nowTime,
+                                "1.250.000 VNĐ",
+                                TicketStatus.REJECTED,
+                                p.rawCode());
+                        MockTicketSource.addTicket(rejectedTicket);
+                    }
                 }
                 String msg = p.message();
                 updateStatus(msg);
@@ -866,23 +889,25 @@ public class SeatGridController {
                 ErrorPresentation p = ErrorPresentationMapper.mapCode(
                         ErrorPresentationMapper.CODE_TIMEOUT_UNKNOWN,
                         outcome.getMessage(),
-                        false);
+                        !socketMode);
                 for (String seatId : affectedSeats) {
                     SeatViewModel vm = getSeatViewModel(seatId);
                     if (vm != null) {
                         vm.setStatus(SeatStatus.UNKNOWN);
                     }
-                    TicketViewModel unknownTicket = new TicketViewModel(
-                            "REQ-" + (System.currentTimeMillis() % 1000000),
-                            "",
-                            seatId,
-                            "SE-001",
-                            finalName,
-                            nowTime,
-                            "1.250.000 VNĐ",
-                            TicketStatus.UNKNOWN,
-                            p.rawCode());
-                    MockTicketSource.addTicket(unknownTicket);
+                    if (!socketMode) {
+                        TicketViewModel unknownTicket = new TicketViewModel(
+                                "REQ-" + (System.currentTimeMillis() % 1000000),
+                                "",
+                                seatId,
+                                "SE-001",
+                                finalName,
+                                nowTime,
+                                "1.250.000 VNĐ",
+                                TicketStatus.UNKNOWN,
+                                p.rawCode());
+                        MockTicketSource.addTicket(unknownTicket);
+                    }
                 }
                 String msg = p.message();
                 updateStatus(msg);

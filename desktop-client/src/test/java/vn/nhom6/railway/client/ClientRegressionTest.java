@@ -26,14 +26,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.jupiter.api.io.TempDir;
+import vn.nhom6.railway.client.controller.CancelTicketController;
 import vn.nhom6.railway.client.controller.ClientErrorKind;
 import vn.nhom6.railway.client.controller.ErrorPresentation;
 import vn.nhom6.railway.client.controller.ErrorPresentationMapper;
 import vn.nhom6.railway.client.controller.PresentationKind;
 import vn.nhom6.railway.client.controller.ReconnectController;
 import vn.nhom6.railway.client.controller.ReconnectController.ReconnectState;
+import vn.nhom6.railway.client.controller.SeatGridController;
 import vn.nhom6.railway.client.harness.RecordedTraceReplayServer;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
+import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.BookingClientReadAdapter;
 import vn.nhom6.railway.client.network.CancelTicketRequestDto;
 import vn.nhom6.railway.client.network.CancelTicketResponseDto;
@@ -115,6 +118,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1708,6 +1712,141 @@ public class ClientRegressionTest {
 
         collectServerFrames(server);
         recordNote("Đủ 8 FXML/CSS & 10 ghế; tách bạch nhãn Socket(0 MOCK) vs Mock(có MOCK); " + evidenceNote);
+    }
+
+    @Test
+    @Order(131)
+    @Tag("fixture")
+    @RegMeta(id = "REG-M02", group = "M", layer = "FIXTURE", dataSource = "FAKE")
+    @DisplayName("REG-M02 [FIXTURE]: Chế độ Socket không khởi tạo ghế từ MockSeatSource, không ghi bẩn MockTicketSource, nạp đúng ghế từ Journal [BUG-D28-01]")
+    void regM02_Fixture_SocketModeNoMockSeatOrTicketContamination(@TempDir Path tempDir) throws Exception {
+        String prevMode = System.getProperty("client.mode");
+        String prevBooking = System.getProperty("booking.client");
+        try {
+            System.setProperty("client.mode", "socket");
+            System.setProperty("booking.client", "mock"); // cố tình đặt property cũ mâu thuẫn để kiểm tra unwrap delegate
+
+            FakeNodeServer server = track(new FakeNodeServer("node-1", 0));
+            LeaderAwareBookingClient socketClient = buildSingleServerLeaderClient(server, 1500, 3000, "reg-m02");
+            PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+            JournalingBookingClient jbc = track(new JournalingBookingClient(socketClient, journal));
+
+            // 1. TicketLookupViewModel phải nhận diện đúng chế độ non-mock qua unwrapped delegate dù có property cũ
+            String reqId = UUID.randomUUID().toString();
+            recordRequestId(reqId);
+            BookTicketResponseDto booked = jbc.book(new BookTicketRequestDto(reqId, "SE-001", "G07", "Khách Kiểm Thử")).get(3, TimeUnit.SECONDS);
+            assertTrue(booked.isConfirmed());
+
+            TicketLookupViewModel lookupVm = new TicketLookupViewModel(jbc, journal, Runnable::run, null);
+            assertFalse(lookupVm.isMockMode(), "JournalingBookingClient bọc Socket/LeaderAware không được rơi vào mockMode");
+            assertEquals(1, lookupVm.getDisplayedTickets().size());
+            assertEquals("G07", lookupVm.getDisplayedTickets().get(0).getSeatId(),
+                    "loadConfirmedTicketsFromJournal phải trích xuất đúng mã ghế từ payload thay vì dấu gạch ngang");
+
+            // 2. SeatGridController ở chế độ Socket trước khi GET_SEATS trả về KHÔNG được nạp G02/G04/G08 BOOKED từ MockSeatSource
+            TicketViewModel.MockTicketSource.resetToDefault();
+            int mockTicketsBefore = TicketViewModel.MockTicketSource.getSharedTickets().size();
+
+            SeatGridController sgc = new SeatGridController();
+            long preBookedCount = sgc.getSeats().stream().filter(SeatViewModel::isBooked).count();
+            assertEquals(0L, preBookedCount,
+                    "Ở chế độ Socket trước khi đọc máy chủ, sơ đồ ghế không được gán sẵn G02/G04/G08 BOOKED từ MockSeatSource (SPEC-06 §8)");
+
+            sgc.getSeats().get(5).setStatus(SeatStatus.SELECTED); // chọn G06 (chưa từng có trong MockTicketSource)
+            sgc.handleBookingOutcome(BookingOutcome.confirmed("TCK-REAL-99", "OK"), "Khách Thật");
+            assertNull(TicketViewModel.MockTicketSource.findByTicketId("TCK-SE001-G06"),
+                    "Ở chế độ Socket, handleBookingOutcome tuyệt đối không được ghi vé giả vào MockTicketSource");
+            assertNull(TicketViewModel.MockTicketSource.findByRequestId("TCK-REAL-99"),
+                    "Ở chế độ Socket, mã tham chiếu thật không được chèn vào MockTicketSource");
+            assertEquals(mockTicketsBefore, TicketViewModel.MockTicketSource.getSharedTickets().size());
+
+            collectServerFrames(server);
+            recordNote("Chế độ Socket: 0 ghế BOOKED giả trước kết nối, 0 ghi bẩn MockTicketSource, nạp đúng ghế G07 từ Journal");
+        } finally {
+            if (prevMode == null) System.clearProperty("client.mode"); else System.setProperty("client.mode", prevMode);
+            if (prevBooking == null) System.clearProperty("booking.client"); else System.setProperty("booking.client", prevBooking);
+        }
+    }
+
+    @Test
+    @Order(42)
+    @Tag("fixture")
+    @RegMeta(id = "REG-D03", group = "D", layer = "FIXTURE", dataSource = "FAKE")
+    @DisplayName("REG-D03 [FIXTURE]: CancelTicketController ở chế độ Socket không chạm MockBookingClient và không nuốt lỗi chặn hủy vé thành UNKNOWN [BUG-D28-02]")
+    void regD03_Fixture_CancelControllerNoMockLeakAndPreservesPreSendBlock(@TempDir Path tempDir) throws Exception {
+        try {
+            Platform.startup(() -> {});
+            Platform.setImplicitExit(false);
+        } catch (IllegalStateException ignored) {
+        }
+
+        String prevMode = System.getProperty("client.mode");
+        BookingClient prevRaw = ClientFactory.getBookingClient();
+        PersistentPendingJournal prevJournal = ClientFactory.getJournal();
+        try {
+            System.setProperty("client.mode", "socket");
+            FakeNodeServer server = track(new FakeNodeServer("node-1", 0));
+            LeaderAwareBookingClient socketClient = buildSingleServerLeaderClient(server, 1500, 3000, "reg-d03");
+            PersistentPendingJournal journal = new PersistentPendingJournal(tempDir);
+            ClientFactory.setBookingClient(socketClient);
+            ClientFactory.setJournal(journal);
+            ClientFactory.getBookingViewModel().setSyncMode(true);
+
+            // Ghi 1 yêu cầu BOOK_TICKET đang SENT_UNRESOLVED
+            String bookReqId = UUID.randomUUID().toString();
+            recordRequestId(bookReqId);
+            String bookPayload = "{\"requestId\":\"" + bookReqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G06\",\"passengerName\":\"Khách Treo\"}";
+            journal.recordPrepared(new PendingEntry(
+                    bookReqId, "BOOK_TICKET", bookPayload, PendingEntry.computePayloadHash(bookPayload),
+                    PendingState.SENT_UNRESOLVED, java.time.Instant.now(), null, 1, null, null, 1));
+
+            String derivedTicketId = "TCK-" + bookReqId.substring(0, 8);
+            TicketViewModel pendingDerivedTicket = new TicketViewModel(
+                    bookReqId, derivedTicketId, "G06", "SE-001", "—", "2026-11-28", "1.250.000 VNĐ",
+                    TicketStatus.CONFIRMED, null, "REAL");
+
+            CountDownLatch latch = new CountDownLatch(1);
+            AtomicReference<String> statusAfterAttempt = new AtomicReference<>();
+            AtomicReference<TicketStatus> ticketStatusAfter = new AtomicReference<>();
+
+            Platform.runLater(() -> {
+                try {
+                    FXMLLoader loader = new FXMLLoader(App.class.getResource("/fxml/cancel-ticket-dialog.fxml"));
+                    Parent root = loader.load();
+                    CancelTicketController ctrl = loader.getController();
+                    ctrl.setTicket(pendingDerivedTicket);
+                    ctrl.getConfirmCheckBox().setSelected(true);
+                    ctrl.onConfirmCancelClicked();
+
+                    // Chờ callback Platform.runLater bên trong onConfirmCancelClicked chạy xong
+                    Platform.runLater(() -> {
+                        Node titleNode = root.lookup("#resultTitleLabel");
+                        String titleTxt = (titleNode instanceof javafx.scene.control.Label lbl) ? lbl.getText() : "";
+                        statusAfterAttempt.set(titleTxt);
+                        ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+                        latch.countDown();
+                    });
+                } catch (Exception e) {
+                    statusAfterAttempt.set("EX:" + e.getMessage());
+                    latch.countDown();
+                }
+            });
+
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+            assertEquals(TicketStatus.CONFIRMED, ticketStatusAfter.get(), "Vé không được tự chuyển sang CANCELLED");
+            assertFalse(statusAfterAttempt.get().contains("TIMEOUT_UNKNOWN"),
+                    "Lỗi chặn hủy trước khi gửi (IllegalStateException) không được nuốt thành TIMEOUT_UNKNOWN: " + statusAfterAttempt.get());
+            assertFalse(statusAfterAttempt.get().contains("MOCK"),
+                    "Hộp thoại hủy vé ở chế độ Socket không được hiển thị nhãn MOCK: " + statusAfterAttempt.get());
+
+            recordNote("CancelTicketController ở chế độ Socket chặn sạch lỗi trước gửi (0 TIMEOUT_UNKNOWN giả, 0 nhãn MOCK)");
+        } finally {
+            if (prevMode == null) System.clearProperty("client.mode"); else System.setProperty("client.mode", prevMode);
+            ClientFactory.setBookingClient(prevRaw);
+            if (prevJournal != null && !prevJournal.isClosed()) {
+                ClientFactory.setJournal(prevJournal);
+            }
+        }
     }
 
     private void captureOptionalJavaFxSnapshots() throws Exception {
