@@ -39,6 +39,8 @@ public final class ClientConfig {
 
     public static final String KEY_CLUSTER_PROFILE = "cluster.profile";
     public static final String KEY_CLIENT_MODE = "client.mode";
+    public static final String KEY_RELEASE_MODE = "release.mode";
+    public static final String KEY_RELEASE_VERSION = "release.version";
     public static final String KEY_CONNECT_TIMEOUT_MS = "client.connectTimeoutMs";
     public static final String KEY_READ_TIMEOUT_MS = "client.readTimeoutMs";
     public static final String KEY_MAX_REDIRECTS = "client.maxRedirects";
@@ -47,6 +49,7 @@ public final class ClientConfig {
     public static final String KEY_FAILURE_COOLDOWN_MS = "client.failureCooldownMs";
 
     public static final String DEFAULT_PROFILE = "dev";
+    public static final String DEFAULT_RELEASE_VERSION = "1.0.0-rc1";
     public static final int DEFAULT_CONNECT_TIMEOUT_MS = 2000;
     public static final int DEFAULT_READ_TIMEOUT_MS = 5000;
     public static final int DEFAULT_MAX_REDIRECTS = 3;
@@ -59,6 +62,8 @@ public final class ClientConfig {
 
     private final String profile;
     private final String clientMode;
+    private final boolean releaseMode;
+    private final String releaseVersion;
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
     private final int maxRedirects;
@@ -84,6 +89,9 @@ public final class ClientConfig {
         this.profile = Objects.requireNonNull(profile, "profile không được null").trim();
         this.rawProperties = (rawProperties != null) ? (Properties) rawProperties.clone() : new Properties();
         this.clientMode = this.rawProperties.getProperty(KEY_CLIENT_MODE, "socket").trim().toLowerCase();
+        this.releaseMode = Boolean.parseBoolean(this.rawProperties.getProperty(KEY_RELEASE_MODE, "false").trim());
+        String ver = this.rawProperties.getProperty(KEY_RELEASE_VERSION, DEFAULT_RELEASE_VERSION).trim();
+        this.releaseVersion = ver.isEmpty() ? DEFAULT_RELEASE_VERSION : ver;
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutMs = readTimeoutMs;
         this.maxRedirects = maxRedirects;
@@ -104,7 +112,43 @@ public final class ClientConfig {
     }
 
     public boolean isSocketMode() {
-        return "socket".equalsIgnoreCase(clientMode) || "tcp".equalsIgnoreCase(clientMode) || "real".equalsIgnoreCase(clientMode);
+        return releaseMode
+                || "socket".equalsIgnoreCase(clientMode)
+                || "tcp".equalsIgnoreCase(clientMode)
+                || "real".equalsIgnoreCase(clientMode);
+    }
+
+    public boolean isReleaseMode() {
+        return releaseMode;
+    }
+
+    public String getReleaseVersion() {
+        return releaseVersion;
+    }
+
+    /**
+     * Kiểm tra nhanh xem cấu hình hệ thống hiện hành có đang bật chế độ RELEASE hay không.
+     */
+    public static boolean isReleaseModeActive() {
+        String sysVal = System.getProperty(KEY_RELEASE_MODE);
+        if (sysVal != null && !sysVal.isBlank()) {
+            return Boolean.parseBoolean(sysVal.trim());
+        }
+        String envVal = System.getenv("RELEASE_MODE");
+        if (envVal != null && !envVal.isBlank()) {
+            return Boolean.parseBoolean(envVal.trim());
+        }
+        try (InputStream is = openClasspathResource("/config/release.properties")) {
+            if (is != null) {
+                Properties p = new Properties();
+                try (Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+                    p.load(r);
+                }
+                return Boolean.parseBoolean(p.getProperty(KEY_RELEASE_MODE, "false").trim());
+            }
+        } catch (IOException ignored) {
+        }
+        return false;
     }
 
     public String getProfile() {
@@ -207,9 +251,16 @@ public final class ClientConfig {
             Map<String, String> sysPropsOverride,
             Map<String, String> envVarsOverride) {
 
-        // 1. Khởi tạo Properties rỗng
+        // 1. Khởi tạo Properties và nạp metadata phiên bản release (/config/release.properties)
         Properties merged = new Properties();
         String sourceDesc = "default-classpath";
+        try (InputStream relIs = openClasspathResource("/config/release.properties")) {
+            if (relIs != null) {
+                try (Reader relReader = new InputStreamReader(relIs, StandardCharsets.UTF_8)) {
+                    merged.load(relReader);
+                }
+            }
+        } catch (IOException ignored) {}
 
         // 4. Classpath default (/config/client.properties hoặc /client.properties)
         try (InputStream is = openClasspathResource("/config/client.properties")) {
@@ -309,9 +360,14 @@ public final class ClientConfig {
         }
 
         // Áp dụng ghi đè từ Environment Variables (từng key)
+        applyEnvOverride(merged, KEY_RELEASE_MODE, "RELEASE_MODE", envVarsOverride);
+        applyEnvOverride(merged, KEY_RELEASE_VERSION, "RELEASE_VERSION", envVarsOverride);
         applyEnvOverride(merged, KEY_CLUSTER_PROFILE, "CLUSTER_PROFILE", envVarsOverride);
         applyEnvOverride(merged, KEY_CLIENT_MODE, "CLIENT_MODE", envVarsOverride);
         applyEnvOverride(merged, KEY_CLIENT_MODE, "BOOKING_CLIENT", envVarsOverride);
+        applyEnvOverride(merged, "booking.client", "BOOKING_CLIENT", envVarsOverride);
+        applyEnvOverride(merged, "cluster.client", "CLUSTER_CLIENT", envVarsOverride);
+        applyEnvOverride(merged, "read.adapter", "READ_ADAPTER", envVarsOverride);
         applyEnvOverride(merged, KEY_CONNECT_TIMEOUT_MS, "CLIENT_CONNECT_TIMEOUT_MS", envVarsOverride);
         applyEnvOverride(merged, KEY_READ_TIMEOUT_MS, "CLIENT_READ_TIMEOUT_MS", envVarsOverride);
         applyEnvOverride(merged, KEY_MAX_REDIRECTS, "CLIENT_MAX_REDIRECTS", envVarsOverride);
@@ -320,7 +376,12 @@ public final class ClientConfig {
         applyEnvOverride(merged, KEY_FAILURE_COOLDOWN_MS, "CLIENT_FAILURE_COOLDOWN_MS", envVarsOverride);
 
         // Áp dụng ghi đè từ System Properties (từng key - mức ưu tiên cao nhất)
+        applySysPropOverride(merged, KEY_RELEASE_MODE, sysPropsOverride);
+        applySysPropOverride(merged, KEY_RELEASE_VERSION, sysPropsOverride);
         applySysPropOverride(merged, KEY_CLUSTER_PROFILE, sysPropsOverride);
+        applySysPropOverride(merged, "booking.client", sysPropsOverride);
+        applySysPropOverride(merged, "cluster.client", sysPropsOverride);
+        applySysPropOverride(merged, "read.adapter", sysPropsOverride);
         String explicitClientMode = getSysPropVal(KEY_CLIENT_MODE, sysPropsOverride);
         String sysBookingClient = getSysPropVal("booking.client", sysPropsOverride);
         if (explicitClientMode != null && !explicitClientMode.isBlank()) {
@@ -356,6 +417,11 @@ public final class ClientConfig {
      */
     public static ClientConfig fromProperties(Properties props, String sourceDescription) {
         Objects.requireNonNull(props, "props không được null");
+        Properties effectiveProps = (Properties) props.clone();
+        if (!effectiveProps.containsKey(KEY_RELEASE_MODE) && isReleaseModeActive()) {
+            effectiveProps.setProperty(KEY_RELEASE_MODE, "true");
+        }
+        props = effectiveProps;
 
         // 1. Xác định profile
         String profile = props.getProperty(KEY_CLUSTER_PROFILE, DEFAULT_PROFILE).trim();
@@ -435,7 +501,7 @@ public final class ClientConfig {
             endpoints.add(new NodeEndpoint(id, host, port));
         }
 
-        return new ClientConfig(
+        ClientConfig built = new ClientConfig(
                 profile,
                 connectTimeoutMs,
                 readTimeoutMs,
@@ -447,6 +513,10 @@ public final class ClientConfig {
                 props,
                 sourceDescription
         );
+        if (built.isReleaseMode()) {
+            built.validateForRelease();
+        }
+        return built;
     }
 
     // =========================================================================
@@ -505,13 +575,84 @@ public final class ClientConfig {
      * @throws IllegalStateException nếu có ít nhất 1 node chứa IP placeholder
      */
     public void validateNoPlaceholders() {
-        List<String> placeholders = getPlaceholderNodes();
+        List<String> placeholders = new ArrayList<>();
+        for (NodeEndpoint ep : endpoints) {
+            if (isPlaceholderHost(ep.host())) {
+                placeholders.add(profile + ".node." + ep.nodeId() + ".client.host=" + ep.host()
+                        + " (nodeId=" + ep.nodeId() + ")");
+            }
+        }
         if (!placeholders.isEmpty()) {
             throw new IllegalStateException(
-                    "Không thể kết nối LAN thật: Các Node sau đang sử dụng IP placeholder chờ TV6-D24 bàn giao: " +
+                    "Cấu hình không hợp lệ — phát hiện IP placeholder chưa thay bằng địa chỉ thật (chờ TV6-D24 bàn giao): " +
                             String.join(", ", placeholders) +
-                            ". Hãy điền IP vật lý thật vào client-lan.properties hoặc cấu hình biến môi trường."
+                            ". Vui lòng cập nhật client-lan.properties hoặc biến môi trường trước khi chạy."
             );
+        }
+    }
+
+    /**
+     * Thẩm tra fail-fast nghiêm ngặt cho bản phát hành RELEASE (TASK TV1-D28):
+     * <ul>
+     *   <li>Chỉ chấp nhận {@code client.mode=socket} (từ chối mọi cấu hình {@code mock}, {@code fake}, {@code demo}).</li>
+     *   <li>Từ chối các cờ phụ {@code booking.client=mock/fake}, {@code cluster.client=mock/fake}, {@code read.adapter=fake}.</li>
+     *   <li>Từ chối IP placeholder và tên dịch vụ Docker nội bộ, nêu rõ khóa cấu hình và {@code nodeId}.</li>
+     * </ul>
+     */
+    public void validateForRelease() {
+        if (!"socket".equalsIgnoreCase(clientMode)
+                && !"tcp".equalsIgnoreCase(clientMode)
+                && !"real".equalsIgnoreCase(clientMode)) {
+            throw new IllegalArgumentException(
+                    "Chế độ RELEASE (release.mode=true) chỉ cho phép 'client.mode=socket'; từ chối cấu hình '"
+                            + KEY_CLIENT_MODE + "=" + clientMode + "' (nguồn: " + sourceDescription + ").");
+        }
+        String legacyBooking = rawProperties.getProperty("booking.client", "").trim();
+        if (!legacyBooking.isEmpty()
+                && !"socket".equalsIgnoreCase(legacyBooking)
+                && !"tcp".equalsIgnoreCase(legacyBooking)
+                && !"real".equalsIgnoreCase(legacyBooking)) {
+            throw new IllegalArgumentException(
+                    "Chế độ RELEASE (release.mode=true) từ chối cấu hình 'booking.client=" + legacyBooking
+                            + "' — chỉ được dùng SocketBookingClient thật.");
+        }
+        String legacyCluster = rawProperties.getProperty("cluster.client", "").trim();
+        if (!legacyCluster.isEmpty()
+                && !"socket".equalsIgnoreCase(legacyCluster)
+                && !"tcp".equalsIgnoreCase(legacyCluster)
+                && !"real".equalsIgnoreCase(legacyCluster)) {
+            throw new IllegalArgumentException(
+                    "Chế độ RELEASE (release.mode=true) từ chối cấu hình 'cluster.client=" + legacyCluster + "'.");
+        }
+        String legacyRead = rawProperties.getProperty("read.adapter", "").trim();
+        if (!legacyRead.isEmpty()
+                && !"socket".equalsIgnoreCase(legacyRead)
+                && !"real".equalsIgnoreCase(legacyRead)) {
+            throw new IllegalArgumentException(
+                    "Chế độ RELEASE (release.mode=true) từ chối cấu hình 'read.adapter=" + legacyRead
+                            + "' — không được phép dùng adapter giả lập.");
+        }
+
+        validateNoPlaceholders();
+
+        for (NodeEndpoint ep : endpoints) {
+            if (isDockerInternalHost(ep.host())) {
+                String key = profile + ".node." + ep.nodeId() + ".client.host";
+                throw new IllegalArgumentException(
+                        "Chế độ RELEASE từ chối tên máy chủ nội bộ Docker tại khóa '" + key + "=" + ep.host()
+                                + "' (nodeId=" + ep.nodeId() + "). Vui lòng cấu hình 127.0.0.1 hoặc IP LAN thật.");
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ của cấu hình khi khởi chạy ứng dụng Desktop.
+     */
+    public void validateForStartup() {
+        if (releaseMode) {
+            validateForRelease();
+        } else if (isSocketMode() && "lan".equalsIgnoreCase(profile)) {
+            validateNoPlaceholders();
         }
     }
 

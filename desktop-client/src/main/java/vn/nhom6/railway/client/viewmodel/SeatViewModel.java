@@ -33,6 +33,8 @@ import vn.nhom6.railway.client.network.VerificationLevel;
  */
 public class SeatViewModel {
 
+    public static final int TOTAL_SEATS = 10;
+
     /**
      * 4 trạng thái ghế theo đặc tả SPEC-06 và nhiệm vụ D04/D05.
      */
@@ -163,18 +165,7 @@ public class SeatViewModel {
          * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
          */
         public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
-            if (seats == null || snapshot == null) {
-                return;
-            }
-            for (SeatViewModel seat : seats) {
-                String id = seat.getSeatId();
-                if (snapshot.containsKey(id)) {
-                    SeatStatus newStatus = snapshot.get(id);
-                    if (newStatus != null && seat.getStatus() != newStatus) {
-                        seat.setStatus(newStatus);
-                    }
-                }
-            }
+            SeatViewModel.applySnapshot(seats, snapshot);
         }
     }
 
@@ -341,7 +332,7 @@ public class SeatViewModel {
         ObservableList<SeatViewModel> list = FXCollections.observableArrayList(
                 seat -> new Observable[]{seat.statusProperty()}
         );
-        for (int i = 1; i <= MockSeatSource.TOTAL_SEATS; i++) {
+        for (int i = 1; i <= TOTAL_SEATS; i++) {
             String seatId = String.format("G%02d", i);
             SeatViewModel vm = new SeatViewModel(seatId, SeatStatus.UNKNOWN);
             vm.setVerification(VerificationLevel.UNVERIFIED);
@@ -351,10 +342,10 @@ public class SeatViewModel {
     }
 
     /**
-     * Tạo danh sách ghế MOCK từ nguồn MOCK duy nhất.
+     * Tạo danh sách ghế dành riêng cho chế độ phát triển cục bộ (không dùng trong Release).
      */
     public static ObservableList<SeatViewModel> createMockSeats() {
-        return MockSeatSource.createMockSeats();
+        return vn.nhom6.railway.client.network.DevSupportBridge.get().createDevMockSeats();
     }
 
     /**
@@ -364,7 +355,18 @@ public class SeatViewModel {
      * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
      */
     public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
-        MockSeatSource.applySnapshot(seats, snapshot);
+        if (seats == null || snapshot == null) {
+            return;
+        }
+        for (SeatViewModel seat : seats) {
+            String id = seat.getSeatId();
+            if (snapshot.containsKey(id)) {
+                SeatStatus newStatus = snapshot.get(id);
+                if (newStatus != null && seat.getStatus() != newStatus) {
+                    seat.setStatus(newStatus);
+                }
+            }
+        }
     }
 
     /**

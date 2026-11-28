@@ -32,7 +32,8 @@
                 </children>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="mockBadgeLabel" text="REAL / SOCKET" minWidth="-Infinity" styleClass="badge-ticket-confirmed" />
+            <Label fx:id="modeBadgeLabel" text="REAL / SOCKET" minWidth="-Infinity" styleClass="badge-ticket-confirmed" />
+            <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity" styleClass="badge-mock" />
         </children>
     </HBox>
 

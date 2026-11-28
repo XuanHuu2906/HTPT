@@ -26,8 +26,10 @@
                                style="-fx-text-fill: #ffffff; -fx-font-size: 17px; -fx-font-weight: bold;" />
                         <Region HBox.hgrow="ALWAYS" />
                         <Label text="CHẾ ĐỘ:" style="-fx-text-fill: #cbd5e1; -fx-font-size: 12px; -fx-font-weight: bold;" />
-                        <Label fx:id="mockBadgeLabel" text="TCP SOCKET" minWidth="-Infinity"
+                        <Label fx:id="modeBadgeLabel" text="TCP SOCKET" minWidth="-Infinity"
                                styleClass="badge-cluster-mode" />
+                        <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity"
+                               styleClass="badge-mock" />
                     </children>
                 </HBox>
                 <fx:include fx:id="clusterStatusBar" source="cluster-status-bar.fxml" />

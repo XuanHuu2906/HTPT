@@ -133,9 +133,9 @@ public class BookingViewModel {
 
     // === JavaFX Properties ===
     private final ObjectProperty<UiState> uiState = new SimpleObjectProperty<>(UiState.IDLE);
-    private final StringProperty message = new SimpleStringProperty("Hệ thống sẵn sàng ở chế độ MOCK (D08).");
+    private final StringProperty message = new SimpleStringProperty("Hệ thống sẵn sàng phục vụ chuyến tàu SE-001.");
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
-    private final BooleanProperty mock = new SimpleBooleanProperty(true);
+    private final BooleanProperty mock = new SimpleBooleanProperty(false);
     private final StringProperty errorCode = new SimpleStringProperty("");
     private final StringProperty leaderHint = new SimpleStringProperty("");
     private final StringProperty currentRequestId = new SimpleStringProperty("");
@@ -168,9 +168,13 @@ public class BookingViewModel {
 
         BookingClient unwrapped = (bookingClient instanceof JournalingBookingClient jbc) ? jbc.getDelegate() : bookingClient;
         if (unwrapped instanceof vn.nhom6.railway.client.network.SocketBookingClient
-                || unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient) {
+                || unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient
+                || vn.nhom6.railway.client.network.ClientConfig.isReleaseModeActive()) {
             this.mock.set(false);
             this.message.set("Hệ thống sẵn sàng kết nối cụm máy chủ (SE-001).");
+        } else if (vn.nhom6.railway.client.network.DevSupportBridge.isDevMockClient(unwrapped)) {
+            this.mock.set(true);
+            this.message.set("Hệ thống sẵn sàng ở chế độ MOCK (D08).");
         }
 
         // Mặc định UiDispatcher chuyển về JavaFX Application Thread

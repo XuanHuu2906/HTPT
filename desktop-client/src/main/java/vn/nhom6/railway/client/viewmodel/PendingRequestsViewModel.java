@@ -32,7 +32,24 @@ public class PendingRequestsViewModel {
 
     public PendingRequestsViewModel(JournalingBookingClient journalingClient) {
         this.journalingClient = journalingClient;
-        reloadFromJournal();
+        loadInitialSync();
+    }
+
+    private void loadInitialSync() {
+        if (journalingClient == null || journalingClient.getJournal() == null) {
+            return;
+        }
+        List<PendingEntry> entries = journalingClient.getJournal().loadPending();
+        String srcLabel = determineSourceLabel();
+        pendingItems.clear();
+        for (PendingEntry entry : entries) {
+            pendingItems.add(new PendingItem(entry, srcLabel));
+        }
+        if (entries.isEmpty()) {
+            statusMessage.set("Không có yêu cầu nào đang chờ xử lý.");
+        } else {
+            statusMessage.set(String.format("Đã khôi phục %d yêu cầu chưa xác nhận từ journal.", entries.size()));
+        }
     }
 
     private static void runOnFxThread(Runnable action) {
@@ -71,11 +88,21 @@ public class PendingRequestsViewModel {
     }
 
     private String determineSourceLabel() {
-        if (journalingClient == null) return "MOCK";
-        String delegateName = journalingClient.getDelegate().getClass().getSimpleName();
-        if (delegateName.contains("Mock")) return "MOCK";
-        if (delegateName.contains("Fake")) return "FAKE-TEST";
-        return "REAL";
+        if (vn.nhom6.railway.client.network.ClientConfig.isReleaseModeActive()) {
+            return "REAL";
+        }
+        if (journalingClient == null) {
+            return "DEV";
+        }
+        if (vn.nhom6.railway.client.network.DevSupportBridge.isDevMockClient(journalingClient)) {
+            return "MOCK";
+        }
+        vn.nhom6.railway.client.network.BookingClient delegate = journalingClient.getDelegate();
+        if (delegate instanceof vn.nhom6.railway.client.network.SocketBookingClient
+                || delegate instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient) {
+            return "REAL";
+        }
+        return "TEST";
     }
 
     /**

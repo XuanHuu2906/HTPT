@@ -37,7 +37,8 @@
 
             <Region HBox.hgrow="ALWAYS" />
 
-            <Label fx:id="mockBadgeLabel" text="CỤM 5 NODE" minWidth="-Infinity" styleClass="badge-cluster-mode" />
+            <Label fx:id="modeBadgeLabel" text="CỤM 5 NODE" minWidth="-Infinity" styleClass="badge-cluster-mode" />
+            <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity" styleClass="badge-mock" />
 
             <Label fx:id="verificationBadgeLabel" text="[Chưa xác minh]" minWidth="-Infinity" styleClass="badge-unverified" />
         </children>
@@ -171,7 +172,7 @@
 
             <Region HBox.hgrow="SOMETIMES" />
 
-            <Button fx:id="makeRefreshSeatsBtn" onAction="#onMockRefreshSnapshotClicked" text="⟳ Làm mới sơ đồ"
+            <Button fx:id="makeRefreshSeatsBtn" onAction="#onRefreshSeatsClicked" text="⟳ Làm mới sơ đồ"
                     minWidth="-Infinity" styleClass="btn-reset" />
 
             <Button fx:id="resetSelectionBtn" onAction="#onResetSelectionClicked" text="Bỏ chọn tất cả"

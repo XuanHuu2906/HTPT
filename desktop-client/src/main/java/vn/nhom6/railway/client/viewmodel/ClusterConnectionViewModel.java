@@ -142,7 +142,7 @@ public class ClusterConnectionViewModel implements AutoCloseable {
     };
 
     public ClusterConnectionViewModel() {
-        this(vn.nhom6.railway.client.network.MockClusterStatusClient.getInstance());
+        this(vn.nhom6.railway.client.ClientFactory.createDefaultClusterStatusClient());
     }
 
     public ClusterConnectionViewModel(ClusterStatusClient statusClient) {

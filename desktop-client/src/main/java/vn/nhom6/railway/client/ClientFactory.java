@@ -1,77 +1,113 @@
 package vn.nhom6.railway.client;
 
+import javafx.collections.ObservableList;
+import vn.nhom6.railway.client.controller.ReconnectController;
 import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.BookingClientReadAdapter;
 import vn.nhom6.railway.client.network.ClientConfig;
 import vn.nhom6.railway.client.network.ClusterEndpoints;
 import vn.nhom6.railway.client.network.ClusterNodeSelector;
 import vn.nhom6.railway.client.network.ClusterStatusClient;
-import vn.nhom6.railway.client.network.FakeReadAdapter;
+import vn.nhom6.railway.client.network.DevSupportBridge;
 import vn.nhom6.railway.client.network.JournalingBookingClient;
 import vn.nhom6.railway.client.network.LeaderAwareBookingClient;
-import vn.nhom6.railway.client.network.MockBookingClient;
-import vn.nhom6.railway.client.network.MockClusterStatusClient;
 import vn.nhom6.railway.client.network.NodeEndpoint;
 import vn.nhom6.railway.client.network.ReadAdapter;
 import vn.nhom6.railway.client.network.RedirectPolicy;
+import vn.nhom6.railway.client.network.SocketBookingClient;
 import vn.nhom6.railway.client.network.SocketClusterStatusClient;
 import vn.nhom6.railway.client.storage.PersistentPendingJournal;
 import vn.nhom6.railway.client.viewmodel.BookingViewModel;
 import vn.nhom6.railway.client.viewmodel.ClusterConnectionViewModel;
 import vn.nhom6.railway.client.viewmodel.PendingRequestsViewModel;
 import vn.nhom6.railway.client.viewmodel.SeatViewModel;
-import javafx.collections.ObservableList;
+import vn.nhom6.railway.client.viewmodel.TicketLookupViewModel;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
- * Nơi tập trung cấu hình và tiêm phụ thuộc (Dependency Injection) cho Desktop
- * Client (TASK D07/D09/D11/D12).
+ * Trung tâm khởi tạo và tiêm phụ thuộc (Dependency Injection) cho Desktop Client (TASK D07..D28).
  * <p>
- * Cho phép đổi nguồn dữ liệu từ Mock sang TCP Socket thật (hoặc Fake Server
- * kiểm thử)
- * mà không phải sửa FXML hay các Controller.
- * <p>
- * Hỗ trợ chọn implementation theo tham số khởi chạy:
+ * Bất biến chế độ RELEASE ({@code release.mode=true} — TASK TV1-D28):
  * <ul>
- * <li>{@code -Dbooking.client=socket|mock} (mặc định là {@code mock}).</li>
- * <li>{@code -Dcluster.client=socket|mock} (nếu không đặt, kế thừa từ
- * {@code booking.client}).</li>
+ *   <li>Luồng release CHỈ khởi tạo {@link SocketBookingClient} bọc bởi
+ *       {@link LeaderAwareBookingClient} và {@link JournalingBookingClient},
+ *       cùng {@link BookingClientReadAdapter} và {@link SocketClusterStatusClient}.</li>
+ *   <li>Mọi yêu cầu cấu hình hoặc tiêm đối tượng {@code Mock*}/{@code Fake*} trong chế độ release
+ *       đều bị từ chối fail-fast bằng ngoại lệ rõ ràng.</li>
+ *   <li>Lớp này hoàn toàn không chứa bất kỳ import hay tham chiếu tĩnh nào tới {@code Mock*}/{@code Fake*}.</li>
  * </ul>
  */
 public final class ClientFactory {
 
-    private static volatile PersistentPendingJournal journal = createDefaultJournal();
-    private static volatile ClusterNodeSelector clusterNodeSelector = createDefaultClusterNodeSelector();
-    private static volatile ClusterStatusClient clusterStatusClient = createDefaultClusterStatusClient();
-    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = createInitialClusterConnectionViewModel();
-
-    private static ClusterConnectionViewModel createInitialClusterConnectionViewModel() {
-        ClusterConnectionViewModel vm = new ClusterConnectionViewModel(clusterStatusClient);
-        try {
-            ClientConfig cfg = ClientConfig.loadDefault();
-            if (cfg.isSocketMode() && clusterNodeSelector != null) {
-                NodeEndpoint ep = clusterNodeSelector.selectNode(true);
-                vm.updateConnectedNode(ep.nodeId(), ep.toAddressString());
-            }
-        } catch (Exception ignored) {}
-        return vm;
-    }
-
-    private static volatile BookingClient rawBookingClient = createDefaultBookingClient();
-    private static volatile JournalingBookingClient journalingBookingClient = wrapWithJournal(rawBookingClient);
-    private static volatile BookingViewModel bookingViewModel = new BookingViewModel(journalingBookingClient);
-    private static volatile PendingRequestsViewModel pendingRequestsViewModel = new PendingRequestsViewModel(
-            journalingBookingClient);
-    private static volatile ReadAdapter readAdapter = createDefaultReadAdapter();
+    private static volatile ClientConfig activeConfig = null;
+    private static volatile PersistentPendingJournal journal = null;
+    private static volatile ClusterNodeSelector clusterNodeSelector = null;
+    private static volatile ClusterStatusClient clusterStatusClient = null;
+    private static volatile ClusterConnectionViewModel clusterConnectionViewModel = null;
+    private static volatile BookingClient rawBookingClient = null;
+    private static volatile JournalingBookingClient journalingBookingClient = null;
+    private static volatile BookingViewModel bookingViewModel = null;
+    private static volatile PendingRequestsViewModel pendingRequestsViewModel = null;
+    private static volatile ReadAdapter readAdapter = null;
     private static volatile SeatsRefreshService seatsRefreshService = null;
-    private static volatile vn.nhom6.railway.client.controller.ReconnectController reconnectController = null;
-    private static volatile vn.nhom6.railway.client.viewmodel.TicketLookupViewModel ticketLookupViewModel = null;
+    private static volatile ReconnectController reconnectController = null;
+    private static volatile TicketLookupViewModel ticketLookupViewModel = null;
 
     private ClientFactory() {
     }
 
     /**
-     * Lấy PersistentPendingJournal dùng chung cho ứng dụng.
+     * Khởi tạo tường minh và thẩm tra fail-fast theo cấu hình khi khởi chạy ứng dụng.
      */
+    public static synchronized void initializeForConfig(ClientConfig config) {
+        Objects.requireNonNull(config, "ClientConfig không được null");
+        config.validateForStartup();
+        closeQuietly();
+
+        activeConfig = config;
+        clusterNodeSelector = new ClusterNodeSelector(config);
+        clusterStatusClient = createClusterStatusClientForConfig(config, clusterNodeSelector);
+        clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
+        if (config.isSocketMode()) {
+            try {
+                NodeEndpoint ep = clusterNodeSelector.selectNode(true);
+                clusterConnectionViewModel.updateConnectedNode(ep.nodeId(), ep.toAddressString());
+            } catch (Exception ignored) {
+            }
+        }
+        rawBookingClient = createBookingClientForConfig(config, clusterNodeSelector, clusterConnectionViewModel, null);
+        journalingBookingClient = wrapWithJournal(rawBookingClient);
+        bookingViewModel = new BookingViewModel(journalingBookingClient);
+        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+        readAdapter = createReadAdapterForConfig(config, rawBookingClient);
+    }
+
+    private static void closeQuietly() {
+        if (seatsRefreshService != null) {
+            try {
+                seatsRefreshService.close();
+            } catch (Exception ignored) {
+            }
+            seatsRefreshService = null;
+        }
+        if (clusterConnectionViewModel != null) {
+            clusterConnectionViewModel.stopPolling();
+        }
+        reconnectController = null;
+        ticketLookupViewModel = null;
+    }
+
+    public static synchronized ClientConfig getActiveConfig() {
+        if (activeConfig == null) {
+            activeConfig = ClientConfig.loadDefault();
+        }
+        return activeConfig;
+    }
+
     public static synchronized PersistentPendingJournal getJournal() {
         if (journal == null || journal.isClosed()) {
             journal = createDefaultJournal();
@@ -79,31 +115,28 @@ public final class ClientFactory {
         return journal;
     }
 
-    /**
-     * Đặt Journal tùy biến (ví dụ trong unit test dùng thư mục tạm).
-     */
     public static synchronized void setJournal(PersistentPendingJournal customJournal) {
-        if (journal != null && !journal.isClosed()) {
+        if (journal != null && journal != customJournal && !journal.isClosed()) {
             try {
                 journal.close();
             } catch (Exception ignored) {
             }
         }
         journal = customJournal;
-        journalingBookingClient = wrapWithJournal(rawBookingClient);
-        bookingViewModel = new BookingViewModel(journalingBookingClient);
-        pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
-        ticketLookupViewModel = null;
+        if (rawBookingClient != null) {
+            journalingBookingClient = wrapWithJournal(rawBookingClient);
+            bookingViewModel = new BookingViewModel(journalingBookingClient);
+            pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
+            ticketLookupViewModel = null;
+        }
     }
 
     private static PersistentPendingJournal createDefaultJournal() {
         try {
             return PersistentPendingJournal.createDefault();
         } catch (Exception e) {
-            System.err.println("[ClientFactory] Không thể lấy khóa journal mặc định: " + e.getMessage());
             try {
-                java.nio.file.Path fallbackDir = java.nio.file.Files.createTempDirectory("railway-journal-fallback-");
-                System.err.println("[ClientFactory] Sử dụng thư mục journal tạm thời: " + fallbackDir.toAbsolutePath());
+                Path fallbackDir = Files.createTempDirectory("railway-journal-fallback-");
                 return new PersistentPendingJournal(fallbackDir);
             } catch (Exception ex) {
                 return null;
@@ -115,12 +148,34 @@ public final class ClientFactory {
         if (client instanceof JournalingBookingClient jbc) {
             return jbc;
         }
+        BookingClient resolved = (client != null) ? client : createDefaultBookingClient();
+        rejectForbiddenComponentInRelease(resolved, "BookingClient");
         PersistentPendingJournal j = getJournal();
-        if (j != null) {
-            return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), j);
+        if (j == null) {
+            j = createDefaultJournal();
         }
-        PersistentPendingJournal fallback = createDefaultJournal();
-        return new JournalingBookingClient(client != null ? client : MockBookingClient.getInstance(), fallback);
+        return new JournalingBookingClient(resolved, j);
+    }
+
+    private static void rejectForbiddenComponentInRelease(Object component, String roleName) {
+        if (component == null) {
+            return;
+        }
+        boolean releaseActive = (activeConfig != null && activeConfig.isReleaseMode())
+                || ClientConfig.isReleaseModeActive();
+        if (!releaseActive) {
+            return;
+        }
+        String className = component.getClass().getName();
+        String simpleName = component.getClass().getSimpleName();
+        if (simpleName.contains("Mock") || simpleName.contains("Fake") || className.contains(".dev.")) {
+            throw new IllegalStateException(
+                    "Chế độ RELEASE (release.mode=true) từ chối thành phần không phải thật cho "
+                            + roleName + ": " + className);
+        }
+        if (component instanceof JournalingBookingClient jbc) {
+            rejectForbiddenComponentInRelease(jbc.getDelegate(), roleName + ".delegate");
+        }
     }
 
     public static synchronized ClusterNodeSelector getClusterNodeSelector() {
@@ -132,82 +187,126 @@ public final class ClientFactory {
 
     public static synchronized void setClusterNodeSelector(ClusterNodeSelector selector) {
         clusterNodeSelector = selector;
-    }
-
-    private static ClusterNodeSelector createDefaultClusterNodeSelector() {
-        try {
-            ClientConfig config = ClientConfig.loadDefault();
-            return new ClusterNodeSelector(config);
-        } catch (Exception e) {
-            System.err.println("[ClientFactory] Không thể nạp ClientConfig mặc định: " + e.getMessage());
-            return null;
+        if (selector != null) {
+            activeConfig = selector.getConfig();
         }
     }
 
-    /**
-     * Khởi tạo BookingClient mặc định theo cấu hình hệ thống:
-     * -Dbooking.client=socket -> LeaderAwareBookingClient bọc SocketBookingClient
-     * Mặc định hoặc -Dbooking.client=mock -> MockBookingClient.getInstance()
-     */
+    private static ClusterNodeSelector createDefaultClusterNodeSelector() {
+        ClientConfig config = ClientConfig.loadDefault();
+        activeConfig = config;
+        return new ClusterNodeSelector(config);
+    }
+
     public static BookingClient createDefaultClient() {
         return createDefaultBookingClient();
     }
 
-    public static BookingClient createDefaultBookingClient() {
+    public static synchronized BookingClient createDefaultBookingClient() {
         ClusterNodeSelector selector = getClusterNodeSelector();
         ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
-        String clientMode = config.getClientMode();
-        if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
-            if (selector == null) {
-                selector = new ClusterNodeSelector(config);
-                setClusterNodeSelector(selector);
-            }
-            ClusterEndpoints endpoints = ClusterEndpoints.fromSelector(selector);
+        return createBookingClientForConfig(config, selector, clusterConnectionViewModel, null);
+    }
+
+    /**
+     * Khởi tạo {@link BookingClient} theo {@link ClientConfig} và hàm tạo transport tùy chọn (hỗ trợ spy kiểm thử).
+     */
+    public static BookingClient createBookingClientForConfig(
+            ClientConfig config,
+            Function<NodeEndpoint, BookingClient> customSocketFactory) {
+        Objects.requireNonNull(config, "config không được null");
+        config.validateForStartup();
+        ClusterNodeSelector selector = new ClusterNodeSelector(config);
+        return createBookingClientForConfig(config, selector, null, customSocketFactory);
+    }
+
+    private static BookingClient createBookingClientForConfig(
+            ClientConfig config,
+            ClusterNodeSelector selector,
+            ClusterConnectionViewModel connVm,
+            Function<NodeEndpoint, BookingClient> customSocketFactory) {
+        Objects.requireNonNull(config, "config không được null");
+        if (config.isReleaseMode()) {
+            config.validateForRelease();
+        }
+        if (config.isReleaseMode() || config.isSocketMode()) {
+            ClusterNodeSelector effectiveSelector = (selector != null) ? selector : new ClusterNodeSelector(config);
+            ClusterEndpoints endpoints = ClusterEndpoints.fromSelector(effectiveSelector);
             RedirectPolicy policy = new RedirectPolicy(
                     config.getMaxRedirects(),
                     config.getConnectTimeoutMs(),
                     config.getReadTimeoutMs()
             );
 
-            // Cập nhật ngay Node ban đầu vào ClusterConnectionViewModel
             try {
-                NodeEndpoint initialEp = selector.selectNode(true);
-                if (clusterConnectionViewModel != null) {
-                    clusterConnectionViewModel.updateConnectedNode(initialEp.nodeId(), initialEp.toAddressString());
+                NodeEndpoint initialEp = effectiveSelector.selectNode(true);
+                if (connVm != null) {
+                    connVm.updateConnectedNode(initialEp.nodeId(), initialEp.toAddressString());
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
+
+            Function<NodeEndpoint, BookingClient> socketFactory = (customSocketFactory != null)
+                    ? customSocketFactory
+                    : ep -> new SocketBookingClient(
+                            ep.host(),
+                            ep.port(),
+                            config.getConnectTimeoutMs(),
+                            config.getReadTimeoutMs(),
+                            "desktop-client"
+                    );
 
             return new LeaderAwareBookingClient(
                     endpoints,
-                    null,
+                    socketFactory,
                     policy,
-                    clusterConnectionViewModel,
+                    connVm,
                     config.getPreferredNode(),
-                    selector
+                    effectiveSelector
             );
         }
-        return MockBookingClient.getInstance();
+        return DevSupportBridge.get().createDevBookingClient();
     }
 
-    public static ClusterStatusClient createDefaultClusterStatusClient() {
+    public static synchronized ClusterStatusClient createDefaultClusterStatusClient() {
         ClusterNodeSelector selector = getClusterNodeSelector();
         ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
+        return createClusterStatusClientForConfig(config, selector);
+    }
+
+    public static ClusterStatusClient createClusterStatusClientForConfig(
+            ClientConfig config,
+            ClusterNodeSelector selector) {
+        Objects.requireNonNull(config, "config không được null");
+        if (config.isReleaseMode()) {
+            config.validateForRelease();
+        }
         String mode = System.getProperty("cluster.client");
         if (mode == null || mode.isBlank()) {
             mode = config.getClientMode();
         }
         mode = mode.trim().toLowerCase();
-        if ("socket".equals(mode) || "tcp".equals(mode) || "real".equals(mode)) {
+
+        if (config.isReleaseMode()) {
+            if (!"socket".equals(mode) && !"tcp".equals(mode) && !"real".equals(mode)) {
+                throw new IllegalArgumentException(
+                        "Chế độ RELEASE từ chối 'cluster.client=" + mode + "' — bắt buộc dùng SocketClusterStatusClient.");
+            }
+        }
+
+        if (config.isReleaseMode() || "socket".equals(mode) || "tcp".equals(mode) || "real".equals(mode)) {
             NodeEndpoint ep = null;
             if (selector != null) {
                 try {
                     ep = selector.selectNode(true);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             if (ep == null) {
-                ep = config.getEndpoints().isEmpty()
-                        ? new NodeEndpoint("node-1", "127.0.0.1", 9101)
-                        : config.getEndpoints().get(0);
+                if (config.getEndpoints().isEmpty()) {
+                    throw new IllegalStateException("Danh sách endpoint rỗng khi khởi tạo SocketClusterStatusClient");
+                }
+                ep = config.getEndpoints().get(0);
             }
             return new SocketClusterStatusClient(
                     ep.host(),
@@ -217,87 +316,81 @@ public final class ClientFactory {
                     "client-status-monitor"
             );
         }
-        return MockClusterStatusClient.getInstance();
+        return DevSupportBridge.get().createDevClusterStatusClient();
     }
 
-    /**
-     * Lấy BookingClient hiện tại đang hoạt động (raw client: LeaderAware hoặc
-     * Mock).
-     */
-    public static BookingClient getBookingClient() {
+    public static synchronized BookingClient getBookingClient() {
+        if (rawBookingClient == null) {
+            rawBookingClient = createDefaultBookingClient();
+        }
         return rawBookingClient;
     }
 
-    /**
-     * Lấy JournalingBookingClient (decorator bọc journal bền vững - TASK D14).
-     */
-    public static JournalingBookingClient getJournalingBookingClient() {
+    public static synchronized JournalingBookingClient getJournalingBookingClient() {
         if (journalingBookingClient == null) {
-            journalingBookingClient = wrapWithJournal(rawBookingClient);
+            journalingBookingClient = wrapWithJournal(getBookingClient());
         }
         return journalingBookingClient;
     }
 
-    /**
-     * Đổi implementation của BookingClient (chỉ cần gọi ở nơi khởi tạo hoặc test
-     * runner).
-     * Tự động bọc vào JournalingBookingClient để tiêm vào BookingViewModel và
-     * PendingRequestsViewModel.
-     */
     public static synchronized void setBookingClient(BookingClient client) {
-        rawBookingClient = (client != null) ? client : MockBookingClient.getInstance();
+        if (client != null) {
+            rejectForbiddenComponentInRelease(client, "BookingClient");
+            rawBookingClient = client;
+        } else {
+            rawBookingClient = createDefaultBookingClient();
+        }
         journalingBookingClient = wrapWithJournal(rawBookingClient);
         bookingViewModel = new BookingViewModel(journalingBookingClient);
         pendingRequestsViewModel = new PendingRequestsViewModel(journalingBookingClient);
         ticketLookupViewModel = null;
     }
 
-    /**
-     * Lấy ClusterStatusClient hiện tại đang hoạt động.
-     */
-    public static ClusterStatusClient getClusterStatusClient() {
+    public static synchronized ClusterStatusClient getClusterStatusClient() {
+        if (clusterStatusClient == null) {
+            clusterStatusClient = createDefaultClusterStatusClient();
+        }
         return clusterStatusClient;
     }
 
-    /**
-     * Đổi implementation của ClusterStatusClient (dùng trong test hoặc cấu hình
-     * lại).
-     */
     public static synchronized void setClusterStatusClient(ClusterStatusClient client) {
+        if (client != null) {
+            rejectForbiddenComponentInRelease(client, "ClusterStatusClient");
+        }
         if (clusterConnectionViewModel != null) {
             clusterConnectionViewModel.stopPolling();
         }
-        clusterStatusClient = (client != null) ? client : MockClusterStatusClient.getInstance();
+        clusterStatusClient = (client != null) ? client : createDefaultClusterStatusClient();
         clusterConnectionViewModel = new ClusterConnectionViewModel(clusterStatusClient);
     }
 
-    /**
-     * Lấy ClusterConnectionViewModel dùng chung cho toàn bộ ứng dụng.
-     */
-    public static ClusterConnectionViewModel getClusterConnectionViewModel() {
+    public static synchronized ClusterConnectionViewModel getClusterConnectionViewModel() {
+        if (clusterConnectionViewModel == null) {
+            clusterConnectionViewModel = new ClusterConnectionViewModel(getClusterStatusClient());
+            try {
+                ClientConfig cfg = getActiveConfig();
+                if (cfg.isSocketMode()) {
+                    NodeEndpoint ep = getClusterNodeSelector().selectNode(true);
+                    clusterConnectionViewModel.updateConnectedNode(ep.nodeId(), ep.toAddressString());
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return clusterConnectionViewModel;
     }
 
-    /**
-     * Thiết lập lại toàn bộ client và viewModel theo cấu hình hệ thống hiện tại.
-     */
     public static synchronized void resetToConfiguredClient() {
-        clusterNodeSelector = createDefaultClusterNodeSelector();
-        setBookingClient(createDefaultBookingClient());
-        setClusterStatusClient(createDefaultClusterStatusClient());
+        ClientConfig cfg = ClientConfig.loadDefault();
+        initializeForConfig(cfg);
     }
 
-    /**
-     * Lấy BookingViewModel dùng chung kết nối với BookingClient hiện hành (được bảo
-     * vệ bởi journal).
-     */
-    public static BookingViewModel getBookingViewModel() {
+    public static synchronized BookingViewModel getBookingViewModel() {
+        if (bookingViewModel == null) {
+            bookingViewModel = new BookingViewModel(getJournalingBookingClient());
+        }
         return bookingViewModel;
     }
 
-    /**
-     * Lấy PendingRequestsViewModel dùng chung cho ứng dụng (TASK D14).
-     */
     public static synchronized PendingRequestsViewModel getPendingRequestsViewModel() {
         if (pendingRequestsViewModel == null) {
             pendingRequestsViewModel = new PendingRequestsViewModel(getJournalingBookingClient());
@@ -305,30 +398,32 @@ public final class ClientFactory {
         return pendingRequestsViewModel;
     }
 
-    /**
-     * Tạo ReadAdapter mặc định theo cấu hình hệ thống (TASK D15).
-     * <p>
-     * -Dread.adapter=fake -> FakeReadAdapter
-     * -Dbooking.client=socket -> BookingClientReadAdapter
-     * Mặc định: FakeReadAdapter phục vụ kiểm thử an toàn
-     */
-    public static ReadAdapter createDefaultReadAdapter() {
-        String readMode = System.getProperty("read.adapter", "").trim().toLowerCase();
-        if ("fake".equals(readMode)) {
-            return new FakeReadAdapter();
-        }
+    public static synchronized ReadAdapter createDefaultReadAdapter() {
         ClusterNodeSelector selector = getClusterNodeSelector();
         ClientConfig config = (selector != null) ? selector.getConfig() : ClientConfig.loadDefault();
-        String clientMode = config.getClientMode();
-        if ("socket".equals(clientMode) || "tcp".equals(clientMode) || "real".equals(clientMode)) {
-            return new BookingClientReadAdapter(getBookingClient());
-        }
-        return new FakeReadAdapter();
+        return createReadAdapterForConfig(config, getBookingClient());
     }
 
-    /**
-     * Lấy ReadAdapter hiện tại đang dùng.
-     */
+    public static ReadAdapter createReadAdapterForConfig(ClientConfig config, BookingClient bookingClient) {
+        Objects.requireNonNull(config, "config không được null");
+        String readMode = System.getProperty("read.adapter", "").trim().toLowerCase();
+        if (config.isReleaseMode()) {
+            config.validateForRelease();
+            if ("fake".equals(readMode) || "mock".equals(readMode)) {
+                throw new IllegalArgumentException(
+                        "Chế độ RELEASE từ chối 'read.adapter=" + readMode + "' — chỉ cho phép BookingClientReadAdapter thật.");
+            }
+            return new BookingClientReadAdapter(Objects.requireNonNull(bookingClient, "bookingClient không được null"));
+        }
+        if ("fake".equals(readMode)) {
+            return DevSupportBridge.get().createDevReadAdapter();
+        }
+        if (config.isSocketMode()) {
+            return new BookingClientReadAdapter(Objects.requireNonNull(bookingClient, "bookingClient không được null"));
+        }
+        return DevSupportBridge.get().createDevReadAdapter();
+    }
+
     public static synchronized ReadAdapter getReadAdapter() {
         if (readAdapter == null) {
             readAdapter = createDefaultReadAdapter();
@@ -336,10 +431,10 @@ public final class ClientFactory {
         return readAdapter;
     }
 
-    /**
-     * Đổi ReadAdapter (dùng trong kiểm thử hoặc khi đổi cấu hình).
-     */
     public static synchronized void setReadAdapter(ReadAdapter adapter) {
+        if (adapter != null) {
+            rejectForbiddenComponentInRelease(adapter, "ReadAdapter");
+        }
         if (readAdapter != null && readAdapter != adapter) {
             try {
                 readAdapter.close();
@@ -353,9 +448,6 @@ public final class ClientFactory {
         }
     }
 
-    /**
-     * Lấy SeatsRefreshService gắn với danh sách ghế ObservableList (TASK D15).
-     */
     public static synchronized SeatsRefreshService getSeatsRefreshService(ObservableList<SeatViewModel> seatsList) {
         if (seatsRefreshService == null || seatsRefreshService.getSeatsList() != seatsList) {
             if (seatsRefreshService != null) {
@@ -366,16 +458,10 @@ public final class ClientFactory {
         return seatsRefreshService;
     }
 
-    /**
-     * Lấy SeatsRefreshService hiện tại (nếu đã khởi tạo).
-     */
     public static synchronized SeatsRefreshService getSeatsRefreshService() {
         return seatsRefreshService;
     }
 
-    /**
-     * Đặt SeatsRefreshService tùy biến (phục vụ Unit Test).
-     */
     public static synchronized void setSeatsRefreshService(SeatsRefreshService service) {
         if (seatsRefreshService != null && seatsRefreshService != service) {
             seatsRefreshService.close();
@@ -383,14 +469,12 @@ public final class ClientFactory {
         seatsRefreshService = service;
     }
 
-    /**
-     * Lấy ReconnectController dùng chung cho ứng dụng (TASK TV1-D21).
-     */
-    public static synchronized vn.nhom6.railway.client.controller.ReconnectController getReconnectController() {
+    public static synchronized ReconnectController getReconnectController() {
         if (reconnectController == null) {
-            LeaderAwareBookingClient leaderClient = (rawBookingClient instanceof LeaderAwareBookingClient labc)
+            BookingClient raw = getBookingClient();
+            LeaderAwareBookingClient leaderClient = (raw instanceof LeaderAwareBookingClient labc)
                     ? labc : null;
-            reconnectController = new vn.nhom6.railway.client.controller.ReconnectController(
+            reconnectController = new ReconnectController(
                     leaderClient,
                     getBookingViewModel(),
                     getClusterConnectionViewModel(),
@@ -400,19 +484,13 @@ public final class ClientFactory {
         return reconnectController;
     }
 
-    /**
-     * Đặt ReconnectController tùy biến (dùng trong test hoặc cấu hình lại).
-     */
-    public static synchronized void setReconnectController(vn.nhom6.railway.client.controller.ReconnectController controller) {
+    public static synchronized void setReconnectController(ReconnectController controller) {
         reconnectController = controller;
     }
 
-    /**
-     * Lấy TicketLookupViewModel dùng chung cho ứng dụng (TASK TV1-D24).
-     */
-    public static synchronized vn.nhom6.railway.client.viewmodel.TicketLookupViewModel getTicketLookupViewModel() {
+    public static synchronized TicketLookupViewModel getTicketLookupViewModel() {
         if (ticketLookupViewModel == null) {
-            ticketLookupViewModel = new vn.nhom6.railway.client.viewmodel.TicketLookupViewModel(
+            ticketLookupViewModel = new TicketLookupViewModel(
                     getJournalingBookingClient(),
                     getJournal(),
                     null,
@@ -426,10 +504,7 @@ public final class ClientFactory {
         return ticketLookupViewModel;
     }
 
-    /**
-     * Đặt TicketLookupViewModel tùy biến (dùng trong kiểm thử).
-     */
-    public static synchronized void setTicketLookupViewModel(vn.nhom6.railway.client.viewmodel.TicketLookupViewModel vm) {
+    public static synchronized void setTicketLookupViewModel(TicketLookupViewModel vm) {
         ticketLookupViewModel = vm;
     }
 }
