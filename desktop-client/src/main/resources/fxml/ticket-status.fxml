@@ -13,26 +13,27 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<VBox fx:id="ticketStatusRoot" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.client.controller.TicketStatusController"
       spacing="14.0" style="-fx-padding: 18 24; -fx-background-color: #f8fafc;"
       stylesheets="@../css/railway.css">
 
-    <!-- 1. HEADER: Nút quay lại, Tiêu đề màn hình và Nhãn MOCK DATA -->
+    <!-- 1. HEADER: Nút quay lại, Tiêu đề màn hình và Nhãn nguồn dữ liệu -->
     <HBox alignment="CENTER_LEFT" spacing="14.0">
         <children>
             <Button fx:id="backBtn" onAction="#onBackClicked" text="⬅ Quay lại màn hình chính"
-                    styleClass="btn-back" />
+                    minWidth="-Infinity" styleClass="btn-back" />
             <VBox spacing="2.0">
                 <children>
-                    <Label text="TRA CỨU VÀ QUẢN LÝ VÉ (TASK D06)"
+                    <Label text="TRA CỨU VÀ QUẢN LÝ VÉ CHUYẾN SE-001"
                            style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
-                    <Label text="Xem danh sách vé, tra cứu theo Request ID / Ticket ID và mô phỏng hủy vé MOCK"
+                    <Label text="Tra cứu kết quả yêu cầu theo Request ID (GET_REQUEST_RESULT) và quản lý vé đã xác nhận"
                            style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="mockBadgeLabel" text="MOCK DATA — D06" styleClass="badge-mock" />
+            <Label fx:id="modeBadgeLabel" text="REAL / SOCKET" minWidth="-Infinity" styleClass="badge-ticket-confirmed" />
+            <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity" styleClass="badge-mock" />
         </children>
     </HBox>
 
@@ -40,22 +41,21 @@
     <VBox spacing="6.0">
         <children>
             <HBox fx:id="bannerBox" alignment="CENTER_LEFT" spacing="10.0"
-                  style="-fx-background-color: #fffbeb; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #fde68a; -fx-border-radius: 6;">
+                  style="-fx-background-color: #eff6ff; -fx-padding: 8 14; -fx-background-radius: 6; -fx-border-color: #bfdbfe; -fx-border-radius: 6;">
                 <children>
-                    <Label fx:id="bannerTitleLabel" text="ℹ THÔNG BÁO MÔ PHỎNG:"
-                           style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #92400e;" />
-                    <Label fx:id="bannerTextLabel" text="Tất cả dữ liệu vé bên dưới là dữ liệu giả lập (MOCK) lưu trong bộ nhớ máy trạm, không ghi DB hay gửi qua mạng."
-                           style="-fx-font-size: 11px; -fx-text-fill: #78350f;" />
+                    <Label fx:id="bannerTitleLabel" text="ℹ NGUỒN DỮ LIỆU:" minWidth="-Infinity"
+                           style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #1d4ed8;" />
+                    <Label fx:id="bannerTextLabel" text="Bảng hiển thị các vé đã xác nhận (CONFIRMED) trong phiên hoặc khôi phục từ nhật ký bền vững của máy trạm này."
+                           wrapText="true" HBox.hgrow="ALWAYS" style="-fx-font-size: 11px; -fx-text-fill: #1e3a8a;" />
                 </children>
             </HBox>
-            <!-- Nhãn thông báo lịch sử nâng cao BLOCKED/P1 (TASK TV1-D24) -->
             <HBox fx:id="historyBlockedBox" alignment="CENTER_LEFT" spacing="8.0"
                   style="-fx-background-color: #f1f5f9; -fx-padding: 6 12; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;">
                 <children>
-                    <Label text="ℹ LỊCH SỬ NÂNG CAO:"
+                    <Label text="ℹ LỊCH SỬ NÂNG CAO:" minWidth="-Infinity"
                            style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #475569;" />
                     <Label fx:id="historyBlockedLabel" text="Lịch sử vé nâng cao chưa có contract được duyệt (BLOCKED/P1) — Bảng chỉ hiển thị vé đã xác nhận của ứng dụng này."
-                           style="-fx-font-size: 11px; -fx-text-fill: #334155;" />
+                           wrapText="true" HBox.hgrow="ALWAYS" style="-fx-font-size: 11px; -fx-text-fill: #334155;" />
                 </children>
             </HBox>
         </children>
@@ -67,25 +67,24 @@
         <children>
             <HBox alignment="CENTER_LEFT" spacing="10.0">
                 <children>
-                    <Label text="Tìm kiếm:" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
-                    <ComboBox fx:id="searchTypeCombo" prefWidth="180.0" styleClass="mock-combobox" />
+                    <Label text="Tìm kiếm:" minWidth="-Infinity" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+                    <ComboBox fx:id="searchTypeCombo" prefWidth="185.0" styleClass="search-combobox" />
                     <TextField fx:id="searchField" HBox.hgrow="ALWAYS"
-                               promptText="Nhập Request ID (VD: REQ-20261105-001) hoặc Ticket ID (VD: TCK-SE001-G02)..."
+                               promptText="Nhập Request ID (UUID) để truy vấn cụm máy chủ hoặc Ticket ID để lọc cục bộ..."
                                style="-fx-font-size: 12px; -fx-padding: 6 10; -fx-background-radius: 5; -fx-border-color: #cbd5e1; -fx-border-radius: 5;" />
                     <Button fx:id="searchBtn" onAction="#onSearchClicked" text="🔍 Tra cứu"
-                            styleClass="btn-primary" />
+                            minWidth="-Infinity" styleClass="btn-primary" />
                     <Button fx:id="clearSearchBtn" onAction="#onClearSearchClicked" text="⟲ Hiện tất cả"
-                            styleClass="btn-reset" />
+                            minWidth="-Infinity" styleClass="btn-reset" />
                     <ProgressIndicator fx:id="searchProgressIndicator" prefWidth="18.0" prefHeight="18.0"
                                        visible="false" managed="false" />
                 </children>
             </HBox>
 
-            <!-- Nhãn phản hồi kết quả tra cứu -->
             <HBox alignment="CENTER_LEFT" spacing="8.0">
                 <children>
-                    <Label fx:id="searchResultLabel" text="Hiển thị tất cả 7 vé trong danh sách MOCK."
-                           style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-style: italic;" />
+                    <Label fx:id="searchResultLabel" text="Nhập Request ID để tra cứu kết quả xử lý trên máy chủ."
+                           wrapText="true" styleClass="search-msg-muted" />
                 </children>
             </HBox>
         </children>
@@ -101,7 +100,7 @@
             <TableColumn fx:id="colPassenger" text="Hành khách" prefWidth="145.0" />
             <TableColumn fx:id="colTime" text="Thời gian đặt" prefWidth="130.0" />
             <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="135.0" />
-            <TableColumn fx:id="colMock" text="Ghi chú" prefWidth="110.0" />
+            <TableColumn fx:id="colMock" text="Nguồn" prefWidth="110.0" />
         </columns>
         <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -116,15 +115,13 @@
                 <children>
                     <Label text="Vé đang chọn trong bảng:" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;" />
                     <Label fx:id="selectedTicketSummaryLabel" text="(Chưa chọn vé nào — Vui lòng nhấp vào một dòng trong bảng)"
-                           style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                           wrapText="true" styleClass="ticket-summary-default" />
                 </children>
             </VBox>
 
-            <!-- Nút Hủy vé: Chỉ bật khi chọn vé CONFIRMED -->
             <Button fx:id="cancelTicketBtn" onAction="#onCancelTicketClicked" text="❌ Hủy vé đã chọn"
-                    styleClass="btn-cancel-ticket" disable="true" />
+                    minWidth="-Infinity" styleClass="btn-cancel-ticket" disable="true" />
         </children>
     </HBox>
 
 </VBox>
-

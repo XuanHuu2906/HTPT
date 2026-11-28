@@ -192,6 +192,9 @@ public class ClusterStatusBarController {
     private void updateDataSourceUi(DataSource ds) {
         if (dataSourceBadgeLabel != null) {
             DataSource source = (ds != null) ? ds : DataSource.NONE;
+            if (ClientConfig.isReleaseModeActive() && source == DataSource.MOCK) {
+                throw new IllegalStateException("Chế độ RELEASE không cho phép hiển thị nguồn dữ liệu MOCK trên thanh trạng thái cụm!");
+            }
             dataSourceBadgeLabel.setText(source.getLabel());
             dataSourceBadgeLabel.getStyleClass().removeAll(
                     "badge-real",

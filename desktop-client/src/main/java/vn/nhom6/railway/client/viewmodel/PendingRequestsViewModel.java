@@ -32,7 +32,24 @@ public class PendingRequestsViewModel {
 
     public PendingRequestsViewModel(JournalingBookingClient journalingClient) {
         this.journalingClient = journalingClient;
-        reloadFromJournal();
+        loadInitialSync();
+    }
+
+    private void loadInitialSync() {
+        if (journalingClient == null || journalingClient.getJournal() == null) {
+            return;
+        }
+        List<PendingEntry> entries = journalingClient.getJournal().loadPending();
+        String srcLabel = determineSourceLabel();
+        pendingItems.clear();
+        for (PendingEntry entry : entries) {
+            pendingItems.add(new PendingItem(entry, srcLabel));
+        }
+        if (entries.isEmpty()) {
+            statusMessage.set("Không có yêu cầu nào đang chờ xử lý.");
+        } else {
+            statusMessage.set(String.format("Đã khôi phục %d yêu cầu chưa xác nhận từ journal.", entries.size()));
+        }
     }
 
     private static void runOnFxThread(Runnable action) {
@@ -71,11 +88,21 @@ public class PendingRequestsViewModel {
     }
 
     private String determineSourceLabel() {
-        if (journalingClient == null) return "MOCK";
-        String delegateName = journalingClient.getDelegate().getClass().getSimpleName();
-        if (delegateName.contains("Mock")) return "MOCK";
-        if (delegateName.contains("Fake")) return "FAKE-TEST";
-        return "REAL";
+        if (vn.nhom6.railway.client.network.ClientConfig.isReleaseModeActive()) {
+            return "REAL";
+        }
+        if (journalingClient == null) {
+            return "DEV";
+        }
+        if (vn.nhom6.railway.client.network.DevSupportBridge.isDevMockClient(journalingClient)) {
+            return "MOCK";
+        }
+        vn.nhom6.railway.client.network.BookingClient delegate = journalingClient.getDelegate();
+        if (delegate instanceof vn.nhom6.railway.client.network.SocketBookingClient
+                || delegate instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient) {
+            return "REAL";
+        }
+        return "TEST";
     }
 
     /**
@@ -97,7 +124,9 @@ public class PendingRequestsViewModel {
                 busy.set(false);
 
                 if (throwable != null) {
-                    statusMessage.set("Kiểm tra thất bại hoặc timeout: " + throwable.getMessage());
+                    var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                    statusMessage.set("Chưa thể hoàn tất kiểm tra kết quả (" + pres.rawCode()
+                            + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                     return;
                 }
 
@@ -145,7 +174,9 @@ public class PendingRequestsViewModel {
                     busy.set(false);
 
                     if (throwable != null) {
-                        statusMessage.set("Gửi lại hủy vé thất bại hoặc timeout: " + throwable.getMessage());
+                        var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                        statusMessage.set("Chưa nhận được phản hồi cuối khi gửi lại yêu cầu hủy (" + pres.rawCode()
+                                + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                         journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
                         return;
                     }
@@ -177,7 +208,9 @@ public class PendingRequestsViewModel {
                 busy.set(false);
 
                 if (throwable != null) {
-                    statusMessage.set("Gửi lại thất bại hoặc timeout: " + throwable.getMessage());
+                    var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                    statusMessage.set("Chưa nhận được phản hồi cuối khi gửi lại yêu cầu đặt vé (" + pres.rawCode()
+                            + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                     // Cập nhật số lần thử từ journal
                     journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
                     return;

@@ -19,21 +19,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Controller điều khiển hộp thoại Xác nhận đặt vé (TASK D03/D04).
- * <p>
- * Tính năng:
- * - Tiếp nhận danh sách ghế đã chọn từ sơ đồ ghế D02/D04.
- * - Lắng nghe thay đổi trên ô nhập họ tên, kiểm tra tính hợp lệ và cập nhật bộ
- * đếm ký tự.
- * - Gọi {@link MockBookingService} chạy ngầm qua {@link Task} để không khóa UI
- * thread.
- * - Chặn bấm xác nhận nhiều lần khi đang xử lý.
- * - Cung cấp {@link #getOutcome()} để D02/D04 lấy kết quả sau khi đóng hộp
- * thoại.
- * - Định dạng giao diện hoàn toàn qua CSS classes (railway.css), không hardcode
- * màu trong Java.
+ * Controller điều khiển hộp thoại Xác nhận đặt vé (TASK D03/D04/D17/D28).
  */
 public class BookingDialogController {
+
+    @FXML
+    private Label dialogModeBadgeLabel;
 
     @FXML
     private Label selectedSeatsSummaryLabel;
@@ -67,6 +58,16 @@ public class BookingDialogController {
 
     @FXML
     public void initialize() {
+        try {
+            vn.nhom6.railway.client.network.ClientConfig cfg = vn.nhom6.railway.client.network.ClientConfig.loadDefault();
+            if (dialogModeBadgeLabel != null && cfg.isReleaseMode()) {
+                dialogModeBadgeLabel.getStyleClass().removeAll("badge-cluster-mode", "badge-release-mode", "badge-mock");
+                dialogModeBadgeLabel.setText("RELEASE");
+                dialogModeBadgeLabel.getStyleClass().add("badge-release-mode");
+            }
+        } catch (Exception ignored) {
+        }
+
         if (errorLabel != null) {
             errorLabel.setText("");
             errorLabel.setVisible(false);

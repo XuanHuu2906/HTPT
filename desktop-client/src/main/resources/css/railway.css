@@ -1,7 +1,7 @@
 /* =============================================================================
    HỆ THỐNG BÁN VÉ TÀU CAO TỐC SE-001 (NHÓM 6)
-   railway.css — Stylesheet dùng chung cho JavaFX Desktop Client (TASK D04)
-   Tuân thủ SPEC-06: Phân biệt trực quan 4 trạng thái ghế, màn hình và MOCK controls.
+   railway.css — Stylesheet dùng chung cho JavaFX Desktop Client
+   Tuân thủ SPEC-06: Phân biệt trực quan 4 trạng thái ghế, trạng thái kết nối và thông báo.
    ============================================================================= */
 
 .root {
@@ -249,8 +249,43 @@
 }
 
 /* =============================================================================
-   4. NHÃN MOCK & BẢNG ĐIỀU KHIỂN KIỂM THỬ NHANH (MOCK CONTROL PANEL)
+   4. NHÃN CHẾ ĐỘ VẬN HÀNH & KHUNG ĐIỀU KHIỂN PHÁT TRIỂN
    ============================================================================= */
+
+.badge-cluster-mode {
+    -fx-background-color: #0284c7;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 4px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #0369a1;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+}
+
+.badge-release-mode {
+    -fx-background-color: #047857;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 4px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #059669;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+}
+
+.version-status-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #334155;
+    -fx-font-family: 'Consolas', 'Segoe UI', monospace;
+}
+
+.mock-d07-row {
+    -fx-padding: 4px 0 0 0;
+}
 
 .badge-mock {
     -fx-background-color: #fef3c7;
@@ -299,9 +334,10 @@
     -fx-background-color: #e2e8f0;
 }
 
-.mock-combobox {
+.mock-combobox,
+.search-combobox {
     -fx-font-size: 11px;
-    -fx-pref-height: 26px;
+    -fx-pref-height: 28px;
     -fx-background-color: #ffffff;
     -fx-border-color: #cbd5e1;
     -fx-border-radius: 4px;
@@ -325,6 +361,17 @@
     -fx-background-color: #334155;
 }
 
+.btn-back:focused {
+    -fx-border-color: #38bdf8;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+}
+
+.btn-back:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: not-allowed;
+}
+
 .btn-reset {
     -fx-background-color: #f1f5f9;
     -fx-text-fill: #475569;
@@ -339,6 +386,16 @@
 .btn-reset:hover {
     -fx-background-color: #e2e8f0;
     -fx-text-fill: #1e293b;
+}
+
+.btn-reset:focused {
+    -fx-border-color: #3b82f6;
+    -fx-border-width: 1.5px;
+}
+
+.btn-reset:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: not-allowed;
 }
 
 .btn-continue {
@@ -871,4 +928,137 @@
 .cluster-refresh-btn:hover {
     -fx-background-color: #334155;
     -fx-text-fill: #ffffff;
+}
+
+.cluster-refresh-btn:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: not-allowed;
+}
+
+/* =============================================================================
+   9. RECONNECT STATES, PENDING JOURNAL CELLS & RELEASE ERROR SCREEN (TV1-D28)
+   ============================================================================= */
+
+.reconnect-connected {
+    -fx-background-color: #ecfdf5;
+    -fx-border-color: #10b981;
+    -fx-border-width: 1px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.reconnect-searching {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #3b82f6;
+    -fx-border-width: 1.5px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.reconnect-no-leader {
+    -fx-background-color: #fff7ed;
+    -fx-border-color: #ea580c;
+    -fx-border-width: 1.5px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.pending-status-confirmed {
+    -fx-text-fill: #059669;
+    -fx-font-weight: bold;
+}
+
+.pending-status-rejected {
+    -fx-text-fill: #dc2626;
+    -fx-font-weight: bold;
+}
+
+.pending-status-error {
+    -fx-text-fill: #b91c1c;
+    -fx-font-weight: bold;
+}
+
+.pending-status-unknown {
+    -fx-text-fill: #ea580c;
+    -fx-font-weight: bold;
+}
+
+.pending-source-real {
+    -fx-text-fill: #0284c7;
+    -fx-font-weight: bold;
+}
+
+.pending-source-fake {
+    -fx-text-fill: #7c3aed;
+    -fx-font-weight: bold;
+}
+
+.pending-source-mock {
+    -fx-text-fill: #d97706;
+    -fx-font-weight: bold;
+}
+
+.btn-pending-check {
+    -fx-background-color: #e0f2fe;
+    -fx-text-fill: #0369a1;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 8;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.btn-pending-check:hover {
+    -fx-background-color: #bae6fd;
+}
+
+.btn-pending-check:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: not-allowed;
+}
+
+.btn-pending-retry {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 8;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.btn-pending-retry:hover {
+    -fx-background-color: #fde68a;
+}
+
+.btn-pending-retry:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: not-allowed;
+}
+
+.config-error-root {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 36px;
+    -fx-alignment: center;
+}
+
+.config-error-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #ef4444;
+    -fx-border-width: 2px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 28px 32px;
+    -fx-max-width: 720px;
+}
+
+.config-error-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #991b1b;
+}
+
+.config-error-detail {
+    -fx-font-size: 13px;
+    -fx-text-fill: #1e293b;
 }

@@ -10,8 +10,9 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import vn.nhom6.railway.client.network.BookingClient;
+import vn.nhom6.railway.client.network.ClientConfig;
+import vn.nhom6.railway.client.network.DevSupportBridge;
 import vn.nhom6.railway.client.network.GetRequestResultResponseDto;
-import vn.nhom6.railway.client.network.MockBookingClient;
 import vn.nhom6.railway.client.storage.PendingEntry;
 import vn.nhom6.railway.client.storage.PendingState;
 import vn.nhom6.railway.client.storage.PersistentPendingJournal;
@@ -37,7 +38,7 @@ import java.util.regex.Pattern;
  *   <li>Single-flight & Cooldown: Không gửi trùng lặp nhiều request tra cứu cùng lúc.</li>
  *   <li>Kiểm tra tính hợp lệ của requestId (rỗng/sai format -> chặn ngay tại Client).</li>
  *   <li>Khớp requestId phản hồi: Bỏ qua các kết quả không khớp requestId đã gửi.</li>
- *   <li>Chế độ socket không bao giờ sử dụng dữ liệu giả từ MockTicketSource.</li>
+ *   <li>Chế độ socket/release không bao giờ sử dụng dữ liệu giả lập phát triển.</li>
  *   <li>Vô hiệu hóa tính năng Lịch sử vé nâng cao khi chưa có contract được duyệt (BLOCKED/P1).</li>
  * </ul>
  */
@@ -124,10 +125,19 @@ public class TicketLookupViewModel {
             }
         };
 
-        this.mockMode = (bookingClient instanceof MockBookingClient)
-                || "mock".equalsIgnoreCase(System.getProperty("booking.client", "socket"));
+        BookingClient unwrapped = (bookingClient instanceof vn.nhom6.railway.client.network.JournalingBookingClient jbc)
+                ? jbc.getDelegate()
+                : bookingClient;
+        boolean releaseActive = ClientConfig.isReleaseModeActive();
+        boolean isRealTransport = (unwrapped instanceof vn.nhom6.railway.client.network.SocketBookingClient)
+                || (unwrapped instanceof vn.nhom6.railway.client.network.LeaderAwareBookingClient);
+        this.mockMode = !releaseActive && !isRealTransport && (
+                DevSupportBridge.isDevMockClient(unwrapped)
+                        || "mock".equalsIgnoreCase(System.getProperty("client.mode", ""))
+                        || "mock".equalsIgnoreCase(System.getProperty("booking.client", ""))
+        );
 
-        // Lịch sử nâng cao GET_TICKET_HISTORY: BLOCKED/P1 khi ở chế độ socket
+        // Lịch sử nâng cao GET_TICKET_HISTORY: BLOCKED/P1 khi ở chế độ socket/release
         this.historyEnabled.set(this.mockMode);
 
         initializeData();
@@ -139,13 +149,14 @@ public class TicketLookupViewModel {
 
     private void initializeData() {
         if (mockMode) {
-            allConfirmedTickets.setAll(TicketViewModel.MockTicketSource.getSharedTickets());
-            statusMessage.set("Chế độ MOCK: Hiển thị " + allConfirmedTickets.size() + " vé mô phỏng (DEMO).");
+            allConfirmedTickets.setAll(DevSupportBridge.get().getSharedDevTickets());
+            statusMessage.set("Chế độ phát triển cục bộ: Hiển thị " + allConfirmedTickets.size() + " vé minh họa.");
             statusStyleClass.set("search-msg-muted");
         } else {
-            // Chế độ SOCKET / REAL: Tuyệt đối KHÔNG dùng MockTicketSource!
+            // Chế độ SOCKET / RELEASE: chỉ đọc từ Journal lưu bền của máy trạm này
             loadConfirmedTicketsFromJournal();
-            statusMessage.set("Chế độ SOCKET: Hiển thị " + allConfirmedTickets.size() + " vé đã xác nhận trong ứng dụng này.");
+            String modeLabel = ClientConfig.isReleaseModeActive() ? "RELEASE" : "SOCKET";
+            statusMessage.set("Chế độ " + modeLabel + ": Hiển thị " + allConfirmedTickets.size() + " vé đã xác nhận trong ứng dụng này.");
             statusStyleClass.set("search-msg-muted");
         }
         displayedTickets.setAll(allConfirmedTickets);
@@ -161,15 +172,32 @@ public class TicketLookupViewModel {
         try {
             List<PendingEntry> entries = journal.getAll();
             for (PendingEntry entry : entries) {
-                if (entry.getState() == PendingState.RESOLVED && "BOOK_TICKET".equals(entry.getCommandType())) {
+                if (entry.getState() == PendingState.RESOLVED
+                        && "BOOK_TICKET".equals(entry.getCommandType())
+                        && (entry.getFinalOutcome() == null || "CONFIRMED".equalsIgnoreCase(entry.getFinalOutcome()))) {
                     String reqId = entry.getRequestId();
                     boolean exists = allConfirmedTickets.stream().anyMatch(t -> reqId.equals(t.getRequestId()));
                     if (!exists) {
+                        String parsedSeat = "—";
+                        String parsedTrip = "SE-001";
+                        if (entry.getPayload() != null && !entry.getPayload().isBlank()) {
+                            try {
+                                com.fasterxml.jackson.databind.JsonNode node =
+                                        vn.nhom6.railway.protocol.codec.MessageCodec.getMapper().readTree(entry.getPayload());
+                                if (node.hasNonNull("seatId")) {
+                                    parsedSeat = node.get("seatId").asText();
+                                }
+                                if (node.hasNonNull("tripId")) {
+                                    parsedTrip = node.get("tripId").asText();
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
                         TicketViewModel tvm = new TicketViewModel(
                                 reqId,
                                 "TCK-" + reqId.substring(0, Math.min(8, reqId.length())),
-                                "—",
-                                "SE-001",
+                                parsedSeat,
+                                parsedTrip,
                                 "—",
                                 entry.getCreatedAt().toString(),
                                 "1.250.000 VNĐ",
@@ -251,9 +279,9 @@ public class TicketLookupViewModel {
             busy.set(false);
 
             if (throwable != null) {
-                Throwable cause = (throwable.getCause() != null) ? throwable.getCause() : throwable;
-                String errMsg = "Không thể hoàn tất tra cứu: " + cause.getMessage()
-                        + ". Trạng thái yêu cầu giữ nguyên CHƯA RÕ (UNKNOWN).";
+                var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, mockMode);
+                String errMsg = "Chưa thể hoàn tất tra cứu (" + pres.rawCode()
+                        + "). Trạng thái yêu cầu giữ nguyên CHƯA RÕ (UNKNOWN).";
                 statusMessage.set(errMsg);
                 statusStyleClass.set("search-msg-error");
                 future.completeExceptionally(throwable);

@@ -26,14 +26,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.jupiter.api.io.TempDir;
+import vn.nhom6.railway.client.controller.CancelTicketController;
 import vn.nhom6.railway.client.controller.ClientErrorKind;
 import vn.nhom6.railway.client.controller.ErrorPresentation;
 import vn.nhom6.railway.client.controller.ErrorPresentationMapper;
 import vn.nhom6.railway.client.controller.PresentationKind;
 import vn.nhom6.railway.client.controller.ReconnectController;
 import vn.nhom6.railway.client.controller.ReconnectController.ReconnectState;
+import vn.nhom6.railway.client.controller.SeatGridController;
 import vn.nhom6.railway.client.harness.RecordedTraceReplayServer;
 import vn.nhom6.railway.client.network.BookTicketResponseDto;
+import vn.nhom6.railway.client.network.BookingClient;
 import vn.nhom6.railway.client.network.BookingClientReadAdapter;
 import vn.nhom6.railway.client.network.CancelTicketRequestDto;
 import vn.nhom6.railway.client.network.CancelTicketResponseDto;
@@ -115,6 +118,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1710,6 +1714,167 @@ public class ClientRegressionTest {
         recordNote("Đủ 8 FXML/CSS & 10 ghế; tách bạch nhãn Socket(0 MOCK) vs Mock(có MOCK); " + evidenceNote);
     }
 
+    @Test
+    @Order(131)
+    @Tag("fixture")
+    @RegMeta(id = "REG-M02", group = "M", layer = "FIXTURE", dataSource = "FAKE")
+    @DisplayName("REG-M02 [FIXTURE]: Chế độ Socket không khởi tạo ghế từ MockSeatSource, không ghi bẩn MockTicketSource, nạp đúng ghế từ Journal [BUG-D28-01]")
+    void regM02_Fixture_SocketModeNoMockSeatOrTicketContamination(@TempDir Path tempDir) throws Exception {
+        String prevMode = System.getProperty("client.mode");
+        String prevBooking = System.getProperty("booking.client");
+        try {
+            System.setProperty("client.mode", "socket");
+            System.setProperty("booking.client", "mock"); // cố tình đặt property cũ mâu thuẫn để kiểm tra unwrap delegate
+
+            FakeNodeServer server = track(new FakeNodeServer("node-1", 0));
+            LeaderAwareBookingClient socketClient = buildSingleServerLeaderClient(server, 1500, 3000, "reg-m02");
+            PersistentPendingJournal journal = track(new PersistentPendingJournal(tempDir));
+            JournalingBookingClient jbc = track(new JournalingBookingClient(socketClient, journal));
+
+            // 1. TicketLookupViewModel phải nhận diện đúng chế độ non-mock qua unwrapped delegate dù có property cũ
+            String reqId = UUID.randomUUID().toString();
+            recordRequestId(reqId);
+            BookTicketResponseDto booked = jbc.book(new BookTicketRequestDto(reqId, "SE-001", "G07", "Khách Kiểm Thử")).get(3, TimeUnit.SECONDS);
+            assertTrue(booked.isConfirmed());
+
+            TicketLookupViewModel lookupVm = new TicketLookupViewModel(jbc, journal, Runnable::run, null);
+            assertFalse(lookupVm.isMockMode(), "JournalingBookingClient bọc Socket/LeaderAware không được rơi vào mockMode");
+            assertEquals(1, lookupVm.getDisplayedTickets().size());
+            assertEquals("G07", lookupVm.getDisplayedTickets().get(0).getSeatId(),
+                    "loadConfirmedTicketsFromJournal phải trích xuất đúng mã ghế từ payload thay vì dấu gạch ngang");
+
+            // 2. SeatGridController ở chế độ Socket trước khi GET_SEATS trả về KHÔNG được nạp G02/G04/G08 BOOKED từ MockSeatSource
+            TicketViewModel.MockTicketSource.resetToDefault();
+            int mockTicketsBefore = TicketViewModel.MockTicketSource.getSharedTickets().size();
+
+            SeatGridController sgc = new SeatGridController();
+            long preBookedCount = sgc.getSeats().stream().filter(SeatViewModel::isBooked).count();
+            assertEquals(0L, preBookedCount,
+                    "Ở chế độ Socket trước khi đọc máy chủ, sơ đồ ghế không được gán sẵn G02/G04/G08 BOOKED từ MockSeatSource (SPEC-06 §8)");
+
+            sgc.getSeats().get(5).setStatus(SeatStatus.SELECTED); // chọn G06 (chưa từng có trong MockTicketSource)
+            sgc.handleBookingOutcome(BookingOutcome.confirmed("TCK-REAL-99", "OK"), "Khách Thật");
+            assertNull(TicketViewModel.MockTicketSource.findByTicketId("TCK-SE001-G06"),
+                    "Ở chế độ Socket, handleBookingOutcome tuyệt đối không được ghi vé giả vào MockTicketSource");
+            assertNull(TicketViewModel.MockTicketSource.findByRequestId("TCK-REAL-99"),
+                    "Ở chế độ Socket, mã tham chiếu thật không được chèn vào MockTicketSource");
+            assertEquals(mockTicketsBefore, TicketViewModel.MockTicketSource.getSharedTickets().size());
+
+            collectServerFrames(server);
+            recordNote("Chế độ Socket: 0 ghế BOOKED giả trước kết nối, 0 ghi bẩn MockTicketSource, nạp đúng ghế G07 từ Journal");
+        } finally {
+            if (prevMode == null) System.clearProperty("client.mode"); else System.setProperty("client.mode", prevMode);
+            if (prevBooking == null) System.clearProperty("booking.client"); else System.setProperty("booking.client", prevBooking);
+        }
+    }
+
+    private static boolean isJavaFxDisplayAvailable() {
+        if (GraphicsEnvironment.isHeadless() || Boolean.parseBoolean(System.getenv("HEADLESS"))) {
+            return false;
+        }
+        if ("Monocle".equalsIgnoreCase(System.getProperty("glass.platform", ""))) {
+            try {
+                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Test
+    @Order(42)
+    @Tag("fixture")
+    @RegMeta(id = "REG-D03", group = "D", layer = "FIXTURE", dataSource = "FAKE")
+    @DisplayName("REG-D03 [FIXTURE]: CancelTicketController ở chế độ Socket không chạm MockBookingClient và không nuốt lỗi chặn hủy vé thành UNKNOWN [BUG-D28-02]")
+    void regD03_Fixture_CancelControllerNoMockLeakAndPreservesPreSendBlock(@TempDir Path tempDir) throws Exception {
+        boolean fxAvailable = isJavaFxDisplayAvailable();
+        if (fxAvailable) {
+            try {
+                Platform.startup(() -> {});
+                Platform.setImplicitExit(false);
+            } catch (IllegalStateException ignored) {
+            }
+        }
+
+        String prevMode = System.getProperty("client.mode");
+        BookingClient prevRaw = ClientFactory.getBookingClient();
+        PersistentPendingJournal prevJournal = ClientFactory.getJournal();
+        try {
+            System.setProperty("client.mode", "socket");
+            FakeNodeServer server = track(new FakeNodeServer("node-1", 0));
+            LeaderAwareBookingClient socketClient = buildSingleServerLeaderClient(server, 1500, 3000, "reg-d03");
+            PersistentPendingJournal journal = new PersistentPendingJournal(tempDir);
+            ClientFactory.setBookingClient(socketClient);
+            ClientFactory.setJournal(journal);
+            ClientFactory.getBookingViewModel().setSyncMode(true);
+
+            // Ghi 1 yêu cầu BOOK_TICKET đang SENT_UNRESOLVED
+            String bookReqId = UUID.randomUUID().toString();
+            recordRequestId(bookReqId);
+            String bookPayload = "{\"requestId\":\"" + bookReqId + "\",\"tripId\":\"SE-001\",\"seatId\":\"G06\",\"passengerName\":\"Khách Treo\"}";
+            journal.recordPrepared(new PendingEntry(
+                    bookReqId, "BOOK_TICKET", bookPayload, PendingEntry.computePayloadHash(bookPayload),
+                    PendingState.SENT_UNRESOLVED, java.time.Instant.now(), null, 1, null, null, 1));
+
+            String derivedTicketId = "TCK-" + bookReqId.substring(0, 8);
+            TicketViewModel pendingDerivedTicket = new TicketViewModel(
+                    bookReqId, derivedTicketId, "G06", "SE-001", "—", "2026-11-28", "1.250.000 VNĐ",
+                    TicketStatus.CONFIRMED, null, "REAL");
+
+            AtomicReference<String> statusAfterAttempt = new AtomicReference<>();
+            AtomicReference<TicketStatus> ticketStatusAfter = new AtomicReference<>();
+
+            if (fxAvailable) {
+                CountDownLatch latch = new CountDownLatch(1);
+                Platform.runLater(() -> {
+                    try {
+                        FXMLLoader loader = new FXMLLoader(App.class.getResource("/fxml/cancel-ticket-dialog.fxml"));
+                        Parent root = loader.load();
+                        CancelTicketController ctrl = loader.getController();
+                        ctrl.setTicket(pendingDerivedTicket);
+                        ctrl.getConfirmCheckBox().setSelected(true);
+                        ctrl.onConfirmCancelClicked();
+
+                        Platform.runLater(() -> {
+                            Node titleNode = root.lookup("#resultTitleLabel");
+                            String titleTxt = (titleNode instanceof javafx.scene.control.Label lbl) ? lbl.getText() : ctrl.getLastResultTitle();
+                            statusAfterAttempt.set(titleTxt);
+                            ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+                            latch.countDown();
+                        });
+                    } catch (Exception e) {
+                        statusAfterAttempt.set("EX:" + e.getMessage());
+                        latch.countDown();
+                    }
+                });
+                assertTrue(latch.await(5, TimeUnit.SECONDS));
+            } else {
+                // Môi trường CI headless / thiếu Monocle: kiểm chứng trực tiếp controller mà không gọi Platform.startup
+                CancelTicketController ctrl = new CancelTicketController();
+                ctrl.setTicket(pendingDerivedTicket);
+                ctrl.onConfirmCancelClicked();
+                statusAfterAttempt.set(ctrl.getLastResultTitle());
+                ticketStatusAfter.set(pendingDerivedTicket.getStatus());
+            }
+
+            assertEquals(TicketStatus.CONFIRMED, ticketStatusAfter.get(), "Vé không được tự chuyển sang CANCELLED");
+            assertFalse(statusAfterAttempt.get().isBlank(), "Phải có tiêu đề phản hồi chặn hủy trước khi gửi");
+            assertFalse(statusAfterAttempt.get().contains("TIMEOUT_UNKNOWN"),
+                    "Lỗi chặn hủy trước khi gửi (IllegalStateException) không được nuốt thành TIMEOUT_UNKNOWN: " + statusAfterAttempt.get());
+            assertFalse(statusAfterAttempt.get().contains("MOCK"),
+                    "Hộp thoại hủy vé ở chế độ Socket không được hiển thị nhãn MOCK: " + statusAfterAttempt.get());
+
+            recordNote("CancelTicketController ở chế độ Socket chặn sạch lỗi trước gửi (0 TIMEOUT_UNKNOWN giả, 0 nhãn MOCK)");
+        } finally {
+            if (prevMode == null) System.clearProperty("client.mode"); else System.setProperty("client.mode", prevMode);
+            ClientFactory.setBookingClient(prevRaw);
+            if (prevJournal != null && !prevJournal.isClosed()) {
+                ClientFactory.setJournal(prevJournal);
+            }
+        }
+    }
+
     private void captureOptionalJavaFxSnapshots() throws Exception {
         try {
             Platform.startup(() -> {});
@@ -1831,9 +1996,16 @@ public class ClientRegressionTest {
         Assumptions.assumeTrue((tv6Confirm != null && !tv6Confirm.isBlank()) || hasNotesConfirm,
                 "NOT_RUN: Chưa có xác nhận khóa lịch cụm test dành riêng từ TV6 (thiếu TV6_SCHEDULE_CONFIRMED / TV6-D27-notes.md)");
 
-        ClientConfig cfg = ClientConfig.loadWithOverrides(null, Map.of("cluster.profile", profile.toLowerCase(Locale.ROOT)), Map.of());
+        Map<String, String> overrides = new HashMap<>();
+        overrides.put("cluster.profile", profile.toLowerCase(Locale.ROOT));
+        if (ClientConfig.isReleaseModeActive()) {
+            overrides.put("release.mode", "true");
+            overrides.put("client.mode", "socket");
+        }
+        ClientConfig cfg = ClientConfig.loadWithOverrides(null, overrides, Map.of());
         Assumptions.assumeFalse(cfg.hasPlaceholderEndpoints(),
                 "BLOCKED: Cấu hình profile '" + profile + "' vẫn chứa IP placeholder: " + cfg.getPlaceholderNodes());
+        cfg.validateForStartup();
 
         ClusterCheckSummary summary = ClusterConnectivityCheck.checkCluster(cfg.getEndpoints(), 1500, DataSource.REAL);
         Assumptions.assumeTrue(summary.reachableNodes() >= 3,
@@ -2356,6 +2528,85 @@ public class ClientRegressionTest {
             }
 
             printSummaryTable(merged.values());
+            writeD28AutoDiffIfRequested(merged);
+            writeD28RealTraceIfRequested(merged);
+        }
+
+        private static void writeD28AutoDiffIfRequested(Map<String, CsvRow> afterRows) throws IOException {
+            String baselineProp = System.getProperty("d28.diff.baseline");
+            if (baselineProp == null || baselineProp.isBlank()) {
+                return;
+            }
+            Path baselinePath = resolveProjectPath(baselineProp.trim());
+            if (!Files.exists(baselinePath)) {
+                return;
+            }
+            Map<String, CsvRow> beforeRows = new LinkedHashMap<>();
+            try (BufferedReader reader = Files.newBufferedReader(baselinePath, StandardCharsets.UTF_8)) {
+                reader.readLine(); // skip header
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    CsvRow parsed = parseCsvLine(line);
+                    if (parsed != null) {
+                        beforeRows.put(parsed.layer() + "::" + parsed.regId(), parsed);
+                    }
+                }
+            }
+
+            String outProp = System.getProperty("d28.diff.output", "artifacts/evidence/D28/TV1-D28-regression-diff.csv");
+            Path diffOutPath = resolveProjectPath(outProp.trim());
+            if (diffOutPath.getParent() != null) {
+                Files.createDirectories(diffOutPath.getParent());
+            }
+
+            Set<String> allKeys = new java.util.LinkedHashSet<>();
+            allKeys.addAll(beforeRows.keySet());
+            allKeys.addAll(afterRows.keySet());
+
+            try (BufferedWriter writer = Files.newBufferedWriter(diffOutPath, StandardCharsets.UTF_8)) {
+                writer.write("regId,group,layer,beforeStatus,afterStatus,change,dataSource,note\n");
+                for (String k : allKeys) {
+                    CsvRow before = beforeRows.get(k);
+                    CsvRow after = afterRows.get(k);
+                    String regId = after != null ? after.regId() : before.regId();
+                    String group = after != null ? after.group() : before.group();
+                    String layer = after != null ? after.layer() : before.layer();
+                    String bStatus = before != null ? before.status() : "ADDED_IN_D28";
+                    String aStatus = after != null ? after.status() : "REMOVED";
+                    String change = bStatus.equals(aStatus) ? "UNCHANGED" : (bStatus + " -> " + aStatus);
+                    String ds = after != null ? after.dataSource() : before.dataSource();
+                    String note = after != null ? after.note() : before.note();
+                    writer.write(String.format("%s,%s,%s,%s,%s,\"%s\",%s,\"%s\"\n",
+                            regId, group, layer, bStatus, aStatus,
+                            change.replace("\"", "\"\""),
+                            ds,
+                            note.replace("\"", "\"\"")));
+                }
+            }
+        }
+
+        private static void writeD28RealTraceIfRequested(Map<String, CsvRow> merged) throws IOException {
+            if (!Boolean.getBoolean("d28.real.trace")) {
+                return;
+            }
+            boolean anyRealRan = merged.values().stream()
+                    .anyMatch(r -> "REAL".equals(r.layer()) && ("PASS".equals(r.status()) || "FAIL".equals(r.status())));
+            if (!anyRealRan) {
+                return;
+            }
+            Path tracePath = resolveProjectPath("artifacts/evidence/D28/TV1-D28-real-trace.csv");
+            if (tracePath.getParent() != null) {
+                Files.createDirectories(tracePath.getParent());
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(tracePath, StandardCharsets.UTF_8)) {
+                writer.write("testCase,node,type,messageId,correlationId,requestId,payloadSha256,response,uiState,dataSource\n");
+                for (CsvRow r : merged.values()) {
+                    if ("REAL".equals(r.layer()) && ("PASS".equals(r.status()) || "FAIL".equals(r.status()))) {
+                        writer.write(String.format("%s,-,-,-,-,\"%s\",-,%s,-,REAL\n",
+                                r.regId(), r.requestIds().replace("\"", "\"\""), r.status()));
+                    }
+                }
+            }
         }
 
         private static CsvRow parseCsvLine(String line) {

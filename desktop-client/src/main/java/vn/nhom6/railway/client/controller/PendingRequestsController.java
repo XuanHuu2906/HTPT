@@ -96,18 +96,21 @@ public class PendingRequestsController {
                     setStyle(null);
                 } else {
                     setText(item);
+                    getStyleClass().removeAll(
+                            "pending-status-confirmed", "pending-status-rejected",
+                            "pending-status-error", "pending-status-unknown"
+                    );
                     PendingItem pendingItem = getTableRow() != null ? getTableRow().getItem() : null;
                     if (pendingItem != null) {
                         String styleClass = pendingItem.getStyleClass();
                         if ("booking-status-confirmed".equals(styleClass)) {
-                            setStyle("-fx-text-fill: #059669; -fx-font-weight: bold;");
+                            getStyleClass().add("pending-status-confirmed");
                         } else if ("booking-status-rejected".equals(styleClass)) {
-                            setStyle("-fx-text-fill: #dc2626; -fx-font-weight: bold;");
+                            getStyleClass().add("pending-status-rejected");
                         } else if ("status-error".equals(styleClass)) {
-                            setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+                            getStyleClass().add("pending-status-error");
                         } else {
-                            // booking-status-unknown (CHƯA XÁC NHẬN)
-                            setStyle("-fx-text-fill: #ea580c; -fx-font-weight: bold;");
+                            getStyleClass().add("pending-status-unknown");
                         }
                     }
                 }
@@ -145,12 +148,13 @@ public class PendingRequestsController {
                     setStyle(null);
                 } else {
                     setText(item);
+                    getStyleClass().removeAll("pending-source-real", "pending-source-fake", "pending-source-mock");
                     if ("REAL".equals(item)) {
-                        setStyle("-fx-text-fill: #0284c7; -fx-font-weight: bold;");
+                        getStyleClass().add("pending-source-real");
                     } else if ("FAKE-TEST".equals(item)) {
-                        setStyle("-fx-text-fill: #7c3aed; -fx-font-weight: bold;");
+                        getStyleClass().add("pending-source-fake");
                     } else {
-                        setStyle("-fx-text-fill: #d97706; -fx-font-weight: bold;");
+                        getStyleClass().add("pending-source-mock");
                     }
                 }
             }
@@ -163,8 +167,8 @@ public class PendingRequestsController {
 
             {
                 container.setAlignment(Pos.CENTER);
-                checkBtn.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-font-size: 11px; -fx-padding: 3 6; -fx-cursor: hand;");
-                retryBtn.setStyle("-fx-background-color: #fef3c7; -fx-text-fill: #92400e; -fx-font-size: 11px; -fx-padding: 3 6; -fx-cursor: hand;");
+                checkBtn.getStyleClass().add("btn-pending-check");
+                retryBtn.getStyleClass().add("btn-pending-retry");
 
                 checkBtn.setOnAction(e -> {
                     PendingItem item = getTableRow().getItem();

@@ -69,7 +69,7 @@
 
         <Region HBox.hgrow="ALWAYS" />
 
-        <!-- Nguồn dữ liệu (REAL / MOCK / NONE) -->
+        <!-- Nguồn dữ liệu -->
         <HBox alignment="CENTER_LEFT" spacing="6.0">
             <children>
                 <Label text="Nguồn:" style="-fx-text-fill: #64748b; -fx-font-size: 11px;" />
@@ -78,6 +78,6 @@
         </HBox>
 
         <!-- Nút Làm mới -->
-        <Button fx:id="refreshBtn" text="⟳ Làm mới" styleClass="cluster-refresh-btn" />
+        <Button fx:id="refreshBtn" text="⟳ Làm mới" minWidth="-Infinity" styleClass="cluster-refresh-btn" />
     </children>
 </HBox>

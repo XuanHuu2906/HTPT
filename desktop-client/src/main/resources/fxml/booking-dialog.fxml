@@ -10,14 +10,14 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<VBox fx:id="bookingDialogRoot" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.client.controller.BookingDialogController"
       stylesheets="@../css/railway.css"
-      spacing="16.0" prefWidth="480.0"
+      spacing="16.0" prefWidth="500.0"
       style="-fx-background-color: #f8fafc; -fx-padding: 24;">
 
     <!-- TIÊU ĐỀ HỘP THOẠI -->
-    <HBox alignment="CENTER_LEFT" spacing="10.0">
+    <HBox fx:id="dialogHeaderBox" alignment="CENTER_LEFT" spacing="10.0">
         <children>
             <VBox spacing="2.0">
                 <children>
@@ -28,7 +28,7 @@
                 </children>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Label text="MOCK D04" styleClass="badge-mock" />
+            <Label fx:id="dialogModeBadgeLabel" text="SE-001" minWidth="-Infinity" styleClass="badge-cluster-mode" />
         </children>
     </HBox>
 
@@ -41,7 +41,7 @@
             <Label text="Danh sách ghế đã chọn:"
                    style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;" />
             <Label fx:id="selectedSeatsSummaryLabel" text="(Chưa có ghế nào)"
-                   styleClass="summary-seats-empty" />
+                   wrapText="true" styleClass="summary-seats-empty" />
         </children>
     </VBox>
 
@@ -54,17 +54,15 @@
                            style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
                     <Label text=" *" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #ef4444;" />
                     <Region HBox.hgrow="ALWAYS" />
-                    <!-- Nhãn đếm ký tự x/50 -->
                     <Label fx:id="charCountLabel" text="0/50" styleClass="char-count-normal" />
                 </children>
             </HBox>
 
-            <TextField fx:id="passengerNameField" promptText="Nhập họ tên (ví dụ: Nguyễn Văn A)..."
+            <TextField fx:id="passengerNameField" promptText="Nhập họ tên hành khách..."
                        style="-fx-padding: 10 12; -fx-font-size: 13px; -fx-background-color: #ffffff; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6;" />
 
-            <!-- Nhãn thông báo lỗi (ẩn khi hợp lệ) -->
-            <Label fx:id="errorLabel" text="" visible="false" managed="false"
-                   style="-fx-font-size: 11px; -fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-padding: 2 0 0 2;" />
+            <Label fx:id="errorLabel" text="" visible="false" managed="false" wrapText="true"
+                   styleClass="char-count-error" />
         </children>
     </VBox>
 

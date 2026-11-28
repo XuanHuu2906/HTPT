@@ -39,7 +39,7 @@ public class BookingClientReadAdapter implements ReadAdapter {
 
         return bookingClient.getSeats(request)
                 .thenApply(dto -> {
-                    DataSource source = (dto.isMock() || bookingClient instanceof MockBookingClient)
+                    DataSource source = (dto.isMock() || DevSupportBridge.isDevMockClient(bookingClient))
                             ? DataSource.MOCK
                             : DataSource.REAL;
 
@@ -88,7 +88,7 @@ public class BookingClientReadAdapter implements ReadAdapter {
                         cause = cause.getCause();
                     }
 
-                    DataSource source = (bookingClient instanceof MockBookingClient)
+                    DataSource source = DevSupportBridge.isDevMockClient(bookingClient)
                             ? DataSource.MOCK
                             : DataSource.REAL;
 
@@ -140,7 +140,7 @@ public class BookingClientReadAdapter implements ReadAdapter {
 
     @Override
     public DataSource getDataSource() {
-        return (bookingClient instanceof MockBookingClient) ? DataSource.MOCK : DataSource.REAL;
+        return DevSupportBridge.isDevMockClient(bookingClient) ? DataSource.MOCK : DataSource.REAL;
     }
 
     @Override

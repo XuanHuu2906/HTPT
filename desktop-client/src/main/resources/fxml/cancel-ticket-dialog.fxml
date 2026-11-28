@@ -12,37 +12,37 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<VBox fx:id="cancelDialogRoot" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.client.controller.CancelTicketController"
       spacing="14.0" prefWidth="640.0" minWidth="600.0"
       style="-fx-padding: 22 26; -fx-background-color: #f8fafc; -fx-font-family: 'Segoe UI', Tahoma, sans-serif;"
       stylesheets="@../css/railway.css">
 
-    <!-- 1. TIÊU ĐỀ HỘP THOẠI & BADGE MOCK -->
-    <HBox alignment="CENTER_LEFT" spacing="10.0">
+    <!-- 1. TIÊU ĐỀ HỘP THOẠI -->
+    <HBox fx:id="cancelHeaderBox" alignment="CENTER_LEFT" spacing="10.0">
         <children>
             <VBox spacing="2.0">
                 <children>
-                    <Label text="XÁC NHẬN HỦY VÉ (TASK D06)"
+                    <Label text="XÁC NHẬN HỦY VÉ CHUYẾN SE-001"
                            style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
-                    <Label text="Thao tác hủy vé mô phỏng trên dữ liệu cục bộ (MOCK)"
+                    <Label fx:id="cancelSubtitleLabel" text="Gửi yêu cầu hủy vé (CANCEL_TICKET) kèm Request ID duy nhất tới Leader"
                            style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <Label text="DEMO / MOCK" styleClass="badge-mock" />
+            <Label fx:id="cancelModeBadgeLabel" text="SE-001" minWidth="-Infinity" styleClass="badge-cluster-mode" />
         </children>
     </HBox>
 
-    <!-- 2. CẢNH BÁO MOCK: Không ngụ ý ghi DB hay gửi server thật -->
-    <HBox alignment="CENTER_LEFT" spacing="8.0"
-          style="-fx-background-color: #fff7ed; -fx-padding: 10 14; -fx-background-radius: 6; -fx-border-color: #fed7aa; -fx-border-radius: 6;">
+    <!-- 2. LƯU Ý AN TOÀN NGHIỆP VỤ -->
+    <HBox fx:id="cancelNoticeBox" alignment="CENTER_LEFT" spacing="8.0"
+          style="-fx-background-color: #eff6ff; -fx-padding: 10 14; -fx-background-radius: 6; -fx-border-color: #bfdbfe; -fx-border-radius: 6;">
         <children>
-            <Label text="⚠ LƯU Ý MÔ PHỎNG:" minWidth="-Infinity"
-                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #c2410c;" />
-            <Label text="Dữ liệu mô phỏng, không ghi cơ sở dữ liệu và không gọi mạng backend thật."
+            <Label fx:id="cancelNoticeTitleLabel" text="ℹ LƯU Ý GIAO DỊCH:" minWidth="-Infinity"
+                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #1d4ed8;" />
+            <Label fx:id="cancelNoticeTextLabel" text="Vé chỉ chuyển sang ĐÃ HỦY sau khi cụm máy chủ đồng thuận và phản hồi CONFIRMED cho đúng Request ID."
                    wrapText="true" HBox.hgrow="ALWAYS"
-                   style="-fx-font-size: 11px; -fx-text-fill: #9a3412;" />
+                   style="-fx-font-size: 11px; -fx-text-fill: #1e3a8a;" />
         </children>
     </HBox>
 
@@ -91,12 +91,12 @@
         </children>
     </VBox>
 
-    <!-- 4. KHU VỰC ĐIỀU KHIỂN KẾT QUẢ MÔ PHỎNG (FAST MOCK OUTCOME) -->
-    <VBox spacing="8.0" styleClass="mock-panel">
+    <!-- 4. KHUNG CHỌN KỊCH BẢN PHÁT TRIỂN CỤC BỘ (bị gỡ khỏi cây giao diện khi chạy Socket/Release) -->
+    <VBox fx:id="cancelMockPanel" spacing="8.0" styleClass="mock-panel">
         <children>
             <HBox alignment="CENTER_LEFT" spacing="8.0">
                 <children>
-                    <Label text="⚡ Giả lập phản hồi kết quả (MOCK DEMO):" styleClass="mock-panel-title" />
+                    <Label text="⚡ Tùy chọn kịch bản kiểm thử cục bộ:" styleClass="mock-panel-title" />
                 </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="10.0">

@@ -11,37 +11,36 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<VBox fx:id="seatGridRoot" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="vn.nhom6.railway.client.controller.SeatGridController"
       stylesheets="@../css/railway.css"
       spacing="14.0" style="-fx-padding: 18; -fx-background-color: #f8fafc;"
       VBox.vgrow="ALWAYS">
 
     <!-- Card 1: Tiêu đề & Điều hướng quay lại -->
-    <HBox alignment="CENTER_LEFT" spacing="15.0"
+    <HBox alignment="CENTER_LEFT" spacing="14.0"
           style="-fx-background-color: #ffffff; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
         <children>
             <Button fx:id="backBtn" onAction="#onBackClicked" text="⬅ Quay lại màn hình chính"
-                    styleClass="btn-back" />
+                    minWidth="-Infinity" styleClass="btn-back" />
 
             <Separator orientation="VERTICAL" style="-fx-padding: 0 4;" />
 
-            <VBox spacing="2.0">
+            <VBox spacing="2.0" HBox.hgrow="ALWAYS">
                 <children>
-                    <Label text="SƠ ĐỒ CHỌN GHẾ TÀU CAO TỐC SE-001"
+                    <Label text="SƠ ĐỒ CHỌN GHẾ TÀU CAO TỐC SE-001" minWidth="-Infinity"
                            style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
-                    <Label text="Hà Nội ➔ TP. Hồ Chí Minh | Toa 01 - Khoang 10 ghế VIP (G01–G10)"
+                    <Label text="Hà Nội ➔ TP. Hồ Chí Minh | Toa 01 - Khoang 10 ghế VIP (G01–G10)" wrapText="true"
                            style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
 
-            <Region HBox.hgrow="ALWAYS" />
+            <Region minWidth="8.0" />
 
-            <!-- Nhãn MOCK DATA -->
-            <Label fx:id="mockBadgeLabel" text="MOCK DATA — D04" styleClass="badge-mock" />
+            <Label fx:id="modeBadgeLabel" text="CỤM 5 NODE" minWidth="-Infinity" styleClass="badge-cluster-mode" />
+            <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity" styleClass="badge-mock" />
 
-            <!-- Nhãn Mức độ xác minh (TASK D15) -->
-            <Label fx:id="verificationBadgeLabel" text="[Chưa xác minh]" styleClass="badge-unverified" />
+            <Label fx:id="verificationBadgeLabel" text="[Chưa xác minh]" minWidth="-Infinity" styleClass="badge-unverified" />
         </children>
     </HBox>
 
@@ -51,7 +50,7 @@
         <children>
             <ProgressIndicator fx:id="statusProgressIndicator" visible="false" managed="false"
                                styleClass="status-progress-indicator" />
-            <Label fx:id="screenStatusLabel" text="Hệ thống sẵn sàng ở chế độ MOCK (D04)."
+            <Label fx:id="screenStatusLabel" text="Đang tải trạng thái ghế từ cụm máy chủ..."
                    styleClass="status-label" wrapText="true" HBox.hgrow="ALWAYS" />
         </children>
     </HBox>
@@ -60,47 +59,43 @@
     <VBox spacing="12.0" VBox.vgrow="ALWAYS"
           style="-fx-background-color: #ffffff; -fx-padding: 16; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
         <children>
-            <HBox alignment="CENTER_LEFT">
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
                 <children>
-                    <Label text="CHỌN GHẾ NGỒI (Click ghế để chọn / bỏ chọn)"
+                    <Label text="CHỌN GHẾ NGỒI (Click ghế trống để chọn / bỏ chọn)"
                            style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
                     <Region HBox.hgrow="ALWAYS" />
 
                     <!-- Chú giải 4 trạng thái (Legend) khớp hoàn toàn với ghế -->
-                    <HBox spacing="14.0" alignment="CENTER_RIGHT">
+                    <HBox spacing="12.0" alignment="CENTER_RIGHT">
                         <children>
-                            <!-- Trạng thái 1: AVAILABLE -->
                             <HBox spacing="5.0" alignment="CENTER">
                                 <children>
                                     <Region styleClass="legend-box, legend-available" />
-                                    <Label fx:id="legendAvailableLabel" text="Trống (AVAILABLE)"
+                                    <Label fx:id="legendAvailableLabel" text="Trống (0)"
                                            styleClass="legend-label-available" />
                                 </children>
                             </HBox>
 
-                            <!-- Trạng thái 2: SELECTED -->
                             <HBox spacing="5.0" alignment="CENTER">
                                 <children>
                                     <Region styleClass="legend-box, legend-selected" />
-                                    <Label fx:id="legendSelectedLabel" text="Đang chọn (SELECTED)"
+                                    <Label fx:id="legendSelectedLabel" text="Đang chọn (0)"
                                            styleClass="legend-label-selected" />
                                 </children>
                             </HBox>
 
-                            <!-- Trạng thái 3: BOOKED -->
                             <HBox spacing="5.0" alignment="CENTER">
                                 <children>
                                     <Region styleClass="legend-box, legend-booked" />
-                                    <Label fx:id="legendBookedLabel" text="Đã đặt (BOOKED)"
+                                    <Label fx:id="legendBookedLabel" text="Đã đặt (0)"
                                            styleClass="legend-label-booked" />
                                 </children>
                             </HBox>
 
-                            <!-- Trạng thái 4: UNKNOWN (Viền nét đứt) -->
                             <HBox spacing="5.0" alignment="CENTER">
                                 <children>
                                     <Region styleClass="legend-box, legend-unknown" />
-                                    <Label fx:id="legendUnknownLabel" text="Chưa rõ (UNKNOWN)"
+                                    <Label fx:id="legendUnknownLabel" text="Chưa rõ (10)"
                                            styleClass="legend-label-unknown" />
                                 </children>
                             </HBox>
@@ -114,53 +109,49 @@
             <!-- Lưới 10 ghế (GridPane 2 hàng x 5 cột) -->
             <GridPane fx:id="seatGridPane" alignment="CENTER" hgap="16.0" vgap="16.0"
                       VBox.vgrow="ALWAYS" style="-fx-padding: 12 10;">
-                <!-- 10 ghế G01 đến G10 được khởi tạo và quản lý bởi SeatGridController -->
             </GridPane>
         </children>
     </VBox>
 
-    <!-- Card 4: Vùng Điều Khiển MOCK (Fast MOCK Controls - D04/D05) -->
-    <VBox spacing="8.0" styleClass="mock-panel">
+    <!-- Card 4: Khung công cụ kiểm thử nội bộ (chỉ khởi tạo ở chế độ phát triển cục bộ; gỡ khỏi cây giao diện khi chạy Socket/Release) -->
+    <VBox fx:id="mockControlPanel" spacing="8.0" styleClass="mock-panel">
         <children>
             <HBox alignment="CENTER_LEFT" spacing="8.0">
                 <children>
-                    <Label text="⚡ ĐIỀU KHIỂN KIỂM THỬ NHANH (MOCK TEST)" styleClass="mock-panel-title" />
-                    <Label text="MOCK D05" styleClass="badge-mock" />
+                    <Label fx:id="devPanelTitleLabel" text="⚡ BẢNG CÔNG CỤ KIỂM THỬ CỤC BỘ" styleClass="mock-panel-title" />
                 </children>
             </HBox>
 
-            <!-- Hàng 1: Đổi trạng thái màn hình -->
             <HBox alignment="CENTER_LEFT" spacing="8.0">
                 <children>
-                    <Label text="Màn hình:" style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;" />
+                    <Label text="Màn hình:" styleClass="mock-control-label" />
                     <Button fx:id="mockLoadingBtn" onAction="#onMockLoadingClicked"
-                            text="🔄 Loading" styleClass="mock-btn" />
+                            text="🔄 Đang tải" styleClass="mock-btn" />
                     <Button fx:id="mockErrorBtn" onAction="#onMockErrorClicked"
-                            text="⚠ Lỗi hệ thống" styleClass="mock-btn" />
+                            text="⚠ Cảnh báo lỗi" styleClass="mock-btn" />
                     <Button fx:id="mockDisconnectedBtn" onAction="#onMockDisconnectedClicked"
                             text="⚡ Mất kết nối" styleClass="mock-btn" />
                     <Button fx:id="mockIdleBtn" onAction="#onMockIdleClicked"
-                            text="✓ Sẵn sàng (Idle)" styleClass="mock-btn" />
+                            text="✓ Sẵn sàng" styleClass="mock-btn" />
                 </children>
             </HBox>
 
-            <!-- Hàng 2: Đổi dữ liệu ghế mock (ComboBox & Nút Refresh Snapshot) -->
             <HBox alignment="CENTER_LEFT" spacing="6.0">
                 <children>
-                    <Label text="Đổi ghế MOCK:" style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: bold;" />
+                    <Label text="Trạng thái ghế:" styleClass="mock-control-label" />
                     <ComboBox fx:id="mockSeatComboBox" prefWidth="75.0" styleClass="mock-combobox" />
                     <ComboBox fx:id="mockStatusComboBox" prefWidth="110.0" styleClass="mock-combobox" />
                     <Button fx:id="mockApplySeatStatusBtn" onAction="#onMockApplySeatStatus"
                             text="Áp dụng" styleClass="mock-btn" />
                     <Separator orientation="VERTICAL" style="-fx-padding: 0 2;" />
                     <Button fx:id="mockToggleG03BookedBtn" onAction="#onMockToggleG03Booked"
-                            text="G03 ➔ BOOKED" styleClass="mock-btn" />
+                            text="Đổi G03" styleClass="mock-btn" />
                     <Button fx:id="mockRefreshSnapshotBtn" onAction="#onMockRefreshSnapshotClicked"
-                            text="⟲ Refresh MOCK" styleClass="mock-btn" />
+                            text="⟲ Làm mới ghế" styleClass="mock-btn" />
                     <Button fx:id="mockAll4StatesBtn" onAction="#onMockAll4States"
-                            text="★ 4 trạng thái" styleClass="mock-btn" />
+                            text="★ Đủ 4 trạng thái" styleClass="mock-btn" />
                     <Button fx:id="mockResetDefaultBtn" onAction="#onMockResetDefault"
-                            text="Reset gốc" styleClass="mock-btn" />
+                            text="Đặt lại ban đầu" styleClass="mock-btn" />
                 </children>
             </HBox>
         </children>
@@ -170,22 +161,25 @@
     <HBox alignment="CENTER_LEFT" spacing="12.0"
           style="-fx-background-color: #ffffff; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
         <children>
-            <VBox spacing="3.0">
+            <VBox spacing="3.0" HBox.hgrow="ALWAYS">
                 <children>
                     <Label fx:id="selectedSeatsLabel" text="Ghế đang chọn: (Chưa chọn ghế nào)"
-                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                           wrapText="true" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
                     <Label fx:id="seatStatusLabel" text="Gợi ý: Click ghế trống để chọn. Nhấn 'Đặt vé' để mở hộp thoại xác nhận."
-                           style="-fx-font-size: 11px; -fx-text-fill: #64748b;" />
+                           wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
 
-            <Region HBox.hgrow="ALWAYS" />
+            <Region HBox.hgrow="SOMETIMES" />
+
+            <Button fx:id="makeRefreshSeatsBtn" onAction="#onRefreshSeatsClicked" text="⟳ Làm mới sơ đồ"
+                    minWidth="-Infinity" styleClass="btn-reset" />
 
             <Button fx:id="resetSelectionBtn" onAction="#onResetSelectionClicked" text="Bỏ chọn tất cả"
-                    styleClass="btn-reset" />
+                    minWidth="-Infinity" styleClass="btn-reset" />
 
             <Button fx:id="continueBtn" onAction="#onContinueClicked" disable="true" text="Đặt vé ➔"
-                    styleClass="btn-continue" />
+                    minWidth="-Infinity" styleClass="btn-continue" />
         </children>
     </HBox>
 

@@ -33,6 +33,8 @@ import vn.nhom6.railway.client.network.VerificationLevel;
  */
 public class SeatViewModel {
 
+    public static final int TOTAL_SEATS = 10;
+
     /**
      * 4 trạng thái ghế theo đặc tả SPEC-06 và nhiệm vụ D04/D05.
      */
@@ -83,7 +85,7 @@ public class SeatViewModel {
      * 4 trạng thái màn hình theo yêu cầu D04.
      */
     public enum ScreenState {
-        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D08).", "status-idle"),
+        IDLE("Hệ thống sẵn sàng phục vụ chuyến tàu SE-001.", "status-idle"),
         LOADING("Đang tải dữ liệu từ hệ thống...", "status-loading"),
         ERROR("Đã xảy ra lỗi khi xử lý dữ liệu ghế.", "status-error"),
         DISCONNECTED("Mất kết nối với mạng / cụm máy chủ.", "status-disconnected");
@@ -163,18 +165,7 @@ public class SeatViewModel {
          * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
          */
         public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
-            if (seats == null || snapshot == null) {
-                return;
-            }
-            for (SeatViewModel seat : seats) {
-                String id = seat.getSeatId();
-                if (snapshot.containsKey(id)) {
-                    SeatStatus newStatus = snapshot.get(id);
-                    if (newStatus != null && seat.getStatus() != newStatus) {
-                        seat.setStatus(newStatus);
-                    }
-                }
-            }
+            SeatViewModel.applySnapshot(seats, snapshot);
         }
     }
 
@@ -334,10 +325,27 @@ public class SeatViewModel {
     }
 
     /**
-     * Tạo danh sách ghế MOCK từ nguồn MOCK duy nhất.
+     * Tạo danh sách 10 ghế G01–G10 ở trạng thái UNKNOWN (chưa xác minh) khi khởi động chế độ Socket/Release
+     * trước khi nhận phản hồi GET_SEATS đầu tiên (SPEC-06 §8: không mặc định ghế trống hay nạp dữ liệu giả).
+     */
+    public static ObservableList<SeatViewModel> createInitialUnverifiedSeats() {
+        ObservableList<SeatViewModel> list = FXCollections.observableArrayList(
+                seat -> new Observable[]{seat.statusProperty()}
+        );
+        for (int i = 1; i <= TOTAL_SEATS; i++) {
+            String seatId = String.format("G%02d", i);
+            SeatViewModel vm = new SeatViewModel(seatId, SeatStatus.UNKNOWN);
+            vm.setVerification(VerificationLevel.UNVERIFIED);
+            list.add(vm);
+        }
+        return list;
+    }
+
+    /**
+     * Tạo danh sách ghế dành riêng cho chế độ phát triển cục bộ (không dùng trong Release).
      */
     public static ObservableList<SeatViewModel> createMockSeats() {
-        return MockSeatSource.createMockSeats();
+        return vn.nhom6.railway.client.network.DevSupportBridge.get().createDevMockSeats();
     }
 
     /**
@@ -347,7 +355,18 @@ public class SeatViewModel {
      * @param snapshot bản đồ trạng thái mới (seatId -> SeatStatus)
      */
     public static void applySnapshot(ObservableList<SeatViewModel> seats, java.util.Map<String, SeatStatus> snapshot) {
-        MockSeatSource.applySnapshot(seats, snapshot);
+        if (seats == null || snapshot == null) {
+            return;
+        }
+        for (SeatViewModel seat : seats) {
+            String id = seat.getSeatId();
+            if (snapshot.containsKey(id)) {
+                SeatStatus newStatus = snapshot.get(id);
+                if (newStatus != null && seat.getStatus() != newStatus) {
+                    seat.setStatus(newStatus);
+                }
+            }
+        }
     }
 
     /**
