@@ -45,14 +45,50 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
     );
 
     /**
+     * Frozen wire protocol version for release v1 (SPEC-03 Section 3.0 & TV3-D28).
+     */
+    public static final int FROZEN_PROTOCOL_VERSION = MessageEnvelope.CURRENT_PROTOCOL_VERSION;
+
+    /**
+     * Immutable set of all 17 {@link MessageType} values frozen under protocol v1.
+     */
+    public static final Set<MessageType> FROZEN_V1_MESSAGE_TYPES = Set.of(MessageType.values());
+
+    /**
      * Standard client-facing TCP port on LAN per SPEC-08 Section 3 and configs/lan/PORTS.md.
      */
     public static final int STANDARD_CLIENT_PORT = 9100;
 
     /**
+     * Minimum and maximum Windows/host-published Dev client TCP ports per SPEC-08 Section 3 and configs/dev/cluster.properties.
+     */
+    public static final int DEV_CLIENT_PORT_MIN = 9101;
+    public static final int DEV_CLIENT_PORT_MAX = 9105;
+
+    /**
      * Standard Raft peer-to-peer consensus TCP port on LAN per SPEC-08 Section 3 and configs/lan/PORTS.md.
      */
     public static final int STANDARD_PEER_PORT = 9200;
+
+    /**
+     * Minimum and maximum Windows/host-published Dev Raft peer TCP ports per SPEC-08 Section 3 and configs/dev/cluster.properties.
+     */
+    public static final int DEV_PEER_PORT_MIN = 9201;
+    public static final int DEV_PEER_PORT_MAX = 9205;
+
+    /**
+     * Returns whether the given wire {@code protocolVersion} matches the frozen v1 release contract.
+     */
+    public static boolean isSupportedProtocolVersion(int protocolVersion) {
+        return protocolVersion == FROZEN_PROTOCOL_VERSION;
+    }
+
+    /**
+     * Returns whether the given {@link MessageType} belongs to the frozen v1 contract set.
+     */
+    public static boolean isFrozenV1MessageType(MessageType type) {
+        return type != null && FROZEN_V1_MESSAGE_TYPES.contains(type);
+    }
 
     /**
      * Checks whether a TCP port corresponds to a standard Client channel port
@@ -62,7 +98,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
      * @return {@code true} if the port is designated for CLIENT traffic
      */
     public static boolean isStandardClientPort(int port) {
-        return port == STANDARD_CLIENT_PORT || (port >= 9101 && port <= 9105);
+        return port == STANDARD_CLIENT_PORT || (port >= DEV_CLIENT_PORT_MIN && port <= DEV_CLIENT_PORT_MAX);
     }
 
     /**
@@ -73,7 +109,7 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
      * @return {@code true} if the port is designated for PEER Raft traffic
      */
     public static boolean isStandardPeerPort(int port) {
-        return port == STANDARD_PEER_PORT || (port >= 9201 && port <= 9205);
+        return port == STANDARD_PEER_PORT || (port >= DEV_PEER_PORT_MIN && port <= DEV_PEER_PORT_MAX);
     }
 
     /**
@@ -247,10 +283,10 @@ public class MessageDispatcher implements TcpServer.MessageHandler {
         MessageType type = request.getType();
         String requestId = extractRequestId(request);
 
-        // 1. Enforce Protocol Version (SPEC-03 Section 3.0)
-        if (request.getProtocolVersion() != MessageEnvelope.CURRENT_PROTOCOL_VERSION) {
+        // 1. Enforce Protocol Version (SPEC-03 Section 3.0 & TV3-D28 freeze)
+        if (!isSupportedProtocolVersion(request.getProtocolVersion())) {
             return logAndCreateError(messageId, "INVALID_REQUEST",
-                    "Unsupported protocolVersion: " + request.getProtocolVersion() + ", expected: " + MessageEnvelope.CURRENT_PROTOCOL_VERSION,
+                    "Unsupported protocolVersion: " + request.getProtocolVersion() + ", expected: " + FROZEN_PROTOCOL_VERSION,
                     requestId);
         }
 
