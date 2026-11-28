@@ -1970,9 +1970,16 @@ public class ClientRegressionTest {
         Assumptions.assumeTrue((tv6Confirm != null && !tv6Confirm.isBlank()) || hasNotesConfirm,
                 "NOT_RUN: Chưa có xác nhận khóa lịch cụm test dành riêng từ TV6 (thiếu TV6_SCHEDULE_CONFIRMED / TV6-D27-notes.md)");
 
-        ClientConfig cfg = ClientConfig.loadWithOverrides(null, Map.of("cluster.profile", profile.toLowerCase(Locale.ROOT)), Map.of());
+        Map<String, String> overrides = new HashMap<>();
+        overrides.put("cluster.profile", profile.toLowerCase(Locale.ROOT));
+        if (ClientConfig.isReleaseModeActive()) {
+            overrides.put("release.mode", "true");
+            overrides.put("client.mode", "socket");
+        }
+        ClientConfig cfg = ClientConfig.loadWithOverrides(null, overrides, Map.of());
         Assumptions.assumeFalse(cfg.hasPlaceholderEndpoints(),
                 "BLOCKED: Cấu hình profile '" + profile + "' vẫn chứa IP placeholder: " + cfg.getPlaceholderNodes());
+        cfg.validateForStartup();
 
         ClusterCheckSummary summary = ClusterConnectivityCheck.checkCluster(cfg.getEndpoints(), 1500, DataSource.REAL);
         Assumptions.assumeTrue(summary.reachableNodes() >= 3,
@@ -2495,6 +2502,85 @@ public class ClientRegressionTest {
             }
 
             printSummaryTable(merged.values());
+            writeD28AutoDiffIfRequested(merged);
+            writeD28RealTraceIfRequested(merged);
+        }
+
+        private static void writeD28AutoDiffIfRequested(Map<String, CsvRow> afterRows) throws IOException {
+            String baselineProp = System.getProperty("d28.diff.baseline");
+            if (baselineProp == null || baselineProp.isBlank()) {
+                return;
+            }
+            Path baselinePath = resolveProjectPath(baselineProp.trim());
+            if (!Files.exists(baselinePath)) {
+                return;
+            }
+            Map<String, CsvRow> beforeRows = new LinkedHashMap<>();
+            try (BufferedReader reader = Files.newBufferedReader(baselinePath, StandardCharsets.UTF_8)) {
+                reader.readLine(); // skip header
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    CsvRow parsed = parseCsvLine(line);
+                    if (parsed != null) {
+                        beforeRows.put(parsed.layer() + "::" + parsed.regId(), parsed);
+                    }
+                }
+            }
+
+            String outProp = System.getProperty("d28.diff.output", "artifacts/evidence/D28/TV1-D28-regression-diff.csv");
+            Path diffOutPath = resolveProjectPath(outProp.trim());
+            if (diffOutPath.getParent() != null) {
+                Files.createDirectories(diffOutPath.getParent());
+            }
+
+            Set<String> allKeys = new java.util.LinkedHashSet<>();
+            allKeys.addAll(beforeRows.keySet());
+            allKeys.addAll(afterRows.keySet());
+
+            try (BufferedWriter writer = Files.newBufferedWriter(diffOutPath, StandardCharsets.UTF_8)) {
+                writer.write("regId,group,layer,beforeStatus,afterStatus,change,dataSource,note\n");
+                for (String k : allKeys) {
+                    CsvRow before = beforeRows.get(k);
+                    CsvRow after = afterRows.get(k);
+                    String regId = after != null ? after.regId() : before.regId();
+                    String group = after != null ? after.group() : before.group();
+                    String layer = after != null ? after.layer() : before.layer();
+                    String bStatus = before != null ? before.status() : "ADDED_IN_D28";
+                    String aStatus = after != null ? after.status() : "REMOVED";
+                    String change = bStatus.equals(aStatus) ? "UNCHANGED" : (bStatus + " -> " + aStatus);
+                    String ds = after != null ? after.dataSource() : before.dataSource();
+                    String note = after != null ? after.note() : before.note();
+                    writer.write(String.format("%s,%s,%s,%s,%s,\"%s\",%s,\"%s\"\n",
+                            regId, group, layer, bStatus, aStatus,
+                            change.replace("\"", "\"\""),
+                            ds,
+                            note.replace("\"", "\"\"")));
+                }
+            }
+        }
+
+        private static void writeD28RealTraceIfRequested(Map<String, CsvRow> merged) throws IOException {
+            if (!Boolean.getBoolean("d28.real.trace")) {
+                return;
+            }
+            boolean anyRealRan = merged.values().stream()
+                    .anyMatch(r -> "REAL".equals(r.layer()) && ("PASS".equals(r.status()) || "FAIL".equals(r.status())));
+            if (!anyRealRan) {
+                return;
+            }
+            Path tracePath = resolveProjectPath("artifacts/evidence/D28/TV1-D28-real-trace.csv");
+            if (tracePath.getParent() != null) {
+                Files.createDirectories(tracePath.getParent());
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(tracePath, StandardCharsets.UTF_8)) {
+                writer.write("testCase,node,type,messageId,correlationId,requestId,payloadSha256,response,uiState,dataSource\n");
+                for (CsvRow r : merged.values()) {
+                    if ("REAL".equals(r.layer()) && ("PASS".equals(r.status()) || "FAIL".equals(r.status()))) {
+                        writer.write(String.format("%s,-,-,-,-,\"%s\",-,%s,-,REAL\n",
+                                r.regId(), r.requestIds().replace("\"", "\"\""), r.status()));
+                    }
+                }
+            }
         }
 
         private static CsvRow parseCsvLine(String line) {
