@@ -1,0 +1,172 @@
+================================================================================
+NHẬT KÝ KIỂM CHỨNG VÀ ĐÓNG BĂNG FRONTEND RELEASE CANDIDATE (TASK TV1-D28)
+================================================================================
+Mã task           : TV1-D28 — Sửa lỗi P0/P1 và đóng băng Frontend release candidate
+Phụ trách         : TV1 (Khoa — Desktop Client JavaFX, package vn.nhom6.railway.client)
+Bàn giao cho      : TV6 + Trưởng nhóm
+Thời gian thực thi: 2026-11-28 08:48:00 +07:00 -> 2026-11-28 09:58:00 +07:00
+================================================================================
+
+1. MÔI TRƯỜNG ĐO THẬT & ĐỊNH DANH GIT (BƯỚC 0.1 & BƯỚC 6)
+--------------------------------------------------------------------------------
+- Hệ điều hành     : Microsoft Windows 11 Home Single Language (10.0.26300.0, amd64)
+- Java trên PATH   : OpenJDK 21.0.12.1 LTS (64-Bit Server VM, mixed mode, sharing)
+- Maven & JDK build: Apache Maven 3.10.0 chạy trên Eclipse Adoptium JDK 21.0.13.9-hotspot
+- Cờ biên dịch     : "-Dmaven.compiler.release=21" (luôn bật trên mọi lệnh Maven)
+- Nhánh Git        : feature/UI
+- Trạng thái đầu ca: Cây làm việc sạch 100% trước khi bắt đầu D28
+- Baseline SHA     : 47f209fa068a1f569abcf5f0edca99213bd1690d (Merge PR #145 — cuối D27)
+- Code Freeze SHA  : ddf4d6b31618bf11a1f6984443074cc1fd34eed3 (toàn bộ mã nguồn + test D28)
+- Tên tag RC cục bộ: desktop-client-rc1-d28 (gắn trên commit cuối cùng của D28 ngay sau bước commit bằng chứng; KHÔNG push, KHÔNG tạo tag G7)
+  * Lưu ý kỹ thuật (Bước 3.5): Do SHA-1 của commit cuối cùng không thể tự nhúng vào chính nội dung tệp bên trong commit đó, SHA đóng băng mã nguồn+test là ddf4d6b31618bf11a1f6984443074cc1fd34eed3 và SHA của chính commit mang tag desktop-client-rc1-d28 được kiểm tra qua `git rev-parse HEAD` & `git show --stat desktop-client-rc1-d28`.
+
+2. KẾT QUẢ PREFLIGHT (BƯỚC 0.2 -> 0.7)
+--------------------------------------------------------------------------------
+2.1. Phân loại lỗi từ D27 theo Owner và Mức độ:
+  - Thuộc TV1 (Desktop Client):
+    + BUG-D27-01..04: Đã đóng trong D27; rà soát sâu D28 phát hiện thêm 2 điểm còn sót ở tầng Controller/ViewModel (ghi nhận mã BUG-D28-01 [P0/P1] và BUG-D28-02 [P1]) -> ĐÃ SỬA TRIỆT ĐỂ trong D28.
+  - Thuộc Owner khác (ngoài phạm vi ghi của TV1 -> chỉ ghi nhận và giao lại):
+    + DEP-D27-01 [P1 - Owner: TV2]: Backend chưa đăng ký handler `CANCEL_TICKET` trên `BookingRequestHandler`.
+    + DEP-D27-02 [P1 - Owner: TV2 + TV3]: `GET_TICKET_HISTORY` chưa khóa wire DTO trong `shared`.
+    + DEP-D27-03 [Hạ tầng - Owner: TV6 + TV3]: `client-lan.properties` giữ IP placeholder mẫu `192.168.10.11..15` chờ chốt IP 6 laptop LAN.
+  - Kết quả `acceptance-results.csv` của TV6-D27: Chưa có tệp trong kho tại thời điểm kiểm tra -> không có mục FAIL bổ sung từ TV6.
+
+2.2. Trạng thái xác nhận cấu hình Release từ TV3 / TV6:
+  - Đã kiểm tra `docs/implementation/TV3-D27-notes.md`, `TV5-D27-notes.md`, `TV6-D24-notes.md`, `artifacts/evidence/D27/TV2-D27-result.log`. Chưa xuất hiện `TV3-D28-notes.md`, `TV6-D28-notes.md`, `TV3-D28-result.log` hay `TV6-D28-result.log`.
+  - Kết luận: **CHƯA XÁC NHẬN bởi TV3/TV6** cho cấu hình release D28. Tiếp tục đóng băng với bảng cổng chuẩn hiện hành (`dev`: `127.0.0.1:9101..9105`; `lan`: cổng `9100` trên từng máy với cơ chế chặn fail-fast IP placeholder).
+
+2.3. Kiểm tra Baseline trước khi sửa:
+  - Lệnh: `mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  - Kết quả: BUILD SUCCESS (`shared`: 38/38 PASS; `desktop-client`: 337 run, 0 failures, 0 errors, 31 skipped).
+  - Baseline `ClientRegressionTest`: 26/26 FIXTURE PASS; 11/11 REAL NOT_RUN.
+
+2.4. Các điểm tiềm ẩn dữ liệu giả đã rà thấy ở Preflight và cách xử lý trong D28:
+  1) `ClientFactory` tạo `MockBookingClient` / `MockClusterStatusClient` / `FakeReadAdapter` trực tiếp -> Đã chuyển sang `DevSupportBridge` + `DevSupportSpi`, khóa cứng khi `release.mode=true`, chỉ cho phép `JournalingBookingClient(LeaderAwareBookingClient(SocketBookingClient))`, `BookingClientReadAdapter` và `SocketClusterStatusClient`.
+  2) `BookingClientReadAdapter` kiểm tra `instanceof MockBookingClient` -> Đã thay bằng `DevSupportBridge.isDevMockClient(...)` để loại sạch phụ thuộc lớp `MockBookingClient` khỏi bytecode bản release.
+  3) `SeatViewModel.applySnapshot` và `createInitialUnverifiedSeats` tham chiếu `MockSeatSource` -> Đã tách hằng `TOTAL_SEATS = 10` và cài đặt `applySnapshot` trực tiếp trên `SeatViewModel`.
+  4) `SeatGridController` khởi tạo từ `MockSeatSource` và ghi vào `MockTicketSource` -> Đã chuyển sang `createInitialUnverifiedSeats()` (10 ghế `UNKNOWN` / `UNVERIFIED`) và chặn ghi `MockTicketSource` khi ở chế độ Socket/Release.
+  5) `CancelTicketController` gọi `MockBookingClient.getInstance()` và có `#cancelMockPanel` -> Đã cô lập qua `DevSupportBridge` và gỡ vật lý `#cancelMockPanel` khỏi Scene Graph khi ở chế độ Socket/Release.
+  6) `MainController`, `SeatGridController`, `TicketStatusController` hiển thị `#mockBadgeLabel` / `#mockControlPanel` -> Đã gỡ vật lý khỏi cây Scene Graph (`parentPane.getChildren().remove(...)`) khi chạy Socket/Release; thay bằng `#modeBadgeLabel` hiển thị `RELEASE v1.0.0-rc1` và `#releaseInfoLabel` hiển thị `release.version=1.0.0-rc1 | mode=RELEASE | profile=<profile> | node=<nodeId>`.
+  7) Đóng gói artifact Maven `-Prelease` -> Đã thêm profile `release` vào `desktop-client/pom.xml`, ghi đè `/config/release.properties` (`release.mode=true`, `client.mode=socket`, `booking.client=socket`) và loại trừ `**/Mock*.class`, `**/*$Mock*.class`, `**/Fake*.class`, `**/*$Fake*.class`, `**/dev/**` khỏi tệp JAR.
+
+2.5. Kiểm tra điều kiện Cụm thật cho lớp REAL (Bước 0.7):
+  - Quét chỉ-đọc TCP tới `127.0.0.1:9101..9105`: `0/5` cổng mở (cụm Docker/Backend chưa bật trên máy chạy kiểm thử).
+  - Biến môi trường `ALLOW_REAL_REGRESSION`, `TV6_SCHEDULE_CONFIRMED`, `REGRESSION_SEATS`: chưa cấp.
+  - Handler `CANCEL_TICKET` phía Backend (TV2): chưa đăng ký.
+  - Do thiếu cụm đang chạy, khóa lịch TV6 và ngân sách ghế -> Toàn bộ lớp `REAL` được dừng an toàn ở trạng thái `NOT_RUN` theo đúng quy tắc Mục 2.4 & Bước 4.2 (Desktop tuyệt đối không tự gọi `docker` hay khởi động Node).
+
+3. TÓM TẮT LỖI ĐÃ SỬA & LỖI ĐỂ LẠI (CHI TIẾT TẠI TV1-D28-fix-list.md)
+--------------------------------------------------------------------------------
+- Đã sửa thuộc TV1:
+  + `BUG-D28-01` [P0/P1]: Chặn rò rỉ ghế `BOOKED` giả từ `MockSeatSource` trước khi đọc máy chủ, chặn ghi bẩn `MockTicketSource`, mở bọc `JournalingBookingClient` trong `TicketLookupViewModel` và đọc đúng `seatId` từ Journal -> Test `REG-M02`: FAIL -> PASS (`Commit bf879ff`).
+  + `BUG-D28-02` [P1]: Chặn gọi `MockBookingClient` ở chế độ Socket trong `CancelTicketController` và giữ nguyên thông báo lỗi tiền kiểm tra trước khi gửi thay vì nuốt thành `TIMEOUT_UNKNOWN` -> Test `REG-D03`: FAIL -> PASS (`Commit bf879ff`).
+  + Rà soát CSS, thông báo `UNKNOWN` (0 từ cấm, khác biệt hoàn toàn với `REJECTED`), kích thước cửa sổ tối thiểu `1040x720` và chống cắt chữ -> `ReleaseUiHygieneTest` (4/4 PASS) (`Commits 0d3eb99, ddf4d6b`).
+  + Đóng băng luồng `RELEASE` + loại sạch `Mock*`/`Fake*` khỏi JAR `-Prelease` -> `ReleaseModeTest` (5/5 PASS) (`Commits 25d3bab, 4d591ac`).
+- Giao lại đúng Owner: `DEP-D27-01` (TV2), `DEP-D27-02` (TV2+TV3), `DEP-D27-03` (TV6+TV3).
+
+4. CHECKLIST TIÊU CHÍ PASS CỦA TASK TV1-D28
+--------------------------------------------------------------------------------
+(1) Không còn mock data trong luồng release:
+    - Trạng thái: **PASS**
+    - Bằng chứng:
+      + `ReleaseModeTest` (5/5 PASS): từ chối mọi cấu hình/injection `mock`/`fake`, từ chối placeholder IP / Docker host / port sai / thiếu profile với thông báo nêu đúng khóa + `nodeId`; xác nhận chuỗi `JournalingBookingClient -> LeaderAwareBookingClient -> SocketBookingClient`, `BookingClientReadAdapter`, `SocketClusterStatusClient`; xác nhận `lookup("#mockBadgeLabel") == null`, `lookup("#mockControlPanel") == null`, `lookup("#cancelMockPanel") == null`, `lookupAll(".mock-panel").isEmpty()`, `lookupAll(".badge-mock").isEmpty()`.
+      + Kiểm tra gói `jar tf desktop-client/target/desktop-client-1.0.0-SNAPSHOT.jar` (build với `-Prelease`): tổng 123 mục, số lớp `Mock*`/`Fake*`/`dev/**` = **0**.
+(2) Chạy giao dịch thật thành công:
+    - Trạng thái: **NOT_RUN**
+    - Lý do trung thực: Tại thời điểm chạy D28, cụm Backend 5 Node không chạy (`0/5` cổng `9101..9105` mở), chưa có khóa lịch cụm test dành riêng từ TV6 (`TV6_SCHEDULE_CONFIRMED`) và chưa cấp `REGRESSION_SEATS`. Desktop tuân thủ nghiêm ngặt quy tắc không tự bật Docker/Node và không dùng kết quả fake hay ảnh fake làm bằng chứng giao dịch thật.
+(3) Regression đạt:
+    - Trạng thái: **PASS (Lớp FIXTURE: 28/28 PASS)** | **NOT_RUN (Lớp REAL: 11/11 NOT_RUN có bảo vệ)**
+    - Bằng chứng:
+      + Toàn bộ module test (`mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"`): BUILD SUCCESS (`shared`: 38/38 PASS; `desktop-client`: 348 tests, 317 PASS, 0 FAIL, 0 ERROR, 31 SKIPPED).
+      + Bảng so sánh tự động trước/sau D28: `artifacts/evidence/D28/TV1-D28-regression-diff.csv` (26 mục cũ giữ nguyên PASS, 2 mục mới `REG-D03` và `REG-M02` đạt PASS).
+
+5. KẾT QUẢ THỰC THI CÁC LỆNH KIỂM THỬ & ĐÓNG GÓI
+--------------------------------------------------------------------------------
+- Lệnh 1 (Kiểm thử vệ sinh UI & chế độ Release + xuất ảnh minh họa UI):
+  `mvn -B -ntp -pl desktop-client test "-Dtest=ReleaseUiHygieneTest,ReleaseModeTest" "-Dui.evidence=true" "-Dd28.ui.evidence=true" "-Dmaven.compiler.release=21"`
+  -> Exit code: 0 | `ReleaseModeTest`: 5/5 PASS | `ReleaseUiHygieneTest`: 4/4 PASS.
+  -> Xuất ảnh `artifacts/evidence/D28/TV1-D28-ui.png` với tiêu đề minh bạch: `"RELEASE UI — KẾT NỐI FAKE (không phải giao dịch thật)"` (chỉ dùng để minh họa bố cục giao diện RELEASE, tuyệt đối không tính là bằng chứng giao dịch thật).
+- Lệnh 2 (Regression lớp FIXTURE + sinh bảng diff tự động):
+  `mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=fixture" "-Dd28.diff.baseline=artifacts/evidence/D28/baseline-before-d28.csv" "-Dmaven.compiler.release=21"`
+  -> Exit code: 0 | 28/28 PASS (Nhóm A..M).
+- Lệnh 3 (Regression lớp REAL chạy bằng chế độ RELEASE `release.mode=true`):
+  `mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=real" "-Drelease.mode=true" "-Dd28.real.trace=true" "-Dmaven.compiler.release=21"`
+  -> Exit code: 0 | 11/11 SKIPPED (`NOT_RUN: Chưa bật opt-in ALLOW_REAL_REGRESSION=true cho lớp REAL`).
+  -> Do lớp REAL là `NOT_RUN` (0 gói tin thật phát sinh), không sinh `TV1-D28-real-trace.csv` giả.
+- Lệnh 4 (Toàn bộ bộ kiểm thử Maven sạch):
+  `mvn -B -ntp -pl desktop-client -am clean test "-Dmaven.compiler.release=21"`
+  -> Exit code: 0 | `shared`: 38 run, 0 fail | `desktop-client`: 348 run, 0 fail, 0 error, 31 skipped (BUILD SUCCESS).
+- Lệnh 5 (Đóng gói và kiểm chứng JAR bản Release `-Prelease`):
+  `mvn -B -ntp -pl desktop-client -am package -Prelease -DskipTests "-Dmaven.compiler.release=21"`
+  `jar tf desktop-client/target/desktop-client-1.0.0-SNAPSHOT.jar | Select-String -Pattern "(Mock|Fake|/dev/)"`
+  -> Exit code: 0 | Tổng số mục trong JAR: 123 | Số mục khớp `(Mock|Fake|/dev/)`: **0**.
+- Kiểm tra hiển thị DPI Windows:
+  + Mức scale hiện hành của máy kiểm thử: đã chụp và kiểm chứng bố cục không cắt chữ tại `1080x740` và kiểm tra layout bounds tại `1040x720`.
+  + Đổi qua lại thủ công 100% <-> 125% ở cấp hệ điều hành Windows: `NOT_RUN` (không tự can thiệp cấu hình Display Scaling toàn máy của người dùng).
+
+6. KẾT QUẢ KIỂM TOÁN GREP TĨNH (BƯỚC 5.1 — KÈM LỆNH VÀ SỐ KHỚP THẬT)
+--------------------------------------------------------------------------------
+1) Không `import java.net` / `java.sql` trong `controller` & `viewmodel`:
+   - Lệnh: `git grep -n -E "^import\s+java\.(net|sql)\." -- desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel`
+   - Số khớp: **0**
+2) Không HTTP / REST / Spring Web / WebSocket / JDBC trong `src/main`:
+   - Lệnh: `git grep -n -E "^import\s+(java\.net\.http|java\.sql|org\.springframework|jakarta\.ws\.rs|javax\.websocket)" -- desktop-client/src/main`
+   - Số khớp: **0**
+3) Không sử dụng mã lỗi tự chế `SEAT_SOLD` trong mã thực thi `src/main`:
+   - Lệnh: `git grep -n "SEAT_SOLD" -- desktop-client/src/main/java ":!**/ErrorPresentationMapper.java"`
+   - Số khớp: **0** (trong `ErrorPresentationMapper.java` chỉ xuất hiện 1 dòng chú thích Javadoc cấm dùng `SEAT_SOLD`).
+4) Không so sánh/parse chuỗi lỗi máy chủ trong `ErrorPresentationMapper`:
+   - Lệnh: `git grep -n -E "serverMsg\.contains|getMessage\(\)\.contains" -- desktop-client/src/main/java/vn/nhom6/railway/client/controller/ErrorPresentationMapper.java`
+   - Số khớp: **0**
+5) Không gọi `.get()` / `.join()` / `Thread.sleep` chặn luồng UI trong `controller` & `viewmodel`:
+   - Lệnh: `git grep -n -E "Thread\.sleep\(|\.join\(\)|Future.*\.get\(" -- desktop-client/src/main/java/vn/nhom6/railway/client/controller desktop-client/src/main/java/vn/nhom6/railway/client/viewmodel`
+   - Số khớp: **0**
+6) Không hardcode Leader / Docker / IP cụm trong Java (ngoài tập hằng số kiểm tra placeholder/default fallback):
+   - Lệnh: `git grep -n -E "192\.168\.|backend-node" -- desktop-client/src/main/java ":!**/ClientConfig.java"`
+   - Số khớp: **0** (trong `ClientConfig.java` chỉ chứa danh sách nhận diện để chặn fail-fast placeholder IP và cảnh báo/chặn Docker hostname nội bộ).
+7) Không gọi `docker` / `ProcessBuilder` / `Runtime.exec` từ code Client:
+   - Lệnh: `git grep -n -E "ProcessBuilder|Runtime\.getRuntime\(\)\.exec" -- desktop-client/src/main/java`
+   - Số khớp: **0**
+8) Không import `Mock*` / `Fake*` trong toàn bộ các lớp thuộc luồng Release:
+   - Lệnh: `git grep -n -E "^import\s+.*(Mock|Fake)" -- desktop-client/src/main/java ":!**/dev/**" ":!**/Mock*.java" ":!**/Fake*.java"`
+   - Số khớp: **0** (kiểm tra sâu toàn thân hàm bằng `ReleaseModeTest#releaseMode_StaticSourceScanZeroMockOrFakeReferencesInReleaseFlow` trên >50 lớp luồng release cũng cho **0** vi phạm).
+9) Kiểm tra `jar tf` bản đóng gói `-Prelease`:
+   - Lệnh: `(jar tf desktop-client/target/desktop-client-1.0.0-SNAPSHOT.jar | Select-String -Pattern "(Mock|Fake|/dev/)").Count`
+   - Số khớp: **0**
+
+7. NGÂN SÁCH GHẾ ĐÃ DÙNG Ở LỚP REAL & DỌN DẸP
+--------------------------------------------------------------------------------
+- Ghế đã tiêu thụ ở lớp REAL trong D28: **0 ghế** (do lớp REAL ở trạng thái `NOT_RUN`).
+- Dọn dẹp: Không phát sinh vé mới trên cụm chung; không cần reset DB từ phiên chạy này.
+
+8. THÔNG TIN RELEASE CANDIDATE & BÀN GIAO CHO TV6 + TRƯỞNG NHÓM
+--------------------------------------------------------------------------------
+- Tên tag RC cục bộ : `desktop-client-rc1-d28` (chỉ tạo cục bộ cho Frontend TV1, **chưa phải tag G7**, không push).
+- Code Freeze SHA   : `ddf4d6b31618bf11a1f6984443074cc1fd34eed3`
+  * Xác nhận `git show --stat` của commit đóng băng mã nguồn và bộ test trước commit bằng chứng:
+    commit ddf4d6b31618bf11a1f6984443074cc1fd34eed3
+    fix(desktop-client): chống cắt chữ tiêu đề phụ sơ đồ ghế ở khung tối thiểu 1040x720 (D28)
+     desktop-client/src/main/resources/fxml/seat-grid.fxml | 8 ++++----
+     1 file changed, 4 insertions(+), 4 deletions(-)
+  * Để xem thông tin tag RC1 trên commit cuối cùng (gồm cả bộ bằng chứng D28): chạy `git show --stat desktop-client-rc1-d28`.
+- Chính sách đóng băng:
+  + Từ sau `desktop-client-rc1-d28`, Frontend **đóng băng tính năng và refactor**; chỉ tiếp nhận bản vá lỗi mức **P0** (nếu phát sinh khi TV6 chạy nghiệm thu tổng, sẽ tạo commit mới + tag `desktop-client-rc2-d28` kèm lý do và giữ nguyên tag cũ).
+- Cấu hình Release & Lệnh Build / Chạy trên Windows (bàn giao TV6):
+  1) Đóng gói bản Release (loại bỏ hoàn toàn lớp `Mock*`/`Fake*` và bật sẵn `release.mode=true`):
+     `mvn -B -ntp -pl desktop-client -am clean package -Prelease -DskipTests "-Dmaven.compiler.release=21"`
+  2) Chạy ứng dụng ở chế độ Release với cụm Docker/Localhost 5 Node (`profile=dev`, cổng `127.0.0.1:9101..9105`):
+     `mvn -pl desktop-client javafx:run -Prelease "-Dcluster.profile=dev"`
+  3) Chạy ứng dụng ở chế độ Release trên mạng LAN 6 máy (`profile=lan`, bắt buộc cung cấp tệp cấu hình chứa IP thật thay cho placeholder):
+     `mvn -pl desktop-client javafx:run -Prelease "-Dcluster.profile=lan" "-Dclient.config=D:\duong-dan\client-lan-real.properties"`
+  4) Chạy kiểm thử regression lớp REAL với bản Release trên cụm test dành riêng của TV6:
+     `$env:ALLOW_REAL_REGRESSION="true"; $env:CLUSTER_PROFILE="dev"; $env:TV6_SCHEDULE_CONFIRMED="true"; $env:REGRESSION_SEATS="G09,G10"`
+     `mvn -B -ntp -pl desktop-client test "-Dtest=ClientRegressionTest" "-Dgroups=real" "-Drelease.mode=true" "-Dd28.real.trace=true" "-Dmaven.compiler.release=21"`
+- Known Issues / Điều kiện trước cổng G7:
+  1) `DEP-D27-01` (TV2): Cần Backend đăng ký handler `CANCEL_TICKET` nếu muốn thông luồng hủy vé P1 trên cụm thật.
+  2) `DEP-D27-02` (TV2 + TV3): `GET_TICKET_HISTORY` đang khóa an toàn `BLOCKED/P1`.
+  3) `DEP-D27-03` (TV6 + TV3): Cần xác nhận bảng IP thật trong `client-lan.properties` trước khi chạy nghiệm thu LAN 6 máy và chốt tag chung `G7`.
+
+9. KẾT LUẬN TRUNG THỰC
+--------------------------------------------------------------------------------
+Frontend RC: không còn mock trong luồng release (kiểm bằng `ReleaseModeTest` + grep tĩnh + `jar tf` = 0 lớp Mock/Fake): PASS. Regression FIXTURE: PASS (28/28, tổng module 317 PASS / 0 FAIL). Giao dịch thật qua bản release: NOT_RUN (cụm 5 Node chưa bật `0/5` cổng `9101..9105`, chưa có khóa lịch TV6 và ngân sách `REGRESSION_SEATS`). Không tuyên bố AC01–AC10, Raft hay LAN PASS; acceptance do TV6 chấm; tag G7 do TV6/trưởng nhóm tạo sau khi duyệt PR D28.
+================================================================================
