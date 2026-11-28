@@ -276,9 +276,9 @@ public class TicketLookupViewModel {
             busy.set(false);
 
             if (throwable != null) {
-                Throwable cause = (throwable.getCause() != null) ? throwable.getCause() : throwable;
-                String errMsg = "Không thể hoàn tất tra cứu: " + cause.getMessage()
-                        + ". Trạng thái yêu cầu giữ nguyên CHƯA RÕ (UNKNOWN).";
+                var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, mockMode);
+                String errMsg = "Chưa thể hoàn tất tra cứu (" + pres.rawCode()
+                        + "). Trạng thái yêu cầu giữ nguyên CHƯA RÕ (UNKNOWN).";
                 statusMessage.set(errMsg);
                 statusStyleClass.set("search-msg-error");
                 future.completeExceptionally(throwable);

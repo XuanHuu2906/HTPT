@@ -20,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -72,6 +73,14 @@ import java.util.function.Consumer;
  * binding.
  */
 public class SeatGridController {
+
+    private static final System.Logger LOGGER = System.getLogger(SeatGridController.class.getName());
+
+    @FXML
+    private VBox seatGridRoot;
+
+    @FXML
+    private VBox mockControlPanel;
 
     @FXML
     private Label mockBadgeLabel;
@@ -199,11 +208,14 @@ public class SeatGridController {
     public void initialize() {
         ClientConfig cfg = ClientConfig.loadDefault();
         if (mockBadgeLabel != null) {
+            mockBadgeLabel.setStyle(null);
+            mockBadgeLabel.getStyleClass().removeAll("badge-mock", "badge-cluster-mode", "badge-release-mode");
             if (cfg.isSocketMode()) {
                 mockBadgeLabel.setText("CỤM 5 NODE (" + cfg.getProfile().toUpperCase() + ")");
-                mockBadgeLabel.setStyle("-fx-background-color: #0284c7; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-padding: 3 8; -fx-background-radius: 4;");
+                mockBadgeLabel.getStyleClass().add("badge-cluster-mode");
             } else {
                 mockBadgeLabel.setText(MockSeatSource.MOCK_LABEL);
+                mockBadgeLabel.getStyleClass().add("badge-mock");
             }
         }
         if (screenStatusLabel != null && cfg.isSocketMode()) {
@@ -260,7 +272,7 @@ public class SeatGridController {
             }
             HBox d07Row = new HBox(8);
             d07Row.setAlignment(Pos.CENTER_LEFT);
-            d07Row.setStyle("-fx-padding: 4 0 0 0;");
+            d07Row.getStyleClass().add("mock-d07-row");
 
             Label scenarioLabel = new Label("Kịch bản MOCK:");
             scenarioLabel.getStyleClass().add("mock-control-label");
@@ -796,9 +808,9 @@ public class SeatGridController {
                 updateStatus("Đã hủy thao tác đặt vé. Trạng thái ghế giữ nguyên.");
             }
         } catch (IOException e) {
-            String errorMsg = "Lỗi khi mở form đặt vé: " + e.getMessage();
+            String errorMsg = "Không thể mở hộp thoại đặt vé.";
             updateStatus(errorMsg);
-            e.printStackTrace();
+            LOGGER.log(System.Logger.Level.WARNING, "Lỗi mở booking-dialog.fxml", e);
         }
     }
 

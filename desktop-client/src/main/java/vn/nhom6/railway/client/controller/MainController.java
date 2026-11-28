@@ -21,6 +21,8 @@ import java.io.IOException;
  */
 public class MainController {
 
+    private static final System.Logger LOGGER = System.getLogger(MainController.class.getName());
+
     // === Container gốc BorderPane để hoán đổi nội dung vùng center ===
     @FXML
     private BorderPane rootBorderPane;
@@ -31,12 +33,24 @@ public class MainController {
     @FXML
     private Button openSeatGridBtn;
 
-    // === Tiêu đề & Nhãn MOCK ===
+    // === Tiêu đề & Nhãn chế độ ===
     @FXML
     private Label tripTitleLabel;
 
     @FXML
     private Label mockBadgeLabel;
+
+    @FXML
+    private Label tripConnectionBadgeLabel;
+
+    @FXML
+    private Label sidebarModeLabel;
+
+    @FXML
+    private Label sidebarBackendLabel;
+
+    @FXML
+    private Label releaseInfoLabel;
 
     @FXML
     private ClusterStatusBarController clusterStatusBarController;
@@ -76,15 +90,25 @@ public class MainController {
     public void initialize() {
         ClientConfig cfg = ClientConfig.loadDefault();
         if (mockBadgeLabel != null) {
+            mockBadgeLabel.setStyle(null);
+            mockBadgeLabel.getStyleClass().removeAll("badge-mock", "badge-cluster-mode", "badge-release-mode");
             if (cfg.isSocketMode()) {
                 mockBadgeLabel.setText("CỤM 5 NODE (" + cfg.getProfile().toUpperCase() + ")");
-                mockBadgeLabel.setStyle("-fx-background-color: #0284c7; -fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 4 14; -fx-background-radius: 6; -fx-border-color: #0369a1; -fx-border-radius: 6;");
+                mockBadgeLabel.getStyleClass().add("badge-cluster-mode");
             } else {
                 mockBadgeLabel.setText("MOCK DATA");
+                mockBadgeLabel.getStyleClass().add("badge-mock");
             }
         }
-        if (statusMessageLabel != null && cfg.isSocketMode()) {
-            statusMessageLabel.setText("Hệ thống kết nối Cụm 5 Node (" + cfg.getProfile().toUpperCase() + "). Nhấn 'Đặt vé' để vào sơ đồ ghế.");
+        if (tripConnectionBadgeLabel != null) {
+            tripConnectionBadgeLabel.setText(cfg.isSocketMode()
+                    ? "Hồ sơ kết nối: " + cfg.getProfile().toUpperCase()
+                    : "Chế độ: MOCK OFFLINE");
+        }
+        if (statusMessageLabel != null) {
+            statusMessageLabel.setText(cfg.isSocketMode()
+                    ? "Hệ thống kết nối Cụm 5 Node (" + cfg.getProfile().toUpperCase() + "). Nhấn 'Đặt vé' để vào sơ đồ ghế."
+                    : "Hệ thống đang chạy ở chế độ giả lập cục bộ (MOCK).");
         }
 
         bindNavigationHandlers();
@@ -114,8 +138,8 @@ public class MainController {
                 updateStatusMessage("Đang ở Sơ đồ chọn ghế tương tác. Click chọn các ghế mong muốn rồi nhấn 'Đặt vé'.");
             }
         } catch (IOException e) {
-            updateStatusMessage("Lỗi khi nạp giao diện seat-grid.fxml: " + e.getMessage());
-            e.printStackTrace();
+            updateStatusMessage("Không thể nạp giao diện chọn ghế.");
+            LOGGER.log(System.Logger.Level.WARNING, "Lỗi nạp seat-grid.fxml", e);
         }
     }
 
@@ -157,8 +181,8 @@ public class MainController {
                         : "Đang ở màn hình Tra cứu & Quản lý vé MOCK (D06).");
             }
         } catch (IOException e) {
-            updateStatusMessage("Lỗi khi nạp giao diện ticket-status.fxml: " + e.getMessage());
-            e.printStackTrace();
+            updateStatusMessage("Không thể nạp giao diện tra cứu vé.");
+            LOGGER.log(System.Logger.Level.WARNING, "Lỗi nạp ticket-status.fxml", e);
         }
     }
 
@@ -209,7 +233,7 @@ public class MainController {
 
     private void setupNavButton(Button btn, String navName) {
         if (btn != null) {
-            btn.setOnAction(e -> updateStatusMessage("Điều hướng: " + navName + " (Placeholder)"));
+            btn.setOnAction(e -> updateStatusMessage("Chức năng thanh toán trực tuyến nằm ngoài phạm vi phiên bản v1 (SPEC-01 §7)."));
         }
     }
 

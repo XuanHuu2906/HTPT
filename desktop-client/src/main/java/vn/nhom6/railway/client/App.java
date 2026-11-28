@@ -21,8 +21,10 @@ import java.io.IOException;
  */
 public class App extends Application {
 
-    private static final int DEFAULT_WIDTH = 1020;
-    private static final int DEFAULT_HEIGHT = 660;
+    public static final int DEFAULT_WIDTH = 1080;
+    public static final int DEFAULT_HEIGHT = 740;
+    public static final int MIN_WIDTH = 1040;
+    public static final int MIN_HEIGHT = 720;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -40,8 +42,8 @@ public class App extends Application {
         String modeDesc = cfg.isSocketMode() ? "CỤM 5 NODE - " + cfg.getProfile().toUpperCase() : "MOCK";
         primaryStage.setTitle("Hệ thống Bán Vé Tàu Cao Tốc - SE-001 [" + modeDesc + "]");
         primaryStage.setScene(scene);
-        primaryStage.setMinWidth(850);
-        primaryStage.setMinHeight(550);
+        primaryStage.setMinWidth(MIN_WIDTH);
+        primaryStage.setMinHeight(MIN_HEIGHT);
         primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
             System.exit(0);

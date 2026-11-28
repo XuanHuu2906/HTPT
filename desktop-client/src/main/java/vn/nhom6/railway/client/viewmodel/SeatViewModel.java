@@ -83,7 +83,7 @@ public class SeatViewModel {
      * 4 trạng thái màn hình theo yêu cầu D04.
      */
     public enum ScreenState {
-        IDLE("Hệ thống sẵn sàng ở chế độ MOCK (D08).", "status-idle"),
+        IDLE("Hệ thống sẵn sàng phục vụ chuyến tàu SE-001.", "status-idle"),
         LOADING("Đang tải dữ liệu từ hệ thống...", "status-loading"),
         ERROR("Đã xảy ra lỗi khi xử lý dữ liệu ghế.", "status-error"),
         DISCONNECTED("Mất kết nối với mạng / cụm máy chủ.", "status-disconnected");

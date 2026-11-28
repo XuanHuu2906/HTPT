@@ -578,9 +578,10 @@ public class TicketStatusController {
             ticketTableView.refresh();
             updateSelectedTicketUI(ticket);
         } catch (IOException e) {
-            String errorMsg = "Lỗi khi mở form hủy vé: " + e.getMessage();
+            String errorMsg = "Không thể mở hộp thoại hủy vé.";
             setSearchResultMessage(errorMsg, "search-msg-error");
-            e.printStackTrace();
+            System.getLogger(TicketStatusController.class.getName())
+                    .log(System.Logger.Level.WARNING, "Lỗi mở cancel-ticket-dialog.fxml", e);
         }
     }
 

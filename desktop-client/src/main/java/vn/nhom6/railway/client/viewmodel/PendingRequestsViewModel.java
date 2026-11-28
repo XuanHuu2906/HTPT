@@ -97,7 +97,9 @@ public class PendingRequestsViewModel {
                 busy.set(false);
 
                 if (throwable != null) {
-                    statusMessage.set("Kiểm tra thất bại hoặc timeout: " + throwable.getMessage());
+                    var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                    statusMessage.set("Chưa thể hoàn tất kiểm tra kết quả (" + pres.rawCode()
+                            + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                     return;
                 }
 
@@ -145,7 +147,9 @@ public class PendingRequestsViewModel {
                     busy.set(false);
 
                     if (throwable != null) {
-                        statusMessage.set("Gửi lại hủy vé thất bại hoặc timeout: " + throwable.getMessage());
+                        var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                        statusMessage.set("Chưa nhận được phản hồi cuối khi gửi lại yêu cầu hủy (" + pres.rawCode()
+                                + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                         journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
                         return;
                     }
@@ -177,7 +181,9 @@ public class PendingRequestsViewModel {
                 busy.set(false);
 
                 if (throwable != null) {
-                    statusMessage.set("Gửi lại thất bại hoặc timeout: " + throwable.getMessage());
+                    var pres = vn.nhom6.railway.client.controller.ErrorPresentationMapper.mapThrowable(throwable, false);
+                    statusMessage.set("Chưa nhận được phản hồi cuối khi gửi lại yêu cầu đặt vé (" + pres.rawCode()
+                            + "). Yêu cầu tiếp tục giữ trạng thái CHƯA XÁC NHẬN.");
                     // Cập nhật số lần thử từ journal
                     journalingClient.getJournal().get(item.getRequestId()).ifPresent(item::syncFromEntry);
                     return;

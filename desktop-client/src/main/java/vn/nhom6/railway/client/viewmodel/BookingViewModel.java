@@ -845,7 +845,7 @@ public class BookingViewModel {
                     markJournalResolved(requestId, "CONFIRMED");
                 } else if ("APPLIED_REJECTED".equals(state)) {
                     uiState.set(UiState.REJECTED);
-                    message.set("Tra cứu thành công: Yêu cầu bị từ chối (" + res.getReasonCode() + ")");
+                    message.set("Tra cứu hoàn tất: Yêu cầu bị từ chối (" + res.getReasonCode() + ")");
                     if ("SEAT_ALREADY_BOOKED".equals(res.getReasonCode())) {
                         String seat = resolveSeatId(requestId);
                         updateSeatStatus(seat, SeatViewModel.SeatStatus.BOOKED);
