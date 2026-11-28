@@ -64,6 +64,20 @@
   3. Chống cắt chữ tiêu đề phụ trên `seat-grid.fxml` khi thu nhỏ về kích thước tối thiểu `1040x720` (`Commit ddf4d6b`).
   4. Triển khai chế độ `RELEASE` nghiêm ngặt (`release.mode=true`), màn hình lỗi cấu hình fail-fast trong `App`, gỡ vật lý các node `#mockBadgeLabel` / `#mockControlPanel` / `#cancelMockPanel` khỏi Scene Graph, cô lập mã giả lập sang `vn.nhom6.railway.client.dev.DevModeSupport` qua `DevSupportBridge` và loại bỏ sạch `Mock*`/`Fake*`/`dev/**` khỏi gói JAR `-Prelease` (`Commits 25d3bab, 4d591ac`).
 
+### 1.4. `BUG-D28-03` — Treo tiến trình Surefire trên CI Headless không có `openjfx-monocle` (Phát hiện trên PR #148, đóng gói RC2)
+- **Mức độ:** **P0** (Chặn đường ống CI GitHub Actions — treo >13 phút ở bước `Standardized Maven Clean Test`).
+- **Mô tả lỗi:**
+  - Trên GitHub Actions (`.github/workflows/ci.yml`), biến `JAVA_TOOL_OPTIONS` đặt `-Djava.awt.headless=true -Dglass.platform=Monocle -Dmonocle.platform=Headless`, nhưng dự án không khai báo thư viện `openjfx-monocle`.
+  - Bài test mới `REG-D03` trong `ClientRegressionTest` gọi trực tiếp `Platform.startup(() -> {})` mà chưa kiểm tra `isJavaFxDisplayAvailable()`, khiến `QuantumToolkit.startup` bật `PlatformImpl.initialized = true` rồi nổ `NullPointerException` (`PlatformFactory.getPlatformFactory() is null`) trước khi giảm chốt `startupLatch`. Toàn bộ các lệnh `Platform.runLater(...)` ở các bài test kế tiếp bị khóa cứng vô thời hạn tại `startupLatch.await()`.
+- **File đã sửa:**
+  - `desktop-client/src/main/java/vn/nhom6/railway/client/controller/CancelTicketController.java`
+  - `desktop-client/src/test/java/vn/nhom6/railway/client/ClientRegressionTest.java`
+  - `desktop-client/src/test/java/vn/nhom6/railway/client/ReleaseModeTest.java`
+  - `desktop-client/src/test/java/vn/nhom6/railway/client/ReleaseUiHygieneTest.java`
+- **Kết quả Trước / Sau (với đúng `JAVA_TOOL_OPTIONS` của `ci.yml`):**
+  - **Trước khi sửa:** `regD03` ném `NullPointerException` tại `QuantumToolkit.startup`, sau đó tiến trình Maven treo cứng >13 phút tại `ReleaseModeTest`.
+  - **Sau khi sửa:** `348` test chạy hoàn tất trong **~36 giây** (`0` Failures, `0` Errors, `REG-D03` vẫn chạy và PASS trên cả CI headless lẫn Windows có màn hình).
+
 ---
 
 ## 2. DANH SÁCH LỖI ĐÃ ĐÓNG TỪ D27 (KHÔNG TÁI PHÁT TRONG D28)

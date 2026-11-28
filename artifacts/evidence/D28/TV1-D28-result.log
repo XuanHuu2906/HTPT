@@ -141,8 +141,10 @@ Thời gian thực thi: 2026-11-28 08:48:00 +07:00 -> 2026-11-28 09:58:00 +07:00
 
 8. THÔNG TIN RELEASE CANDIDATE & BÀN GIAO CHO TV6 + TRƯỞNG NHÓM
 --------------------------------------------------------------------------------
-- Tên tag RC cục bộ : `desktop-client-rc1-d28` (chỉ tạo cục bộ cho Frontend TV1, **chưa phải tag G7**, không push).
-- Code Freeze SHA   : `ddf4d6b31618bf11a1f6984443074cc1fd34eed3`
+- Tên tag RC cục bộ :
+  + `desktop-client-rc1-d28` (SHA: `ef9b665f9c9c694b438a82f4a913c76c26522dd5` — giữ nguyên lịch sử theo quy định Bước 6.4).
+  + `desktop-client-rc2-d28` (bản RC hiện hành sau khi vá lỗi P0 `BUG-D28-03` treo `Platform.startup` trên GitHub Actions `ubuntu-latest` headless không có `openjfx-monocle`; kiểm chứng đạt 348 test trong ~36s với đúng `JAVA_TOOL_OPTIONS` của `.github/workflows/ci.yml`; **chưa phải tag G7**, không tự động push).
+- Code Freeze SHA   : `ddf4d6b31618bf11a1f6984443074cc1fd34eed3` (RC1) -> cập nhật lên commit RC2 (xem `git show --stat desktop-client-rc2-d28`).
   * Xác nhận `git show --stat` của commit đóng băng mã nguồn và bộ test trước commit bằng chứng:
     commit ddf4d6b31618bf11a1f6984443074cc1fd34eed3
     fix(desktop-client): chống cắt chữ tiêu đề phụ sơ đồ ghế ở khung tối thiểu 1040x720 (D28)
