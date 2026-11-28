@@ -11,11 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import vn.nhom6.railway.protocol.dto.NodeStatusDto;
 import vn.nhom6.railway.protocol.dto.RequestVoteRequestDto;
@@ -59,21 +63,151 @@ import vn.nhom6.railway.raft.replication.ReplicationTracker;
  */
 public final class RaftElectionService implements ElectionService {
 
+    private static final Logger LOGGER = Logger.getLogger(RaftElectionService.class.getName());
+
     public static final List<String> VOTERS = List.of("node-1", "node-2", "node-3", "node-4", "node-5");
     public static final int CLUSTER_SIZE = 5;
     public static final int REQUIRED_VOTES = 3; // strict majority: 5 / 2 + 1 = 3
 
-    // TV5-D25 structured term/failover event types (SPEC-02 §8 & SPEC-04 §10)
+    // TV5-D28 runtime mode & timeout configuration keys (SPEC-04 §3, SPEC-08 §3.1)
+    public static final String ENV_RAFT_MODE = "RAFT_MODE";
+    public static final String ENV_RAILWAY_MODE = "RAILWAY_MODE";
+    public static final String PROP_RAFT_MODE = "railway.raft.mode";
+    public static final String ENV_HEARTBEAT_INTERVAL_MS = "RAFT_HEARTBEAT_INTERVAL_MS";
+    public static final String ENV_ELECTION_TIMEOUT_MIN_MS = "RAFT_ELECTION_TIMEOUT_MIN_MS";
+    public static final String ENV_ELECTION_TIMEOUT_MAX_MS = "RAFT_ELECTION_TIMEOUT_MAX_MS";
+    public static final String ENV_RPC_TIMEOUT_MS = "RAFT_RPC_TIMEOUT_MS";
+    public static final String ENV_TCP_RESPONSE_DEADLINE_MS = "TCP_RESPONSE_DEADLINE_MS";
+    public static final String ENV_QUORUM_FRESHNESS_MS = "RAFT_QUORUM_FRESHNESS_MS";
+
+    private static final CandidateElection.VoteTransport NO_OP_TRANSPORT = (peer, req, reply) -> {};
+
+    /**
+     * Execution mode for {@link RaftElectionService} (TV5-D28).
+     * <ul>
+     *   <li>{@link #PRODUCTION}: Enforces real durable storage, persistent Raft core, real vote transport,
+     *       quorum availability policy, and validated Raft timeouts; forbids all mock/simulation helpers.</li>
+     *   <li>{@link #TEST_SIMULATION}: Permitted only in deterministic unit/harness tests for partition,
+     *       stop-leader simulation, and fake-transport drills.</li>
+     * </ul>
+     */
+    public enum RuntimeMode {
+        PRODUCTION,
+        TEST_SIMULATION
+    }
+
+    /**
+     * Validated Raft Election &amp; Quorum timing configuration (TV5-D28, SPEC-04 §3 &amp; SPEC-08 §3.1).
+     */
+    public record TimeoutConfig(
+            ElectionConfig electionConfig,
+            Duration rpcTimeout,
+            Duration quorumFreshnessWindow) {
+
+        public TimeoutConfig {
+            Objects.requireNonNull(electionConfig, "electionConfig");
+            Objects.requireNonNull(rpcTimeout, "rpcTimeout");
+            Objects.requireNonNull(quorumFreshnessWindow, "quorumFreshnessWindow");
+            if (rpcTimeout.isZero() || rpcTimeout.isNegative()) {
+                throw new IllegalArgumentException("rpcTimeout must be positive: " + rpcTimeout);
+            }
+            if (quorumFreshnessWindow.isZero() || quorumFreshnessWindow.isNegative()) {
+                throw new IllegalArgumentException(
+                        "quorumFreshnessWindow must be positive: " + quorumFreshnessWindow);
+            }
+        }
+
+        public static TimeoutConfig defaults() {
+            ElectionConfig cfg = ElectionConfig.defaults();
+            return new TimeoutConfig(
+                    cfg,
+                    Duration.ofMillis(1_000L),
+                    Duration.ofMillis(Math.max(1_000L, cfg.heartbeatIntervalMillis() * 6L)));
+        }
+
+        public static TimeoutConfig lanProductionDefaults() {
+            ElectionConfig cfg = ElectionConfig.defaults();
+            return new TimeoutConfig(
+                    cfg,
+                    Duration.ofMillis(500L),
+                    WriteAvailabilityPolicy.DEFAULT_FRESHNESS_WINDOW);
+        }
+
+        public static TimeoutConfig fromEnvironment(Map<String, String> env, Properties props) {
+            Map<String, String> safeEnv = env != null ? env : Map.of();
+            Properties safeProps = props != null ? props : new Properties();
+            long heartbeat = readConfigLong(
+                    safeEnv, safeProps, ENV_HEARTBEAT_INTERVAL_MS, "raft.heartbeat.interval.ms", 150L);
+            long minElection = readConfigLong(
+                    safeEnv, safeProps, ENV_ELECTION_TIMEOUT_MIN_MS, "raft.election.timeout.min.ms", 500L);
+            long maxElection = readConfigLong(
+                    safeEnv, safeProps, ENV_ELECTION_TIMEOUT_MAX_MS, "raft.election.timeout.max.ms", 1_000L);
+            ElectionConfig electionConfig = new ElectionConfig(heartbeat, minElection, maxElection);
+
+            long rpcMs;
+            if (hasConfigValue(safeEnv, safeProps, ENV_RPC_TIMEOUT_MS, "raft.rpc.timeout.ms")) {
+                rpcMs = readConfigLong(safeEnv, safeProps, ENV_RPC_TIMEOUT_MS, "raft.rpc.timeout.ms", 500L);
+            } else {
+                long tcpDeadline = readConfigLong(
+                        safeEnv, safeProps, ENV_TCP_RESPONSE_DEADLINE_MS, "tcp.response.deadline.ms", 1_000L);
+                rpcMs = Math.max(200L, Math.min(tcpDeadline, maxElection));
+            }
+            long defaultFreshness = Math.max(1_000L, heartbeat * 6L);
+            long freshnessMs = readConfigLong(
+                    safeEnv, safeProps, ENV_QUORUM_FRESHNESS_MS, "raft.quorum.freshness.ms", defaultFreshness);
+            return new TimeoutConfig(
+                    electionConfig,
+                    Duration.ofMillis(rpcMs),
+                    Duration.ofMillis(freshnessMs));
+        }
+
+        /**
+         * Validates strict Raft liveness/safety timing margins required in PRODUCTION mode (SPEC-04 §3).
+         */
+        public void validateForProduction() {
+            long hb = electionConfig.heartbeatIntervalMillis();
+            long min = electionConfig.electionTimeoutMinMillis();
+            long max = electionConfig.electionTimeoutMaxMillis();
+            if (min < hb * 3L) {
+                throw new IllegalArgumentException(
+                        "Production electionTimeoutMinMillis (" + min
+                                + "ms) must be >= 3 * heartbeatIntervalMillis (" + (hb * 3L) + "ms)");
+            }
+            if (max - min < hb) {
+                throw new IllegalArgumentException(
+                        "Production randomized election window (" + min + ".." + max
+                                + "ms) spread must be >= heartbeatIntervalMillis (" + hb + "ms)");
+            }
+            if (rpcTimeout.toMillis() > max) {
+                throw new IllegalArgumentException(
+                        "Production rpcTimeout (" + rpcTimeout.toMillis()
+                                + "ms) must not exceed electionTimeoutMaxMillis (" + max + "ms)");
+            }
+            if (quorumFreshnessWindow.toMillis() < hb * 3L) {
+                throw new IllegalArgumentException(
+                        "Production quorumFreshnessWindow (" + quorumFreshnessWindow.toMillis()
+                                + "ms) must be >= 3 * heartbeatIntervalMillis (" + (hb * 3L) + "ms)");
+            }
+        }
+    }
+
+    // TV5-D25 / TV5-D28 structured term/failover event types (SPEC-02 §8 & SPEC-04 §10)
+    public static final String EVENT_NODE_STARTED = "NODE_STARTED";
+    public static final String EVENT_TIMEOUT_CONFIGURED = "TIMEOUT_CONFIGURED";
     public static final String EVENT_ELECTION_STARTED = "ELECTION_STARTED";
     public static final String EVENT_VOTE_GRANTED = "VOTE_GRANTED";
+    public static final String EVENT_VOTE_DENIED = "VOTE_DENIED";
     public static final String EVENT_LEADER_ELECTED = "LEADER_ELECTED";
     public static final String EVENT_HIGHER_TERM_STEP_DOWN = "HIGHER_TERM_STEP_DOWN";
+    public static final String EVENT_STEP_DOWN = "STEP_DOWN";
     public static final String EVENT_STOP_LEADER_PREPARED = "STOP_LEADER_PREPARED";
     public static final String EVENT_STOP_LEADER_EXECUTED = "STOP_LEADER_EXECUTED";
     public static final String EVENT_NODE_RESTARTED = "NODE_RESTARTED";
     public static final String EVENT_PARTITION_APPLIED = "PARTITION_APPLIED";
     public static final String EVENT_PARTITION_HEALED = "PARTITION_HEALED";
     public static final String EVENT_RECOVERY_RESTORED = "RECOVERY_RESTORED";
+    public static final String EVENT_RECOVERY_FAILED = "RECOVERY_FAILED";
+    public static final String EVENT_FAIL_CLOSED = "FAIL_CLOSED";
 
     /**
      * Structured term/role transition log entry for LAN failover auditing (TV5-D25, SPEC-02 §8).
@@ -100,6 +234,19 @@ public final class RaftElectionService implements ElectionService {
                     + " votedFor=" + (votedFor != null ? votedFor : "NONE")
                     + " commit=" + commitIndex
                     + " lastLog=" + lastLogIndex
+                    + (detail != null && !detail.isBlank() ? " detail=\"" + detail + "\"" : "");
+        }
+
+        public String toDetailedLogLine(long lastApplied, RuntimeMode mode) {
+            return timestamp + " [" + nodeId + "] mode=" + mode
+                    + " event=" + eventType
+                    + " term=" + previousTerm + "->" + currentTerm
+                    + " role=" + previousRole + "->" + currentRole
+                    + " leader=" + (leaderId != null ? leaderId : "NONE")
+                    + " votedFor=" + (votedFor != null ? votedFor : "NONE")
+                    + " commitIndex=" + commitIndex
+                    + " lastApplied=" + lastApplied
+                    + " lastLogIndex=" + lastLogIndex
                     + (detail != null && !detail.isBlank() ? " detail=\"" + detail + "\"" : "");
         }
     }
@@ -150,6 +297,9 @@ public final class RaftElectionService implements ElectionService {
     }
 
     private final String localId;
+    private final RuntimeMode runtimeMode;
+    private final TimeoutConfig timeoutConfig;
+    private final ElectionTimeoutPolicy timeoutPolicy;
     private final RaftNode node;
     private final RaftState state;
     private final RaftStorage storage;
@@ -170,11 +320,165 @@ public final class RaftElectionService implements ElectionService {
     private final Map<String, Instant> peerPingTimes = new ConcurrentHashMap<>();
     private final Set<String> partitionIsolatedPeers = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArrayList<TermLogEntry> termLog = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<TermLogEntry>> eventListeners = new CopyOnWriteArrayList<>();
     private volatile boolean failed;
     private volatile boolean stopped;
 
     /**
-     * Primary constructor with all dependencies.
+     * Production factory: enforces real durable storage, {@link PersistentRaftNode}, real vote transport,
+     * and validated production timeout intervals; disables all mock/simulation hooks.
+     * Automatically wires a real {@link WriteAvailabilityPolicy} backed by {@link ReplicationTracker}
+     * and {@link CommitAdvancer} upon promotion to {@link Role#LEADER}.
+     */
+    public static RaftElectionService production(
+            String localId,
+            PersistentRaftNode node,
+            RaftState state,
+            RaftStorage storage,
+            CandidateElection.VoteTransport transport,
+            CandidateElection.HigherTermHandler higherTermHandler,
+            Runnable onLeader,
+            Runnable onStepDown,
+            TimeoutConfig timeoutConfig) {
+        return new RaftElectionService(
+                RuntimeMode.PRODUCTION,
+                timeoutConfig != null ? timeoutConfig : TimeoutConfig.lanProductionDefaults(),
+                localId,
+                Objects.requireNonNull(node, "Production mode requires PersistentRaftNode"),
+                state,
+                Objects.requireNonNull(storage, "Production mode requires durable RaftStorage"),
+                Objects.requireNonNull(transport, "Production mode requires real VoteTransport"),
+                higherTermHandler,
+                onLeader,
+                onStepDown,
+                null);
+    }
+
+    /**
+     * Production factory overload with an explicit {@link WriteAvailabilityPolicy}.
+     */
+    public static RaftElectionService production(
+            String localId,
+            PersistentRaftNode node,
+            RaftState state,
+            RaftStorage storage,
+            CandidateElection.VoteTransport transport,
+            CandidateElection.HigherTermHandler higherTermHandler,
+            Runnable onLeader,
+            Runnable onStepDown,
+            WriteAvailabilityPolicy writeAvailabilityPolicy,
+            TimeoutConfig timeoutConfig) {
+        return new RaftElectionService(
+                RuntimeMode.PRODUCTION,
+                timeoutConfig != null ? timeoutConfig : TimeoutConfig.lanProductionDefaults(),
+                localId,
+                Objects.requireNonNull(node, "Production mode requires PersistentRaftNode"),
+                state,
+                Objects.requireNonNull(storage, "Production mode requires durable RaftStorage"),
+                Objects.requireNonNull(transport, "Production mode requires real VoteTransport"),
+                higherTermHandler,
+                onLeader,
+                onStepDown,
+                Objects.requireNonNull(writeAvailabilityPolicy, "writeAvailabilityPolicy"));
+    }
+
+    /**
+     * Production factory overload constructing {@link WriteAvailabilityPolicy} from replication dependencies
+     * with the configured {@link TimeoutConfig#quorumFreshnessWindow()}.
+     */
+    public static RaftElectionService production(
+            String localId,
+            PersistentRaftNode node,
+            RaftState state,
+            RaftStorage storage,
+            CandidateElection.VoteTransport transport,
+            CandidateElection.HigherTermHandler higherTermHandler,
+            Runnable onLeader,
+            Runnable onStepDown,
+            ReplicationTracker tracker,
+            CommitAdvancer advancer,
+            TimeoutConfig timeoutConfig) {
+        Objects.requireNonNull(localId, "localId");
+        Objects.requireNonNull(state, "state");
+        Objects.requireNonNull(tracker, "tracker");
+        Objects.requireNonNull(advancer, "advancer");
+        TimeoutConfig effectiveTimeout = timeoutConfig != null ? timeoutConfig : TimeoutConfig.lanProductionDefaults();
+        Set<String> remotePeers = new TreeSet<>(VOTERS);
+        remotePeers.remove(localId);
+        WriteAvailabilityPolicy policy = new WriteAvailabilityPolicy(
+                localId, state, remotePeers, tracker, advancer, effectiveTimeout.quorumFreshnessWindow());
+        return production(
+                localId, node, state, storage, transport, higherTermHandler,
+                onLeader, onStepDown, policy, effectiveTimeout);
+    }
+
+    /**
+     * Resolves {@link RuntimeMode} and {@link TimeoutConfig} from environment and properties.
+     * Defaults to {@link RuntimeMode#PRODUCTION} unless an explicit test/simulation mode is specified.
+     */
+    public static RaftElectionService fromEnvironment(
+            String localId,
+            RaftNode node,
+            RaftState state,
+            RaftStorage storage,
+            CandidateElection.VoteTransport transport,
+            CandidateElection.HigherTermHandler higherTermHandler,
+            Runnable onLeader,
+            Runnable onStepDown,
+            WriteAvailabilityPolicy writeAvailabilityPolicy,
+            Map<String, String> env,
+            Properties props) {
+        RuntimeMode mode = resolveRuntimeMode(env, props);
+        TimeoutConfig timeouts = TimeoutConfig.fromEnvironment(env, props);
+        return new RaftElectionService(
+                mode, timeouts, localId, node, state, storage, transport,
+                higherTermHandler, onLeader, onStepDown, writeAvailabilityPolicy);
+    }
+
+    /**
+     * Resolves {@link RuntimeMode} from environment variables and properties, defaulting to
+     * {@link RuntimeMode#PRODUCTION} (fail-closed against mock election in production).
+     */
+    public static RuntimeMode resolveRuntimeMode(Map<String, String> env, Properties props) {
+        String raw = getFirstNonBlank(
+                env != null ? env.get(ENV_RAFT_MODE) : null,
+                env != null ? env.get(ENV_RAILWAY_MODE) : null,
+                System.getProperty(PROP_RAFT_MODE),
+                props != null ? props.getProperty(PROP_RAFT_MODE) : null,
+                props != null ? props.getProperty("raft.mode") : null);
+        if (raw == null) {
+            return RuntimeMode.PRODUCTION;
+        }
+        String normalized = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (normalized) {
+            case "production", "prod", "lan", "release" -> RuntimeMode.PRODUCTION;
+            case "test", "simulation", "sim", "test_simulation" -> RuntimeMode.TEST_SIMULATION;
+            default -> throw new IllegalArgumentException(
+                    "Invalid Raft runtime mode '" + raw + "'; expected PRODUCTION or TEST_SIMULATION");
+        };
+    }
+
+    /**
+     * Returns true when system properties or process environment explicitly enforce PRODUCTION mode.
+     */
+    public static boolean isProductionModeConfigured() {
+        String raw = getFirstNonBlank(
+                System.getProperty(PROP_RAFT_MODE),
+                System.getenv(ENV_RAFT_MODE),
+                System.getenv(ENV_RAILWAY_MODE));
+        if (raw == null) {
+            return false;
+        }
+        String normalized = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        return "production".equals(normalized)
+                || "prod".equals(normalized)
+                || "lan".equals(normalized)
+                || "release".equals(normalized);
+    }
+
+    /**
+     * Primary constructor with all dependencies (defaults to {@link RuntimeMode#TEST_SIMULATION}
+     * unless PRODUCTION mode is configured in system properties or environment).
      */
     public RaftElectionService(
             String localId,
@@ -186,12 +490,61 @@ public final class RaftElectionService implements ElectionService {
             Runnable onLeader,
             Runnable onStepDown,
             WriteAvailabilityPolicy writeAvailabilityPolicy) {
+        this(
+                isProductionModeConfigured() ? RuntimeMode.PRODUCTION : RuntimeMode.TEST_SIMULATION,
+                TimeoutConfig.defaults(),
+                localId,
+                node,
+                state,
+                storage,
+                transport,
+                higherTermHandler,
+                onLeader,
+                onStepDown,
+                writeAvailabilityPolicy);
+    }
+
+    /**
+     * Full mode- and timeout-aware constructor.
+     */
+    public RaftElectionService(
+            RuntimeMode runtimeMode,
+            TimeoutConfig timeoutConfig,
+            String localId,
+            RaftNode node,
+            RaftState state,
+            RaftStorage storage,
+            CandidateElection.VoteTransport transport,
+            CandidateElection.HigherTermHandler higherTermHandler,
+            Runnable onLeader,
+            Runnable onStepDown,
+            WriteAvailabilityPolicy writeAvailabilityPolicy) {
+        this.runtimeMode = Objects.requireNonNull(runtimeMode, "runtimeMode");
+        this.timeoutConfig = Objects.requireNonNull(timeoutConfig, "timeoutConfig");
+        this.timeoutPolicy = ElectionTimeoutPolicy.randomized(timeoutConfig.electionConfig());
+
         this.localId = Objects.requireNonNull(localId, "localId");
         if (!VOTERS.contains(localId)) {
             throw new IllegalArgumentException("localId must be one of the five configured voters: " + VOTERS);
         }
         this.node = Objects.requireNonNull(node, "node");
         this.state = Objects.requireNonNull(state, "state");
+
+        if (runtimeMode == RuntimeMode.PRODUCTION) {
+            if (storage == null) {
+                throw new IllegalArgumentException("Production mode requires non-null durable RaftStorage");
+            }
+            if (!(node instanceof PersistentRaftNode)) {
+                throw new IllegalArgumentException(
+                        "Production mode requires PersistentRaftNode (mock/in-memory RaftNode forbidden)");
+            }
+            if (transport == null || transport == NO_OP_TRANSPORT) {
+                throw new IllegalArgumentException(
+                        "Production mode requires a real VoteTransport (mock/no-op election transport forbidden)");
+            }
+            timeoutConfig.validateForProduction();
+        }
+
         this.storage = storage;
 
         Set<String> remotePeers = new TreeSet<>(VOTERS);
@@ -200,7 +553,7 @@ public final class RaftElectionService implements ElectionService {
 
         this.onLeader = onLeader != null ? onLeader : () -> {};
         this.onStepDown = onStepDown != null ? onStepDown : () -> {};
-        this.transport = transport != null ? transport : (peer, req, reply) -> {};
+        this.transport = transport != null ? transport : NO_OP_TRANSPORT;
         this.writeAvailabilityPolicy = writeAvailabilityPolicy;
 
         this.persistence = storage != null
@@ -225,9 +578,43 @@ public final class RaftElectionService implements ElectionService {
                         if (failed || stopped || partitionIsolatedPeers.contains(peer)) {
                             return;
                         }
+                        long prevTerm = this.state.currentTerm();
+                        Role prevRole = this.state.role();
+                        int prevGrants = currentGrants.size();
+                        int insertIdx = termLog.size();
+                        boolean sameCampaign = prevRole == Role.CANDIDATE && prevTerm == req.getTerm();
                         try {
                             reply.receive(response);
                             syncGrantsFromCandidate();
+                            if (sameCampaign && response.term() == req.getTerm()) {
+                                if (response.voteGranted()) {
+                                    if (this.state.role() == Role.LEADER && prevRole == Role.CANDIDATE) {
+                                        TermLogEntry voteEntry = new TermLogEntry(
+                                                clock.instant(),
+                                                this.localId,
+                                                EVENT_VOTE_GRANTED,
+                                                prevTerm,
+                                                prevTerm,
+                                                Role.CANDIDATE,
+                                                Role.CANDIDATE,
+                                                null,
+                                                this.state.votedFor(),
+                                                this.state.commitIndex(),
+                                                this.state.lastLogIndex(),
+                                                "Peer " + peer + " granted vote (quorum reached for term " + prevTerm + ")");
+                                        termLog.add(Math.min(insertIdx, termLog.size()), voteEntry);
+                                        emitStructuredLog(voteEntry);
+                                        notifyEventListeners(voteEntry);
+                                    } else if (currentGrants.size() > prevGrants) {
+                                        recordTermEvent(EVENT_VOTE_GRANTED, prevTerm, prevRole,
+                                                "Peer " + peer + " granted vote (" + currentGrants.size()
+                                                        + "/" + CLUSTER_SIZE + ")");
+                                    }
+                                } else {
+                                    recordTermEvent(EVENT_VOTE_DENIED, prevTerm, prevRole,
+                                            "Peer " + peer + " denied vote for term " + req.getTerm());
+                                }
+                            }
                         } catch (RaftStorageException | RuntimeException failure) {
                             failClosed();
                             throw failure;
@@ -238,6 +625,14 @@ public final class RaftElectionService implements ElectionService {
                 () -> {
                     syncGrantsFromCandidate();
                     clearPeerAcks();
+                    if (runtimeMode == RuntimeMode.PRODUCTION && this.writeAvailabilityPolicy == null
+                            && this.state.role() == Role.LEADER) {
+                        ReplicationTracker tracker = new ReplicationTracker(this.state, this.peers);
+                        CommitAdvancer advancer = new CommitAdvancer(this.state, tracker);
+                        this.writeAvailabilityPolicy = new WriteAvailabilityPolicy(
+                                this.localId, this.state, this.peers, tracker, advancer,
+                                this.timeoutConfig.quorumFreshnessWindow());
+                    }
                     recordTermEvent(
                             EVENT_LEADER_ELECTED,
                             this.state.currentTerm(),
@@ -246,6 +641,22 @@ public final class RaftElectionService implements ElectionService {
                     this.onLeader.run();
                 }
         );
+
+        recordTermEvent(
+                EVENT_NODE_STARTED,
+                state.currentTerm(),
+                state.role(),
+                "Initialized RaftElectionService in mode=" + runtimeMode
+                        + " storage=" + (storage != null ? "DURABLE" : "NONE"));
+        recordTermEvent(
+                EVENT_TIMEOUT_CONFIGURED,
+                state.currentTerm(),
+                state.role(),
+                "Configured timeouts heartbeat=" + timeoutConfig.electionConfig().heartbeatIntervalMillis() + "ms"
+                        + " election=" + timeoutConfig.electionConfig().electionTimeoutMinMillis()
+                        + ".." + timeoutConfig.electionConfig().electionTimeoutMaxMillis() + "ms"
+                        + " rpc=" + timeoutConfig.rpcTimeout().toMillis() + "ms"
+                        + " quorumFreshness=" + timeoutConfig.quorumFreshnessWindow().toMillis() + "ms");
     }
 
     /**
@@ -277,14 +688,34 @@ public final class RaftElectionService implements ElectionService {
     }
 
     /**
-     * Minimal constructor for test doubles or components where transport is attached later.
+     * Minimal test-only constructor for test doubles or components where transport is attached later.
+     * Forbidden when PRODUCTION mode is enforced.
      */
     public RaftElectionService(
             String localId,
             RaftNode node,
             RaftState state,
             RaftStorage storage) {
-        this(localId, node, state, storage, (peer, req, reply) -> {}, null, () -> {}, () -> {}, null);
+        this(
+                rejectNoOpTransportInProduction(),
+                TimeoutConfig.defaults(),
+                localId,
+                node,
+                state,
+                storage,
+                NO_OP_TRANSPORT,
+                null,
+                () -> {},
+                () -> {},
+                null);
+    }
+
+    private static RuntimeMode rejectNoOpTransportInProduction() {
+        if (isProductionModeConfigured()) {
+            throw new IllegalStateException(
+                    "Mock/no-op election constructor is forbidden when PRODUCTION mode is configured");
+        }
+        return RuntimeMode.TEST_SIMULATION;
     }
 
     // -------------------------------------------------------------------------------------------
@@ -369,7 +800,10 @@ public final class RaftElectionService implements ElectionService {
             throw new IllegalArgumentException("candidate is not a voter");
         }
         if (partitionIsolatedPeers.contains(request.getCandidateId())) {
-            // Drop or deny vote request from isolated candidate
+            // Drop or deny vote request from isolated candidate (test/simulation only)
+            recordTermEvent(EVENT_VOTE_DENIED, state.currentTerm(), state.role(),
+                    "Denied vote to isolated candidate " + request.getCandidateId()
+                            + " for term " + request.getTerm());
             return new RequestVoteResponse(state.currentTerm(), false);
         }
         long prevTerm = state.currentTerm();
@@ -395,10 +829,16 @@ public final class RaftElectionService implements ElectionService {
             currentGrants.clear();
             clearPeerAcks();
             onStepDown.run();
+            recordTermEvent(EVENT_STEP_DOWN, prevTerm, prevRole,
+                    "Stepped down from LEADER to FOLLOWER on RequestVote(" + request.getCandidateId() + ")");
         }
         if (response.voteGranted()) {
             recordTermEvent(EVENT_VOTE_GRANTED, prevTerm, prevRole,
                     "Granted vote to " + request.getCandidateId() + " for term " + state.currentTerm());
+        } else {
+            recordTermEvent(EVENT_VOTE_DENIED, prevTerm, prevRole,
+                    "Denied vote to " + request.getCandidateId() + " for requestTerm=" + request.getTerm()
+                            + " (currentTerm=" + state.currentTerm() + ", votedFor=" + state.votedFor() + ")");
         }
         if (response.term() > state.currentTerm()) {
             observeHigherTerm(response.term());
@@ -410,6 +850,8 @@ public final class RaftElectionService implements ElectionService {
     public ElectionOutcome recordVoteResponse(String voterId, long term, boolean granted) {
         requireHealthy();
         if (partitionIsolatedPeers.contains(voterId)) {
+            recordTermEvent(EVENT_VOTE_DENIED, state.currentTerm(), state.role(),
+                    "Ignored vote response from isolated peer " + voterId + " for term " + term);
             return new ElectionService.IgnoredVote("peer isolated in partition");
         }
         long prevTerm = state.currentTerm();
@@ -431,6 +873,10 @@ public final class RaftElectionService implements ElectionService {
                 failClosed();
                 throw new RuntimeException("Durable step down failed", e);
             }
+        } else if (outcome instanceof ElectionService.IgnoredVote ignored) {
+            recordTermEvent(EVENT_VOTE_DENIED, prevTerm, prevRole,
+                    "Vote response from " + voterId + " (term=" + term + ", granted=" + granted
+                            + ") ignored: " + ignored.reason());
         }
         return outcome;
     }
@@ -443,6 +889,14 @@ public final class RaftElectionService implements ElectionService {
         clearPeerAcks();
         candidateElection.promoteToLeader(leaderPeers);
         syncGrantsFromCandidate();
+        if (runtimeMode == RuntimeMode.PRODUCTION && this.writeAvailabilityPolicy == null
+                && this.state.role() == Role.LEADER) {
+            ReplicationTracker tracker = new ReplicationTracker(this.state, this.peers);
+            CommitAdvancer advancer = new CommitAdvancer(this.state, tracker);
+            this.writeAvailabilityPolicy = new WriteAvailabilityPolicy(
+                    this.localId, this.state, this.peers, tracker, advancer,
+                    this.timeoutConfig.quorumFreshnessWindow());
+        }
         recordTermEvent(EVENT_LEADER_ELECTED, prevTerm, prevRole,
                 "Promoted to leader with " + currentGrants.size() + "/" + CLUSTER_SIZE + " votes");
     }
@@ -549,7 +1003,8 @@ public final class RaftElectionService implements ElectionService {
      * Configures a {@link WriteAvailabilityPolicy} using replication tracking and commit advancer.
      */
     public void configureWriteAvailability(ReplicationTracker tracker, CommitAdvancer advancer) {
-        this.writeAvailabilityPolicy = new WriteAvailabilityPolicy(localId, state, peers, tracker, advancer);
+        this.writeAvailabilityPolicy = new WriteAvailabilityPolicy(
+                localId, state, peers, tracker, advancer, timeoutConfig.quorumFreshnessWindow());
     }
 
     /**
@@ -713,12 +1168,16 @@ public final class RaftElectionService implements ElectionService {
     }
 
     private int activeVoterCountFallback(Instant now) {
+        if (runtimeMode == RuntimeMode.PRODUCTION) {
+            throw new IllegalStateException(
+                    "Production mode requires WriteAvailabilityPolicy; fallback mock counting is forbidden");
+        }
         if (failed || stopped || state.role() != Role.LEADER) {
             return 0;
         }
         long currentTerm = state.currentTerm();
         int count = 1; // local leader
-        Duration window = WriteAvailabilityPolicy.DEFAULT_FRESHNESS_WINDOW;
+        Duration window = timeoutConfig.quorumFreshnessWindow();
         for (String peer : peers) {
             if (partitionIsolatedPeers.contains(peer)) {
                 continue;
@@ -746,23 +1205,31 @@ public final class RaftElectionService implements ElectionService {
         }
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
-        PersistentState loaded = storage.load();
-        validateDurableState(loaded, state.currentTerm());
-        recordTermEvent(EVENT_RECOVERY_RESTORED, prevTerm, prevRole,
-                "Recovered durable state term=" + loaded.currentTerm()
-                        + ", votedFor=" + loaded.votedFor()
-                        + ", logEntries=" + loaded.log().size());
-        return loaded;
+        try {
+            PersistentState loaded = storage.load();
+            validateDurableState(loaded, state.currentTerm());
+            recordTermEvent(EVENT_RECOVERY_RESTORED, prevTerm, prevRole,
+                    "Recovered durable state term=" + loaded.currentTerm()
+                            + ", votedFor=" + loaded.votedFor()
+                            + ", lastApplied=" + loaded.lastApplied()
+                            + ", logEntries=" + loaded.log().size());
+            return loaded;
+        } catch (RaftStorageException | RuntimeException failure) {
+            recordTermEvent(EVENT_RECOVERY_FAILED, prevTerm, prevRole,
+                    "Durable recovery failed on " + localId + ": " + failure.getMessage());
+            throw failure;
+        }
     }
 
     // -------------------------------------------------------------------------------------------
-    // G5 Fault Scenario Simulation Helpers
+    // G5 Fault Scenario Simulation Helpers (TEST_SIMULATION mode only; forbidden in PRODUCTION)
     // -------------------------------------------------------------------------------------------
 
     /**
      * Isolates a peer from local communication (simulating link failure or partition).
      */
     public void isolatePeer(String peer) {
+        requireSimulationMode("isolatePeer");
         if (peers.contains(peer)) {
             partitionIsolatedPeers.add(peer);
             peerAckTimes.remove(peer);
@@ -778,6 +1245,7 @@ public final class RaftElectionService implements ElectionService {
      * Heals communication with an isolated peer.
      */
     public void healPeer(String peer) {
+        requireSimulationMode("healPeer");
         if (partitionIsolatedPeers.remove(peer)) {
             recordTermEvent(EVENT_PARTITION_HEALED, state.currentTerm(), state.role(),
                     "Healed peer " + peer + " (remaining isolated=" + isolatedPeers() + ")");
@@ -788,6 +1256,7 @@ public final class RaftElectionService implements ElectionService {
      * Configures a simulated partition, isolating the given set of peers.
      */
     public void partition(Set<String> isolatedPeers) {
+        requireSimulationMode("partition");
         partitionIsolatedPeers.clear();
         for (String p : isolatedPeers) {
             if (peers.contains(p)) {
@@ -806,6 +1275,7 @@ public final class RaftElectionService implements ElectionService {
      * Heals all simulated partitions.
      */
     public void healAll() {
+        requireSimulationMode("healAll");
         partitionIsolatedPeers.clear();
         recordTermEvent(EVENT_PARTITION_HEALED, state.currentTerm(), state.role(),
                 "Healed all simulated partitions");
@@ -819,14 +1289,30 @@ public final class RaftElectionService implements ElectionService {
     }
 
     // -------------------------------------------------------------------------------------------
-    // TV5-D25: LAN Failover Stop-Leader Actions, Term Logging & Trace Auditing
+    // TV5-D25 / TV5-D28: LAN Failover Stop-Leader Actions, Event Logging & Trace Auditing
     // -------------------------------------------------------------------------------------------
 
     /**
      * Configures a custom clock for deterministic term-log timestamps in tests.
+     * Forbidden in PRODUCTION mode.
      */
     public void setClock(Clock clock) {
+        requireSimulationMode("setClock");
         this.clock = Objects.requireNonNull(clock, "clock");
+    }
+
+    /**
+     * Registers a listener notified synchronously whenever a structured {@link TermLogEntry} is recorded.
+     */
+    public void addEventListener(Consumer<TermLogEntry> listener) {
+        eventListeners.add(Objects.requireNonNull(listener, "listener"));
+    }
+
+    /**
+     * Removes a previously registered event log listener.
+     */
+    public void removeEventListener(Consumer<TermLogEntry> listener) {
+        eventListeners.remove(listener);
     }
 
     /**
@@ -837,16 +1323,32 @@ public final class RaftElectionService implements ElectionService {
     }
 
     /**
+     * Exports all recorded structured election/recovery events as formatted single-line log records.
+     */
+    public List<String> exportEventLogs() {
+        List<String> lines = new ArrayList<>(termLog.size());
+        long applied = state.lastApplied();
+        for (TermLogEntry entry : termLog) {
+            lines.add(entry.toDetailedLogLine(applied, runtimeMode));
+        }
+        return Collections.unmodifiableList(lines);
+    }
+
+    /**
      * Clears the in-memory term log (useful between independent test scenarios).
+     * Forbidden in PRODUCTION mode so audit history cannot be wiped.
      */
     public void clearTermLog() {
+        requireSimulationMode("clearTermLog");
         termLog.clear();
     }
 
     /**
-     * Appends a structured term/role transition entry to this node's audit log.
+     * Appends a structured term/role transition entry to this node's audit log, emits a runtime
+     * {@link Logger} record, and notifies registered event listeners.
      */
     public TermLogEntry recordTermEvent(String eventType, long previousTerm, Role previousRole, String detail) {
+        String effectiveLeader = state.role() == Role.LEADER ? localId : state.leaderId();
         TermLogEntry entry = new TermLogEntry(
                 clock.instant(),
                 localId,
@@ -855,13 +1357,39 @@ public final class RaftElectionService implements ElectionService {
                 state.currentTerm(),
                 previousRole,
                 state.role(),
-                state.leaderId(),
+                effectiveLeader,
                 state.votedFor(),
                 state.commitIndex(),
                 state.lastLogIndex(),
                 detail);
         termLog.add(entry);
+        emitStructuredLog(entry);
+        notifyEventListeners(entry);
         return entry;
+    }
+
+    private void notifyEventListeners(TermLogEntry entry) {
+        for (Consumer<TermLogEntry> listener : eventListeners) {
+            try {
+                listener.accept(entry);
+            } catch (RuntimeException listenerError) {
+                LOGGER.log(Level.WARNING,
+                        "[" + localId + "] Event listener failed for " + entry.eventType() + ": "
+                                + listenerError.getMessage(),
+                        listenerError);
+            }
+        }
+    }
+
+    private void emitStructuredLog(TermLogEntry entry) {
+        Level level = switch (entry.eventType()) {
+            case EVENT_FAIL_CLOSED, EVENT_RECOVERY_FAILED -> Level.SEVERE;
+            case EVENT_HIGHER_TERM_STEP_DOWN, EVENT_STEP_DOWN, EVENT_VOTE_DENIED, EVENT_PARTITION_APPLIED -> Level.WARNING;
+            default -> Level.INFO;
+        };
+        if (LOGGER.isLoggable(level)) {
+            LOGGER.log(level, () -> "[RAFT-ELECTION] " + entry.toDetailedLogLine(state.lastApplied(), runtimeMode));
+        }
     }
 
     /**
@@ -911,6 +1439,7 @@ public final class RaftElectionService implements ElectionService {
      * Isolates all peers, stops local leadership activity, and logs STOP_LEADER_EXECUTED.
      */
     public StopLeaderAction simulateStopLeader(String clientEndpoint, String reason) {
+        requireSimulationMode("simulateStopLeader");
         StopLeaderAction prepared = prepareLocalStopLeaderAction(clientEndpoint, reason);
         long prevTerm = state.currentTerm();
         Role prevRole = state.role();
@@ -940,6 +1469,7 @@ public final class RaftElectionService implements ElectionService {
      * or wiping the persisted {@code votedFor} record.
      */
     public PersistentState simulateRestartAfterStop() throws RaftStorageException {
+        requireSimulationMode("simulateRestartAfterStop");
         if (!stopped) {
             throw new IllegalStateException("Node " + localId + " is not stopped");
         }
@@ -1223,6 +1753,34 @@ public final class RaftElectionService implements ElectionService {
         return storage;
     }
 
+    public RuntimeMode runtimeMode() {
+        return runtimeMode;
+    }
+
+    public boolean isProductionMode() {
+        return runtimeMode == RuntimeMode.PRODUCTION;
+    }
+
+    public TimeoutConfig timeoutConfig() {
+        return timeoutConfig;
+    }
+
+    public ElectionConfig electionConfig() {
+        return timeoutConfig.electionConfig();
+    }
+
+    public long nextElectionTimeoutMillis() {
+        return timeoutPolicy.nextTimeoutMillis();
+    }
+
+    public Duration rpcTimeout() {
+        return timeoutConfig.rpcTimeout();
+    }
+
+    public Duration quorumFreshnessWindow() {
+        return timeoutConfig.quorumFreshnessWindow();
+    }
+
     private void syncGrantsFromCandidate() {
         Set<String> snapshot = candidateElection.grantedVotersSnapshot();
         currentGrants.retainAll(snapshot);
@@ -1242,6 +1800,7 @@ public final class RaftElectionService implements ElectionService {
             throw new RaftStorageException("storage returned null PersistentState for " + localId);
         }
         if (loaded.currentTerm() < minTerm) {
+            failClosed();
             throw new RaftStorageException("term regression in storage: stored="
                     + loaded.currentTerm() + ", expected>=" + minTerm);
         }
@@ -1263,6 +1822,16 @@ public final class RaftElectionService implements ElectionService {
         }
     }
 
+    private void requireSimulationMode(String operation) {
+        if (runtimeMode == RuntimeMode.PRODUCTION) {
+            LOGGER.log(Level.WARNING,
+                    "[{0}] Blocked mock/simulation operation ''{1}'' in PRODUCTION mode",
+                    new Object[] { localId, operation });
+            throw new UnsupportedOperationException(
+                    "Mock/simulation operation '" + operation + "' is forbidden in PRODUCTION mode");
+        }
+    }
+
     private void requireHealthy() {
         if (failed) {
             throw new IllegalStateException("RaftElectionService failed closed; reload storage before reuse");
@@ -1273,9 +1842,52 @@ public final class RaftElectionService implements ElectionService {
     }
 
     private void failClosed() {
+        boolean firstFailure = !failed;
         failed = true;
         currentGrants.clear();
         candidateElection.clearCampaignOnStepDown();
         clearPeerAcks();
+        if (firstFailure) {
+            recordTermEvent(EVENT_FAIL_CLOSED, state.currentTerm(), state.role(),
+                    "RaftElectionService transitioned to FAIL_CLOSED state on " + localId);
+        }
+    }
+
+    private static boolean hasConfigValue(
+            Map<String, String> env, Properties props, String envKey, String propKey) {
+        return getFirstNonBlank(
+                env.get(envKey),
+                System.getProperty(propKey),
+                props.getProperty(propKey)) != null;
+    }
+
+    private static long readConfigLong(
+            Map<String, String> env,
+            Properties props,
+            String envKey,
+            String propKey,
+            long fallback) {
+        String raw = getFirstNonBlank(
+                env.get(envKey),
+                System.getProperty(propKey),
+                props.getProperty(propKey));
+        if (raw == null) {
+            return fallback;
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "Invalid numeric config for " + envKey + "/" + propKey + ": '" + raw + "'", ex);
+        }
+    }
+
+    private static String getFirstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 }
