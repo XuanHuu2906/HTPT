@@ -26,16 +26,16 @@
 
             <Separator orientation="VERTICAL" style="-fx-padding: 0 4;" />
 
-            <VBox spacing="2.0">
+            <VBox spacing="2.0" HBox.hgrow="ALWAYS">
                 <children>
-                    <Label text="SƠ ĐỒ CHỌN GHẾ TÀU CAO TỐC SE-001"
+                    <Label text="SƠ ĐỒ CHỌN GHẾ TÀU CAO TỐC SE-001" minWidth="-Infinity"
                            style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
-                    <Label text="Hà Nội ➔ TP. Hồ Chí Minh | Toa 01 - Khoang 10 ghế VIP (G01–G10)"
+                    <Label text="Hà Nội ➔ TP. Hồ Chí Minh | Toa 01 - Khoang 10 ghế VIP (G01–G10)" wrapText="true"
                            style="-fx-font-size: 12px; -fx-text-fill: #64748b;" />
                 </children>
             </VBox>
 
-            <Region HBox.hgrow="ALWAYS" />
+            <Region minWidth="8.0" />
 
             <Label fx:id="modeBadgeLabel" text="CỤM 5 NODE" minWidth="-Infinity" styleClass="badge-cluster-mode" />
             <Label fx:id="mockBadgeLabel" text="" minWidth="-Infinity" styleClass="badge-mock" />
