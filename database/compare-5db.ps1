@@ -1,4 +1,4 @@
-com<#
+<#
 .SYNOPSIS
     SQL checker hau recovery cho 5 PostgreSQL nodes (Railway Distributed System - Nhom 6).
     Owner: TV2 (Pham Minh Tuan).
